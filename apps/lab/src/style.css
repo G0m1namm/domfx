@@ -1,0 +1,31 @@
+:root { color: #f9eee4; background: #130b0a; font-family: ui-sans-serif, system-ui; color-scheme: dark; }
+body { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at 50% 0%, #472217, #130b0a 65%); }
+main { width: min(1040px, 92vw); margin: auto; padding: 3rem 0; }
+.eyebrow { color: #ffb057; letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; }
+.host { position: relative; padding: 40px 30px; margin-block: 1rem; border: 3px solid #804329; }
+h1 { width: max-content; margin: 0; font: 900 72px/1 Impact, sans-serif; letter-spacing: .02em; color: #fff5df; }
+.effect { position: absolute; pointer-events: none; z-index: 2; }
+.controls { display: flex; flex-wrap: wrap; gap: .5rem; }
+button { padding: .6rem .85rem; border: 1px solid #d07f46; border-radius: .4rem; background: #271713; color: inherit; cursor: pointer; }
+button:disabled { opacity: .45; cursor: default; }
+button:focus-visible, a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+.diagnostics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-top: 2rem; }
+figure { margin: 0; } figcaption { color: #e6b99b; margin-bottom: .5rem; font-size: .85rem; }
+figure canvas { width: 100%; height: auto; background: #100d0c; border: 1px solid #633521; }
+h2 { font-size: 1.2rem; margin-top: 2rem; }
+.fixtures { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.fixture-host { padding: 25px; position: relative; }
+#rounded { border-radius: 24px; background: #3477bc; color: white; border: 0; font: 16px sans-serif; }
+#card { background: #e7ddc8; color: #211810; width: 155px; padding: 18px; border-radius: 10px; font-size: 12px; }
+#card p { margin: 6px 0; } #card a { color: #712c1b; }
+.guard-host { background: rgb(0, 160, 80); padding: 45px; }
+#guard { width: 64px; height: 40px; position: relative; background: transparent; box-shadow: 14px 9px 8px rgba(255, 100, 0, .8); }
+.overflow-mark { position: absolute; left: -20px; top: 10px; width: 10px; height: 10px; background: #00ffff; }
+.origin-mark { position: absolute; left: 0; top: 0; width: 8px; height: 8px; background: #ff0000; }
+.corner-mark { position: absolute; right: 0; bottom: 0; width: 8px; height: 8px; background: #0088ff; }
+.transform-host { border: 5px solid #7a5040; width: 160px; height: 90px; overflow: auto; }
+.transform-ancestor { transform: translate(3.25px, 4.5px) scale(1.1, .9); width: 200px; height: 140px; }
+#transformed { position: relative; width: 80px; height: 48px; transform: translate(2.5px, 3.25px) scale(1.25, .75); transform-origin: 20% 40%; }
+.note, #clock { color: #d8b7a5; font-size: .85rem; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .75rem; background: #211511; padding: 1rem; border-radius: .4rem; }
+@media(max-width:700px) { h1 { font-size: 52px; } .diagnostics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

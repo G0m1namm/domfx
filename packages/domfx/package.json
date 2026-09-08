@@ -1,0 +1,40 @@
+{
+  "name": "@domfx/browser",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "description": "Experimental DOM capture and internal TypeGPU renderer.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./experimental": {
+      "types": "./dist/experimental.d.ts",
+      "import": "./dist/experimental.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.config.json"
+  },
+  "dependencies": {
+    "@domfx/core": "workspace:*",
+    "@typegpu/sdf": "^0.12.0",
+    "@zumer/snapdom": "^2.24.15",
+    "typegpu": "^0.12.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "@webgpu/types": "^0.1.64",
+    "typescript": "^5.9.3",
+    "unplugin-typegpu": "^0.12.3",
+    "vite": "^7.1.7"
+  }
+}

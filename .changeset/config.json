@@ -1,0 +1,13 @@
+{
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "bumpVersionsWithWorkspaceProtocolOnly": true,
+  "privatePackages": { "version": true, "tag": false },
+  "ignore": ["@domfx/lab"],
+  "format": "oxfmt"
+}

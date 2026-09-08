@@ -43,6 +43,10 @@ and open a PR against `main`. There is no permanent `develop` or `master` branch
 Follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report vulnerabilities through
 [SECURITY.md](SECURITY.md), never public issues.
 
+Consumer-facing library changes include a changeset (`pnpm changeset`); tooling,
+lab-only and contributor-doc changes need no package bump. See
+[RELEASING.md](RELEASING.md). Publishing remains disabled.
+
 ## Dependency boundaries
 
 | Workspace               | Allowed workspace dependencies               |

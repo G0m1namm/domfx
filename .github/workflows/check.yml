@@ -47,3 +47,5 @@ jobs:
         run: git log -1 --format=%B | pnpm exec commitlint
       - run: pnpm check
       - run: pnpm build:demo
+      - run: pnpm release:status --since origin/main
+      - run: pnpm release:artifacts

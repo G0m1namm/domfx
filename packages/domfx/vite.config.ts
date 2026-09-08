@@ -1,6 +1,8 @@
-import { defineConfig } from 'vite';
-import typegpuPlugin from 'unplugin-typegpu/vite';
 import { resolve } from 'node:path';
+
+import typegpuPlugin from 'unplugin-typegpu/vite';
+import { defineConfig } from 'vite';
+
 import packageJson from './package.json' with { type: 'json' };
 
 export default defineConfig({
@@ -17,7 +19,10 @@ export default defineConfig({
       fileName: (_format, entry) => `${entry}.js`,
     },
     rollupOptions: {
-      external: (id) => Object.keys(packageJson.dependencies).some(name => id === name || id.startsWith(`${name}/`)),
+      external: (id) =>
+        Object.keys(packageJson.dependencies).some(
+          (name) => id === name || id.startsWith(`${name}/`),
+        ),
     },
   },
 });

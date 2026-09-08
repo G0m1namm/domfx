@@ -5,6 +5,7 @@ dist-demo/
 demo/
 .scratch/
 /docs/
+/PROJECT_CONTEXT.md
 /lefthook-local.yml
 docs/
 .env

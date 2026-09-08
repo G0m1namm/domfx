@@ -1,5 +1,6 @@
-import { d, std, tgpu, type TgpuRoot } from 'typegpu';
 import { createJumpFlood, type JumpFlood } from '@typegpu/sdf';
+import { d, std, tgpu, type TgpuRoot } from 'typegpu';
+
 import type { CaptureFrame } from '@domfx/core';
 
 const sourceLayout = tgpu.bindGroupLayout({ source: { texture: d.texture2d() } });
@@ -48,9 +49,12 @@ fn field(p: vec2f) -> f32 {
 
 export function decodeFloat16(bits: number): number {
   const sign = bits & 0x8000 ? -1 : 1;
-  const exponent = (bits >>> 10) & 31, fraction = bits & 1023;
+  const exponent = (bits >>> 10) & 31,
+    fraction = bits & 1023;
   if (exponent === 31) return fraction ? NaN : sign * Infinity;
-  return sign * (exponent === 0 ? fraction * 2 ** -24 : (1 + fraction / 1024) * 2 ** (exponent - 15));
+  return (
+    sign * (exponent === 0 ? fraction * 2 ** -24 : (1 + fraction / 1024) * 2 ** (exponent - 15))
+  );
 }
 
 export interface PreparedGpuFrame {
@@ -75,12 +79,19 @@ export class GpuExperiment {
   // @typegpu/sdf 0.12.0 keeps its offset uniform until root.destroy().
   private retainedUniformBytes = 0;
   readonly errors: string[] = [];
-  private constructor(readonly root: TgpuRoot, readonly adapterInfo: GPUAdapterInfo) {
+  private constructor(
+    readonly root: TgpuRoot,
+    readonly adapterInfo: GPUAdapterInfo,
+  ) {
     const device = root.device;
     device.addEventListener('uncapturederror', (event) => this.errors.push(event.error.message));
-    const module = device.createShaderModule({ label: 'domfx deterministic fire', code: fireShader });
+    const module = device.createShaderModule({
+      label: 'domfx deterministic fire',
+      code: fireShader,
+    });
     this.pipeline = device.createRenderPipeline({
-      label: 'domfx fire', layout: 'auto',
+      label: 'domfx fire',
+      layout: 'auto',
       vertex: { module, entryPoint: 'vertex' },
       fragment: { module, entryPoint: 'fragment', targets: [{ format: 'rgba8unorm' }] },
       primitive: { topology: 'triangle-list' },
@@ -95,72 +106,146 @@ export class GpuExperiment {
     return new GpuExperiment(tgpu.initFromDevice({ device }), adapter.info);
   }
 
-  get device(): GPUDevice { return this.root.device; }
-  get managedBytes(): number { return this.retainedUniformBytes + [...this.prepared].reduce((sum, frame) => sum + frame.managedBytes, 0); }
+  get device(): GPUDevice {
+    return this.root.device;
+  }
+  get managedBytes(): number {
+    return (
+      this.retainedUniformBytes +
+      [...this.prepared].reduce((sum, frame) => sum + frame.managedBytes, 0)
+    );
+  }
 
-  async prepare(frame: Pick<CaptureFrame, 'width' | 'height' | 'pixels'>): Promise<PreparedGpuFrame> {
+  async prepare(
+    frame: Pick<CaptureFrame, 'width' | 'height' | 'pixels'>,
+  ): Promise<PreparedGpuFrame> {
     if (this.destroyed) throw new Error('renderer-disposed');
     const { width, height, pixels } = frame;
-    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || pixels.length !== width * height * 4) throw new Error('invalid-frame');
-    if (width * height > 1_000_000 || width > this.device.limits.maxTextureDimension2D || height > this.device.limits.maxTextureDimension2D) throw new Error('capture-budget');
+    if (
+      !Number.isInteger(width) ||
+      !Number.isInteger(height) ||
+      width < 1 ||
+      height < 1 ||
+      pixels.length !== width * height * 4
+    )
+      throw new Error('invalid-frame');
+    if (
+      width * height > 1_000_000 ||
+      width > this.device.limits.maxTextureDimension2D ||
+      height > this.device.limits.maxTextureDimension2D
+    )
+      throw new Error('capture-budget');
     if (!pixels.some((value, i) => i % 4 === 3 && value >= 128)) throw new Error('empty-mask');
     if (!pixels.some((value, i) => i % 4 === 3 && value < 128)) throw new Error('missing-exterior');
-    if (this.managedBytes + width * height * 36 + 32 > 144_000_000) throw new Error('aggregate-budget');
+    if (this.managedBytes + width * height * 36 + 32 > 144_000_000)
+      throw new Error('aggregate-budget');
 
     const started = performance.now();
-    const root = this.root, device = this.device;
-    const source = root.createTexture({ size: [width, height] as const, format: 'rgba8unorm' as const }).$usage('sampled');
+    const root = this.root,
+      device = this.device;
+    const source = root
+      .createTexture({ size: [width, height] as const, format: 'rgba8unorm' as const })
+      .$usage('sampled');
     let runner: JumpFlood.Executor | undefined;
     let output: GPUTexture | undefined;
     let uniform: GPUBuffer | undefined;
     let scopeOpen = true;
     device.pushErrorScope('validation');
     try {
-      device.queue.writeTexture({ texture: root.unwrap(source) }, pixels, { bytesPerRow: width * 4 }, { width, height });
+      device.queue.writeTexture(
+        { texture: root.unwrap(source) },
+        pixels,
+        { bytesPerRow: width * 4 },
+        { width, height },
+      );
       runner = createJumpFlood({
-        root, size: { width, height },
-        classify: classifyMask, getSdf: storeDistance, getColor: copyNearestColor,
+        root,
+        size: { width, height },
+        classify: classifyMask,
+        getSdf: storeDistance,
+        getColor: copyNearestColor,
       }).with(root.createBindGroup(sourceLayout, { source: source.createView() }));
       this.retainedUniformBytes += 16;
       await runner.initAsync();
       runner.run();
       await device.queue.onSubmittedWorkDone();
       const sdfTexture = root.unwrap(runner.sdfOutput);
-      output = device.createTexture({ label: 'domfx fire output', size: [width, height], format: 'rgba8unorm', usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC });
-      uniform = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+      output = device.createTexture({
+        label: 'domfx fire output',
+        size: [width, height],
+        format: 'rgba8unorm',
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+      });
+      uniform = device.createBuffer({
+        size: 16,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      });
       const bindGroup = device.createBindGroup({
         layout: this.pipeline.getBindGroupLayout(0),
-        entries: [{ binding: 0, resource: sdfTexture.createView() }, { binding: 1, resource: { buffer: uniform } }],
+        entries: [
+          { binding: 0, resource: sdfTexture.createView() },
+          { binding: 1, resource: { buffer: uniform } },
+        ],
       });
-      const outputTexture = output, parameters = uniform;
+      const outputTexture = output,
+        parameters = uniform;
       let disposed = false;
       const prepared: PreparedGpuFrame = {
-        width, height, managedBytes: width * height * 36 + 16, prepareMs: performance.now() - started,
+        width,
+        height,
+        managedBytes: width * height * 36 + 16,
+        prepareMs: performance.now() - started,
         readSdf: async () => {
           const bytes = await this.readTexture(sdfTexture, width, height, 8);
           const view = new DataView(bytes.buffer);
-          return Float32Array.from({ length: width * height }, (_, i) => decodeFloat16(view.getUint16(i * 8, true)));
+          return Float32Array.from({ length: width * height }, (_, i) =>
+            decodeFloat16(view.getUint16(i * 8, true)),
+          );
         },
         render: (time, seed, intensity, pixelsPerCss) => {
           if (disposed) throw new Error('frame-disposed');
-          if (![time, seed, intensity, pixelsPerCss].every(Number.isFinite) || pixelsPerCss <= 0) throw new Error('invalid-parameters');
-          device.queue.writeBuffer(parameters, 0, new Float32Array([time, seed, Math.max(0, Math.min(1, intensity)), pixelsPerCss]));
+          if (![time, seed, intensity, pixelsPerCss].every(Number.isFinite) || pixelsPerCss <= 0)
+            throw new Error('invalid-parameters');
+          device.queue.writeBuffer(
+            parameters,
+            0,
+            new Float32Array([time, seed, Math.max(0, Math.min(1, intensity)), pixelsPerCss]),
+          );
           const encoder = device.createCommandEncoder();
-          const pass = encoder.beginRenderPass({ colorAttachments: [{ view: outputTexture.createView(), clearValue: [0, 0, 0, 0], loadOp: 'clear', storeOp: 'store' }] });
-          pass.setPipeline(this.pipeline); pass.setBindGroup(0, bindGroup); pass.draw(3); pass.end();
+          const pass = encoder.beginRenderPass({
+            colorAttachments: [
+              {
+                view: outputTexture.createView(),
+                clearValue: [0, 0, 0, 0],
+                loadOp: 'clear',
+                storeOp: 'store',
+              },
+            ],
+          });
+          pass.setPipeline(this.pipeline);
+          pass.setBindGroup(0, bindGroup);
+          pass.draw(3);
+          pass.end();
           device.queue.submit([encoder.finish()]);
         },
         present: (destination) => {
           if (disposed) throw new Error('frame-disposed');
           const encoder = device.createCommandEncoder();
-          encoder.copyTextureToTexture({ texture: outputTexture }, { texture: destination }, { width, height });
+          encoder.copyTextureToTexture(
+            { texture: outputTexture },
+            { texture: destination },
+            { width, height },
+          );
           device.queue.submit([encoder.finish()]);
         },
         readFire: () => this.readTexture(outputTexture, width, height, 4),
         destroy: () => {
           if (disposed) return;
           disposed = true;
-          runner!.destroy(); source.destroy(); outputTexture.destroy(); parameters.destroy();
+          runner!.destroy();
+          source.destroy();
+          outputTexture.destroy();
+          parameters.destroy();
           this.prepared.delete(prepared);
         },
       };
@@ -170,25 +255,43 @@ export class GpuExperiment {
       this.prepared.add(prepared);
       return prepared;
     } catch (error) {
-      runner?.destroy(); source.destroy(); output?.destroy(); uniform?.destroy();
+      runner?.destroy();
+      source.destroy();
+      output?.destroy();
+      uniform?.destroy();
       if (scopeOpen) await device.popErrorScope();
       throw error;
     }
   }
 
-  private async readTexture(texture: GPUTexture, width: number, height: number, bytesPerPixel: number): Promise<Uint8Array> {
-    const stride = Math.ceil(width * bytesPerPixel / 256) * 256;
-    const buffer = this.device.createBuffer({ size: stride * height, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+  private async readTexture(
+    texture: GPUTexture,
+    width: number,
+    height: number,
+    bytesPerPixel: number,
+  ): Promise<Uint8Array> {
+    const stride = Math.ceil((width * bytesPerPixel) / 256) * 256;
+    const buffer = this.device.createBuffer({
+      size: stride * height,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
     try {
       const encoder = this.device.createCommandEncoder();
       encoder.copyTextureToBuffer({ texture }, { buffer, bytesPerRow: stride }, { width, height });
       this.device.queue.submit([encoder.finish()]);
       await buffer.mapAsync(GPUMapMode.READ);
-      const mapped = new Uint8Array(buffer.getMappedRange()), packed = new Uint8Array(width * height * bytesPerPixel);
-      for (let row = 0; row < height; row += 1) packed.set(mapped.subarray(row * stride, row * stride + width * bytesPerPixel), row * width * bytesPerPixel);
+      const mapped = new Uint8Array(buffer.getMappedRange()),
+        packed = new Uint8Array(width * height * bytesPerPixel);
+      for (let row = 0; row < height; row += 1)
+        packed.set(
+          mapped.subarray(row * stride, row * stride + width * bytesPerPixel),
+          row * width * bytesPerPixel,
+        );
       buffer.unmap();
       return packed;
-    } finally { buffer.destroy(); }
+    } finally {
+      buffer.destroy();
+    }
   }
 
   destroy(): void {

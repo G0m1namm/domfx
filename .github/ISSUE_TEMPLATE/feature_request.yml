@@ -1,0 +1,17 @@
+name: Feature proposal
+description: Describe a concrete use case before proposing an implementation.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and use case
+      description: Who needs this, and what can they not do today?
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Smallest useful result
+      description: Expected behavior, alternatives and how we could verify success.
+    validations:
+      required: true

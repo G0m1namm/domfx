@@ -1,3 +1,11 @@
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      run: pnpm format:check
+    lint:
+      run: pnpm lint
+
 commit-msg:
   commands:
     commitlint:

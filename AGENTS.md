@@ -1,17 +1,21 @@
 # domfx agent guide
 
-Read `PROJECT_CONTEXT.md` before planning or implementation. Read the relevant ADRs before changing capture, rendering, compositing, or animation boundaries.
+Read `README.md` and `CONTRIBUTING.md` before planning or implementation.
+Use `CONTEXT.md` for shared domain terminology.
 
 ## Engineering workflow
 
 Follow `CONTRIBUTING.md` for commit/code conventions and `workspace-boundaries.mjs`
 for permitted dependency directions. Run `pnpm check` before handing off code changes.
+Use Oxfmt (`pnpm format`) and Oxlint (`pnpm lint`), not competing formatters.
+Do not format vendored skills or generated/local-only files. Review automatic fixes.
 
-Tasks are local Markdown files under `.scratch/<feature>/issues/`. See `docs/agents/issue-tracker.md`.
+Use the relevant GitHub issue for scope and acceptance checks. Confirm the intended
+contract before changing capture, rendering, compositing or animation boundaries.
 
-Use the standard triage states in `docs/agents/triage-labels.md`. A task is `ready-for-agent` only when its acceptance checks can be completed without guessing.
-
-The domain documentation uses one root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
+`PROJECT_CONTEXT.md`, `docs/` and `.scratch/` are optional, ignored maintainer notes.
+Read them when available, but do not require them in public clones or publish them.
+Put any context contributors need in the issue or tracked contributor guidance.
 
 ## Code health
 

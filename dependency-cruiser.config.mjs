@@ -1,15 +1,22 @@
-import { boundaries } from './workspace-boundaries.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 
-const manifests = Object.fromEntries(Object.keys(boundaries)
-  .filter(path => existsSync(`${path}/package.json`))
-  .map(path => [path, JSON.parse(readFileSync(`${path}/package.json`, 'utf8'))]));
+import { boundaries } from './workspace-boundaries.mjs';
+
+const manifests = Object.fromEntries(
+  Object.keys(boundaries)
+    .filter((path) => existsSync(`${path}/package.json`))
+    .map((path) => [path, JSON.parse(readFileSync(`${path}/package.json`, 'utf8'))]),
+);
 
 function declaredTargets(workspace, targets) {
   const manifest = manifests[workspace] ?? {};
-  const names = Object.assign({}, ...['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']
-    .map(section => manifest[section]));
-  return targets.filter(target => Object.hasOwn(names, manifests[target]?.name ?? ''));
+  const names = Object.assign(
+    {},
+    ...['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'].map(
+      (section) => manifest[section],
+    ),
+  );
+  return targets.filter((target) => Object.hasOwn(names, manifests[target]?.name ?? ''));
 }
 
 export default {

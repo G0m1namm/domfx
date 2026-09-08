@@ -1,0 +1,22 @@
+name: Bug report
+description: Report a reproducible domfx problem. Do not disclose vulnerabilities here.
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal example, commit/version, steps, expected and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser/version, GPU/WebGPU support, reduced-motion setting, Node and pnpm versions.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Relevant console output or screenshots. Remove credentials and private data.

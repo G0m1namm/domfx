@@ -2,14 +2,17 @@
   "name": "@domfx/core",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
+  "description": "DOM-independent domfx contracts and alpha classification.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/G0m1namm/domfx.git",
+    "directory": "packages/core"
+  },
   "files": [
     "dist"
   ],
-  "engines": {
-    "node": ">=22"
-  },
-  "description": "DOM-independent domfx contracts and alpha classification.",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -22,5 +25,8 @@
   },
   "devDependencies": {
     "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

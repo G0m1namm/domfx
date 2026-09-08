@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/G0m1namm/domfx/blob/main/SECURITY.md
+    about: Use the private contact in our security policy, not a public issue.

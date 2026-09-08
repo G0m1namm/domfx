@@ -2,14 +2,17 @@
   "name": "@domfx/lab",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
+  "description": "Self-checking browser/GPU experiment consuming built domfx packages.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/G0m1namm/domfx.git",
+    "directory": "apps/lab"
+  },
   "files": [
     "dist"
   ],
-  "engines": {
-    "node": ">=22"
-  },
-  "description": "Self-checking browser/GPU experiment consuming built domfx packages.",
+  "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
@@ -18,8 +21,8 @@
     "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/numerical.test.js"
   },
   "dependencies": {
-    "@domfx/core": "workspace:*",
     "@domfx/browser": "workspace:*",
+    "@domfx/core": "workspace:*",
     "gsap": "^3.15.0"
   },
   "devDependencies": {
@@ -27,5 +30,8 @@
     "@webgpu/types": "^0.1.64",
     "typescript": "^5.9.3",
     "vite": "^7.1.7"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

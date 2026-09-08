@@ -1,0 +1,31 @@
+{
+  "name": "@domfx/lab",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "description": "Self-checking browser/GPU experiment consuming built domfx packages.",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/numerical.test.js"
+  },
+  "dependencies": {
+    "@domfx/core": "workspace:*",
+    "@domfx/browser": "workspace:*",
+    "gsap": "^3.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "@webgpu/types": "^0.1.64",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.7"
+  }
+}

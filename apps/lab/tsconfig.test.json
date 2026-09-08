@@ -3,16 +3,10 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "types": [
-      "node",
-      "@webgpu/types"
-    ],
+    "types": ["node", "@webgpu/types"],
     "noEmit": false,
     "rootDir": ".",
     "outDir": ".test-dist"
   },
-  "include": [
-    "tests/**/*.ts",
-    "src/diagnostics/**/*.ts"
-  ]
+  "include": ["tests/**/*.ts", "src/diagnostics/**/*.ts"]
 }

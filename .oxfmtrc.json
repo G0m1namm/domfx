@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "singleQuote": true,
+  "semi": true,
+  "trailingComma": "all",
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "proseWrap": "preserve",
+  "embeddedLanguageFormatting": "off",
+  "sortImports": {
+    "internalPattern": ["@domfx/"],
+    "groups": ["builtin", "external", "internal", ["parent", "sibling", "index"], "unknown"],
+    "newlinesBetween": true,
+    "sortSideEffects": false
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.test-dist/**",
+    "dist-demo/**",
+    "docs/**",
+    "PROJECT_CONTEXT.md",
+    ".scratch/**",
+    ".agents/**",
+    "pnpm-lock.yaml"
+  ]
+}

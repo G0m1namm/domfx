@@ -20,18 +20,20 @@ Open the printed loopback address in a WebGPU-enabled browser. With reduced
 motion disabled, the lab automatically checks capture, GPU distances, fire and
 GSAP seeking. It also provides Play, Seek, Reverse and Dispose controls.
 
-| Command | Result |
-| --- | --- |
-| `pnpm build` | Build core, then browser/GPU JavaScript and declarations |
-| `pnpm typecheck` | Build dependencies and check all workspaces/configs |
-| `pnpm test` | Build dependencies and run four numerical tests |
-| `pnpm check` | Build, validate boundaries, typecheck and run tooling/numerical tests |
-| `pnpm lint:boundaries` | Check workspace dependencies and imports after building |
-| `pnpm test:tooling` | Test commit conventions and forbidden dependency edges |
-| `pnpm hooks:install` | Install or repair Lefthook's commit-message and pre-push hooks |
-| `pnpm demo` | Build packages and start the development lab |
-| `pnpm build:demo` | Build packages and the production lab in `apps/lab/dist` |
-| `pnpm preview:demo` | Serve the production lab after `build:demo` |
+| Command                             | Result                                                                     |
+| ----------------------------------- | -------------------------------------------------------------------------- |
+| `pnpm build`                        | Build core, then browser/GPU JavaScript and declarations                   |
+| `pnpm typecheck`                    | Build dependencies and check all workspaces/configs                        |
+| `pnpm test`                         | Build dependencies and run four numerical tests                            |
+| `pnpm check`                        | Check formatting/lint, build, validate boundaries, typecheck and run tests |
+| `pnpm format` / `pnpm format:check` | Apply or check Oxfmt formatting and import order                           |
+| `pnpm lint` / `pnpm lint:fix`       | Check Oxlint rules or apply safe fixes                                     |
+| `pnpm lint:boundaries`              | Check workspace dependencies and imports after building                    |
+| `pnpm test:tooling`                 | Test commit conventions and forbidden dependency edges                     |
+| `pnpm hooks:install`                | Install or repair Lefthook's pre-commit, commit-message and pre-push hooks |
+| `pnpm demo`                         | Build packages and start the development lab                               |
+| `pnpm build:demo`                   | Build packages and the production lab in `apps/lab/dist`                   |
+| `pnpm preview:demo`                 | Serve the production lab after `build:demo`                                |
 
 ## Workspace structure
 
@@ -49,9 +51,7 @@ the spike to the lab temporarily, not a supported public renderer API.
 
 Rebuild packages after library edits and restart the lab to refresh dependencies.
 Test-only Float64 distance oracles stay in the lab, outside consumer runtime.
-`apps/lab` is the diagnostic testbed; `apps/web` will be the separate marketing
-and documentation website. Add `packages/gsap` and `apps/web` when their tickets start; the future app still
-needs product discovery. No empty workspaces or extra task orchestrator are needed.
+`apps/lab` is the diagnostic testbed, not a marketing website.
 
 ## Spike stack
 
@@ -59,29 +59,30 @@ needs product discovery. No empty workspaces or extra task orchestrator are need
 - SnapDOM as the MVP capture adapter.
 - GSAP as the first animation adapter.
 
-The core is framework-agnostic. Capture and renderer adapters are explicit seams so native HTML-in-Canvas and vGPU can be evaluated later without changing the public model.
-
 ## Status
 
-The capture → GPU SDF → GPU fire spike passes in the recorded local browser. All
-five DOM capture classes plus overflow/transform guards pass an independent
-distance oracle; the largest measured error is 0.277 raster pixels. These are
-bounded fixture results, not broad browser support or performance guarantees.
-The lab prints its current verification results. Internal evidence lives in the
-local-only `docs/` folder, not the public contributor documentation.
+The lab exercises capture → GPU distance field → fire rendering and prints its
+verification results. Local fixture checks have passed, but they do not establish
+broad browser support or performance guarantees.
 
-This is not yet a stable attachment API or a completed five-class/two-live-target preview. Reusable lifecycle/GSAP adapters, full geometry and refresh-race coverage, broader performance/support measurements and user validation remain next.
+A stable attachment API, reusable lifecycle/GSAP adapters, broader geometry and
+refresh coverage, and automated browser verification remain unfinished.
 
 ## Workflow
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for checks and the public-repository checklist.
+See [CONTEXT.md](CONTEXT.md) for domain terminology.
+Oxfmt enforces formatting/import order; Oxlint checks code correctness.
 Commitlint enforces Conventional Commits; Lefthook installs the local checks.
 Workspace manifests and import boundaries are checked locally and in CI.
 
+## License
+
+domfx is [MIT licensed](LICENSE). Dependencies retain their own licenses;
+GSAP is not relicensed by this project. Vendored skills retain their
+[upstream MIT notice](.agents/skills/LICENSE).
+
 ## Inspiration
 
-[Kugiri's first commit](https://github.com/edoardolunardi/kugiri/commit/29182419bbe187f43c7fe955053cefca52d4984b)
-already paired library source with a demo/test harness, package metadata and
-documentation. Its release automation came later. We follow that practical
-progression, using separate workspaces because domfx has distinct core, browser
-and app responsibilities. No Kugiri implementation code was copied.
+Inspired by [Kugiri](https://github.com/edoardolunardi/kugiri)'s library-and-demo
+approach. No Kugiri implementation code was copied.

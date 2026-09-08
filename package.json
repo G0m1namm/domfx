@@ -2,30 +2,41 @@
   "name": "domfx-workspace",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "description": "GPU edge effects for live DOM elements.",
-  "packageManager": "pnpm@11.5.0",
-  "engines": {
-    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/G0m1namm/domfx.git"
   },
+  "type": "module",
   "scripts": {
     "build": "pnpm --filter \"./packages/**\" -r build",
     "build:demo": "pnpm build && pnpm --filter @domfx/lab build",
     "preview:demo": "pnpm --filter @domfx/lab preview",
     "typecheck": "pnpm build && pnpm -r typecheck",
-    "check": "pnpm build && pnpm lint:boundaries && pnpm test:tooling && pnpm -r typecheck && pnpm --filter @domfx/lab test",
+    "check": "pnpm format:check && pnpm lint && pnpm build && pnpm lint:boundaries && pnpm test:tooling && pnpm -r typecheck && pnpm --filter @domfx/lab test",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint --deny-warnings .",
+    "lint:fix": "oxlint --fix --deny-warnings .",
     "test": "pnpm build && pnpm --filter @domfx/lab test",
     "demo": "pnpm build && pnpm --filter @domfx/lab dev",
     "lint:boundaries": "node scripts/check-workspaces.mjs && depcruise --config dependency-cruiser.config.mjs packages apps",
-    "test:tooling": "node --test scripts/tooling.test.mjs",
+    "test:tooling": "node --test scripts/*.test.mjs",
     "hooks:install": "lefthook install",
     "prepare": "lefthook install"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.2",
-    "@commitlint/config-conventional": "^21.2.1",
-    "dependency-cruiser": "^18.2.0",
-    "lefthook": "^2.1.12",
-    "typescript": "^5.9.3"
-  }
+    "@commitlint/cli": "21.2.2",
+    "@commitlint/config-conventional": "21.2.2",
+    "dependency-cruiser": "18.2.0",
+    "lefthook": "2.1.12",
+    "oxfmt": "0.67.0",
+    "oxlint": "1.82.0",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+  },
+  "packageManager": "pnpm@11.5.0"
 }

@@ -14,8 +14,12 @@ export interface CaptureFrame {
   release(): void;
 }
 
-export function classifyAlpha(frame: Pick<CaptureFrame, 'width' | 'height' | 'pixels'>, threshold = 128): Uint8Array {
+export function classifyAlpha(
+  frame: Pick<CaptureFrame, 'width' | 'height' | 'pixels'>,
+  threshold = 128,
+): Uint8Array {
   const result = new Uint8Array(frame.width * frame.height);
-  for (let i = 0; i < result.length; i += 1) result[i] = frame.pixels[i * 4 + 3] >= threshold ? 1 : 0;
+  for (let i = 0; i < result.length; i += 1)
+    result[i] = frame.pixels[i * 4 + 3] >= threshold ? 1 : 0;
   return result;
 }

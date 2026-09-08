@@ -7,6 +7,17 @@ setup and workspace map in [README.md](README.md).
 
 - Use pnpm, TypeScript/ES modules, two-space indentation, single quotes and
   semicolons in source. `.editorconfig` defines whitespace rules.
+- Oxfmt owns formatting and import order; do not add Prettier or a second formatter.
+  Use 100-column wrapping, trailing commas, parenthesized arrow parameters and LF.
+  Imports are alphabetical within groups: Node built-ins, external dependencies,
+  `@domfx/` packages, then relative imports. Side-effect imports retain their order.
+  Use explicit type-only imports. Oxlint enforces correctness, unused bindings,
+  strict equality, no `var`/debugger and `const` where possible. Prefix intentionally
+  unused parameters with `_`. TypeScript and dependency-cruiser remain separate gates.
+- Run `pnpm format` to format, `pnpm lint:fix` for safe lint fixes, and review the diff.
+  `pnpm format:check` and `pnpm lint` never modify files. Oxc versions are pinned;
+  upgrades must pass tooling regression tests. Generated output, local docs/plans,
+  vendored skills and the generated lockfile are not formatting targets.
 - Use `kebab-case` filenames and named exports. Keep changes small, typed and
   covered by observable tests; do not commit generated output.
 - Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
@@ -16,21 +27,31 @@ setup and workspace map in [README.md](README.md).
 - Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
   `chore`, `style`, `revert`. Commitlint enforces the conventional preset and scopes.
 
-`pnpm install` installs Lefthook hooks. `commit-msg` checks the message;
+`pnpm install` installs Lefthook hooks. `pre-commit` checks formatting and lint
+across the working tree (including unstaged edits); `commit-msg` checks the message;
 `pre-push` runs `pnpm check` and `pnpm build:demo`. Reinstall with
 `pnpm hooks:install` if needed. Hooks validate but never format, stage or commit
 files automatically. CI repeats checks and validates PR commit ranges; push CI
 checks the latest commit without retroactively enforcing all existing history.
+Use a Conventional Commit title for the PR too: squash merges use that title.
+
+## Proposing changes
+
+Use GitHub issues for reproducible bugs and scoped feature proposals. Discuss large
+changes before implementing. Fork the repository, work on a short-lived branch,
+and open a PR against `main`. There is no permanent `develop` or `master` branch.
+Follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report vulnerabilities through
+[SECURITY.md](SECURITY.md), never public issues.
 
 ## Dependency boundaries
 
-| Workspace | Allowed workspace dependencies |
-| --- | --- |
-| `packages/core` | None; no DOM, framework, GPU or Node imports |
-| `packages/domfx` | Core |
-| `packages/gsap` (later) | Core and browser package |
-| `apps/lab` | Library packages, never other apps |
-| `apps/web` (later) | Library packages, never other apps |
+| Workspace               | Allowed workspace dependencies               |
+| ----------------------- | -------------------------------------------- |
+| `packages/core`         | None; no DOM, framework, GPU or Node imports |
+| `packages/domfx`        | Core                                         |
+| `packages/gsap` (later) | Core and browser package                     |
+| `apps/lab`              | Library packages, never other apps           |
+| `apps/web` (later)      | Library packages, never other apps           |
 
 `workspace-boundaries.mjs` defines the direction. `pnpm lint:boundaries` checks
 manifests and imports (run `pnpm build` first). Cross-workspace dependencies must
@@ -59,19 +80,15 @@ Before proposing a change:
 3. Describe the reason, observable result, and remaining limitations. Include
    browser/GPU details for rendering bugs. Never infer GPU success from CI alone.
 
-The GitHub workflow checks conventions, boundaries, types, tests and the production build. It
-does not yet automate browser/GPU execution; that is a separate backlog ticket.
-Local planning lives under `.scratch/preview/` and `/docs/`, both ignored and
-excluded from the initial commit. Public contributor guidance stays in this file
-and README. A hosted issue tracker is not configured yet.
+The GitHub workflow checks conventions, boundaries, types, tests and the production
+build. It does not yet automate browser/GPU execution.
 
-## Before making the repository public
+## Maintainer notes
 
-- Choose the project license and retain any required third-party notices.
-- Review tracked files and Git history for private material and local-only notes.
-- Choose the GitHub owner/repository and establish contribution/security contacts.
-- Keep workspace packages private until package names, packed-consumer checks
-  and release gates are approved. Public source and npm publication are separate.
+Public contributions must be understandable from tracked files and the linked
+issue. `PROJECT_CONTEXT.md`, `docs/` and `.scratch/` are local-only notes, not
+contributor prerequisites. Never commit them.
 
-No project license has been selected by this migration. It adds no publishing,
-deployment or release credentials.
+See [.github/REPOSITORY_SETTINGS.md](.github/REPOSITORY_SETTINGS.md) for launch
+settings. Packages stay private until release gates pass; public source does not
+imply npm publication. Retain the project and third-party license notices.

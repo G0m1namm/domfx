@@ -10,6 +10,10 @@
   },
   "type": "module",
   "scripts": {
+    "changeset": "changeset",
+    "release:status": "changeset status",
+    "release:artifacts": "node scripts/check-release-artifacts.mjs",
+    "release:check": "pnpm check && pnpm build:demo && pnpm release:status && pnpm release:artifacts",
     "build": "pnpm --filter \"./packages/**\" -r build",
     "build:demo": "pnpm build && pnpm --filter @domfx/lab build",
     "preview:demo": "pnpm --filter @domfx/lab preview",
@@ -27,6 +31,7 @@
     "prepare": "lefthook install"
   },
   "devDependencies": {
+    "@changesets/cli": "3.0.2",
     "@commitlint/cli": "21.2.2",
     "@commitlint/config-conventional": "21.2.2",
     "dependency-cruiser": "18.2.0",

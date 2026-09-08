@@ -76,6 +76,12 @@ Oxfmt enforces formatting/import order; Oxlint checks code correctness.
 Commitlint enforces Conventional Commits; Lefthook installs the local checks.
 Workspace manifests and import boundaries are checked locally and in CI.
 
+## Release preparation
+
+See [RELEASING.md](RELEASING.md) for versioning and release gates.
+`pnpm release:check` validates local release preparation without publishing.
+All packages remain private; the lab and future website are not npm releases.
+
 ## License
 
 domfx is [MIT licensed](LICENSE). Dependencies retain their own licenses;

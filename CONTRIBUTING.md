@@ -14,6 +14,9 @@ setup and workspace map in [README.md](README.md).
   Use explicit type-only imports. Oxlint enforces correctness, unused bindings,
   strict equality, no `var`/debugger and `const` where possible. Prefix intentionally
   unused parameters with `_`. TypeScript and dependency-cruiser remain separate gates.
+- Explicit `any`, `@ts-ignore`, and `@ts-nocheck` are rejected. Use `unknown` and
+  narrow external inputs. `@ts-expect-error` requires an explanation of at least
+  10 characters, such as the invalid contract exercised by a negative type test.
 - Run `pnpm format` to format, `pnpm lint:fix` for safe lint fixes, and review the diff.
   `pnpm format:check` and `pnpm lint` never modify files. Oxc versions are pinned;
   upgrades must pass tooling regression tests. Generated output, local docs/plans,
@@ -70,6 +73,10 @@ when actual reuse warrants it. The website is not scaffolded yet.
 
 ## Verification
 
+The [development harness](HARNESS.md) provides a task brief (`pnpm agent:brief`) and
+one verification command (`pnpm agent:verify`) that runs the checks below and records
+their outcomes locally. It supports coding agents and human contributors alike.
+
 Keep changes small and include a reproducible check. Packages must not import
 apps; GSAP and diagnostic distance oracles currently belong only to the lab.
 For library edits, rebuild with `pnpm build`; the lab imports compiled packages,
@@ -77,15 +84,18 @@ not source aliases. Restart `pnpm demo` after rebuilding to refresh dependencies
 
 Before proposing a change:
 
-1. Run `pnpm check` and `pnpm build:demo`.
-2. For capture/GPU changes, run both `pnpm demo` and `pnpm preview:demo` in a
-   WebGPU-enabled browser with reduced motion disabled. Confirm the page reports
-   PASS, exercise the controls, and dispose the effect.
+1. Run `pnpm agent:verify`: it runs `pnpm check`, `pnpm build:demo`, then the
+   development and production browser/GPU suite. Install Chromium as described in
+   [browser verification](engineering/browser-verification.md) first.
+2. For capture/GPU changes, add a scenario for the changed behavior. Exercise any
+   relevant case outside the automated coverage in both `pnpm demo` and
+   `pnpm preview:demo`, and record the actual environment and outcome.
 3. Describe the reason, observable result, and remaining limitations. Include
    browser/GPU details for rendering bugs. Never infer GPU success from CI alone.
 
-The GitHub workflow checks conventions, boundaries, types, tests and the production
-build. It does not yet automate browser/GPU execution.
+The GitHub workflow runs the same harness with Chromium and the SwiftShader software
+GPU, and retains browser reports and failure traces. CI exercises shaders and the lab's
+browser scenarios; it does not establish hardware performance or broad browser support.
 
 ## Maintainer notes
 

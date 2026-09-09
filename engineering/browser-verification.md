@@ -36,7 +36,7 @@ Browser launch flags are restricted to the local test browser.
 
 ## Required scenarios
 
-Each project runs three cases at a 1280 × 900 viewport and device pixel ratio 2:
+Each project runs four cases at a 1280 × 900 viewport and device pixel ratio 2:
 
 - **Normal rendering:** existing capture fixtures and GPU distance fields agree with
   the independent numerical oracle; fire reproduces at fixed time and changes with
@@ -46,8 +46,10 @@ Each project runs three cases at a 1280 × 900 viewport and device pixel ratio 2
 - **Reduced motion at startup:** complete without accessing the GPU, keep effect
   controls disabled, and preserve original DOM interaction.
 - **Missing WebGPU:** inject the missing capability and require the lab's explicit
-  failure report while preserving original DOM interaction. This negative test does
+  unavailable report while preserving original DOM interaction. This negative test does
   not replace the successful real-GPU scenario.
+- **Injected assertion failure:** finish the GPU fixtures, then require an explicit FAIL
+  with the injected assertion message and verify that cleanup removes the overlay.
 
 Unexpected page/console errors fail the tests. There are no automatic retries.
 Each test has a three-minute deadline; the browser suite has a ten-minute deadline.

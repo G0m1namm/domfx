@@ -19,6 +19,13 @@ import { fileURLToPath } from 'node:url';
 
 import { runVerification, snapshotWorktree } from './agent-harness.mjs';
 
+// Git hooks export repository-local variables; fixtures must discover their own repositories.
+for (const name of execFileSync('git', ['rev-parse', '--local-env-vars'], { encoding: 'utf8' })
+  .trim()
+  .split('\n')) {
+  delete process.env[name];
+}
+
 function fixture(t) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'domfx-harness-')));
   t.after(() => rmSync(root, { recursive: true, force: true }));

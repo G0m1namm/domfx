@@ -30,6 +30,7 @@ GSAP seeking. It also provides Play, Seek, Reverse and Dispose controls.
 | `pnpm lint` / `pnpm lint:fix`       | Check Oxlint rules or apply safe fixes                                     |
 | `pnpm lint:boundaries`              | Check workspace dependencies and imports after building                    |
 | `pnpm test:tooling`                 | Test commit conventions and forbidden dependency edges                     |
+| `pnpm test:packed`                  | Verify packed GPU dev/prod and missing-transform rejection                 |
 | `pnpm hooks:install`                | Install or repair Lefthook's pre-commit, commit-message and pre-push hooks |
 | `pnpm demo`                         | Build packages and start the development lab                               |
 | `pnpm build:demo`                   | Build packages and the production lab in `apps/lab/dist`                   |
@@ -56,6 +57,8 @@ transformation belongs to the browser package. The `/experimental` entry exposes
 the spike to the lab temporarily, not a supported public renderer API.
 
 Rebuild packages after library edits and restart the lab to refresh dependencies.
+See [packed ESM consumption](packages/domfx/README.md#packed-esm-consumption) for
+the supported consumer build path and Chromium setup for `pnpm test:packed`.
 Test-only Float64 distance oracles stay in the lab, outside consumer runtime.
 `apps/lab` is the diagnostic testbed, not a marketing website.
 

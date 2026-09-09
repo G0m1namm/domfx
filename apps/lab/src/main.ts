@@ -12,6 +12,8 @@ const element = <T extends Element = HTMLElement>(id: string) =>
 const status = element('status');
 const images: Record<string, string> = {};
 const report: Record<string, unknown> = {};
+const automation = new URLSearchParams(location.search).has('automation');
+if (automation) Object.assign(window, { domfxEvidence: { report, images } });
 let roundedClicks = 0;
 element<HTMLButtonElement>('rounded').onclick = () => {
   element('interaction').textContent = `Rounded button clicks: ${++roundedClicks}`;
@@ -354,6 +356,12 @@ async function verifyGsap(prepared: PreparedGpuFrame, pixelsPerCss: number) {
 }
 async function main() {
   try {
+    report.environment = {
+      userAgent: navigator.userAgent,
+      viewport: [innerWidth, innerHeight],
+      devicePixelRatio,
+      build: import.meta.env.DEV ? 'Vite development' : 'Vite production',
+    };
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
       report.outcome = 'UNAVAILABLE: reduced-motion before capture/GPU allocation';
       status.textContent = 'Reduced motion is enabled. Original DOM is shown without an effect.';
@@ -381,14 +389,6 @@ async function main() {
       powerMode: 'unmeasured',
       refreshRate: 'unmeasured',
       build: import.meta.env.DEV ? 'Vite development' : 'Vite production',
-      versions: {
-        snapdom: '2.24.15',
-        typegpu: '0.12.4',
-        sdf: '0.12.0',
-        typegpuPlugin: '0.12.3',
-        gsap: '3.15.0',
-        vite: '7.3.6',
-      },
     };
     report.numericalFixtures = await runNumericalFixtures(gpu);
     report.captures = {};
@@ -470,6 +470,10 @@ async function main() {
     check(gpu.errors.length === 0, 'uncaptured GPU validation errors');
     attachDemo(hero.frame, hero.prepared);
     hero.frame.release();
+    check(
+      !automation || !new URLSearchParams(location.search).has('inject-failure'),
+      'injected assertion failure',
+    );
     report.outcome = 'PASS: capture, GPU signed distances and deterministic GPU fire';
     showReport();
     status.textContent = 'Spike passed: real capture → verified GPU SDF → deterministic GPU fire.';
@@ -478,7 +482,10 @@ async function main() {
     stop();
     live?.destroy();
     service?.destroy();
-    report.outcome = 'FAIL';
+    report.outcome =
+      error instanceof Error && ['no-webgpu', 'no-adapter'].includes(error.message)
+        ? 'UNAVAILABLE: no GPU'
+        : 'FAIL';
     report.error = error instanceof Error ? error.stack : String(error);
     status.textContent = `Experiment failed: ${error instanceof Error ? error.message : String(error)}`;
     showReport();

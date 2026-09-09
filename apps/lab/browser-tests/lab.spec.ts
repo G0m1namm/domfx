@@ -132,14 +132,14 @@ test('reduced motion avoids GPU allocation and preserves interaction', async ({
   expect(browserErrors).toEqual([]);
 });
 
-test('missing WebGPU is an explicit failure with usable original DOM', async ({
+test('missing WebGPU is explicitly unavailable with usable original DOM', async ({
   page,
   browserErrors,
 }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
   await page.goto('/');
   expect(await terminalReport(page)).toMatchObject({
-    outcome: 'FAIL',
+    outcome: 'UNAVAILABLE: no GPU',
     error: expect.stringContaining('no-webgpu'),
   });
   await expect(page.locator('#host canvas.effect')).toHaveCount(0);
@@ -147,4 +147,17 @@ test('missing WebGPU is an explicit failure with usable original DOM', async ({
   await page.getByRole('button', { name: 'Rounded button' }).click();
   await expect(page.locator('#interaction')).toHaveText('Rounded button clicks: 1');
   expect(browserErrors).toEqual([expect.stringContaining('no-webgpu')]);
+});
+
+test('injected assertion fails after completing GPU fixtures', async ({ page, browserErrors }) => {
+  await page.goto('/?automation&inject-failure');
+  expect(await terminalReport(page)).toMatchObject({
+    outcome: 'FAIL',
+    error: expect.stringContaining('injected assertion failure'),
+    fire: { pass: true },
+    gsap: { pass: true },
+    gpuErrors: [],
+  });
+  await expect(page.locator('#host canvas.effect')).toHaveCount(0);
+  expect(browserErrors).toEqual([expect.stringContaining('injected assertion failure')]);
 });

@@ -30,6 +30,7 @@
     "@playwright/test": "1.63.0",
     "@types/node": "^24.5.2",
     "@webgpu/types": "^0.1.64",
+    "playwright": "1.63.0",
     "typescript": "^5.9.3",
     "vite": "^7.1.7"
   },

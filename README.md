@@ -24,6 +24,7 @@ GSAP seeking. It also provides Play, Seek, Reverse and Dispose controls.
 | ----------------------------------- | -------------------------------------------------------------------------- |
 | `pnpm build`                        | Build core, then browser/GPU JavaScript and declarations                   |
 | `pnpm typecheck`                    | Build dependencies and check all workspaces/configs                        |
+| `pnpm test:browser:evidence`        | Build and run production browser fixtures; save JSON, PNGs and logs        |
 | `pnpm test`                         | Build dependencies and run four numerical tests                            |
 | `pnpm check`                        | Check formatting/lint, build, validate boundaries, typecheck and run tests |
 | `pnpm format` / `pnpm format:check` | Apply or check Oxfmt formatting and import order                           |
@@ -102,3 +103,29 @@ listed in [skill provenance](engineering/skills.md).
 
 Inspired by [Kugiri](https://github.com/edoardolunardi/kugiri)'s library-and-demo
 approach. No Kugiri implementation code was copied.
+
+## Browser regression fixtures
+
+Install Chromium once with `pnpm --filter @domfx/lab exec playwright install chromium`,
+then run `pnpm test:browser:evidence`. The command runs numerical tests, builds the production
+lab, serves it on an ephemeral loopback port, and launches visible Chromium with
+reduced motion disabled at 1280 × 720 and DPR 2. A desktop session and WebGPU are
+required. To use an existing Chromium executable, set `DOMFX_BROWSER_EXECUTABLE`
+to its absolute path. The runner uses Playwright's browser transport API only;
+the assertions remain in the lab.
+
+Each run writes `.scratch/browser-regression/<timestamp>/report.json`, fixture
+PNGs, a page screenshot, and test/build logs. JSON records the Git revision and
+dirty state, production bundle and lockfile hashes, installed dependency versions,
+actual browser version, user agent, GPU adapter, viewport and DPR. Nondeterministic
+measurements live under `timings`, separate from fixture checks and pixel hashes;
+the warm timing candidate is informational and never gates a pass. PNGs and hashes
+are evidence for that run, not portable baselines across GPUs or browsers.
+
+Exit codes: `0` = PASS; `1` = assertion/build/runner failure; `2` = GPU or effect
+unavailable; `3` = browser launch/transport unavailable. Missing hardware is never
+a successful GPU run. Failure reports retain completed fixture evidence. Run
+`pnpm test:browser:evidence --inject-failure` to prove the failure path: on a working GPU it
+must report FAIL, include `injected assertion failure`, and exit 1. It intentionally
+fails after the fixture assertions; do not interpret an unavailable run as this proof.
+Manual `pnpm demo` and `pnpm preview:demo` controls remain available.

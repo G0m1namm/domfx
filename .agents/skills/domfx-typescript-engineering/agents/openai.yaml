@@ -1,0 +1,4 @@
+interface:
+  display_name: "domfx TypeScript Engineering"
+  short_description: "Write maintainable TypeScript with clear boundaries"
+  default_prompt: "Use $domfx-typescript-engineering to implement this change with clear ownership, safe types, and observable verification."

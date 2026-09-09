@@ -26,6 +26,7 @@
     "lint": "oxlint --deny-warnings .",
     "lint:fix": "oxlint --fix --deny-warnings .",
     "test": "pnpm build && pnpm --filter @domfx/lab test",
+    "test:packed": "pnpm build && node scripts/test-packed-consumer.mjs",
     "demo": "pnpm build && pnpm --filter @domfx/lab dev",
     "lint:boundaries": "node scripts/check-workspaces.mjs && depcruise --config dependency-cruiser.config.mjs packages apps",
     "test:tooling": "node --test scripts/*.test.mjs",
@@ -42,6 +43,7 @@
     "lefthook": "2.1.12",
     "oxfmt": "0.67.0",
     "oxlint": "1.82.0",
+    "playwright": "1.63.0",
     "typescript": "5.9.3"
   },
   "engines": {

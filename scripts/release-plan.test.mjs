@@ -16,6 +16,13 @@ import { fileURLToPath } from 'node:url';
 
 import { checkReleaseArtifacts } from './check-release-artifacts.mjs';
 
+// Git hooks export repository-local variables; fixtures must discover their own repositories.
+for (const name of execFileSync('git', ['rev-parse', '--local-env-vars'], { encoding: 'utf8' })
+  .trim()
+  .split('\n')) {
+  delete process.env[name];
+}
+
 const repo = dirname(dirname(fileURLToPath(import.meta.url)));
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 

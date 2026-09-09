@@ -34,6 +34,12 @@ GSAP seeking. It also provides Play, Seek, Reverse and Dispose controls.
 | `pnpm demo`                         | Build packages and start the development lab                               |
 | `pnpm build:demo`                   | Build packages and the production lab in `apps/lab/dist`                   |
 | `pnpm preview:demo`                 | Serve the production lab after `build:demo`                                |
+| `pnpm test:browser`                 | Build and verify the development/production lab in Chromium                |
+| `pnpm agent:verify`                 | Run repository checks, builds, and browser/GPU verification with evidence  |
+
+For browser checks, first run `pnpm --filter @domfx/lab exec playwright install chromium`.
+See [browser verification](engineering/browser-verification.md) for GPU backends,
+CI behavior, evidence, and coverage limits.
 
 ## Workspace structure
 
@@ -65,13 +71,16 @@ The lab exercises capture → GPU distance field → fire rendering and prints i
 verification results. Local fixture checks have passed, but they do not establish
 broad browser support or performance guarantees.
 
-A stable attachment API, reusable lifecycle/GSAP adapters, broader geometry and
-refresh coverage, and automated browser verification remain unfinished.
+The existing lab scenarios run automatically in Chromium for development and
+production builds. A stable attachment API, reusable lifecycle/GSAP adapters, broader
+browser/geometry support, and refresh coverage remain unfinished.
 
 ## Workflow
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for checks and the public-repository checklist.
 See [CONTEXT.md](CONTEXT.md) for domain terminology.
+Use the [development agent harness](HARNESS.md) for task contracts, design review,
+and recorded verification: `pnpm agent:brief` and `pnpm agent:verify`.
 Oxfmt enforces formatting/import order; Oxlint checks code correctness.
 Commitlint enforces Conventional Commits; Lefthook installs the local checks.
 Workspace manifests and import boundaries are checked locally and in CI.
@@ -86,7 +95,8 @@ All packages remain private; the lab and future website are not npm releases.
 
 domfx is [MIT licensed](LICENSE). Dependencies retain their own licenses;
 GSAP is not relicensed by this project. Vendored skills retain their
-[upstream MIT notice](.agents/skills/LICENSE).
+[existing upstream MIT notice](.agents/skills/LICENSE) and the per-skill notices
+listed in [skill provenance](engineering/skills.md).
 
 ## Inspiration
 

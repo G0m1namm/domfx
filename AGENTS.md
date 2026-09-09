@@ -5,6 +5,10 @@ Use `CONTEXT.md` for shared domain terminology.
 
 ## Engineering workflow
 
+Use [HARNESS.md](HARNESS.md) for the define → design → implement → verify → review loop.
+Start with `pnpm agent:brief`; finish implementation with `pnpm agent:verify` and the
+applicable manual checks. Keep the task brief proportional to the change.
+
 Follow `CONTRIBUTING.md` for commit/code conventions and `workspace-boundaries.mjs`
 for permitted dependency directions. Run `pnpm check` before handing off code changes.
 Use Oxfmt (`pnpm format`) and Oxlint (`pnpm lint`), not competing formatters.
@@ -18,5 +22,17 @@ Read them when available, but do not require them in public clones or publish th
 Put any context contributors need in the issue or tracked contributor guidance.
 
 ## Code health
+
+For TypeScript implementation, refactoring, and architecture work, use
+[domfx-typescript-engineering](.agents/skills/domfx-typescript-engineering/SKILL.md).
+Apply patterns only when a current requirement warrants them.
+
+For specialist work, load the relevant [skills](engineering/skills.md):
+[GPU/shaders](.agents/skills/domfx-gpu-engineering/SKILL.md),
+[browser/capture](.agents/skills/domfx-browser-engineering/SKILL.md),
+[GSAP core](.agents/skills/gsap-core/SKILL.md), and
+[GSAP timelines](.agents/skills/gsap-timeline/SKILL.md).
+Repository contracts take precedence over upstream examples, especially target
+visibility, global animation state, package boundaries, and resource ownership.
 
 Keep changes vertical, small, typed, and testable. Preserve the core's DOM/framework independence; browser and GPU details belong behind adapters. Every behavior change needs an observable verification path.

@@ -83,6 +83,14 @@ for (const [name, source, rule] of [
   ['loose equality', 'export const same = (a, b) => a == b;', 'eqeqeq'],
   ['var declarations', 'export var value = 1;', 'no-var'],
   ['debugger statements', 'debugger;', 'no-debugger'],
+  ['explicit any', 'export const identity = (value: any) => value;', 'no-explicit-any'],
+  [
+    'ignored type errors',
+    '// @ts-ignore: bypass a mismatch\nexport const value = 1;',
+    'ban-ts-comment',
+  ],
+  ['disabled type checking', '// @ts-nocheck\nexport const value = 1;', 'ban-ts-comment'],
+  ['unexplained expected errors', '// @ts-expect-error\nexport const value = 1;', 'ban-ts-comment'],
   [
     'type-only imports',
     "import { Value } from './types.js'; export type Result = Value;",
@@ -103,6 +111,16 @@ test('lint accepts clean typed code', (t) => {
   const f = fixture(t);
   f.put('source.ts', 'export const same = (a: number, b: number): boolean => a === b;\n');
   const result = run('oxlint', ['--deny-warnings', '.'], { cwd: f.directory });
+  assert.equal(result.status, 0, result.output);
+});
+
+test('lint allows a documented negative type test', (t) => {
+  const f = fixture(t);
+  f.put(
+    'source.ts',
+    '// @ts-expect-error: numbers are not valid string inputs\nexport const value: string = 1;\n',
+  );
+  const result = run('oxlint', ['--deny-warnings', 'source.ts'], { cwd: f.directory });
   assert.equal(result.status, 0, result.output);
 });
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "domfx GPU Engineering"
+  short_description: "Review GPU contracts, shaders, and resource ownership"
+  default_prompt: "Use $domfx-gpu-engineering to implement or review this GPU change and verify its shader, data, and lifecycle contracts."

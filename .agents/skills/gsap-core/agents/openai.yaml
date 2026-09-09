@@ -1,0 +1,4 @@
+interface:
+  display_name: "GSAP Core"
+  short_description: "Use official GSAP tween and playback guidance"
+  default_prompt: "Use $gsap-core for this animation change while following domfx ownership and verification rules."

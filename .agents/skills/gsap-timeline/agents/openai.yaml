@@ -1,0 +1,4 @@
+interface:
+  display_name: "GSAP Timeline"
+  short_description: "Compose and control GSAP animation timelines"
+  default_prompt: "Use $gsap-timeline for this animation change while following domfx ownership and verification rules."

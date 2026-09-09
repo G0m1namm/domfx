@@ -1,0 +1,4 @@
+interface:
+  display_name: "domfx Browser Engineering"
+  short_description: "Keep capture, geometry, and browser lifecycles correct"
+  default_prompt: "Use $domfx-browser-engineering to implement or review this browser change while preserving capture fidelity, interaction, and cleanup."

@@ -10,6 +10,8 @@
   },
   "type": "module",
   "scripts": {
+    "agent:brief": "node scripts/agent-harness.mjs brief",
+    "agent:verify": "node scripts/agent-harness.mjs verify",
     "changeset": "changeset",
     "release:status": "changeset status",
     "release:artifacts": "node scripts/check-release-artifacts.mjs",
@@ -27,6 +29,8 @@
     "demo": "pnpm build && pnpm --filter @domfx/lab dev",
     "lint:boundaries": "node scripts/check-workspaces.mjs && depcruise --config dependency-cruiser.config.mjs packages apps",
     "test:tooling": "node --test scripts/*.test.mjs",
+    "test:browser": "pnpm build:demo && pnpm test:browser:built",
+    "test:browser:built": "pnpm --filter @domfx/lab test:browser",
     "hooks:install": "lefthook install",
     "prepare": "lefthook install"
   },

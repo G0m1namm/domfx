@@ -3,8 +3,8 @@
 GPU edge effects for live DOM elements. The first vertical slice is a fire effect that follows an element's visible silhouette and is controlled by GSAP.
 
 This repository contains a working browser feasibility experiment in a pnpm
-monorepo. Packages are private and experimental; there is no stable attachment
-API or published installation command yet.
+monorepo. Packages are private and experimental; the manual attachment
+API is experimental and there is no published installation command yet.
 
 ## Development
 
@@ -76,8 +76,9 @@ verification results. Local fixture checks have passed, but they do not establis
 broad browser support or performance guarantees.
 
 The existing lab scenarios run automatically in Chromium for development and
-production builds. A stable attachment API, reusable lifecycle/GSAP adapters, broader
-browser/geometry support, and refresh coverage remain unfinished.
+production builds. An experimental [manual attachment API](packages/domfx/README.md#manual-fire-attachment)
+is available through the browser package. GSAP adapters, broader browser/geometry
+support, and refresh coverage remain unfinished.
 
 ## Workflow
 

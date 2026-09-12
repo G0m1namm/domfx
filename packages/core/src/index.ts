@@ -1,6 +1,21 @@
 /** SSR-safe capture contracts and alpha classification. */
 export type EffectName = 'fire-edge';
 
+/** Manual controls do not own a clock or an animation adapter. */
+export interface ManualEffectHandle {
+  /** Settles after initialization or cleanup of a cancelled initialization. */
+  readonly ready: Promise<void>;
+  readonly lifecycle: 'active' | 'suspended' | 'unavailable' | 'disposed';
+  readonly raster: 'fresh' | 'refreshing' | 'stale';
+  readonly reason: string | undefined;
+  readonly seed: number;
+  /** Absolute time in seconds; finite values, including negative time, are accepted. */
+  time: number;
+  /** Finite values are clamped to [0, 1]. */
+  intensity: number;
+  dispose(): void;
+}
+
 export interface CaptureFrame {
   readonly width: number;
   readonly height: number;

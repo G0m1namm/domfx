@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         manual: resolve(import.meta.dirname, 'manual.html'),
+        gsap: resolve(import.meta.dirname, 'gsap.html'),
       },
     },
   },

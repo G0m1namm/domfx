@@ -1,0 +1,89 @@
+import { gsap } from 'gsap';
+
+import type { EffectHandle } from '@domfx/core';
+
+export interface FireBindingOptions {
+  /** Absolute destination time in seconds. */
+  readonly time: number;
+  /** Destination intensity, clamped to [0, 1] before interpolation. */
+  readonly intensity: number;
+  /** Linear interpolation duration in seconds, including zero. */
+  readonly duration: number;
+  /** GSAP insertion position; omitted appends to the host timeline. */
+  readonly position?: gsap.Position;
+}
+
+export interface FireBinding {
+  /** Remove only the owned child, retaining the attachment's last values. Idempotent. */
+  dispose(): void;
+}
+
+/** Bind a manual attachment's current controls to a caller-owned GSAP timeline. */
+export function bindFire(
+  effect: EffectHandle,
+  timeline: gsap.core.Timeline,
+  options: FireBindingOptions,
+): FireBinding {
+  if (effect.clock !== 'manual') {
+    throw new Error('GSAP binding requires a manual attachment');
+  }
+  if (
+    !Number.isFinite(options.time) ||
+    !Number.isFinite(Math.fround(options.time)) ||
+    !Number.isFinite(options.intensity) ||
+    !Number.isFinite(options.duration) ||
+    options.duration < 0
+  ) {
+    throw new Error('invalid-gsap-binding-options');
+  }
+
+  let disposed = false;
+  // Setters also run when seek suppresses callbacks. The attachment owns batching;
+  // an onUpdate copy would leave controls stale during the default timeline.seek().
+  const controls = {
+    get time() {
+      return effect.time;
+    },
+    set time(value: number) {
+      if (!disposed) {
+        effect.time = value;
+      }
+    },
+    get intensity() {
+      return effect.intensity;
+    },
+    set intensity(value: number) {
+      if (!disposed) {
+        effect.intensity = value;
+      }
+    },
+  };
+  const child = gsap.fromTo(
+    controls,
+    { time: effect.time, intensity: effect.intensity },
+    {
+      time: options.time,
+      intensity: Math.min(1, Math.max(0, options.intensity)),
+      duration: options.duration,
+      ease: 'none',
+      paused: true,
+      immediateRender: false,
+      lazy: false,
+    },
+  );
+  timeline.add(child, options.position);
+  const position = child.startTime();
+  child.paused(false);
+  // smoothChildTiming can move an unpaused child to the host's current playhead.
+  // Reinsert at the resolved position so binding an advanced host still seeks correctly.
+  if (child.startTime() !== position) {
+    timeline.add(child, position);
+  }
+
+  return {
+    dispose() {
+      disposed = true;
+      child.kill();
+    },
+  };
+}

@@ -57,13 +57,13 @@ lab-only and contributor-doc changes need no package bump. See
 
 ## Dependency boundaries
 
-| Workspace               | Allowed workspace dependencies               |
-| ----------------------- | -------------------------------------------- |
-| `packages/core`         | None; no DOM, framework, GPU or Node imports |
-| `packages/domfx`        | Core                                         |
-| `packages/gsap` (later) | Core and browser package                     |
-| `apps/lab`              | Library packages, never other apps           |
-| `apps/web` (later)      | Library packages, never other apps           |
+| Workspace          | Allowed workspace dependencies               |
+| ------------------ | -------------------------------------------- |
+| `packages/core`    | None; no DOM, framework, GPU or Node imports |
+| `packages/domfx`   | Core                                         |
+| `packages/gsap`    | Core and browser package                     |
+| `apps/lab`         | Library packages, never other apps           |
+| `apps/web` (later) | Library packages, never other apps           |
 
 `workspace-boundaries.mjs` defines the direction. `pnpm lint:boundaries` checks
 manifests and imports (run `pnpm build` first). Cross-workspace dependencies must
@@ -83,8 +83,8 @@ one verification command (`pnpm agent:verify`) that runs the checks below and re
 their outcomes locally. It supports coding agents and human contributors alike.
 
 Keep changes small and include a reproducible check. Packages must not import
-apps; GSAP and diagnostic distance oracles currently belong only to the lab.
-For library edits, rebuild with `pnpm build`; the lab imports compiled packages,
+apps; diagnostic distance oracles belong only to the lab. GSAP belongs in the optional
+adapter and its lab consumers. For library edits, rebuild with `pnpm build`; the lab imports compiled packages,
 not source aliases. Restart `pnpm demo` after rebuilding to refresh dependencies.
 
 Before proposing a change:

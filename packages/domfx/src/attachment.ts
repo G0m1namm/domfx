@@ -16,6 +16,8 @@ export interface FireOptions {
 }
 
 const owners = new WeakMap<Document, Set<Element>>();
+// A disposed owner may still be capturing when this target is reattached.
+const captures = new WeakMap<Element, Promise<void>>();
 
 function finite(value: number): number {
   if (!Number.isFinite(value) || !Number.isFinite(Math.fround(value))) {
@@ -25,8 +27,27 @@ function finite(value: number): number {
   return value;
 }
 
-/** Capture once; batch control writes and optional ambient time through one scheduler. */
+type AttachmentRenderer = Pick<GpuExperiment, 'device' | 'prepare' | 'destroy'>;
+
+/** Internal adapter seam for controlled lifecycle verification in the lab. */
+export interface AttachmentAdapters {
+  capture: typeof captureElement;
+  createRenderer: () => Promise<AttachmentRenderer>;
+}
+
+/** Batch control writes and explicitly refresh captured paint. */
 export function attachFire(target: Element, options: FireOptions): EffectHandle {
+  return attachFireWithAdapters(target, options, {
+    capture: captureElement,
+    createRenderer: () => GpuExperiment.create(),
+  });
+}
+
+export function attachFireWithAdapters(
+  target: Element,
+  options: FireOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
   const document = target?.ownerDocument;
   const view = document?.defaultView;
   if (!view || !(target instanceof view.Element)) {
@@ -79,11 +100,20 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
   let reason: EffectReason | undefined;
   let reasonDetail: string | undefined;
 
-  let service: GpuExperiment | undefined;
+  let service: AttachmentRenderer | undefined;
   let prepared: PreparedGpuFrame | undefined;
   let frame: CaptureFrame | undefined;
   let context: GPUCanvasContext | null = null;
-  let initializing = true;
+  let work: Promise<void> | undefined;
+  let revision = 1;
+  let generation = 0;
+  const refreshes: { resolve: () => void; reject: (error: unknown) => void }[] = [];
+
+  function rejectRefreshes(error: unknown) {
+    for (const refresh of refreshes.splice(0)) {
+      refresh.reject(error);
+    }
+  }
   const disposalCallbacks = new Set<() => void>();
 
   const canvas = document.createElement('canvas');
@@ -109,6 +139,8 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
       return;
     }
 
+    generation += 1;
+    rejectRefreshes(new Error('refresh-invalidated'));
     raster = 'stale';
     lifecycle = 'suspended';
     reason = 'stale-raster';
@@ -138,9 +170,8 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
     prepared?.destroy();
     prepared = undefined;
 
-    // prepare() may still own a pending shader compilation. Let it settle before
-    // destroying its device; initialize's finally releases all late resources.
-    if (!initializing) {
+    // Pending preparation owns the device until its late result is released.
+    if (!work) {
       service?.destroy();
       service = undefined;
     }
@@ -162,6 +193,9 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
   function invalidate() {
     // Preserve immediate stale-output hiding even though rendering is deferred.
     if (observer.takeRecords().length) {
+      stale();
+    }
+    if (raster === 'refreshing' && (motion.matches || document.hidden)) {
       stale();
     }
     if (lifecycle === 'disposed' || lifecycle === 'unavailable' || raster !== 'fresh') {
@@ -196,6 +230,8 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
       return;
     }
 
+    generation += 1;
+    rejectRefreshes(error);
     lifecycle = 'unavailable';
     raster = 'stale';
     reasonDetail = error instanceof Error ? error.message : String(error);
@@ -262,69 +298,162 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
     }
   }
 
-  function cancelled() {
-    return lifecycle === 'disposed' || lifecycle === 'unavailable' || raster === 'stale';
+  function current(requestedRevision: number, requestedGeneration: number) {
+    if (observer.takeRecords().length) {
+      stale();
+    }
+    if (
+      raster === 'refreshing' &&
+      (!target.isConnected ||
+        !host.contains(target) ||
+        motion.matches ||
+        document.hidden ||
+        target.getClientRects().length === 0)
+    ) {
+      stale();
+    }
+    return (
+      lifecycle !== 'disposed' &&
+      lifecycle !== 'unavailable' &&
+      raster === 'refreshing' &&
+      revision === requestedRevision &&
+      generation === requestedGeneration
+    );
   }
 
-  async function initialize() {
-    let failureReason: EffectReason = 'renderer-failed';
-
-    try {
-      if (motion.matches) {
-        throw new Error('reduced-motion');
-      }
-      service = await GpuExperiment.create();
-      if (cancelled()) {
-        return;
-      }
-      void service.device.lost.then((info) => {
-        if (info.reason !== 'destroyed') {
-          unavailable(new Error(info.message), 'device-lost');
+  function captureRevision(requestedRevision: number, requestedGeneration: number) {
+    const previous = captures.get(target) ?? Promise.resolve();
+    const captured = previous.then(() =>
+      current(requestedRevision, requestedGeneration) ? adapters.capture(target) : undefined,
+    );
+    const settled = captured
+      .then(
+        () => {},
+        () => {},
+      )
+      .finally(() => {
+        if (captures.get(target) === settled) {
+          captures.delete(target);
         }
       });
+    captures.set(target, settled);
+    return captured;
+  }
 
-      failureReason = 'capture-failed';
-      frame = await captureElement(target);
-      failureReason = 'renderer-failed';
-      if (cancelled()) {
-        return;
+  async function refreshLoop() {
+    try {
+      if (!service && lifecycle !== 'disposed' && lifecycle !== 'unavailable') {
+        if (motion.matches) {
+          throw new Error('reduced-motion');
+        }
+        service = await adapters.createRenderer();
+        void service.device.lost.then((info) => {
+          if (info.reason !== 'destroyed') {
+            unavailable(new Error(info.message), 'device-lost');
+          }
+        });
       }
+      while (
+        service &&
+        raster === 'refreshing' &&
+        lifecycle !== 'disposed' &&
+        lifecycle !== 'unavailable'
+      ) {
+        const requestedRevision = revision;
+        const requestedGeneration = generation;
+        let nextFrame: CaptureFrame | undefined;
+        let nextPrepared: PreparedGpuFrame | undefined;
+        let failureReason: EffectReason = 'capture-failed';
+        try {
+          if (!current(requestedRevision, requestedGeneration)) {
+            continue;
+          }
+          nextFrame = await captureRevision(requestedRevision, requestedGeneration);
+          if (!nextFrame || !current(requestedRevision, requestedGeneration)) {
+            continue;
+          }
+          failureReason = 'renderer-failed';
+          nextPrepared = await service.prepare(nextFrame);
+          if (!current(requestedRevision, requestedGeneration)) {
+            continue;
+          }
 
-      prepared = await service.prepare(frame);
-      if (cancelled()) {
-        return;
-      }
-
-      canvas.width = frame.width;
-      canvas.height = frame.height;
-      context = canvas.getContext('webgpu');
-      if (!context) {
-        throw new Error('canvas-webgpu-unavailable');
-      }
-      context.configure({
-        device: service.device,
-        format: 'rgba8unorm',
-        alphaMode: 'premultiplied',
-        usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-      });
-
-      host.append(canvas);
-      raster = 'fresh';
-      paint();
-      if (running()) {
-        lastTimestamp = now();
-        scheduler.schedule(commit);
+          // No await between installing and painting the replacement. Keep the
+          // previous resources alive until presentation has consumed the new frame.
+          canvas.width = nextFrame.width;
+          canvas.height = nextFrame.height;
+          context ??= canvas.getContext('webgpu');
+          if (!context) {
+            throw new Error('canvas-webgpu-unavailable');
+          }
+          context.configure({
+            device: service.device,
+            format: 'rgba8unorm',
+            alphaMode: 'premultiplied',
+            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+          });
+          const previous = prepared;
+          prepared = nextPrepared;
+          nextPrepared = undefined;
+          frame = nextFrame;
+          host.append(canvas);
+          raster = 'fresh';
+          paint();
+          previous?.destroy();
+          if (raster === 'fresh') {
+            for (const refresh of refreshes.splice(0)) {
+              refresh.resolve();
+            }
+            if (running()) {
+              lastTimestamp = now();
+              scheduler.schedule(commit);
+            }
+          }
+        } catch (error) {
+          // A superseded failure cannot reject requests for the newer revision.
+          if (current(requestedRevision, requestedGeneration)) {
+            unavailable(error, failureReason);
+          }
+        } finally {
+          nextPrepared?.destroy();
+          nextFrame?.release();
+        }
       }
     } catch (error) {
-      unavailable(error, failureReason);
-    } finally {
-      frame?.release();
-      initializing = false;
-      if (lifecycle !== 'active' && raster !== 'fresh') {
-        cleanup();
-        frame = undefined;
-      }
+      unavailable(error);
     }
+  }
+
+  function startRefresh(): Promise<void> {
+    // Deferring entry also coalesces requests made in the same task, and installs
+    // the work owner before any adapter can complete or fail.
+    work ??= Promise.resolve()
+      .then(refreshLoop)
+      .finally(() => {
+        work = undefined;
+        if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
+          cleanup();
+          frame = undefined;
+        } else if (raster === 'refreshing') {
+          // A settlement callback may request another revision before this finally.
+          return startRefresh();
+        }
+      });
+    return work;
+  }
+
+  function refresh(): Promise<void> {
+    if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
+      return Promise.reject(new Error(`effect-${lifecycle}`));
+    }
+    // Mutations already queued before this explicit request belong to its capture.
+    observer.takeRecords();
+    revision += 1;
+    raster = 'refreshing';
+    suspend('stale-raster');
+    const promise = new Promise<void>((resolve, reject) => refreshes.push({ resolve, reject }));
+    void startRefresh();
+    return promise;
   }
 
   observer.observe(target, {
@@ -339,10 +468,11 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
   document.addEventListener('visibilitychange', invalidate);
   motion.addEventListener('change', invalidate);
 
-  const ready = initialize();
+  const ready = startRefresh();
 
   return {
     ready,
+    refresh,
 
     get lifecycle() {
       return lifecycle;
@@ -427,6 +557,8 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
       if (lifecycle === 'disposed') {
         return;
       }
+      generation += 1;
+      rejectRefreshes(new Error('effect-disposed'));
       lifecycle = 'disposed';
       raster = 'stale';
       reason = undefined;

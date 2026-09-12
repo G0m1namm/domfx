@@ -1,5 +1,7 @@
 import { attachFire, type EffectHandle } from '@domfx/browser';
 
+import { verifyRefresh } from './refresh-checks.js';
+
 const host = document.querySelector<HTMLElement>('#manual-host');
 const target = document.querySelector<HTMLButtonElement>('#manual-target');
 const state = document.querySelector<HTMLElement>('#state');
@@ -29,10 +31,15 @@ async function capture(time: number, intensity: number) {
 // Lab-only access to the public consumer API, with no renderer or capture internals.
 declare global {
   interface Window {
-    manual: { effect: EffectHandle; attach: typeof attachFire; capture: typeof capture };
+    manual: {
+      effect: EffectHandle;
+      attach: typeof attachFire;
+      capture: typeof capture;
+      verifyRefresh: typeof verifyRefresh;
+    };
   }
 }
-window.manual = { effect, attach: attachFire, capture };
+window.manual = { effect, attach: attachFire, capture, verifyRefresh };
 void effect.ready.then(report);
 let clicks = 0;
 target.onclick = () => {

@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@typegpu/sdf@0.12.0': d632831e9f5541e5c9b174ffe49d4a9d7e4018d705da346e7aa17f687d8e072a
+
 importers:
 
   .:
@@ -82,8 +85,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@typegpu/sdf':
-        specifier: ^0.12.0
-        version: 0.12.0(typegpu@0.12.4)
+        specifier: 0.12.0
+        version: 0.12.0(patch_hash=d632831e9f5541e5c9b174ffe49d4a9d7e4018d705da346e7aa17f687d8e072a)(typegpu@0.12.4)
       '@zumer/snapdom':
         specifier: ^2.24.15
         version: 2.24.15
@@ -2193,7 +2196,7 @@ snapshots:
 
   '@simple-libs/stream-utils@2.0.0': {}
 
-  '@typegpu/sdf@0.12.0(typegpu@0.12.4)':
+  '@typegpu/sdf@0.12.0(patch_hash=d632831e9f5541e5c9b174ffe49d4a9d7e4018d705da346e7aa17f687d8e072a)(typegpu@0.12.4)':
     dependencies:
       typegpu: 0.12.4
 

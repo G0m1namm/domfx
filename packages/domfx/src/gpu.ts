@@ -78,8 +78,6 @@ export class GpuExperiment {
   private readonly prepared = new Set<PreparedGpuFrame>();
   private readonly pipeline: GPURenderPipeline;
   private destroyed = false;
-  // @typegpu/sdf 0.12.0 keeps its offset uniform until root.destroy().
-  private retainedUniformBytes = 0;
   readonly errors: string[] = [];
   private constructor(
     readonly root: TgpuRoot,
@@ -124,10 +122,7 @@ export class GpuExperiment {
     return this.root.device;
   }
   get managedBytes(): number {
-    return (
-      this.retainedUniformBytes +
-      [...this.prepared].reduce((sum, frame) => sum + frame.managedBytes, 0)
-    );
+    return [...this.prepared].reduce((sum, frame) => sum + frame.managedBytes, 0);
   }
 
   async prepare(
@@ -159,7 +154,7 @@ export class GpuExperiment {
     if (!pixels.some((value, i) => i % 4 === 3 && value < 128)) {
       throw new Error('missing-exterior');
     }
-    if (this.managedBytes + width * height * 36 + 32 > 144_000_000) {
+    if (this.managedBytes + width * height * 36 + 20 > 144_000_000) {
       throw new Error('aggregate-budget');
     }
 
@@ -188,7 +183,6 @@ export class GpuExperiment {
         getSdf: storeDistance,
         getColor: copyNearestColor,
       }).with(root.createBindGroup(sourceLayout, { source: source.createView() }));
-      this.retainedUniformBytes += 16;
       await runner.initAsync();
       runner.run();
       await device.queue.onSubmittedWorkDone();
@@ -216,7 +210,8 @@ export class GpuExperiment {
       const prepared: PreparedGpuFrame = {
         width,
         height,
-        managedBytes: width * height * 36 + 16,
+        // Source/JFA/fire textures + fire vec4f (16) and patched JFA i32 (4).
+        managedBytes: width * height * 36 + 20,
         prepareMs: performance.now() - started,
         readSdf: async () => {
           const bytes = await this.readTexture(sdfTexture, width, height, 8);
@@ -339,6 +334,5 @@ export class GpuExperiment {
     }
     this.root.destroy();
     this.device.destroy();
-    this.retainedUniformBytes = 0;
   }
 }

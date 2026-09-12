@@ -47,3 +47,6 @@ minimumReleaseAgeExclude:
   - '@oxlint/binding-win32-x64-msvc@1.82.0'
   - oxfmt@0.67.0
   - oxlint@1.82.0
+
+patchedDependencies:
+  '@typegpu/sdf@0.12.0': patches/@typegpu__sdf@0.12.0.patch

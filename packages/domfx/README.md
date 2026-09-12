@@ -15,9 +15,23 @@ library build targeting ES2022, and an ESM Vite consumer. Import only
 The browser package runs `unplugin-typegpu` when building: its emitted JavaScript
 includes TypeGPU callback metadata and inline fire WGSL. No separate shader files,
 runtime asset copy, source aliases or consumer TypeGPU plugin are required.
-Runtime dependencies (`@domfx/core`, TypeGPU, SDF and SnapDOM) remain external and
+Runtime dependencies (`@domfx/core`, TypeGPU and SnapDOM) remain external and
 must be installed with the package. CommonJS, SSR and other bundlers are not
 verified by this path.
+
+The SDF executor from pinned `@typegpu/sdf` 0.12.0 is bundled with its MIT notice.
+The repository's pnpm patch adds `offsetUniform.buffer.destroy()` to executor cleanup;
+bundling carries this fix into packed consumers without requiring their own pnpm patch.
+No shader algorithm or dependency version upgrade is involved.
+
+Prepared frames account for 36 bytes per pixel of textures, a 16-byte fire uniform,
+and the observed 4-byte JFA offset buffer (`i32`, TypeGPU 0.12.4). Destroying a frame
+releases all of these allocations; zero offset bytes remain per destroyed frame,
+so the bound does not grow with refresh count. Destroying the service releases its
+live frames and device; repeated frame/service cleanup is idempotent. Diagnostic
+readback staging buffers are temporary and released after each read. This managed
+allocation ledger excludes pipelines, browser/driver caches and canvas backing stores;
+it is not a total VRAM measurement.
 
 From the repository, run `pnpm exec playwright install chromium` once, then
 `pnpm test:packed` on a machine with a display and WebGPU. This packs both private

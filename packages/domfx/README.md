@@ -43,3 +43,60 @@ These results cover this machine and build path, not broad browser support.
 
 See the [project README](https://github.com/G0m1namm/domfx#readme) for development
 instructions. MIT licensed; dependencies retain their own licenses.
+
+## Manual fire attachment
+
+The root export provides an experimental, one-target manual API:
+
+```ts
+import { attachFire } from '@domfx/browser';
+
+const effect = attachFire(target, { host, seed: 314, time: 1.5, intensity: 0.85 });
+await effect.ready;
+if (effect.lifecycle === 'active') {
+  effect.time = 2; // Absolute seconds. Seeking backwards is supported.
+  effect.intensity = 0.5;
+}
+effect.dispose(); // Safe before ready, and safe to call twice.
+```
+
+`host` must be a connected, positioned HTML element and `target` a strict descendant
+in the same document. Duplicate or nested target ownership throws synchronously,
+as do invalid host geometry and nonfinite/out-of-float32-range parameters. Dispose
+an unavailable attachment before claiming that target again. Seed defaults to `0`,
+time to `0`, and intensity to `1`. Seed is read-only; finite intensity clamps to
+`[0, 1]`. Control writes paint synchronously from the same prepared raster, without
+capture or an internal animation clock. Writes after disposal update readable
+controls but cannot render or recreate resources.
+
+`ready` settles after initialization, including cleanup of cancelled initial work.
+Environmental failures resolve with `lifecycle: 'unavailable'` and a readable `reason`.
+The original target remains visible and interactive. Each handle owns one renderer
+and a pointer-transparent, `aria-hidden` canvas appended directly to its host,
+outside the captured subtree. Disposal removes output immediately; pending initial
+capture/preparation is allowed to settle and releases its late resources before
+`ready` resolves. Renderer/device sharing is deferred.
+
+Lifecycle is `suspended` during initialization, `active` while rendering,
+`unavailable` after failure, or `disposed`. Raster health is independently
+`refreshing` during the initial capture, `fresh` after preparation, or `stale` when
+invalidated. Target subtree mutations, target asset load events and window resize
+hide stale output; there is no refresh/retry loop. Reattach after disposal to capture
+again. Reduced motion at startup avoids capture/GPU allocation; runtime reduced
+motion or document hiding suspends existing output and resumes it when permitted.
+
+Placement supports translation and positive axis-aligned scale, including a scaled
+host. Rotation, skew, perspective and CSS zoom reject. Scrolling and control writes
+update placement. This is a bounded snapshot API: stylesheet/font changes,
+ancestor layout/paint changes, arbitrary clipping/stacking contexts, and continuous
+layout tracking are not comprehensively detected or supported. Dispose before
+changing those conditions. The caller must provide a host whose compositing lets
+its decorative child overlap the target. The attachment does not change target styles.
+The pinned SnapDOM adapter can temporarily change source styles when capturing a
+focused borderless target with an outline; this is conservatively detected as stale
+and suspends initialization. Attach before focusing such a target, or dispose and
+reattach after focus moves away.
+
+Run the lab and open `/manual.html` to exercise the root-export consumer with Seek,
+Zero intensity and Dispose controls. The browser suite covers it in development
+and production alongside the existing numerical capture/fire fixtures.

@@ -36,7 +36,7 @@ Browser launch flags are restricted to the local test browser.
 
 ## Required scenarios
 
-Each project runs four cases at a 1280 × 900 viewport and device pixel ratio 2:
+Each project runs the following scenarios at a 1280 × 900 viewport and device pixel ratio 2:
 
 - **Normal rendering:** existing capture fixtures and GPU distance fields agree with
   the independent numerical oracle; fire reproduces at fixed time and changes with
@@ -50,6 +50,11 @@ Each project runs four cases at a 1280 × 900 viewport and device pixel ratio 2:
   not replace the successful real-GPU scenario.
 - **Injected assertion failure:** finish the GPU fixtures, then require an explicit FAIL
   with the injected assertion message and verify that cleanup removes the overlay.
+
+The `/manual.html` root-export consumer also checks deterministic control writes,
+intensity bounds, ownership and numeric rejection, stale-paint hiding, scaled-host
+placement, disposal before a late adapter result or during GPU preparation, repeated
+disposal/reattachment, missing GPU, and startup/runtime reduced motion.
 
 Unexpected page/console errors fail the tests. There are no automatic retries.
 Each test has a three-minute deadline; the browser suite has a ten-minute deadline.

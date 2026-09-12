@@ -67,6 +67,13 @@ test('capture, GPU numerics, fire, controls and disposal', async ({
       ]),
     ),
     transformCapture: { pass: true },
+    preparationResources: {
+      pass: true,
+      cycles: 1000,
+      wrongSigns: 0,
+      afterCycles: { managedBytes: 0, bufferBytes: 0 },
+      afterServiceDestroy: { managedBytes: 0, bufferBytes: 0 },
+    },
     fire: { pass: true, zeroIntensityTransparent: true },
     gsap: { pass: true, contextRevertPreservesSibling: true },
     gpuErrors: [],

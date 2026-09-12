@@ -43,6 +43,14 @@ Each project runs the following scenarios at a 1280 × 900 viewport and device p
   time; zero intensity is transparent; GSAP cleanup preserves its caller-owned sibling.
   Exercise Play, Seek, Reverse, pointer/keyboard interaction, overlay attributes, and
   Dispose. Disposal must remove the overlay and release accounted GPU allocations.
+  The preparation regression also runs 1,000 real small-mask prepare/readback/destroy
+  cycles, alternating 7 × 5 and 9 × 5 masks with alpha values around the threshold.
+  Every readback is compared to the Float64 oracle (0.002 raster-pixel tolerance).
+  `preparationResources` records allocation samples at cycles 1, 10, 100 and 1,000;
+  both the managed ledger and observed live GPUBuffer bytes must return to zero.
+  It also checks failure after GPU submission, independently live frames, and repeated
+  frame/service cleanup. Device-call observations count explicit buffer destruction;
+  they do not measure garbage collection, driver allocation or total VRAM.
 - **Reduced motion at startup:** complete without accessing the GPU, keep effect
   controls disabled, and preserve original DOM interaction.
 - **Missing WebGPU:** inject the missing capability and require the lab's explicit

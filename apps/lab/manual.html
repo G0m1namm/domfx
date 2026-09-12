@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Manual fire attachment</title>
+    <script type="module" src="/src/manual.ts"></script>
+    <style>
+      body { margin: 60px; font-family: sans-serif; background: #17202b; color: white; }
+      #manual-host { position: relative; padding: 48px; border: 4px solid #76879c; width: 400px; }
+      #manual-target { display: block; width: 160px; height: 64px; border: 0; border-radius: 18px; background: #538caf; color: white; }
+      nav { margin-top: 48px; }
+    </style>
+  </head>
+  <body>
+    <h1>Manual attachment consumer</h1>
+    <div id="manual-host">
+      <button id="manual-target">Original <span>target</span></button>
+    </div>
+    <nav>
+      <button id="seek">Seek 1.5s</button> <button id="zero">Zero intensity</button>
+      <button id="dispose">Dispose</button>
+    </nav>
+    <p id="clicks">Target clicks: 0</p>
+    <pre id="state">Preparing…</pre>
+  </body>
+</html>

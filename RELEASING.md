@@ -6,7 +6,7 @@ release workflows. Repository visibility does not change package visibility.
 
 ## Packages and versions
 
-- `@domfx/core` and `@domfx/browser` are provisional names. Confirm npm scope/name
+- `@domfx/core`, `@domfx/browser` and `@domfx/gsap` are provisional names. Confirm npm scope/name
   ownership before publication; then update manifests and Changesets references together.
 - Version libraries independently. Changesets also updates affected internal dependents.
   The workspace root and apps stay private; website deployments are separate.

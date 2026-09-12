@@ -65,6 +65,12 @@ Fake animation-frame tests use the real attachment, capture and GPU renderer to 
 one shared frame request, one commit per dirty target, manual time ownership, ambient
 pause/seek/resume, immutable seed, no per-frame capture, and cancellation on disposal.
 
+The `/gsap.html` optional-package consumer verifies starting control snapshots,
+callback-suppressed host seeking, reverse and fixed-time GPU output, one scheduled
+commit for multiple writes, and no per-frame capture. It checks ambient rejection,
+numeric options, insertion positions, zero duration, context revert, sibling preservation,
+idempotent binding disposal and attachment disposal, plus the interactive controls.
+
 Unexpected page/console errors fail the tests. There are no automatic retries.
 Each test has a three-minute deadline; the browser suite has a ten-minute deadline.
 The harness also requires report evidence from both projects, with no skipped tests,

@@ -48,11 +48,12 @@ CI behavior, evidence, and coverage limits.
 ```text
 packages/core   → DOM/framework/GPU-independent contracts and alpha classification
 packages/domfx  → browser capture and internal TypeGPU renderer; consumes core
+packages/gsap   → optional GSAP timeline binding; consumes core types and the GSAP peer
 apps/lab        → GPU experiment, GSAP example, diagnostics and tests; consumes packages
 ```
 
 One workspace lockfile governs dependencies. `@domfx/core`, `@domfx/browser` and
-`@domfx/lab` are private local names, not reserved registry names. The lab imports
+`@domfx/gsap` and `@domfx/lab` are private local names, not reserved registry names. The lab imports
 built package exports; it has no source aliases or TypeGPU build plugin. Shader
 transformation belongs to the browser package. The `/experimental` entry exposes
 the spike to the lab temporarily, not a supported public renderer API.
@@ -77,8 +78,9 @@ broad browser support or performance guarantees.
 
 The existing lab scenarios run automatically in Chromium for development and
 production builds. An experimental [manual attachment API](packages/domfx/README.md#manual-fire-attachment)
-is available through the browser package. GSAP adapters, broader browser/geometry
-support, and refresh coverage remain unfinished.
+is available through the browser package. The optional [GSAP binding](packages/gsap/README.md)
+drives manual attachments from caller-owned timelines; open `/gsap.html` in the lab
+for its package consumer. Broader browser/geometry support and refresh coverage remain unfinished.
 
 ## Workflow
 

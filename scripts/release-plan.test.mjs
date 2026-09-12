@@ -37,6 +37,7 @@ function workspace(t) {
     'package.json',
     'packages/core/package.json',
     'packages/domfx/package.json',
+    'packages/gsap/package.json',
     'apps/lab/package.json',
     '.changeset/config.json',
   ]) {
@@ -49,12 +50,10 @@ function workspace(t) {
   );
   write('.gitignore', 'node_modules\n');
   symlinkSync(join(repo, 'node_modules'), join(root, 'node_modules'), 'dir');
-  mkdirSync(join(root, 'packages/domfx/node_modules/@domfx'), { recursive: true });
-  symlinkSync(
-    join(root, 'packages/core'),
-    join(root, 'packages/domfx/node_modules/@domfx/core'),
-    'dir',
-  );
+  for (const path of ['packages/domfx', 'packages/gsap']) {
+    mkdirSync(join(root, path, 'node_modules/@domfx'), { recursive: true });
+    symlinkSync(join(root, 'packages/core'), join(root, path, 'node_modules/@domfx/core'), 'dir');
+  }
   return { root, write };
 }
 
@@ -107,6 +106,7 @@ test('Changesets checks detached PRs and rehearses private library versions with
     [
       ['@domfx/browser', '0.0.1'],
       ['@domfx/core', '0.0.1'],
+      ['@domfx/gsap', '0.0.1'],
     ],
   );
   assert.equal(plan.releases.find(({ name }) => name === '@domfx/lab')?.type, 'none');
@@ -115,7 +115,7 @@ test('Changesets checks detached PRs and rehearses private library versions with
   } catch (error) {
     throw new Error(`${error.stdout}\n${error.stderr}`, { cause: error });
   }
-  for (const path of ['packages/core', 'packages/domfx']) {
+  for (const path of ['packages/core', 'packages/domfx', 'packages/gsap']) {
     const manifest = readJson(join(root, path, 'package.json'));
     assert.equal(manifest.version, '0.0.1');
     assert.equal(manifest.private, true);
@@ -130,7 +130,7 @@ test('Changesets checks detached PRs and rehearses private library versions with
 test('artifact inspection skips lifecycle scripts and creates no tarballs', (t) => {
   const { root, write } = workspace(t);
   write('LICENSE', 'Fixture license');
-  for (const path of ['packages/core', 'packages/domfx']) {
+  for (const path of ['packages/core', 'packages/domfx', 'packages/gsap']) {
     const manifest = readJson(join(root, path, 'package.json'));
     manifest.scripts = {
       prepack: 'node -e "process.exit(99)"',
@@ -156,6 +156,7 @@ for (const path of [
   'package.json',
   'packages/core/package.json',
   'packages/domfx/package.json',
+  'packages/gsap/package.json',
   'apps/lab/package.json',
 ]) {
   test(`artifact check blocks publication enablement in ${path}`, (t) => {

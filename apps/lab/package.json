@@ -24,6 +24,7 @@
   "dependencies": {
     "@domfx/browser": "workspace:*",
     "@domfx/core": "workspace:*",
+    "@domfx/gsap": "workspace:*",
     "gsap": "^3.15.0"
   },
   "devDependencies": {

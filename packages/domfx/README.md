@@ -46,6 +46,9 @@ instructions. MIT licensed; dependencies retain their own licenses.
 
 ## Manual fire attachment
 
+For caller-owned timelines, use the optional [`@domfx/gsap` binding](../gsap/README.md).
+The browser package itself does not depend on GSAP.
+
 The root export provides an experimental, one-target attachment API:
 
 ```ts

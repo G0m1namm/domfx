@@ -1,0 +1,316 @@
+import { expect, type Page, test as base } from '@playwright/test';
+
+import type {} from '../src/gsap-consumer.js';
+
+const test = base.extend<{ browserErrors: string[] }>({
+  browserErrors: [
+    async ({ page }, use) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      page.on('console', (message) => {
+        if (message.type() === 'error') {
+          errors.push(message.text());
+        }
+      });
+      await use(errors);
+      expect(errors).toEqual([]);
+    },
+    { auto: true },
+  ],
+});
+
+async function openConsumer(page: Page) {
+  await page.goto('/gsap.html');
+  await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
+}
+
+test('host seek/reverse reproduces GPU output through one scheduled commit without capture', async ({
+  page,
+}, testInfo) => {
+  await openConsumer(page);
+  const result = await page.evaluate(() => {
+    const { effect, timeline } = window.bindingConsumer;
+    const canvas = document.querySelector<HTMLCanvasElement>('#host canvas');
+    if (!canvas) {
+      throw new Error('missing-effect-layer');
+    }
+    let commits = 0;
+    const getTexture = GPUCanvasContext.prototype.getCurrentTexture;
+    GPUCanvasContext.prototype.getCurrentTexture = function () {
+      commits += 1;
+      return getTexture.call(this);
+    };
+    let captures = 0;
+    const decode = HTMLImageElement.prototype.decode;
+    HTMLImageElement.prototype.decode = function () {
+      captures += 1;
+      return decode.call(this);
+    };
+    const readPixels = CanvasRenderingContext2D.prototype.getImageData;
+    CanvasRenderingContext2D.prototype.getImageData = function (...args) {
+      captures += 1;
+      return Reflect.apply(readPixels, this, args);
+    };
+    let requests = 0;
+    const callbacks = new Map<number, FrameRequestCallback>();
+    window.requestAnimationFrame = (callback) => {
+      requests += 1;
+      callbacks.set(requests, callback);
+      return requests;
+    };
+    window.cancelAnimationFrame = (id) => callbacks.delete(id);
+    function frame() {
+      const batch = [...callbacks.values()];
+      callbacks.clear();
+      for (const callback of batch) {
+        callback(performance.now());
+      }
+    }
+    const initial = { time: effect.time, intensity: effect.intensity };
+    const children = timeline.getChildren();
+    const child = { count: children.length, paused: children[0].paused() };
+    timeline.seek(1);
+    timeline.seek(3);
+    timeline.seek(2); // Default suppressEvents=true must still write both controls.
+    const beforeFrame = { requests, commits, time: effect.time, intensity: effect.intensity };
+    frame();
+    const first = canvas.toDataURL();
+    const afterFrame = { commits, pending: callbacks.size };
+    timeline.seek(3);
+    frame();
+    const changed = canvas.toDataURL() !== first;
+    timeline.reverse().pause();
+    timeline.seek(2);
+    frame();
+    const repeated = canvas.toDataURL() === first;
+    timeline.seek(0);
+    frame();
+    return {
+      initial,
+      child,
+      beforeFrame,
+      afterFrame,
+      changed,
+      repeated,
+      restored: { time: effect.time, intensity: effect.intensity },
+      seed: effect.seed,
+      captures,
+      commits,
+      pending: callbacks.size,
+      raster: effect.raster,
+    };
+  });
+  expect(result).toEqual({
+    initial: { time: 1.5, intensity: 0.85 },
+    child: { count: 1, paused: false },
+    beforeFrame: { requests: 1, commits: 0, time: 3.5, intensity: 0.55 },
+    afterFrame: { commits: 1, pending: 0 },
+    changed: true,
+    repeated: true,
+    restored: { time: 1.5, intensity: 0.85 },
+    seed: 314,
+    captures: 0,
+    commits: 4,
+    pending: 0,
+    raster: 'fresh',
+  });
+  await testInfo.attach('binding-checks.json', {
+    body: JSON.stringify(result),
+    contentType: 'application/json',
+  });
+});
+
+test('binding snapshots starts, rejects ambient/invalid inputs, and cleans up only its child', async ({
+  page,
+}) => {
+  await openConsumer(page);
+  const result = await page.evaluate(async () => {
+    const { effect, timeline, binding, bind, attach, gsap } = window.bindingConsumer;
+    binding.dispose();
+    const sibling = { value: 0 };
+    timeline.to(sibling, { value: 10, duration: 10, ease: 'none' }, 0);
+    timeline.addLabel('fire', 1);
+    const next = bind(effect, timeline, {
+      time: 5.5,
+      intensity: -1,
+      duration: 4,
+      position: 'fire',
+    });
+    effect.time = 99;
+    effect.intensity = 1;
+    timeline.seek(0.5);
+    const beforeStart = effect.time;
+    timeline.seek(3);
+    const midpoint = { time: effect.time, intensity: effect.intensity };
+    timeline.seek(5);
+    const endpoint = { time: effect.time, intensity: effect.intensity };
+    next.dispose();
+    next.dispose();
+    timeline.seek(7);
+    const disposed = {
+      time: effect.time,
+      intensity: effect.intensity,
+      sibling: sibling.value,
+      children: timeline.getChildren().length,
+      lifecycle: effect.lifecycle,
+    };
+    const context = gsap.context(() => {
+      bind(effect, timeline, { time: 8, intensity: 1, duration: 2, position: 0 });
+    });
+    timeline.seek(1);
+    context.revert();
+    timeline.seek(8);
+    const afterRevert = { children: timeline.getChildren().length, sibling: sibling.value };
+    const host = document.querySelector<HTMLElement>('#host');
+    const target = document.createElement('button');
+    target.textContent = 'Ambient target';
+    if (!host) {
+      throw new Error('fixture');
+    }
+    host.append(target);
+    const ambient = attach(target, { host, clock: 'ambient' });
+    ambient.pause();
+    let ambientError = '';
+    try {
+      bind(ambient, timeline, { time: 4, intensity: 1, duration: 4 });
+    } catch (error) {
+      ambientError = String(error);
+    }
+    ambient.dispose();
+    await ambient.ready;
+    let invalidRejected = 0;
+    for (const options of [
+      { time: NaN, intensity: 1, duration: 1 },
+      { time: Number.MAX_VALUE, intensity: 1, duration: 1 },
+      { time: 1, intensity: Infinity, duration: 1 },
+      { time: 1, intensity: 1, duration: -1 },
+      { time: 1, intensity: 1, duration: Infinity },
+    ]) {
+      try {
+        bind(effect, timeline, options);
+      } catch (error) {
+        if (error instanceof Error && error.message === 'invalid-gsap-binding-options') {
+          invalidRejected += 1;
+        }
+      }
+    }
+    const afterRejection = timeline.getChildren().length;
+    timeline.seek(0);
+    const instant = bind(effect, timeline, {
+      time: -2,
+      intensity: 10,
+      duration: 0,
+      position: 1,
+    });
+    timeline.seek(2);
+    const zeroDuration = { time: effect.time, intensity: effect.intensity };
+    effect.dispose();
+    timeline.seek(0);
+    instant.dispose();
+    return {
+      beforeStart,
+      midpoint,
+      endpoint,
+      disposed,
+      afterRevert,
+      ambientError,
+      invalidRejected,
+      afterRejection,
+      zeroDuration,
+      layersAfterDisposal: host.querySelectorAll('canvas').length,
+    };
+  });
+  expect(result).toEqual({
+    beforeStart: 99,
+    midpoint: { time: 3.5, intensity: 0.425 },
+    endpoint: { time: 5.5, intensity: 0 },
+    disposed: { time: 5.5, intensity: 0, sibling: 7, children: 1, lifecycle: 'active' },
+    afterRevert: { children: 1, sibling: 8 },
+    ambientError: 'Error: GSAP binding requires a manual attachment',
+    invalidRejected: 5,
+    afterRejection: 1,
+    zeroDuration: { time: -2, intensity: 1 },
+    layersAfterDisposal: 0,
+  });
+});
+
+test('consumer playback, reverse, interaction and separate disposal controls work', async ({
+  page,
+}) => {
+  await openConsumer(page);
+  await page.locator('#play').click();
+  await expect
+    .poll(() => page.evaluate(() => window.bindingConsumer.effect.time))
+    .toBeGreaterThan(1.5);
+  await page.locator('#seek').click();
+  await expect.poll(() => page.evaluate(() => window.bindingConsumer.effect.time)).toBe(3.5);
+  await page.locator('#reverse').click();
+  await expect
+    .poll(() => page.evaluate(() => window.bindingConsumer.effect.time))
+    .toBeLessThan(3.5);
+  await page.locator('#seek').click();
+  await page.locator('#unbind').click();
+  await page.locator('#play').click();
+  expect(await page.evaluate(() => window.bindingConsumer.effect.time)).toBe(3.5);
+  await expect(page.locator('#host canvas')).toBeVisible();
+  await page.locator('#target').click();
+  await page.locator('#target').press('Enter');
+  await expect(page.locator('#clicks')).toHaveText('Target clicks: 2');
+  await page.locator('#dispose').click();
+  await expect(page.locator('#host canvas')).toHaveCount(0);
+});
+
+test('an advanced smooth host keeps the requested child position and its callbacks', async ({
+  page,
+}) => {
+  await openConsumer(page);
+  const result = await page.evaluate(() => {
+    const { effect, binding, bind, gsap } = window.bindingConsumer;
+    binding.dispose();
+    let updates = 0;
+    const onUpdate = () => {
+      updates += 1;
+    };
+    const timeline = gsap.timeline({ paused: true, smoothChildTiming: true, onUpdate });
+    timeline.to({ value: 0 }, { value: 1, duration: 10 });
+    timeline.seek(7);
+    const next = bind(effect, timeline, { time: 5.5, intensity: 0.25, duration: 4, position: 1 });
+    const atBind = { time: effect.time, intensity: effect.intensity };
+    timeline.seek(3, false);
+    const result = {
+      atBind,
+      sought: { time: effect.time, intensity: effect.intensity },
+      position: timeline.getChildren()[1].startTime(),
+      paused: timeline.paused(),
+      callbackPreserved: timeline.eventCallback('onUpdate') === onUpdate,
+      updates,
+    };
+    next.dispose();
+    timeline.kill();
+    return result;
+  });
+  expect(result).toEqual({
+    atBind: { time: 5.5, intensity: 0.25 },
+    sought: { time: 3.5, intensity: 0.55 },
+    position: 1,
+    paused: true,
+    callbackPreserved: true,
+    updates: 1,
+  });
+});
+
+test('standalone browser/core consumer loads no GSAP runtime or binding', async ({ page }) => {
+  const scripts: Promise<string>[] = [];
+  page.on('response', (response) => {
+    if (response.request().resourceType() === 'script') {
+      scripts.push(response.text());
+    }
+  });
+  await page.goto('/manual.html');
+  await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
+  const sources = await Promise.all(scripts);
+  expect(sources.length).toBeGreaterThan(0);
+  for (const source of sources) {
+    expect(source).not.toMatch(/gsapVersions|GreenSock|GSAP binding requires/);
+  }
+});

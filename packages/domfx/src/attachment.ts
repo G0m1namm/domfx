@@ -84,6 +84,7 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
   let frame: CaptureFrame | undefined;
   let context: GPUCanvasContext | null = null;
   let initializing = true;
+  const disposalCallbacks = new Set<() => void>();
 
   const canvas = document.createElement('canvas');
   canvas.setAttribute('aria-hidden', 'true');
@@ -411,6 +412,17 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
       invalidate();
     },
 
+    onDispose(callback) {
+      if (lifecycle === 'disposed') {
+        callback();
+      } else {
+        disposalCallbacks.add(callback);
+      }
+      return () => {
+        disposalCallbacks.delete(callback);
+      };
+    },
+
     dispose() {
       if (lifecycle === 'disposed') {
         return;
@@ -421,6 +433,19 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
       reasonDetail = undefined;
       releaseOwnership();
       cleanup();
+      const callbacks = [...disposalCallbacks];
+      disposalCallbacks.clear();
+      const errors: unknown[] = [];
+      for (const callback of callbacks) {
+        try {
+          callback();
+        } catch (error) {
+          errors.push(error);
+        }
+      }
+      if (errors.length) {
+        throw new AggregateError(errors, 'effect-disposal-callback-failed');
+      }
     },
   };
 }

@@ -19,7 +19,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc -p tsconfig.json",
     "test:browser": "playwright test",
-    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/numerical.test.js"
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js"
   },
   "dependencies": {
     "@domfx/browser": "workspace:*",

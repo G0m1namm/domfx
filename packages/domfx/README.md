@@ -113,6 +113,13 @@ outside the captured subtree. Disposal removes output immediately; pending initi
 capture/preparation is allowed to settle and releases its late resources before
 `ready` resolves. Renderer/device sharing is deferred.
 
+`onDispose(callback)` subscribes to disposal and returns an idempotent unsubscribe
+function. Disposal removes output and runs immediate cleanup before notifying each listener
+once; pending initialization still releases late resources before `ready` settles.
+Subscribing after disposal calls the listener immediately. Listener failures are collected
+and thrown as an `AggregateError` after all listeners run. The optional GSAP adapter uses
+this notification to detach bindings without replacing the handle's `dispose()` method.
+
 Lifecycle is `suspended` during initialization, `active` while rendering,
 `unavailable` after failure, or `disposed`. Raster health is independently
 `refreshing` during the initial capture, `fresh` after preparation, or `stale` when

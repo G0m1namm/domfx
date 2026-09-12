@@ -136,11 +136,38 @@ this notification to detach bindings without replacing the handle's `dispose()` 
 
 Lifecycle is `suspended` during initialization, `active` while rendering,
 `unavailable` after failure, or `disposed`. Raster health is independently
-`refreshing` during the initial capture, `fresh` after preparation, or `stale` when
+`refreshing` during capture or replacement, `fresh` after preparation, or `stale` when
 invalidated. Target subtree mutations, target asset load events and window resize
-hide stale output; there is no refresh/retry loop. Reattach after disposal to capture
-again. Reduced motion at startup avoids capture/GPU allocation; runtime reduced
+hide stale output; call `refresh()` to capture again. There is no automatic refresh/retry
+loop. Reduced motion at startup avoids capture/GPU allocation; runtime reduced
 motion or document hiding suspends existing output and resumes it when permitted.
+
+Explicit refresh hides output synchronously, retains the same decorative canvas, and
+serializes capture/preparation per attachment. A reattached target also waits for any
+previous attachment's pending capture before starting another. Calls made while work is pending coalesce
+to the newest requested capture revision; superseded results never paint. A promise
+resolves when its requested revision or a newer one commits. The replacement presents
+before previous GPU resources are released; capture pixels are released after preparation.
+Time, intensity, seed and clock pause remain unchanged.
+
+```ts
+target.textContent = 'Updated content';
+try {
+  await effect.refresh(); // Also allowed before ready or after stale-paint suspension.
+} catch (error) {
+  // Inspect effect.lifecycle, effect.reason and effect.reasonDetail.
+}
+```
+
+A newest capture/preparation failure rejects affected refresh promises with the underlying
+error and makes the attachment unavailable with stale, hidden output. Superseded failures
+do not reject newer requests. There is no retry: refresh on an unavailable or disposed
+handle rejects with `effect-unavailable` or `effect-disposed`. Mutation, asset load, resize,
+or a visibility/motion invalidation during pending work rejects with `refresh-invalidated`;
+call refresh explicitly once conditions permit. Disposal rejects pending promises immediately.
+In all cases late capture/preparation completes only to release its resources exactly once;
+it cannot resurrect an invalidated attachment. `ready` retains its nonrejecting initialization
+contract, including cleanup after initial disposal; refresh promises are separate from it.
 
 Placement supports translation and positive axis-aligned scale, including a scaled
 host. Rotation, skew, perspective and CSS zoom reject. Scrolling and control writes
@@ -151,8 +178,8 @@ changing those conditions. The caller must provide a host whose compositing lets
 its decorative child overlap the target. The attachment does not change target styles.
 The pinned SnapDOM adapter can temporarily change source styles when capturing a
 focused borderless target with an outline; this is conservatively detected as stale
-and suspends initialization. Attach before focusing such a target, or dispose and
-reattach after focus moves away.
+and invalidates capture. Attach before focusing such a target, or refresh after focus
+moves away.
 
 Run the lab and open `/manual.html` to exercise the root-export consumer with Seek,
 Zero intensity and Dispose controls. The browser suite covers it in development

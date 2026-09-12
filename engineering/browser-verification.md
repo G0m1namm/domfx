@@ -69,6 +69,13 @@ canvas/device cleanup, preserved pointer/keyboard interaction, and successful re
 without disposing the failed handle. Invalid runtime options/hosts and both directions of
 nested ownership also reject without leaving claims.
 
+Refresh checks use controlled capture/preparation delays and failures with the real GPU
+renderer. They verify revision coalescing, promise settlement, atomic replacement order,
+exactly-once frame release, and invalidation/disposal during both stages. A changed DOM
+silhouette is refreshed on the same canvas and compared with a fresh attachment at the
+same time/seed; runtime reduced motion and simulated document hiding invalidate pending
+capture. These checks run in both development and production.
+
 Fake animation-frame tests use the real attachment, capture and GPU renderer to verify
 one shared frame request, one commit per dirty target, manual time ownership, ambient
 pause/seek/resume, immutable seed, no per-frame capture, and cancellation on disposal.
@@ -100,8 +107,8 @@ CI uploads `.scratch/agent/` as `browser-gpu-evidence` for seven days, including
 Pixel readbacks establish shader output; screenshot attachments help diagnosis but
 are not visual-diff assertions. Accounted bytes are not a driver-memory leak detector.
 Performance observations, especially SwiftShader timings, are not release thresholds.
-Other browsers, fractional DPR, expanded geometry, device loss, refresh races, and
-runtime motion-preference changes need their own scenarios when relevant to a change.
+Other browsers, fractional DPR, expanded geometry, device loss, and
+additional runtime motion-preference changes need their own scenarios when relevant to a change.
 
 The implementation follows Playwright's [web-server lifecycle](https://playwright.dev/docs/test-webserver)
 and [Chromium channel guidance](https://playwright.dev/docs/browsers), with the Linux

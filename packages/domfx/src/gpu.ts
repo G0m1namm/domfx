@@ -49,9 +49,11 @@ fn field(p: vec2f) -> f32 {
 
 export function decodeFloat16(bits: number): number {
   const sign = bits & 0x8000 ? -1 : 1;
-  const exponent = (bits >>> 10) & 31,
-    fraction = bits & 1023;
-  if (exponent === 31) return fraction ? NaN : sign * Infinity;
+  const exponent = (bits >>> 10) & 31;
+  const fraction = bits & 1023;
+  if (exponent === 31) {
+    return fraction ? NaN : sign * Infinity;
+  }
   return (
     sign * (exponent === 0 ? fraction * 2 ** -24 : (1 + fraction / 1024) * 2 ** (exponent - 15))
   );
@@ -99,9 +101,13 @@ export class GpuExperiment {
   }
 
   static async create(): Promise<GpuExperiment> {
-    if (!navigator.gpu) throw new Error('no-webgpu');
+    if (!navigator.gpu) {
+      throw new Error('no-webgpu');
+    }
     const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) throw new Error('no-adapter');
+    if (!adapter) {
+      throw new Error('no-adapter');
+    }
     const device = await adapter.requestDevice();
     let root: TgpuRoot | undefined;
     try {
@@ -127,7 +133,9 @@ export class GpuExperiment {
   async prepare(
     frame: Pick<CaptureFrame, 'width' | 'height' | 'pixels'>,
   ): Promise<PreparedGpuFrame> {
-    if (this.destroyed) throw new Error('renderer-disposed');
+    if (this.destroyed) {
+      throw new Error('renderer-disposed');
+    }
     const { width, height, pixels } = frame;
     if (
       !Number.isInteger(width) ||
@@ -135,22 +143,29 @@ export class GpuExperiment {
       width < 1 ||
       height < 1 ||
       pixels.length !== width * height * 4
-    )
+    ) {
       throw new Error('invalid-frame');
+    }
     if (
       width * height > 1_000_000 ||
       width > this.device.limits.maxTextureDimension2D ||
       height > this.device.limits.maxTextureDimension2D
-    )
+    ) {
       throw new Error('capture-budget');
-    if (!pixels.some((value, i) => i % 4 === 3 && value >= 128)) throw new Error('empty-mask');
-    if (!pixels.some((value, i) => i % 4 === 3 && value < 128)) throw new Error('missing-exterior');
-    if (this.managedBytes + width * height * 36 + 32 > 144_000_000)
+    }
+    if (!pixels.some((value, i) => i % 4 === 3 && value >= 128)) {
+      throw new Error('empty-mask');
+    }
+    if (!pixels.some((value, i) => i % 4 === 3 && value < 128)) {
+      throw new Error('missing-exterior');
+    }
+    if (this.managedBytes + width * height * 36 + 32 > 144_000_000) {
       throw new Error('aggregate-budget');
+    }
 
     const started = performance.now();
-    const root = this.root,
-      device = this.device;
+    const root = this.root;
+    const device = this.device;
     const source = root
       .createTexture({ size: [width, height] as const, format: 'rgba8unorm' as const })
       .$usage('sampled');
@@ -195,8 +210,8 @@ export class GpuExperiment {
           { binding: 1, resource: { buffer: uniform } },
         ],
       });
-      const outputTexture = output,
-        parameters = uniform;
+      const outputTexture = output;
+      const parameters = uniform;
       let disposed = false;
       const prepared: PreparedGpuFrame = {
         width,
@@ -211,9 +226,12 @@ export class GpuExperiment {
           );
         },
         render: (time, seed, intensity, pixelsPerCss) => {
-          if (disposed) throw new Error('frame-disposed');
-          if (![time, seed, intensity, pixelsPerCss].every(Number.isFinite) || pixelsPerCss <= 0)
+          if (disposed) {
+            throw new Error('frame-disposed');
+          }
+          if (![time, seed, intensity, pixelsPerCss].every(Number.isFinite) || pixelsPerCss <= 0) {
             throw new Error('invalid-parameters');
+          }
           device.queue.writeBuffer(
             parameters,
             0,
@@ -237,7 +255,9 @@ export class GpuExperiment {
           device.queue.submit([encoder.finish()]);
         },
         present: (destination) => {
-          if (disposed) throw new Error('frame-disposed');
+          if (disposed) {
+            throw new Error('frame-disposed');
+          }
           const encoder = device.createCommandEncoder();
           encoder.copyTextureToTexture(
             { texture: outputTexture },
@@ -248,7 +268,9 @@ export class GpuExperiment {
         },
         readFire: () => this.readTexture(outputTexture, width, height, 4),
         destroy: () => {
-          if (disposed) return;
+          if (disposed) {
+            return;
+          }
           disposed = true;
           runner!.destroy();
           source.destroy();
@@ -259,7 +281,9 @@ export class GpuExperiment {
       };
       const error = await device.popErrorScope();
       scopeOpen = false;
-      if (error) throw new Error(error.message);
+      if (error) {
+        throw new Error(error.message);
+      }
       this.prepared.add(prepared);
       return prepared;
     } catch (error) {
@@ -267,7 +291,9 @@ export class GpuExperiment {
       source.destroy();
       output?.destroy();
       uniform?.destroy();
-      if (scopeOpen) await device.popErrorScope();
+      if (scopeOpen) {
+        await device.popErrorScope();
+      }
       throw error;
     }
   }
@@ -288,13 +314,14 @@ export class GpuExperiment {
       encoder.copyTextureToBuffer({ texture }, { buffer, bytesPerRow: stride }, { width, height });
       this.device.queue.submit([encoder.finish()]);
       await buffer.mapAsync(GPUMapMode.READ);
-      const mapped = new Uint8Array(buffer.getMappedRange()),
-        packed = new Uint8Array(width * height * bytesPerPixel);
-      for (let row = 0; row < height; row += 1)
+      const mapped = new Uint8Array(buffer.getMappedRange());
+      const packed = new Uint8Array(width * height * bytesPerPixel);
+      for (let row = 0; row < height; row += 1) {
         packed.set(
           mapped.subarray(row * stride, row * stride + width * bytesPerPixel),
           row * width * bytesPerPixel,
         );
+      }
       buffer.unmap();
       return packed;
     } finally {
@@ -303,9 +330,13 @@ export class GpuExperiment {
   }
 
   destroy(): void {
-    if (this.destroyed) return;
+    if (this.destroyed) {
+      return;
+    }
     this.destroyed = true;
-    for (const frame of this.prepared) frame.destroy();
+    for (const frame of this.prepared) {
+      frame.destroy();
+    }
     this.root.destroy();
     this.device.destroy();
     this.retainedUniformBytes = 0;

@@ -6,8 +6,9 @@ const test = base.extend<{ browserErrors: string[] }>({
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(`page: ${error.message}`));
       page.on('console', (message) => {
-        if (message.type() === 'error')
+        if (message.type() === 'error') {
           errors.push(`console: ${message.text()} (${message.location().url})`);
+        }
       });
       await use(errors);
       await testInfo.attach('browser-errors.json', {

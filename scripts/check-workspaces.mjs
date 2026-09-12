@@ -34,8 +34,9 @@ export function checkWorkspaces(root = '.') {
         if (target && (!boundaries[path].includes(target) || version !== 'workspace:*')) {
           errors.push(`${path}: ${name} must follow the boundary map and use workspace:`);
         }
-        if (!target && version.startsWith('workspace:'))
+        if (!target && version.startsWith('workspace:')) {
           errors.push(`${path}: missing workspace ${name}`);
+        }
         if (section !== 'devDependencies' && path === 'packages/core') {
           errors.push(`${path}: core must have no runtime dependencies`);
         }
@@ -53,5 +54,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
   if (errors.length) {
     console.error(errors.join('\n'));
     process.exitCode = 1;
-  } else console.log('Workspace manifests respect dependency boundaries.');
+  } else {
+    console.log('Workspace manifests respect dependency boundaries.');
+  }
 }

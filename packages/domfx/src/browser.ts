@@ -7,10 +7,11 @@ export async function captureElement(
   element: Element,
   options: { paddingCss?: number; dpr?: number } = {},
 ): Promise<CaptureFrame> {
-  const padding = options.paddingCss ?? 32,
-    dpr = options.dpr ?? element.ownerDocument.defaultView!.devicePixelRatio;
-  if (!(padding >= 0) || !Number.isFinite(padding) || !(dpr > 0) || !Number.isFinite(dpr))
+  const padding = options.paddingCss ?? 32;
+  const dpr = options.dpr ?? element.ownerDocument.defaultView!.devicePixelRatio;
+  if (!(padding >= 0) || !Number.isFinite(padding) || !(dpr > 0) || !Number.isFinite(dpr)) {
     throw new Error('invalid-capture-options');
+  }
   const { snapdom } = await import('@zumer/snapdom');
   const snapshot = await snapdom(element, {
     dpr,
@@ -25,19 +26,24 @@ export async function captureElement(
         afterClone({ clone }) {
           // outerTransforms:false preserves scale in SnapDOM 2.24.15. Strip the
           // selected root's transform too; descendant transforms remain its paint.
-          if (!clone) return;
-          for (const property of ['transform', 'translate', 'rotate', 'scale'])
+          if (!clone) {
+            return;
+          }
+          for (const property of ['transform', 'translate', 'rotate', 'scale']) {
             clone.style.setProperty(property, 'none', 'important');
+          }
         },
       },
     ],
   });
   const { w0, h0, contentX, contentY } = snapshot.meta;
-  const widthCss = w0 + padding * 2,
-    heightCss = h0 + padding * 2;
-  const width = Math.ceil(widthCss * dpr),
-    height = Math.ceil(heightCss * dpr);
-  if (width * height > 1_000_000) throw new Error('capture-budget');
+  const widthCss = w0 + padding * 2;
+  const heightCss = h0 + padding * 2;
+  const width = Math.ceil(widthCss * dpr);
+  const height = Math.ceil(heightCss * dpr);
+  if (width * height > 1_000_000) {
+    throw new Error('capture-budget');
+  }
   // SnapDOM's crop clamps to its existing viewBox. Expand the serialized SVG's
   // viewport instead, so overflow/shadows are painted into the requested exterior.
   const svgText = decodeURIComponent(snapshot.url.slice(snapshot.url.indexOf(',') + 1));
@@ -59,7 +65,9 @@ export async function captureElement(
   try {
     await image.decode();
     const context = canvas.getContext('2d', { willReadFrequently: true });
-    if (!context) throw new Error('capture-context-unavailable');
+    if (!context) {
+      throw new Error('capture-context-unavailable');
+    }
     context.drawImage(image, 0, 0, width, height);
     pixels = new Uint8Array(context.getImageData(0, 0, width, height).data);
   } finally {

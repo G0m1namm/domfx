@@ -27,12 +27,17 @@ let exitCode = 1;
 
 // Timings are diagnostic observations, never inputs to pixel/assertion comparisons.
 function separateTimings(value, path = '', timings = {}) {
-  if (!value || typeof value !== 'object') return value;
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
   const checks = Array.isArray(value) ? [] : {};
   for (const [key, child] of Object.entries(value)) {
     const name = path ? `${path}.${key}` : key;
-    if (key.endsWith('Ms') || key === 'warmMeasurements') timings[name] = child;
-    else checks[key] = separateTimings(child, name, timings);
+    if (key.endsWith('Ms') || key === 'warmMeasurements') {
+      timings[name] = child;
+    } else {
+      checks[key] = separateTimings(child, name, timings);
+    }
   }
   return checks;
 }
@@ -57,7 +62,9 @@ try {
       resolve(directory, `${command.replace(':', '-')}.log`),
       `${run.stdout ?? ''}${run.stderr ?? ''}`,
     );
-    if (run.status !== 0) throw new Error(`${command} failed: ${run.error ?? run.status}`);
+    if (run.status !== 0) {
+      throw new Error(`${command} failed: ${run.error ?? run.status}`);
+    }
   }
   const buildHash = createHash('sha256');
   for (const file of (await readdir(resolve(lab, 'dist'), { recursive: true, withFileTypes: true }))
@@ -95,8 +102,9 @@ try {
   result.timings = {};
   result.checks = separateTimings(evidence.report, '', result.timings);
   for (const [name, data] of Object.entries(evidence.images)) {
-    if (!/^[a-z0-9-]+$/.test(name) || !data.startsWith('data:image/png;base64,'))
+    if (!/^[a-z0-9-]+$/.test(name) || !data.startsWith('data:image/png;base64,')) {
       throw new Error('invalid evidence image');
+    }
     await writeFile(resolve(directory, `${name}.png`), Buffer.from(data.slice(22), 'base64'));
     result.artifacts.push(`${name}.png`);
   }
@@ -108,13 +116,19 @@ try {
     await page.locator('#dispose').click();
     const disposal = await page.evaluate(() => window.domfxEvidence.report.disposal);
     result.checks.disposal = disposal;
-    if (disposal.managedBytes !== 0 || !disposal.overlayRemoved)
+    if (disposal.managedBytes !== 0 || !disposal.overlayRemoved) {
       throw new Error('disposal assertion failed');
+    }
     await page.locator('#rounded').click();
-    if (!(await page.locator('#interaction').textContent()).includes('1'))
+    if (!(await page.locator('#interaction').textContent()).includes('1')) {
       throw new Error('original target is not interactive');
-    if (result.errors.length) throw new Error('uncaught browser errors');
-    if (!result.artifacts.length) throw new Error('missing PNG evidence');
+    }
+    if (result.errors.length) {
+      throw new Error('uncaught browser errors');
+    }
+    if (!result.artifacts.length) {
+      throw new Error('missing PNG evidence');
+    }
     result.outcome = 'PASS';
     exitCode = 0;
   }
@@ -142,7 +156,9 @@ try {
     }
   }
   await browser?.close();
-  if (server) await new Promise((done) => server.httpServer.close(done));
+  if (server) {
+    await new Promise((done) => server.httpServer.close(done));
+  }
   await writeFile(resolve(directory, 'report.json'), `${JSON.stringify(result, null, 2)}\n`);
   console.log(`${result.outcome}: ${directory}`);
   process.exitCode = exitCode;

@@ -83,6 +83,8 @@ for (const [name, source, rule] of [
   ['loose equality', 'export const same = (a, b) => a == b;', 'eqeqeq'],
   ['var declarations', 'export var value = 1;', 'no-var'],
   ['debugger statements', 'debugger;', 'no-debugger'],
+  ['unbraced control flow', 'export function run(value) { if (value) return value; }', 'curly'],
+  ['grouped declarations', 'export const first = 1, second = 2;', 'one-var'],
   ['explicit any', 'export const identity = (value: any) => value;', 'no-explicit-any'],
   [
     'ignored type errors',

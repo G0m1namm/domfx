@@ -13,7 +13,9 @@ const status = element('status');
 const images: Record<string, string> = {};
 const report: Record<string, unknown> = {};
 const automation = new URLSearchParams(location.search).has('automation');
-if (automation) Object.assign(window, { domfxEvidence: { report, images } });
+if (automation) {
+  Object.assign(window, { domfxEvidence: { report, images } });
+}
 let roundedClicks = 0;
 element<HTMLButtonElement>('rounded').onclick = () => {
   element('interaction').textContent = `Rounded button clicks: ${++roundedClicks}`;
@@ -27,11 +29,15 @@ function showReport() {
   element('report').textContent = JSON.stringify(report, null, 2);
 }
 function check(condition: boolean, message: string): void {
-  if (!condition) throw new Error(message);
+  if (!condition) {
+    throw new Error(message);
+  }
 }
 function hash(bytes: Uint8Array): string {
   let value = 2166136261;
-  for (const byte of bytes) value = Math.imul(value ^ byte, 16777619);
+  for (const byte of bytes) {
+    value = Math.imul(value ^ byte, 16777619);
+  }
   return (value >>> 0).toString(16).padStart(8, '0');
 }
 function picture(
@@ -61,11 +67,13 @@ function firePicture(
   visible?: string,
 ): void {
   const straight = premultiplied.slice();
-  for (let i = 0; i < straight.length; i += 4)
+  for (let i = 0; i < straight.length; i += 4) {
     if (straight[i + 3]) {
-      for (let c = 0; c < 3; c++)
+      for (let c = 0; c < 3; c++) {
         straight[i + c] = Math.min(255, Math.round((straight[i + c] * 255) / straight[i + 3]));
+      }
     }
+  }
   picture(name, width, height, straight, visible);
 }
 function fieldPicture(
@@ -77,27 +85,31 @@ function fieldPicture(
 ): void {
   const bytes = new Uint8Array(values.length * 4);
   for (let i = 0; i < values.length; i++) {
-    const inside = values[i] < 0,
-      band = 0.6 + 0.4 * Math.cos(values[i] * 0.6);
+    const inside = values[i] < 0;
+    const band = 0.6 + 0.4 * Math.cos(values[i] * 0.6);
     bytes.set(inside ? [20, 90 * band, 255, 255] : [255, 130 * band, 50 * band, 255], i * 4);
   }
   picture(name, width, height, bytes, visible);
 }
 function compare(mask: Uint8Array, width: number, height: number, gpu: Float32Array) {
   const truth = exactDistanceField(mask, width, height);
-  let maxError = 0,
-    squaredError = 0,
-    wrongSigns = 0,
-    maxContourError = 0,
-    crossings = 0;
+  let maxError = 0;
+  let squaredError = 0;
+  let wrongSigns = 0;
+  let maxContourError = 0;
+  let crossings = 0;
   for (let i = 0; i < gpu.length; i++) {
     const error = Math.abs(gpu[i] - truth[i]);
     check(Number.isFinite(error), `nonfinite distance at ${i}`);
     maxError = Math.max(maxError, error);
     squaredError += error * error;
-    if (gpu[i] < 0 !== Boolean(mask[i])) wrongSigns++;
+    if (gpu[i] < 0 !== Boolean(mask[i])) {
+      wrongSigns++;
+    }
     for (const j of [i % width < width - 1 ? i + 1 : -1, i + width < gpu.length ? i + width : -1]) {
-      if (j < 0 || mask[i] === mask[j]) continue;
+      if (j < 0 || mask[i] === mask[j]) {
+        continue;
+      }
       crossings++;
       maxContourError = Math.max(
         maxContourError,
@@ -121,16 +133,18 @@ function boundaryAlpha(frame: CaptureFrame, marginCss = 0): number {
   const mx = Math.max(1, Math.ceil(marginCss / frame.pixelToLocal.a));
   const my = Math.max(1, Math.ceil(marginCss / frame.pixelToLocal.d));
   let max = 0;
-  for (let y = 0; y < frame.height; y++)
+  for (let y = 0; y < frame.height; y++) {
     for (let x = 0; x < frame.width; x++) {
-      if (x < mx || x >= frame.width - mx || y < my || y >= frame.height - my)
+      if (x < mx || x >= frame.width - mx || y < my || y >= frame.height - my) {
         max = Math.max(max, frame.pixels[(y * frame.width + x) * 4 + 3]);
+      }
     }
+  }
   return max;
 }
 function alphaAt(frame: CaptureFrame, localX: number, localY: number) {
-  const x = Math.floor((localX - frame.pixelToLocal.e) / frame.pixelToLocal.a),
-    y = Math.floor((localY - frame.pixelToLocal.f) / frame.pixelToLocal.d);
+  const x = Math.floor((localX - frame.pixelToLocal.e) / frame.pixelToLocal.a);
+  const y = Math.floor((localY - frame.pixelToLocal.f) / frame.pixelToLocal.d);
   return Array.from(
     frame.pixels.subarray((y * frame.width + x) * 4, (y * frame.width + x) * 4 + 4),
   );
@@ -160,24 +174,34 @@ async function runNumericalFixtures(gpu: GpuExperiment) {
     'empty',
     'full-without-exterior',
   ]) {
-    const width = 47,
-      height = 39,
-      pixels = new Uint8Array(width * height * 4);
-    for (let y = 0; y < height; y++)
+    const width = 47;
+    const height = 39;
+    const pixels = new Uint8Array(width * height * 4);
+    for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const radius = Math.hypot(x - 23, y - 19);
         let alpha = 0;
-        if (name === 'ring') alpha = radius <= 15 && radius >= 7 ? 255 : 0;
-        if (name === 'islands')
+        if (name === 'ring') {
+          alpha = radius <= 15 && radius >= 7 ? 255 : 0;
+        }
+        if (name === 'islands') {
           alpha = Math.hypot(x - 12, y - 12) < 7 || Math.hypot(x - 35, y - 26) < 5 ? 255 : 0;
-        if (name === 'diagonal')
+        }
+        if (name === 'diagonal') {
           alpha = Math.round(Math.max(0, 1 - Math.abs(y - x * 0.61 - 5) / 2) * 255);
-        if (name === 'semitransparent')
+        }
+        if (name === 'semitransparent') {
           alpha = x > 8 && x < 38 && y > 8 && y < 30 ? (x < 15 ? 127 : x < 23 ? 128 : 192) : 0;
-        if (name === 'opaque-exterior') alpha = x > 5 && x < 41 && y > 5 && y < 33 ? 255 : 0;
-        if (name === 'full-without-exterior') alpha = 255;
+        }
+        if (name === 'opaque-exterior') {
+          alpha = x > 5 && x < 41 && y > 5 && y < 33 ? 255 : 0;
+        }
+        if (name === 'full-without-exterior') {
+          alpha = 255;
+        }
         pixels.set([200, 120, 60, alpha], (y * width + x) * 4);
       }
+    }
     const frame = { width, height, pixels };
     const rejected =
       name === 'empty'
@@ -214,20 +238,23 @@ async function captureFixture(gpu: GpuExperiment, id: string, dpr: number) {
   const captureMs = performance.now() - start;
   const larger = await captureElement(element(id), { dpr, paddingCss: 80 });
   const offset = 32 * dpr;
-  let maxAlphaDifference = 0,
-    omittedPaintPixels = 0;
-  for (let y = 0; y < larger.height; y++)
+  let maxAlphaDifference = 0;
+  let omittedPaintPixels = 0;
+  for (let y = 0; y < larger.height; y++) {
     for (let x = 0; x < larger.width; x++) {
-      const lx = x - offset,
-        ly = y - offset,
-        alpha = larger.pixels[(y * larger.width + x) * 4 + 3];
+      const lx = x - offset;
+      const ly = y - offset;
+      const alpha = larger.pixels[(y * larger.width + x) * 4 + 3];
       if (lx >= 0 && ly >= 0 && lx < frame.width && ly < frame.height) {
         maxAlphaDifference = Math.max(
           maxAlphaDifference,
           Math.abs(alpha - frame.pixels[(ly * frame.width + lx) * 4 + 3]),
         );
-      } else if (alpha) omittedPaintPixels++;
+      } else if (alpha) {
+        omittedPaintPixels++;
+      }
     }
+  }
   const capturedBoundaryMaxAlpha = boundaryAlpha(frame);
   const exterior20pxMaxAlpha = boundaryAlpha(frame, 20);
   check(
@@ -290,12 +317,13 @@ async function warmMeasurements(gpu: GpuExperiment) {
     const prepared = await gpu.prepare(frame);
     const completed = performance.now();
     peakAccountedBytes = Math.max(peakAccountedBytes, gpu.managedBytes + frame.pixels.byteLength);
-    if (i >= 3)
+    if (i >= 3) {
       samples.push({
         captureMs: captured - started,
         prepareMs: completed - captured,
         totalMs: completed - started,
       });
+    }
     prepared.destroy();
     frame.release();
   }
@@ -398,9 +426,9 @@ async function main() {
       await sleepFrame();
       const { frame, prepared, details } = await captureFixture(gpu, id, 1);
       if (id === 'guard') {
-        const overflow = alphaAt(frame, -15, 15),
-          background = alphaAt(frame, 30, 20),
-          shadow = alphaAt(frame, 76, 22);
+        const overflow = alphaAt(frame, -15, 15);
+        const background = alphaAt(frame, 30, 20);
+        const shadow = alphaAt(frame, 76, 22);
         check(
           overflow[1] > 240 && overflow[2] > 240 && overflow[3] === 255,
           'overflow sentinel missing',
@@ -410,9 +438,9 @@ async function main() {
         report.captureGuard = { overflow, transparentInterior: background, rootShadow: shadow };
       }
       if (id === 'transformed') {
-        const origin = alphaAt(frame, 4, 4),
-          corner = alphaAt(frame, 76, 44),
-          gap = alphaAt(frame, 12, 12);
+        const origin = alphaAt(frame, 4, 4);
+        const corner = alphaAt(frame, 76, 44);
+        const gap = alphaAt(frame, 12, 12);
         check(
           origin[0] === 255 &&
             origin[3] === 255 &&
@@ -494,8 +522,8 @@ async function main() {
   }
 }
 function attachDemo(frame: CaptureFrame, prepared: PreparedGpuFrame) {
-  const host = element('host'),
-    target = element('target');
+  const host = element('host');
+  const target = element('target');
   const canvas = document.createElement('canvas');
   canvas.width = frame.width;
   canvas.height = frame.height;
@@ -509,11 +537,11 @@ function attachDemo(frame: CaptureFrame, prepared: PreparedGpuFrame) {
     usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
   });
   host.append(canvas);
-  const params = { time: 1.5, intensity: 0.85 },
-    reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let dirty = true,
-    raf = 0,
-    disposed = false;
+  const params = { time: 1.5, intensity: 0.85 };
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let dirty = true;
+  let raf = 0;
+  let disposed = false;
   const controls = {
     get time() {
       return params.time;
@@ -538,11 +566,13 @@ function attachDemo(frame: CaptureFrame, prepared: PreparedGpuFrame) {
   timeline.add(child, 0);
   child.paused(false);
   const tick = () => {
-    if (disposed) return;
-    const targetRect = target.getBoundingClientRect(),
-      hostRect = host.getBoundingClientRect();
-    const sx = targetRect.width / frame.contentBounds.width,
-      sy = targetRect.height / frame.contentBounds.height;
+    if (disposed) {
+      return;
+    }
+    const targetRect = target.getBoundingClientRect();
+    const hostRect = host.getBoundingClientRect();
+    const sx = targetRect.width / frame.contentBounds.width;
+    const sy = targetRect.height / frame.contentBounds.height;
     canvas.style.left = `${targetRect.left - hostRect.left - host.clientLeft + host.scrollLeft + frame.pixelToLocal.e * sx}px`;
     canvas.style.top = `${targetRect.top - hostRect.top - host.clientTop + host.scrollTop + frame.pixelToLocal.f * sy}px`;
     canvas.style.width = `${frame.width * frame.pixelToLocal.a * sx}px`;
@@ -557,7 +587,9 @@ function attachDemo(frame: CaptureFrame, prepared: PreparedGpuFrame) {
     raf = requestAnimationFrame(tick);
   };
   stop = () => {
-    if (disposed) return;
+    if (disposed) {
+      return;
+    }
     disposed = true;
     cancelAnimationFrame(raf);
     timeline.remove(child);
@@ -568,20 +600,26 @@ function attachDemo(frame: CaptureFrame, prepared: PreparedGpuFrame) {
     context.unconfigure();
     canvas.remove();
     prepared.destroy();
-    for (const id of ['play', 'seek', 'reverse', 'dispose'])
+    for (const id of ['play', 'seek', 'reverse', 'dispose']) {
       element<HTMLButtonElement>(id).disabled = true;
+    }
   };
-  for (const id of ['play', 'seek', 'reverse', 'dispose'])
+  for (const id of ['play', 'seek', 'reverse', 'dispose']) {
     element<HTMLButtonElement>(id).disabled = false;
+  }
   element<HTMLButtonElement>('play').onclick = () => {
-    if (!reduced) timeline.play();
+    if (!reduced) {
+      timeline.play();
+    }
   };
   element<HTMLButtonElement>('seek').onclick = () => {
     timeline.pause(0);
     controls.time = 1.5;
   };
   element<HTMLButtonElement>('reverse').onclick = () => {
-    if (!reduced) timeline.reverse(timeline.time() || 4);
+    if (!reduced) {
+      timeline.reverse(timeline.time() || 4);
+    }
   };
   element<HTMLButtonElement>('dispose').onclick = () => {
     stop();
@@ -599,7 +637,9 @@ element<HTMLButtonElement>('save').onclick = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ report, images }),
     });
-    if (!response.ok) throw new Error(await response.text());
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
     const result = await response.json();
     status.textContent = `Evidence saved: ${result.directory}`;
   } catch (error) {

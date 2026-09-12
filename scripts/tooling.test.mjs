@@ -157,7 +157,9 @@ test('rejects forbidden manifest edges, non-workspace versions and undeclared im
 for (const declared of [false, true]) {
   test(`rejects ${declared ? 'dev-only' : 'undeclared'} external runtime imports`, (t) => {
     const f = fixture(t);
-    if (declared) f.manifest('apps/lab', { devDependencies: { 'tool-only': '1.0.0' } });
+    if (declared) {
+      f.manifest('apps/lab', { devDependencies: { 'tool-only': '1.0.0' } });
+    }
     f.put(
       'apps/lab/node_modules/tool-only/package.json',
       JSON.stringify({ name: 'tool-only', main: 'index.js' }),

@@ -1,4 +1,4 @@
-import type { CaptureFrame, ManualEffectHandle } from '@domfx/core';
+import type { CaptureFrame, EffectReason, ManualEffectHandle } from '@domfx/core';
 
 import { captureElement } from './browser.js';
 import { GpuExperiment, type PreparedGpuFrame } from './gpu.js';
@@ -52,11 +52,13 @@ function scaleToViewport(element: Element): { x: number; y: number } {
 
 /** Capture once and paint on control writes. No clock, recapture or retry loop. */
 export function attachFire(target: Element, options: FireOptions): ManualEffectHandle {
+  const document = target?.ownerDocument,
+    view = document?.defaultView;
+  if (!view || !(target instanceof view.Element)) throw new Error('invalid-effect-target');
+  if (!options || typeof options !== 'object') throw new Error('invalid-fire-options');
   const { host } = options;
-  const document = target.ownerDocument,
-    view = document.defaultView;
   if (
-    !view ||
+    !(host instanceof view.HTMLElement) ||
     host.ownerDocument !== document ||
     host === target ||
     !host.contains(target) ||
@@ -67,14 +69,18 @@ export function attachFire(target: Element, options: FireOptions): ManualEffectH
   const claimed = owners.get(document) ?? new Set<Element>();
   if ([...claimed].some((other) => other.contains(target) || target.contains(other)))
     throw new Error('effect-target-owned');
-  const seed = finite(options.seed ?? 0);
-  let time = finite(options.time ?? 0),
-    intensity = Math.max(0, Math.min(1, finite(options.intensity ?? 1)));
+  const seed = finite(options.seed === undefined ? 0 : options.seed);
+  let time = finite(options.time === undefined ? 0 : options.time),
+    intensity = Math.max(
+      0,
+      Math.min(1, finite(options.intensity === undefined ? 1 : options.intensity)),
+    );
   scaleToViewport(target);
   const motion = view.matchMedia('(prefers-reduced-motion: reduce)');
   let lifecycle: ManualEffectHandle['lifecycle'] = 'suspended',
     raster: ManualEffectHandle['raster'] = 'refreshing',
-    reason: string | undefined,
+    reason: EffectReason | undefined,
+    reasonDetail: string | undefined,
     service: GpuExperiment | undefined,
     prepared: PreparedGpuFrame | undefined,
     frame: CaptureFrame | undefined,
@@ -86,12 +92,20 @@ export function attachFire(target: Element, options: FireOptions): ManualEffectH
   claimed.add(target);
   owners.set(document, claimed);
 
+  let ownsTarget = true;
+  function releaseOwnership() {
+    if (!ownsTarget) return;
+    ownsTarget = false;
+    claimed.delete(target);
+  }
+
   const observer = new view.MutationObserver(() => stale());
   function stale() {
     if (lifecycle === 'disposed' || lifecycle === 'unavailable') return;
     raster = 'stale';
     lifecycle = 'suspended';
     reason = 'stale-raster';
+    reasonDetail = undefined;
     canvas.style.display = 'none';
   }
   function cleanup() {
@@ -110,13 +124,32 @@ export function attachFire(target: Element, options: FireOptions): ManualEffectH
     prepared = undefined;
     // prepare() may still own a pending shader compilation. Let it settle before
     // destroying its device; initialize's finally releases all late resources.
-    if (!initializing) service?.destroy();
+    if (!initializing) {
+      service?.destroy();
+      service = undefined;
+    }
   }
-  function unavailable(error: unknown) {
+  function unavailable(error: unknown, fallback: EffectReason = 'renderer-failed') {
     if (lifecycle === 'disposed') return;
     lifecycle = 'unavailable';
     raster = 'stale';
-    reason = error instanceof Error ? error.message : String(error);
+    reasonDetail = error instanceof Error ? error.message : String(error);
+    switch (reasonDetail) {
+      case 'no-webgpu':
+      case 'no-adapter':
+      case 'capture-budget':
+      case 'empty-mask':
+      case 'missing-exterior':
+      case 'aggregate-budget':
+      case 'canvas-webgpu-unavailable':
+      case 'unsupported-placement':
+      case 'reduced-motion':
+        reason = reasonDetail;
+        break;
+      default:
+        reason = fallback;
+    }
+    releaseOwnership();
     cleanup();
   }
   function paint() {
@@ -137,6 +170,7 @@ export function attachFire(target: Element, options: FireOptions): ManualEffectH
     if (motion.matches || document.hidden || target.getClientRects().length === 0) {
       lifecycle = 'suspended';
       reason = motion.matches ? 'reduced-motion' : 'target-not-visible';
+      reasonDetail = undefined;
       canvas.style.display = 'none';
       return;
     }
@@ -156,6 +190,7 @@ export function attachFire(target: Element, options: FireOptions): ManualEffectH
       prepared.present(context.getCurrentTexture());
       lifecycle = 'active';
       reason = undefined;
+      reasonDetail = undefined;
     } catch (error) {
       unavailable(error);
     }
@@ -164,14 +199,17 @@ export function attachFire(target: Element, options: FireOptions): ManualEffectH
     return lifecycle === 'disposed' || lifecycle === 'unavailable' || raster === 'stale';
   }
   async function initialize() {
+    let failureReason: EffectReason = 'renderer-failed';
     try {
       if (motion.matches) throw new Error('reduced-motion');
       service = await GpuExperiment.create();
       if (cancelled()) return;
       void service.device.lost.then((info) => {
-        if (info.reason !== 'destroyed') unavailable(new Error(`device-lost: ${info.message}`));
+        if (info.reason !== 'destroyed') unavailable(new Error(info.message), 'device-lost');
       });
+      failureReason = 'capture-failed';
       frame = await captureElement(target);
+      failureReason = 'renderer-failed';
       if (cancelled()) return;
       prepared = await service.prepare(frame);
       if (cancelled()) return;
@@ -189,13 +227,13 @@ export function attachFire(target: Element, options: FireOptions): ManualEffectH
       raster = 'fresh';
       paint();
     } catch (error) {
-      unavailable(error);
+      unavailable(error, failureReason);
     } finally {
       frame?.release();
       initializing = false;
       if (lifecycle !== 'active' && raster !== 'fresh') {
         cleanup();
-        service?.destroy();
+        frame = undefined;
       }
     }
   }
@@ -222,6 +260,9 @@ export function attachFire(target: Element, options: FireOptions): ManualEffectH
     get reason() {
       return reason;
     },
+    get reasonDetail() {
+      return reasonDetail;
+    },
     get seed() {
       return seed;
     },
@@ -244,7 +285,8 @@ export function attachFire(target: Element, options: FireOptions): ManualEffectH
       lifecycle = 'disposed';
       raster = 'stale';
       reason = undefined;
-      claimed.delete(target);
+      reasonDetail = undefined;
+      releaseOwnership();
       cleanup();
     },
   };

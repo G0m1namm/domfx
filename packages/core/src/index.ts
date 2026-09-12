@@ -1,13 +1,32 @@
 /** SSR-safe capture contracts and alpha classification. */
 export type EffectName = 'fire-edge';
 
+/** Stable codes for unavailable effects and temporary suspension. */
+export type EffectReason =
+  | 'no-webgpu'
+  | 'no-adapter'
+  | 'capture-failed'
+  | 'capture-budget'
+  | 'empty-mask'
+  | 'missing-exterior'
+  | 'aggregate-budget'
+  | 'renderer-failed'
+  | 'canvas-webgpu-unavailable'
+  | 'device-lost'
+  | 'unsupported-placement'
+  | 'reduced-motion'
+  | 'target-not-visible'
+  | 'stale-raster';
+
 /** Manual controls do not own a clock or an animation adapter. */
 export interface ManualEffectHandle {
   /** Settles after initialization or cleanup of a cancelled initialization. */
   readonly ready: Promise<void>;
   readonly lifecycle: 'active' | 'suspended' | 'unavailable' | 'disposed';
   readonly raster: 'fresh' | 'refreshing' | 'stale';
-  readonly reason: string | undefined;
+  readonly reason: EffectReason | undefined;
+  /** Underlying failure message for diagnostics; use reason for branching. */
+  readonly reasonDetail: string | undefined;
   readonly seed: number;
   /** Absolute time in seconds; finite values, including negative time, are accepted. */
   time: number;

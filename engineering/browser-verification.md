@@ -54,7 +54,12 @@ Each project runs the following scenarios at a 1280 × 900 viewport and device p
 The `/manual.html` root-export consumer also checks deterministic control writes,
 intensity bounds, ownership and numeric rejection, stale-paint hiding, scaled-host
 placement, disposal before a late adapter result or during GPU preparation, repeated
-disposal/reattachment, missing GPU, and startup/runtime reduced motion.
+disposal/reattachment, missing GPU, and startup/runtime reduced motion. Initial failure
+checks inject missing adapters, capture decode failures, sub-threshold alpha and renderer
+construction failures; an oversized target exercises the real capture budget. They require
+canvas/device cleanup, preserved pointer/keyboard interaction, and successful reattachment
+without disposing the failed handle. Invalid runtime options/hosts and both directions of
+nested ownership also reject without leaving claims.
 
 Unexpected page/console errors fail the tests. There are no automatic retries.
 Each test has a three-minute deadline; the browser suite has a ten-minute deadline.

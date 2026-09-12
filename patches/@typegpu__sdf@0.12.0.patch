@@ -1,0 +1,12 @@
+diff --git a/jumpFlood.js b/jumpFlood.js
+index 4738954020cbb2683a80b7abfe5a10089de908c3..8ef176971e23f34ca168f71a0b4f39dc2cb61552 100644
+--- a/jumpFlood.js
++++ b/jumpFlood.js
+@@ -1539,6 +1539,7 @@ function createJumpFlood(options) {
+ 	const maxDim = Math.max(width, height);
+ 	const maxRange = 2 ** Math.floor(Math.log2(Math.max(maxDim - 1, 1)));
+ 	function destroy() {
++		offsetUniform.buffer.destroy();
+ 		floodTextureA.destroy();
+ 		floodTextureB.destroy();
+ 		sdfTexture.destroy();

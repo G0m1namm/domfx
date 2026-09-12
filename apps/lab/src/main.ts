@@ -5,6 +5,7 @@ import { GpuExperiment, type PreparedGpuFrame } from '@domfx/browser/experimenta
 import { classifyAlpha, type CaptureFrame } from '@domfx/core';
 
 import { exactDistanceField } from './diagnostics/distance-oracle.js';
+import { verifyPreparationResources } from './diagnostics/preparation-resources.js';
 import './style.css';
 
 const element = <T extends Element = HTMLElement>(id: string) =>
@@ -338,7 +339,7 @@ async function warmMeasurements(gpu: GpuExperiment) {
     peakAccountedBytes,
     managedBytesAfterWarmFramesReleased: gpu.managedBytes,
     memoryMethod:
-      'source 4 + JFA 28 + fire output 4 bytes/pixel; 16-byte fire uniform; 16-byte JFA offset uniform retained per prepare until service disposal; CPU frame 4 bytes/pixel. Excludes browser/driver/cache overhead and canvas backing stores.',
+      'source 4 + JFA 28 + fire output 4 bytes/pixel; 16-byte fire uniform + 4-byte JFA offset uniform, both released with the prepared frame; CPU frame 4 bytes/pixel. Excludes browser/driver/cache overhead and canvas backing stores; not total VRAM.',
   };
 }
 async function verifyGsap(prepared: PreparedGpuFrame, pixelsPerCss: number) {
@@ -419,6 +420,10 @@ async function main() {
       build: import.meta.env.DEV ? 'Vite development' : 'Vite production',
     };
     report.numericalFixtures = await runNumericalFixtures(gpu);
+    status.textContent = 'Checking 1,000 GPU preparation/release cycles…';
+    const preparationResources = await verifyPreparationResources();
+    report.preparationResources = preparationResources;
+    check(preparationResources.pass, 'repeated preparation resources failed');
     report.captures = {};
     const captured: Record<string, unknown> = {};
     for (const id of ['rounded', 'vector', 'transparent', 'card', 'guard', 'transformed']) {

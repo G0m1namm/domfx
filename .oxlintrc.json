@@ -5,6 +5,8 @@
     "correctness": "error"
   },
   "rules": {
+    "curly": ["error", "all"],
+    "one-var": ["error", "never"],
     "eqeqeq": "error",
     "no-debugger": "error",
     "no-var": "error",

@@ -14,6 +14,11 @@ setup and workspace map in [README.md](README.md).
   Use explicit type-only imports. Oxlint enforces correctness, unused bindings,
   strict equality, no `var`/debugger and `const` where possible. Prefix intentionally
   unused parameters with `_`. TypeScript and dependency-cruiser remain separate gates.
+- Use braces for every control-flow body and one variable per declaration; Oxlint
+  enforces both. Separate functions and logical phases with a blank line. Group
+  related declarations together, with blank lines between different responsibilities.
+  Use descriptive names for state and coordinate spaces. Extract cohesive work when
+  it clarifies inputs and ownership; keep resource creation and cleanup easy to trace.
 - Explicit `any`, `@ts-ignore`, and `@ts-nocheck` are rejected. Use `unknown` and
   narrow external inputs. `@ts-expect-error` requires an explanation of at least
   10 characters, such as the invalid contract exercised by a negative type test.

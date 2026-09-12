@@ -28,7 +28,9 @@ export default defineConfig({
             let body = '';
             for await (const chunk of request) {
               body += chunk;
-              if (body.length > 20_000_000) throw new Error('evidence too large');
+              if (body.length > 20_000_000) {
+                throw new Error('evidence too large');
+              }
             }
             const { report, images } = JSON.parse(body);
             const directory = resolve(
@@ -42,8 +44,9 @@ export default defineConfig({
               JSON.stringify(report, null, 2) + '\n',
             );
             for (const [name, data] of Object.entries(images as Record<string, string>)) {
-              if (!/^[a-z0-9-]+$/.test(name) || !data.startsWith('data:image/png;base64,'))
+              if (!/^[a-z0-9-]+$/.test(name) || !data.startsWith('data:image/png;base64,')) {
                 throw new Error('invalid diagnostic image');
+              }
               await writeFile(
                 resolve(directory, `${name}.png`),
                 Buffer.from(data.slice(22), 'base64'),

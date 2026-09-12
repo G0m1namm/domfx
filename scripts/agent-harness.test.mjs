@@ -293,7 +293,9 @@ process.exitCode = command === process.env.DOMFX_TEST_FAIL_COMMAND ? 2 : 0;
       report.browserVerification,
       failure === 'test:browser:built' ? 'failed' : failure ? 'not-run' : 'passed',
     );
-    if (failure === 'signal') assert.equal(report.checks[0].signal, 'SIGTERM');
+    if (failure === 'signal') {
+      assert.equal(report.checks[0].signal, 'SIGTERM');
+    }
     if (['check', 'build:demo', 'test:browser:built'].includes(failure)) {
       assert.equal(report.checks.find((check) => check.command === failure).exitCode, 2);
     }
@@ -314,9 +316,15 @@ for (const scenario of [
       if (command === 'test:browser:built' && scenario !== 'missing') {
         pass(command, environment);
         const evidence = browserEvidence();
-        if (scenario === 'skipped') evidence.stats.skipped = 1;
-        if (scenario === 'empty') evidence.suites = [];
-        if (scenario === 'failed') evidence.errors = [{ message: 'Browser setup failed' }];
+        if (scenario === 'skipped') {
+          evidence.stats.skipped = 1;
+        }
+        if (scenario === 'empty') {
+          evidence.suites = [];
+        }
+        if (scenario === 'failed') {
+          evidence.errors = [{ message: 'Browser setup failed' }];
+        }
         if (scenario === 'expected-failure') {
           evidence.suites[0].specs[0].tests[0].expectedStatus = 'failed';
           evidence.suites[0].specs[0].tests[0].results[0].status = 'failed';

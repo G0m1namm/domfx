@@ -140,7 +140,9 @@ test('artifact inspection skips lifecycle scripts and creates no tarballs', (t) 
     write(`${path}/package.json`, JSON.stringify(manifest));
     write(`${path}/README.md`, 'Fixture package');
     for (const entry of Object.values(manifest.exports)) {
-      for (const target of Object.values(entry)) write(`${path}/${target}`, 'export {};');
+      for (const target of Object.values(entry)) {
+        write(`${path}/${target}`, 'export {};');
+      }
     }
   }
   checkReleaseArtifacts(root);

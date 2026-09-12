@@ -32,7 +32,9 @@ export function snapshotWorktree(directory) {
       const digest = createHash('sha256').update(contents).digest('hex');
       hash.update(JSON.stringify([file, stat.mode, digest]));
     } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
+      if (error.code !== 'ENOENT') {
+        throw error;
+      }
       hash.update(JSON.stringify([file, null]));
     }
   }
@@ -90,7 +92,9 @@ export function runVerification(directory, run) {
     report.sourceBefore = snapshotWorktree(directory);
     for (const check of report.checks) {
       check.status = 'running';
-      if (check.command === 'test:browser:built') report.browserVerification = 'running';
+      if (check.command === 'test:browser:built') {
+        report.browserVerification = 'running';
+      }
       save();
       const start = Date.now();
       const result = run(check.command, {
@@ -99,7 +103,9 @@ export function runVerification(directory, run) {
       check.durationMs = Date.now() - start;
       check.exitCode = result.status ?? null;
       check.signal = result.signal ?? null;
-      if (result.error) check.error = result.error.message;
+      if (result.error) {
+        check.error = result.error.message;
+      }
       if (
         check.command === 'test:browser:built' &&
         result.status === 0 &&
@@ -109,13 +115,17 @@ export function runVerification(directory, run) {
         validateBrowserReport(report.browserReport);
       }
       check.status = result.status === 0 && !result.error && !result.signal ? 'passed' : 'failed';
-      if (check.command === 'test:browser:built') report.browserVerification = check.status;
+      if (check.command === 'test:browser:built') {
+        report.browserVerification = check.status;
+      }
       report.sourceAfter = snapshotWorktree(directory);
       if (report.sourceBefore.digest !== report.sourceAfter.digest) {
         report.error = `Source changed during verification after ${check.command}. Run again after edits finish.`;
       }
       save();
-      if (check.status === 'failed' || report.error) break;
+      if (check.status === 'failed' || report.error) {
+        break;
+      }
     }
     report.status =
       !report.error && report.checks.every((check) => check.status === 'passed')
@@ -124,9 +134,13 @@ export function runVerification(directory, run) {
   } catch (error) {
     report.status = 'failed';
     report.error = error.message;
-    if (report.browserVerification === 'running') report.browserVerification = 'failed';
+    if (report.browserVerification === 'running') {
+      report.browserVerification = 'failed';
+    }
     for (const check of report.checks) {
-      if (check.status === 'running') check.status = 'failed';
+      if (check.status === 'running') {
+        check.status = 'failed';
+      }
     }
   }
   report.finishedAt = new Date().toISOString();
@@ -174,7 +188,9 @@ if (
       `Browser/GPU verification: ${report.browserVerification}. Evidence: ${report.browserReport}`,
     );
     console.log('Design review and broader browser/device coverage remain separate.');
-    if (report.error) console.error(report.error);
+    if (report.error) {
+      console.error(report.error);
+    }
     process.exitCode = report.status === 'passed' ? 0 : 1;
   }
 }

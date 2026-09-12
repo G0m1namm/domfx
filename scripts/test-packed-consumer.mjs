@@ -131,8 +131,9 @@ async function verify(browser, cwd, production, missingTransform) {
       assert.equal(report.fire.time1_5Hash, report.fire.seekBackHash);
       assert.notEqual(report.fire.time1_5Hash, report.fire.time2_5Hash);
       assert.deepEqual(report.gpuErrors, []);
-      for (const control of ['play', 'seek', 'reverse', 'dispose'])
+      for (const control of ['play', 'seek', 'reverse', 'dispose']) {
         await page.locator(`#${control}`).click();
+      }
       report = JSON.parse(await page.locator('#report').innerText());
       assert.deepEqual(report.disposal, { managedBytes: 0, overlayRemoved: true });
       writeJson(join(directory, `${label}.json`), report);

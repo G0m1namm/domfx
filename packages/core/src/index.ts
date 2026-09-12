@@ -22,6 +22,9 @@ export type EffectReason =
 export interface ManualEffectHandle {
   /** Settles after initialization or cleanup of a cancelled initialization. */
   readonly ready: Promise<void>;
+  /** Hide stale output and capture again. Resolves after this or a newer revision
+   * commits; rejects on failure, invalidation, disposal or an unavailable handle. */
+  refresh(): Promise<void>;
   readonly lifecycle: 'active' | 'suspended' | 'unavailable' | 'disposed';
   readonly raster: 'fresh' | 'refreshing' | 'stale';
   readonly reason: EffectReason | undefined;

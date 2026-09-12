@@ -61,6 +61,10 @@ canvas/device cleanup, preserved pointer/keyboard interaction, and successful re
 without disposing the failed handle. Invalid runtime options/hosts and both directions of
 nested ownership also reject without leaving claims.
 
+Fake animation-frame tests use the real attachment, capture and GPU renderer to verify
+one shared frame request, one commit per dirty target, manual time ownership, ambient
+pause/seek/resume, immutable seed, no per-frame capture, and cancellation on disposal.
+
 Unexpected page/console errors fail the tests. There are no automatic retries.
 Each test has a three-minute deadline; the browser suite has a ten-minute deadline.
 The harness also requires report evidence from both projects, with no skipped tests,

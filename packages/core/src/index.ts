@@ -18,7 +18,7 @@ export type EffectReason =
   | 'target-not-visible'
   | 'stale-raster';
 
-/** Manual controls do not own a clock or an animation adapter. */
+/** Readable controls shared by manual and ambient attachments. */
 export interface ManualEffectHandle {
   /** Settles after initialization or cleanup of a cancelled initialization. */
   readonly ready: Promise<void>;
@@ -33,6 +33,18 @@ export interface ManualEffectHandle {
   /** Finite values are clamped to [0, 1]. */
   intensity: number;
   dispose(): void;
+}
+
+export type ClockMode = 'manual' | 'ambient';
+
+export interface EffectHandle extends ManualEffectHandle {
+  readonly clock: ClockMode;
+  /** Manual mode is always paused. Independent of lifecycle suspension. */
+  readonly paused: boolean;
+  /** Freeze ambient time at the last committed frame; retain pending control writes. */
+  pause(): void;
+  /** Continue ambient time without changing seed. No-op in manual mode. */
+  resume(): void;
 }
 
 export interface CaptureFrame {
@@ -53,7 +65,8 @@ export function classifyAlpha(
   threshold = 128,
 ): Uint8Array {
   const result = new Uint8Array(frame.width * frame.height);
-  for (let i = 0; i < result.length; i += 1)
+  for (let i = 0; i < result.length; i += 1) {
     result[i] = frame.pixels[i * 4 + 3] >= threshold ? 1 : 0;
+  }
   return result;
 }

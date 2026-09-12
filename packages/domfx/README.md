@@ -46,12 +46,12 @@ instructions. MIT licensed; dependencies retain their own licenses.
 
 ## Manual fire attachment
 
-The root export provides an experimental, one-target manual API:
+The root export provides an experimental, one-target attachment API:
 
 ```ts
 import { attachFire } from '@domfx/browser';
 
-const effect = attachFire(target, { host, seed: 314, time: 1.5, intensity: 0.85 });
+const effect = attachFire(target, { host, clock: 'manual', seed: 314, time: 1.5, intensity: 0.85 });
 await effect.ready;
 if (effect.lifecycle === 'active') {
   effect.time = 2; // Absolute seconds. Seeking backwards is supported.
@@ -68,9 +68,33 @@ claim automatically; a later attachment can use the target without disposing the
 handle first. Disposing that old handle cannot release the new attachment's claim.
 Seed defaults to `0`,
 time to `0`, and intensity to `1`. Seed is read-only; finite intensity clamps to
-`[0, 1]`. Control writes paint synchronously from the same prepared raster, without
-capture or an internal animation clock. Writes after disposal update readable
-controls but cannot render or recreate resources.
+`[0, 1]`. Control writes update readable values immediately and coalesce into one
+render commit per dirty target on the next animation frame, using one domfx scheduler
+per document. The initial paint completes before `ready` resolves. Frames reuse the
+prepared raster without capture. Writes after disposal update readable controls but
+cannot render or recreate resources.
+
+`clock` defaults to `'manual'`; the handle exposes its immutable mode. Manual time
+never advances automatically, including after `resume()`. Choose `'ambient'` to advance
+time in seconds with the document's animation frames after initialization:
+
+```ts
+const effect = attachFire(target, { host, clock: 'ambient', seed: 314 });
+await effect.ready;
+effect.pause(); // Freeze at the last committed time; seed is unchanged.
+effect.time = 2; // Paint this time on the next frame while remaining paused.
+effect.resume(); // Continue from 2, excluding the paused interval.
+```
+
+The returned `EffectHandle` extends the existing `ManualEffectHandle` control shape
+with `clock`, `paused`, `pause()` and `resume()`. Pause/resume are idempotent, can be
+called before `ready`, and do not recapture. Manual mode is always paused. An explicit
+time write while ambient is running resets the time origin to that value; subsequent
+frames add elapsed time from the write. Ambient time is the last committed time when
+read. Clock pause is independent of lifecycle suspension: pausing keeps fresh output
+visible, and seeking while paused does not resume the clock. Existing visibility/motion
+suspension stops frame scheduling; resumption excludes the suspended interval. Stale,
+unavailable and disposed attachments leave the scheduler, without a retry loop.
 
 `ready` settles after initialization, including cleanup of cancelled initial work.
 Environmental failures resolve with `lifecycle: 'unavailable'` and a typed `EffectReason`

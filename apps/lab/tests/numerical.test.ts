@@ -7,16 +7,17 @@ import { classifyAlpha } from '@domfx/core';
 import { exactDistanceField, signedDistanceOracle } from '../src/diagnostics/distance-oracle.js';
 
 test('full-field oracle preserves an inner hole and disconnected island', () => {
-  const width = 7,
-    height = 6;
+  const width = 7;
+  const height = 6;
   const mask = Uint8Array.from([
     0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1,
     1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
   ]);
   const actual = exactDistanceField(mask, width, height);
   const expected = signedDistanceOracle(mask, width, height);
-  for (let i = 0; i < mask.length; i += 1)
+  for (let i = 0; i < mask.length; i += 1) {
     assert.ok(Math.abs(actual[i] - expected[i]) < 1e-5, `pixel ${i}`);
+  }
 });
 
 test('separable Float64 oracle matches exhaustive pixel-center distances', () => {
@@ -33,11 +34,14 @@ test('separable Float64 oracle matches exhaustive pixel-center distances', () =>
         seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
         return seed % 7 < trial ? 1 : 0;
       });
-      const actual = exactDistanceField(mask, width, height),
-        expected = signedDistanceOracle(mask, width, height);
+      const actual = exactDistanceField(mask, width, height);
+      const expected = signedDistanceOracle(mask, width, height);
       for (let i = 0; i < mask.length; i++) {
-        if (!Number.isFinite(expected[i])) assert.equal(actual[i], expected[i]);
-        else assert.ok(Math.abs(actual[i] - expected[i]) < 1e-12);
+        if (!Number.isFinite(expected[i])) {
+          assert.equal(actual[i], expected[i]);
+        } else {
+          assert.ok(Math.abs(actual[i] - expected[i]) < 1e-12);
+        }
       }
     }
   }

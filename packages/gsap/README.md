@@ -48,12 +48,45 @@ It does not register a plugin or change global GSAP settings.
 Use one animation owner for an attachment's controls at a time. Starting values are
 fixed when binding; later direct writes do not redefine the animation's start.
 Binding before `ready` is supported because initialization reads the latest controls.
-Unavailable, stale, reduced-motion and disposed attachments retain the browser
-package's existing rendering policy. Dispose the binding when it is no longer needed;
-attachment disposal alone does not remove animations from the caller's timeline.
-Binding disposal is idempotent and does not restore starting values or dispose the
-attachment. Bindings created inside `gsap.context()` participate in its normal revert
-behavior; siblings created outside the context remain owned by the caller.
+Unavailable, stale and reduced-motion attachments retain the browser package's existing
+rendering policy. Attachment disposal immediately detaches all of its bindings; binding
+an already disposed attachment throws before creating a tween.
+Binding disposal is idempotent and retains the last controls. By default it borrows the
+attachment. Set `disposeEffect: true` to transfer attachment cleanup to the binding:
+both binding disposal and context revert then dispose the effect. Synchronous validation
+failure leaves ownership with the caller. Bindings created inside `gsap.context()`
+participate in its normal revert behavior; siblings created outside the context remain
+owned by the caller. Context cleanup also unregisters the attachment disposal listener.
+
+For an asynchronous operation that returns an attachment, register cleanup synchronously
+with `bindFireAsync()`. This helper requires explicit `disposeEffect: true` ownership so
+it can dispose a result arriving after teardown:
+
+```ts
+import { bindFireAsync } from '@domfx/gsap';
+
+const context = gsap.context(() => {
+  const pending = bindFireAsync(loadAttachment(), timeline, {
+    time: 5.5,
+    intensity: 0.25,
+    duration: 4,
+    disposeEffect: true,
+  });
+  void pending.ready.catch(reportSetupError);
+});
+context.revert(); // Safe even before loadAttachment() resolves.
+```
+
+`loadAttachment()` is caller code returning `Promise<EffectHandle>`. The returned
+binding exposes `dispose()` immediately and `ready: Promise<void>` for completion.
+It binds when the handle promise resolves; it does not additionally await `effect.ready`.
+On revert or disposal, pending setup becomes permanently cancelled. A late result is
+disposed without creating a tween, even if the context is reused. Successful async
+bindings are removed by the original context's cleanup, retaining their last controls.
+Rejected promises propagate through `ready`; binding setup failure also disposes the
+owned result. The helper adds no cancellation to the caller's underlying operation.
+Use `context.revert()` for cleanup: GSAP's bare `context.kill()` does not run custom
+cleanup callbacks.
 
 Run `pnpm demo` and open `/gsap.html` for the built-export consumer and its Play,
 Seek, Reverse and separate disposal controls. `pnpm agent:verify` exercises it in

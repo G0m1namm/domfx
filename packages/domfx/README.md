@@ -62,15 +62,24 @@ effect.dispose(); // Safe before ready, and safe to call twice.
 
 `host` must be a connected, positioned HTML element and `target` a strict descendant
 in the same document. Duplicate or nested target ownership throws synchronously,
-as do invalid host geometry and nonfinite/out-of-float32-range parameters. Dispose
-an unavailable attachment before claiming that target again. Seed defaults to `0`,
+as do invalid options, non-HTML hosts, invalid host geometry and nonfinite/out-of-float32-range
+parameters. Rejected calls never claim ownership. Unavailable attachments release their
+claim automatically; a later attachment can use the target without disposing the failed
+handle first. Disposing that old handle cannot release the new attachment's claim.
+Seed defaults to `0`,
 time to `0`, and intensity to `1`. Seed is read-only; finite intensity clamps to
 `[0, 1]`. Control writes paint synchronously from the same prepared raster, without
 capture or an internal animation clock. Writes after disposal update readable
 controls but cannot render or recreate resources.
 
 `ready` settles after initialization, including cleanup of cancelled initial work.
-Environmental failures resolve with `lifecycle: 'unavailable'` and a readable `reason`.
+Environmental failures resolve with `lifecycle: 'unavailable'` and a typed `EffectReason`
+code in `reason`. Initial failures include `no-webgpu`, `no-adapter`, `capture-failed`,
+`empty-mask`, `capture-budget`, `aggregate-budget`, `missing-exterior`,
+`canvas-webgpu-unavailable`, `renderer-failed`, and `reduced-motion`.
+`reasonDetail` preserves the underlying message for diagnostics; branch on `reason`.
+Failed setup releases its capture pixels, canvas backing store, listeners and GPU resources
+before `ready` settles.
 The original target remains visible and interactive. Each handle owns one renderer
 and a pointer-transparent, `aria-hidden` canvas appended directly to its host,
 outside the captured subtree. Disposal removes output immediately; pending initial

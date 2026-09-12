@@ -103,7 +103,15 @@ export class GpuExperiment {
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) throw new Error('no-adapter');
     const device = await adapter.requestDevice();
-    return new GpuExperiment(tgpu.initFromDevice({ device }), adapter.info);
+    let root: TgpuRoot | undefined;
+    try {
+      root = tgpu.initFromDevice({ device });
+      return new GpuExperiment(root, adapter.info);
+    } catch (error) {
+      root?.destroy();
+      device.destroy();
+      throw error;
+    }
   }
 
   get device(): GPUDevice {

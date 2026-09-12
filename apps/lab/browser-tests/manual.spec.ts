@@ -280,3 +280,223 @@ test('runtime reduced motion suspends and resumes the same manual raster', async
   await expect(page.locator('#manual-host canvas')).toBeVisible();
   expect(await page.evaluate(() => window.manual.effect.raster)).toBe('fresh');
 });
+
+for (const mode of [
+  'no-webgpu',
+  'no-adapter',
+  'capture-failed',
+  'empty-mask',
+  'capture-budget',
+  'renderer-failed',
+  'canvas-webgpu-unavailable',
+] as const) {
+  test(`initial ${mode} releases ownership and resources`, async ({ page }) => {
+    await page.addInitScript((failure) => {
+      const gpu = navigator.gpu;
+      const requestAdapter = gpu.requestAdapter.bind(gpu);
+      const decode = HTMLImageElement.prototype.decode;
+      const getImageData = CanvasRenderingContext2D.prototype.getImageData;
+      const getContext = HTMLCanvasElement.prototype.getContext;
+      const canvases = new Set<HTMLCanvasElement>();
+      let devices = 0;
+      let destroyed = 0;
+      HTMLCanvasElement.prototype.getContext = function (...args) {
+        canvases.add(this);
+        if (failure === 'canvas-webgpu-unavailable' && args[0] === 'webgpu') return null;
+        return Reflect.apply(getContext, this, args);
+      };
+      gpu.requestAdapter = async (options) => {
+        if (failure === 'no-adapter') return null;
+        const adapter = await requestAdapter(options);
+        if (!adapter) throw new Error('test requires a real GPU adapter');
+        const requestDevice = adapter.requestDevice.bind(adapter);
+        adapter.requestDevice = async (descriptor) => {
+          const device = await requestDevice(descriptor);
+          devices += 1;
+          const destroy = device.destroy.bind(device);
+          device.destroy = () => {
+            destroyed += 1;
+            destroy();
+          };
+          if (failure === 'renderer-failed')
+            device.createRenderPipeline = () => {
+              throw new Error('injected renderer construction failure');
+            };
+          return device;
+        };
+        return adapter;
+      };
+      if (failure === 'no-webgpu')
+        Object.defineProperty(navigator, 'gpu', { value: undefined, configurable: true });
+      if (failure === 'capture-failed')
+        HTMLImageElement.prototype.decode = async () => {
+          throw new Error('injected capture decode failure');
+        };
+      if (failure === 'empty-mask')
+        CanvasRenderingContext2D.prototype.getImageData = function (...args) {
+          const data = Reflect.apply(getImageData, this, args);
+          // Alpha below the agreed 128 threshold is an empty silhouette.
+          for (let i = 3; i < data.data.length; i += 4) data.data[i] = 127;
+          return data;
+        };
+      document.addEventListener(
+        'inspect-failure',
+        () => {
+          document.documentElement.dataset.resources = JSON.stringify({
+            devices,
+            destroyed,
+            canvasesReleased: [...canvases].every(
+              (canvas) => canvas.width === 0 && canvas.height === 0 && !canvas.isConnected,
+            ),
+          });
+          Object.defineProperty(navigator, 'gpu', { value: gpu, configurable: true });
+          gpu.requestAdapter = requestAdapter;
+          HTMLImageElement.prototype.decode = decode;
+          CanvasRenderingContext2D.prototype.getImageData = getImageData;
+          HTMLCanvasElement.prototype.getContext = getContext;
+        },
+        { once: true },
+      );
+    }, mode);
+    if (mode === 'capture-budget') {
+      await page.route('**/manual.html', async (route) => {
+        const response = await route.fetch();
+        const body = (await response.text())
+          .replace(/width:\s*160px/g, 'width:600px')
+          .replace(/height:\s*64px/g, 'height:600px');
+        await route.fulfill({ response, body });
+      });
+    }
+    await page.goto('/manual.html');
+    await expect(page.locator('#state')).toContainText('"lifecycle":"unavailable"');
+    expect(await page.evaluate(() => window.manual.effect.reason)).toBe(mode);
+    if (mode === 'capture-failed' || mode === 'renderer-failed')
+      expect(await page.evaluate(() => window.manual.effect.reasonDetail)).toBe(
+        mode === 'capture-failed'
+          ? 'injected capture decode failure'
+          : 'injected renderer construction failure',
+      );
+    await page.evaluate(() => document.dispatchEvent(new Event('inspect-failure')));
+    expect(await page.locator('html').getAttribute('data-resources')).toBe(
+      JSON.stringify({
+        devices: mode === 'no-webgpu' || mode === 'no-adapter' ? 0 : 1,
+        destroyed: mode === 'no-webgpu' || mode === 'no-adapter' ? 0 : 1,
+        canvasesReleased: true,
+      }),
+    );
+    await expect(page.locator('#manual-host canvas')).toHaveCount(0);
+    await expect(page.locator('#manual-target')).toHaveText('Original target');
+    if (mode === 'capture-budget')
+      await page.addStyleTag({ content: '#manual-target { width:160px; height:64px; }' });
+    expect(await page.locator('#manual-target').getAttribute('style')).toBeNull();
+    await page.locator('#manual-target').click();
+    await page.locator('#manual-target').press('Enter');
+    await expect(page.locator('#clicks')).toHaveText('Target clicks: 2');
+    const result = await page.evaluate(async () => {
+      const { effect, attach } = window.manual;
+      const host = document.querySelector<HTMLElement>('#manual-host');
+      const target = document.querySelector<HTMLElement>('#manual-target');
+      if (!host || !target) throw new Error('fixture');
+      target.blur();
+      const next = attach(target, { host });
+      await next.ready;
+      // Disposing the failed handle must not release the new owner's claim.
+      effect.dispose();
+      let duplicateRejected = false;
+      try {
+        attach(target, { host });
+      } catch {
+        duplicateRejected = true;
+      }
+      const lifecycle = next.lifecycle;
+      next.dispose();
+      return { lifecycle, duplicateRejected };
+    });
+    expect(result).toEqual({ lifecycle: 'active', duplicateRejected: true });
+  });
+}
+
+test('programmer errors never register a target', async ({ page }) => {
+  await page.goto('/manual.html');
+  await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
+  const results = await page.evaluate(async () => {
+    const { effect, attach } = window.manual;
+    effect.dispose();
+    const host = document.querySelector<HTMLElement>('#manual-host');
+    const target = document.querySelector<HTMLElement>('#manual-target');
+    if (!host || !target) throw new Error('fixture');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.style.position = 'relative';
+    const svgTarget = document.createElementNS(svg.namespaceURI, 'rect');
+    svg.append(svgTarget);
+    host.append(svg);
+    const foreignHost = document.implementation.createHTMLDocument().body;
+    const cases: [unknown, unknown, string][] = [
+      [null, { host }, 'invalid-effect-target'],
+      [{}, { host }, 'invalid-effect-target'],
+      [target, undefined, 'invalid-fire-options'],
+      [target, null, 'invalid-fire-options'],
+      [target, 1, 'invalid-fire-options'],
+      [target, {}, 'invalid-effect-host'],
+      [target, { host: null }, 'invalid-effect-host'],
+      [target, { host: {} }, 'invalid-effect-host'],
+      [target, { host: foreignHost }, 'invalid-effect-host'],
+      [target, { host: document.body }, 'invalid-effect-host'],
+      [host, { host }, 'invalid-effect-host'],
+      [document.body, { host }, 'invalid-effect-host'],
+      [svgTarget, { host: svg }, 'invalid-effect-host'],
+    ];
+    for (const parameter of ['seed', 'time', 'intensity']) {
+      for (const value of [NaN, Infinity, -Infinity, Number.MAX_VALUE, null, '1']) {
+        cases.push([target, { host, [parameter]: value }, 'invalid-fire-parameter']);
+      }
+    }
+    const results: boolean[] = [];
+    for (const [candidate, options, expected] of cases) {
+      try {
+        const unexpected = Reflect.apply(attach, undefined, [candidate, options]);
+        unexpected.dispose();
+        results.push(false);
+      } catch (error) {
+        results.push(error instanceof Error && error.message === expected);
+      }
+      const valid = attach(target, { host });
+      valid.dispose();
+      await valid.ready;
+    }
+    // A disconnected host and its descendant also reject before registration.
+    host.remove();
+    try {
+      attach(target, { host });
+      results.push(false);
+    } catch (error) {
+      results.push(error instanceof Error && error.message === 'invalid-effect-host');
+    }
+    document.body.append(host);
+    const wrapper = document.createElement('div');
+    target.before(wrapper);
+    wrapper.append(target);
+    const valid = attach(target, { host });
+    await valid.ready;
+    for (const candidate of [target, target.querySelector('span'), wrapper]) {
+      try {
+        Reflect.apply(attach, undefined, [candidate, { host }]);
+        results.push(false);
+      } catch (error) {
+        results.push(error instanceof Error && error.message === 'effect-target-owned');
+      }
+    }
+    results.push(valid.lifecycle === 'active');
+    valid.dispose();
+    // The rejected ancestor/descendant claims must not survive the actual owner.
+    for (const candidate of [wrapper, target.querySelector('span')]) {
+      if (!candidate) throw new Error('fixture');
+      const next = attach(candidate, { host });
+      next.dispose();
+      await next.ready;
+    }
+    return results;
+  });
+  expect(results.length).toBe(36);
+  expect(results.every(Boolean)).toBe(true);
+});

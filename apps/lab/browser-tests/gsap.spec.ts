@@ -24,6 +24,140 @@ async function openConsumer(page: Page) {
   await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
 }
 
+test('attachment disposal detaches its binding and preserves caller siblings', async ({ page }) => {
+  await openConsumer(page);
+  const result = await page.evaluate(() => {
+    const { effect, timeline, binding } = window.bindingConsumer;
+    const sibling = { value: 0 };
+    timeline.to(sibling, { value: 10, duration: 10, ease: 'none' }, 0);
+    timeline.seek(2);
+    const time = effect.time;
+    effect.dispose();
+    effect.dispose();
+    timeline.seek(8);
+    const result = {
+      children: timeline.getChildren().length,
+      time: effect.time,
+      sibling: sibling.value,
+      retained: time,
+    };
+    binding.dispose();
+    return result;
+  });
+  expect(result).toEqual({ children: 1, time: 3.5, sibling: 8, retained: 3.5 });
+});
+
+test('context ownership and late async cleanup preserve the real consumer host', async ({
+  page,
+}) => {
+  await openConsumer(page);
+  const result = await page.evaluate(async () => {
+    const { effect, timeline, binding, bind, bindAsync, gsap } = window.bindingConsumer;
+    binding.dispose();
+    const sibling = { value: 0 };
+    timeline.to(sibling, { value: 10, duration: 10, ease: 'none' }, 0);
+    const options = { time: 4, intensity: 1, duration: 4, position: 0 };
+    const borrowed = gsap.context(() => {
+      bind(effect, timeline, options);
+    });
+    borrowed.revert();
+    borrowed.revert();
+    const borrowedLifecycle = effect.lifecycle;
+    const context = gsap.context(() => {});
+    // Promise.resolve still leaves a deterministic microtask gap before binding.
+    const pending = context.add(() =>
+      bindAsync(Promise.resolve(effect), timeline, { ...options, disposeEffect: true }),
+    );
+    context.revert();
+    context.revert();
+    await pending.ready;
+    pending.dispose();
+    timeline.seek(8);
+    return {
+      borrowedLifecycle,
+      lifecycle: effect.lifecycle,
+      children: timeline.getChildren().length,
+      sibling: sibling.value,
+      layers: document.querySelectorAll('#host canvas').length,
+    };
+  });
+  expect(result).toEqual({
+    borrowedLifecycle: 'active',
+    lifecycle: 'disposed',
+    children: 1,
+    sibling: 8,
+    layers: 0,
+  });
+});
+
+test('owned context cleanup releases attachments and disposal listeners run once', async ({
+  page,
+}) => {
+  await openConsumer(page);
+  const result = await page.evaluate(() => {
+    const { effect, timeline, binding, bind, gsap } = window.bindingConsumer;
+    binding.dispose();
+    let notified = 0;
+    const unsubscribe = effect.onDispose(() => {
+      notified += 100;
+    });
+    unsubscribe();
+    unsubscribe();
+    effect.onDispose(() => {
+      notified += 1;
+    });
+    const context = gsap.context(() => {
+      bind(effect, timeline, { time: 4, intensity: 1, duration: 4, disposeEffect: true });
+    });
+    timeline.seek(2);
+    context.revert();
+    context.revert();
+    effect.dispose();
+    const stop = effect.onDispose(() => {
+      notified += 1;
+    });
+    stop();
+    return {
+      notified,
+      lifecycle: effect.lifecycle,
+      children: timeline.getChildren().length,
+      layers: document.querySelectorAll('#host canvas').length,
+    };
+  });
+  expect(result).toEqual({ notified: 2, lifecycle: 'disposed', children: 0, layers: 0 });
+});
+
+test('a throwing disposal listener cannot retain bindings or browser resources', async ({
+  page,
+}) => {
+  await openConsumer(page);
+  const result = await page.evaluate(() => {
+    const { effect, timeline, binding, bind } = window.bindingConsumer;
+    binding.dispose();
+    effect.onDispose(() => {
+      throw new Error('listener-failed');
+    });
+    bind(effect, timeline, { time: 4, intensity: 1, duration: 4 });
+    let error = '';
+    try {
+      effect.dispose();
+    } catch (failure) {
+      error = String(failure);
+    }
+    effect.dispose();
+    return {
+      error,
+      children: timeline.getChildren().length,
+      layers: document.querySelectorAll('#host canvas').length,
+    };
+  });
+  expect(result).toEqual({
+    error: 'AggregateError: effect-disposal-callback-failed',
+    children: 0,
+    layers: 0,
+  });
+});
+
 test('host seek/reverse reproduces GPU output through one scheduled commit without capture', async ({
   page,
 }, testInfo) => {

@@ -1,7 +1,7 @@
 import { gsap } from 'gsap';
 
 import { attachFire } from '@domfx/browser';
-import { bindFire } from '@domfx/gsap';
+import { bindFire, bindFireAsync } from '@domfx/gsap';
 
 const host = document.querySelector<HTMLElement>('#host');
 const target = document.querySelector<HTMLButtonElement>('#target');
@@ -30,7 +30,15 @@ function dispose() {
   report();
 }
 
-const consumer = { effect, timeline, binding, bind: bindFire, attach: attachFire, gsap };
+const consumer = {
+  effect,
+  timeline,
+  binding,
+  bind: bindFire,
+  bindAsync: bindFireAsync,
+  attach: attachFire,
+  gsap,
+};
 declare global {
   interface Window {
     bindingConsumer: typeof consumer;

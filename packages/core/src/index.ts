@@ -32,6 +32,8 @@ export interface ManualEffectHandle {
   time: number;
   /** Finite values are clamped to [0, 1]. */
   intensity: number;
+  /** Called once on disposal, or immediately if disposed. Returns an unsubscribe function. */
+  onDispose(callback: () => void): () => void;
   dispose(): void;
 }
 

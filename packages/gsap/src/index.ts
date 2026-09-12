@@ -11,10 +11,12 @@ export interface FireBindingOptions {
   readonly duration: number;
   /** GSAP insertion position; omitted appends to the host timeline. */
   readonly position?: gsap.Position;
+  /** Transfer attachment cleanup to this binding, including context revert. Defaults to false. */
+  readonly disposeEffect?: boolean;
 }
 
 export interface FireBinding {
-  /** Remove only the owned child, retaining the attachment's last values. Idempotent. */
+  /** Remove the owned child and dispose an explicitly owned attachment. Idempotent. */
   dispose(): void;
 }
 
@@ -26,6 +28,9 @@ export function bindFire(
 ): FireBinding {
   if (effect.clock !== 'manual') {
     throw new Error('GSAP binding requires a manual attachment');
+  }
+  if (effect.lifecycle === 'disposed') {
+    throw new Error('GSAP binding requires a live attachment');
   }
   if (
     !Number.isFinite(options.time) ||
@@ -71,19 +76,79 @@ export function bindFire(
       lazy: false,
     },
   );
-  timeline.add(child, options.position);
-  const position = child.startTime();
-  child.paused(false);
-  // smoothChildTiming can move an unpaused child to the host's current playhead.
-  // Reinsert at the resolved position so binding an advanced host still seeks correctly.
-  if (child.startTime() !== position) {
-    timeline.add(child, position);
+  let unsubscribe: (() => void) | undefined;
+  function dispose() {
+    if (disposed) {
+      return;
+    }
+    disposed = true;
+    unsubscribe?.();
+    child.kill();
+    if (options.disposeEffect) {
+      effect.dispose();
+    }
   }
 
-  return {
-    dispose() {
-      disposed = true;
-      child.kill();
-    },
-  };
+  try {
+    unsubscribe = effect.onDispose(dispose);
+    timeline.add(child, options.position);
+    const position = child.startTime();
+    child.paused(false);
+    // smoothChildTiming can move an unpaused child to the host's current playhead.
+    // Reinsert at the resolved position so binding an advanced host still seeks correctly.
+    if (child.startTime() !== position) {
+      timeline.add(child, position);
+    }
+    gsap.context()?.add(() => dispose);
+  } catch (error) {
+    dispose();
+    throw error;
+  }
+
+  return { dispose };
+}
+
+export interface AsyncFireBinding extends FireBinding {
+  /** Settles after binding or late-result cleanup; rejects if attachment or binding setup fails. */
+  readonly ready: Promise<void>;
+}
+
+/** Own a pending attachment; register context cleanup before its promise settles. */
+export function bindFireAsync(
+  attachment: Promise<EffectHandle>,
+  timeline: gsap.core.Timeline,
+  options: FireBindingOptions & { readonly disposeEffect: true },
+): AsyncFireBinding {
+  if (options.disposeEffect !== true) {
+    throw new Error('Async GSAP binding requires explicit attachment ownership');
+  }
+  let disposed = false;
+  let effect: EffectHandle | undefined;
+  let binding: FireBinding | undefined;
+
+  function dispose() {
+    if (disposed) {
+      return;
+    }
+    disposed = true;
+    binding?.dispose();
+    effect?.dispose();
+  }
+
+  gsap.context()?.add(() => dispose);
+  const ready = attachment.then((result) => {
+    effect = result;
+    if (disposed) {
+      result.dispose();
+      return;
+    }
+    try {
+      binding = bindFire(result, timeline, { ...options, disposeEffect: false });
+    } catch (error) {
+      dispose();
+      throw error;
+    }
+  });
+
+  return { ready, dispose };
 }

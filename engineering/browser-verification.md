@@ -91,6 +91,15 @@ checks Document/device isolation and owning-Document capability detection. A sim
 device-loss notification checks cleanup of both owners. Successful rendering always uses
 real GPU work; notification injection does not establish hardware-loss behavior.
 
+Memory admission checks hold three one-million-pixel captures pending and require a
+fourth to reject before capture. Concurrent replacements verify retained-frame and
+pending-output accounting, rejected refresh promises, stale-output hiding and zero
+reservations after cleanup. Disposal and simulated device loss during capture keep
+bytes reserved until late completion. Existing refresh/supersession and shared-loss
+scenarios also check reservation cleanup. Pure ledger tests cover exact decimal target
+and Document boundaries, atomic failed reconciliation, dimension changes and idempotent
+release. These are bounded accounting checks, not process-memory or total-VRAM measurements.
+
 The `/gsap.html` optional-package consumer verifies starting control snapshots,
 callback-suppressed host seeking, reverse and fixed-time GPU output, one scheduled
 commit for multiple writes, and no per-frame capture. It checks ambient rejection,

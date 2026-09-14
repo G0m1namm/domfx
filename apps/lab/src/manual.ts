@@ -1,5 +1,6 @@
 import { attachFire, type EffectHandle } from '@domfx/browser';
 
+import { verifyMemory } from './memory-checks.js';
 import { verifyRefresh } from './refresh-checks.js';
 import {
   verifyDocumentIsolation,
@@ -42,6 +43,7 @@ declare global {
       attach: typeof attachFire;
       capture: typeof capture;
       verifyRefresh: typeof verifyRefresh;
+      verifyMemory: typeof verifyMemory;
       verifySharedTargets: typeof verifySharedTargets;
       verifySharedInitialization: typeof verifySharedInitialization;
       verifyDocumentIsolation: typeof verifyDocumentIsolation;
@@ -54,6 +56,7 @@ window.manual = {
   attach: attachFire,
   capture,
   verifyRefresh,
+  verifyMemory,
   verifySharedTargets,
   verifySharedInitialization,
   verifyDocumentIsolation,

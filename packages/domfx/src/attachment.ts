@@ -1,7 +1,8 @@
 import type { CaptureFrame, ClockMode, EffectHandle, EffectReason } from '@domfx/core';
 
-import { captureElement } from './browser.js';
+import { captureElementWithReservation, measureCapture } from './browser.js';
 import type { PreparedGpuFrame } from './gpu.js';
+import { estimateFrameMemory, memoryFor, type AllocationReservation } from './memory.js';
 import { measureEffectPlacement, scaleToViewport } from './placement.js';
 import { acquireRenderer, type AttachmentRenderer } from './renderer-service.js';
 import { schedulerFor } from './scheduler.js';
@@ -39,7 +40,7 @@ function watchDeviceLoss(device: GPUDevice, callback: (info: GPUDeviceLostInfo) 
 
 /** Internal adapter seam for controlled lifecycle verification in the lab. */
 export interface AttachmentAdapters {
-  capture: typeof captureElement;
+  capture: typeof captureElementWithReservation;
   /** One owned reference; destroy releases it. attachFire supplies a shared service lease. */
   createRenderer: () => Promise<AttachmentRenderer>;
 }
@@ -47,7 +48,7 @@ export interface AttachmentAdapters {
 /** Batch control writes and explicitly refresh captured paint. */
 export function attachFire(target: Element, options: FireOptions): EffectHandle {
   return attachFireWithAdapters(target, options, {
-    capture: captureElement,
+    capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
   });
 }
@@ -112,6 +113,8 @@ export function attachFireWithAdapters(
   let service: AttachmentRenderer | undefined;
   let unwatchDeviceLoss: (() => void) | undefined;
   let prepared: PreparedGpuFrame | undefined;
+  let retainedMemory: AllocationReservation | undefined;
+  const memory = memoryFor(document);
   let frame: CaptureFrame | undefined;
   let context: GPUCanvasContext | null = null;
   let work: Promise<void> | undefined;
@@ -179,6 +182,8 @@ export function attachFireWithAdapters(
 
     prepared?.destroy();
     prepared = undefined;
+    retainedMemory?.release();
+    retainedMemory = undefined;
     unwatchDeviceLoss?.();
     unwatchDeviceLoss = undefined;
 
@@ -254,6 +259,7 @@ export function attachFireWithAdapters(
       case 'empty-mask':
       case 'missing-exterior':
       case 'aggregate-budget':
+      case 'target-budget':
       case 'canvas-webgpu-unavailable':
       case 'unsupported-placement':
       case 'reduced-motion':
@@ -333,11 +339,20 @@ export function attachFireWithAdapters(
     );
   }
 
-  function captureRevision(requestedRevision: number, requestedGeneration: number) {
+  function captureRevision(
+    requestedRevision: number,
+    requestedGeneration: number,
+    reserve: (width: number, height: number) => void,
+  ) {
     const previous = captures.get(target) ?? Promise.resolve();
-    const captured = previous.then(() =>
-      current(requestedRevision, requestedGeneration) ? adapters.capture(target) : undefined,
-    );
+    const captured = previous.then(() => {
+      if (!current(requestedRevision, requestedGeneration)) {
+        return undefined;
+      }
+      const estimate = measureCapture(target);
+      reserve(estimate.width, estimate.height);
+      return adapters.capture(target, {}, reserve);
+    });
     const settled = captured
       .then(
         () => {},
@@ -375,20 +390,39 @@ export function attachFireWithAdapters(
         const requestedGeneration = generation;
         let nextFrame: CaptureFrame | undefined;
         let nextPrepared: PreparedGpuFrame | undefined;
+        let reservation: AllocationReservation | undefined;
+        const reserve = (width: number, height: number) => {
+          const estimate = estimateFrameMemory(width, height);
+          if (reservation) {
+            reservation.reconcile(estimate);
+          } else {
+            reservation = memory.reserve(target, estimate);
+          }
+        };
         let failureReason: EffectReason = 'capture-failed';
         try {
           if (!current(requestedRevision, requestedGeneration)) {
             continue;
           }
-          nextFrame = await captureRevision(requestedRevision, requestedGeneration);
+          nextFrame = await captureRevision(requestedRevision, requestedGeneration, reserve);
           if (!nextFrame || !current(requestedRevision, requestedGeneration)) {
             continue;
+          }
+          reserve(nextFrame.width, nextFrame.height);
+          if (nextFrame.pixels.byteLength !== nextFrame.width * nextFrame.height * 4) {
+            throw new Error('invalid-frame');
           }
           failureReason = 'renderer-failed';
           nextPrepared = await service.prepare(nextFrame);
           if (!current(requestedRevision, requestedGeneration)) {
             continue;
           }
+
+          const actual = estimateFrameMemory(nextPrepared.width, nextPrepared.height);
+          if (nextPrepared.width !== nextFrame.width || nextPrepared.height !== nextFrame.height) {
+            throw new Error('invalid-frame');
+          }
+          reservation?.reconcile({ ...actual, managedBytes: nextPrepared.managedBytes });
 
           // No await between installing and painting the replacement. Keep the
           // previous resources alive until presentation has consumed the new frame.
@@ -405,6 +439,9 @@ export function attachFireWithAdapters(
             usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
           });
           const previous = prepared;
+          const previousMemory = retainedMemory;
+          retainedMemory = reservation;
+          reservation = undefined;
           prepared = nextPrepared;
           nextPrepared = undefined;
           frame = nextFrame;
@@ -412,6 +449,7 @@ export function attachFireWithAdapters(
           raster = 'fresh';
           paint();
           previous?.destroy();
+          previousMemory?.release();
           if (raster === 'fresh') {
             for (const refresh of refreshes.splice(0)) {
               refresh.resolve();
@@ -429,6 +467,14 @@ export function attachFireWithAdapters(
         } finally {
           nextPrepared?.destroy();
           nextFrame?.release();
+          if (frame && nextFrame === frame && prepared && retainedMemory) {
+            retainedMemory.reconcile({
+              ...estimateFrameMemory(frame.width, frame.height),
+              managedBytes: prepared.managedBytes,
+              captureBytes: 0,
+            });
+          }
+          reservation?.release();
         }
       }
     } catch (error) {

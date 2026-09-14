@@ -276,9 +276,9 @@ for (const ending of ['stale', 'renderer-failed'] as const) {
         lifecycle: ending === 'stale' ? 'suspended' : 'unavailable',
         raster: 'stale',
         reason: ending === 'stale' ? 'stale-raster' : 'renderer-failed',
-        pending: 0,
+        pending: ending === 'stale' ? 1 : 0,
       },
-      pendingAfterWrites: 0,
+      pendingAfterWrites: ending === 'stale' ? 1 : 0,
     });
   });
 }

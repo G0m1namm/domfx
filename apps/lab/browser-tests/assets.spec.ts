@@ -171,7 +171,7 @@ test('a loaded programmatic font without an embeddable source rejects and cleans
 });
 
 for (const kind of ['image', 'font'] as const) {
-  test(`initial attachment waits for ${kind} readiness; later font and asset signals hide stale output`, async ({
+  test(`initial attachment waits for ${kind} readiness; later font and asset signals refresh`, async ({
     page,
   }) => {
     const file = kind === 'font' ? 'block.ttf' : 'split.png';
@@ -193,12 +193,21 @@ for (const kind of ['image', 'font'] as const) {
     expect(await page.evaluate(() => window.assets.effect?.lifecycle)).toBe('suspended');
     release();
     await expect.poll(() => page.evaluate(() => window.assets.effect?.lifecycle)).toBe('active');
-    await page.evaluate(() => document.fonts.dispatchEvent(new Event('loadingdone')));
-    expect(await page.evaluate(() => window.assets.effect?.raster)).toBe('stale');
-    await expect(page.locator('#host canvas')).toBeHidden();
-    await page.evaluate(() => window.assets.effect?.refresh());
-    await page.evaluate(() => document.querySelector('#target')!.dispatchEvent(new Event('error')));
-    expect(await page.evaluate(() => window.assets.effect?.raster)).toBe('stale');
+    for (const signal of ['font', 'load', 'error']) {
+      const hidden = await page.evaluate((signal) => {
+        if (signal === 'font') {
+          document.fonts.dispatchEvent(new Event('loadingdone'));
+        } else {
+          document.querySelector('#target')!.dispatchEvent(new Event(signal));
+        }
+        return (
+          window.assets.effect?.raster === 'stale' &&
+          document.querySelector<HTMLCanvasElement>('#host canvas')!.style.display === 'none'
+        );
+      }, signal);
+      expect(hidden).toBe(true);
+      await expect.poll(() => page.evaluate(() => window.assets.effect?.raster)).toBe('fresh');
+    }
     await page.evaluate(() => window.assets.effect?.dispose());
     await expect(page.locator('#host canvas')).toHaveCount(0);
   });
@@ -304,14 +313,17 @@ for (const stage of ['decode', 'readback'] as const) {
   });
 }
 
-test('font signals after readiness invalidate pending capture without late output', async ({
+test('font signals after readiness discard pending capture and capture a new revision', async ({
   page,
 }) => {
   await page.addInitScript(() => {
     const decode = HTMLImageElement.prototype.decode;
     HTMLImageElement.prototype.decode = async function () {
       await decode.call(this);
-      if (this.src.startsWith('data:image/svg+xml')) {
+      if (
+        this.src.startsWith('data:image/svg+xml') &&
+        !document.documentElement.dataset.waitingSnapshot
+      ) {
         document.documentElement.dataset.waitingSnapshot = 'true';
         await new Promise<void>((resolve) =>
           document.addEventListener('release-snapshot', () => resolve(), { once: true }),
@@ -324,14 +336,18 @@ test('font signals after readiness invalidate pending capture without late outpu
     void window.assets.attach();
   });
   await expect(page.locator('html')).toHaveAttribute('data-waiting-snapshot', 'true');
-  await page.evaluate(() => document.fonts.dispatchEvent(new Event('loadingdone')));
-  expect(await page.evaluate(() => window.assets.effect?.raster)).toBe('stale');
-  await page.evaluate(async () => {
-    document.dispatchEvent(new Event('release-snapshot'));
-    await window.assets.effect?.ready;
-  });
-  expect(await page.evaluate(() => window.assets.effect?.lifecycle)).toBe('suspended');
+  expect(
+    await page.evaluate(() => {
+      document.fonts.dispatchEvent(new Event('loadingdone'));
+      return window.assets.effect?.raster;
+    }),
+  ).toBe('stale');
   await expect(page.locator('#host canvas')).toHaveCount(0);
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event('release-snapshot'));
+  });
+  await expect.poll(() => page.evaluate(() => window.assets.effect?.raster)).toBe('fresh');
+  await expect(page.locator('#host canvas')).toBeVisible();
   await page.evaluate(() => window.assets.effect?.dispose());
 });
 

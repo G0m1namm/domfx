@@ -21,8 +21,13 @@ verified by this path.
 
 The SDF executor from pinned `@typegpu/sdf` 0.12.0 is bundled with its MIT notice.
 The repository's pnpm patch adds `offsetUniform.buffer.destroy()` to executor cleanup;
-bundling carries this fix into packed consumers without requiring their own pnpm patch.
-No shader algorithm or dependency version upgrade is involved.
+bundling carries the patch into packed consumers without requiring their own pnpm patch.
+The patch also adds offset-4 and offset-2 refinement passes before the executor's
+existing offset-1 finalization. Disconnected overflow paint otherwise produced full-raster
+distance errors above 1.5 px at DPR 1/2. Refinement reuses the two flood textures and
+pipelines; formats, allocation accounting and alpha threshold remain unchanged.
+Jump flooding remains approximate; the verified fixtures do not prove an error bound
+for arbitrary paint. No dependency version upgrade is involved.
 
 Prepared frames account for 36 bytes per pixel of textures, a 16-byte fire uniform,
 and the observed 4-byte JFA offset buffer (`i32`, TypeGPU 0.12.4). Destroying a frame
@@ -57,6 +62,42 @@ These results cover this machine and build path, not broad browser support.
 
 See the [project README](https://github.com/G0m1namm/domfx#readme) for development
 instructions. MIT licensed; dependencies retain their own licenses.
+
+## Padded capture fidelity
+
+`captureElement` returns untransformed target-local straight RGBA8. The content bounds
+are the selected root's border box; padding is in CSS pixels. Raster pixel centers map
+through `pixelToLocal`: `(a * (x + 0.5) + e, d * (y + 0.5) + f)`. Placement applies root
+and ancestor translation/positive axis-aligned scale separately. Descendant transforms
+remain part of captured paint.
+
+The development and production gate runs at actual browser DPR 1 and 2. Each required
+fixture compares a 48 CSS-pixel padded capture against an 80 CSS-pixel reference:
+alpha differs by at most 1/255 in the overlap, no reference paint lies outside the
+smaller raster, the smaller raster's outer 20 CSS-pixel band is transparent, and the
+reference boundary is transparent. Padding expands the serialized SVG viewport before
+rasterization; appending transparent pixels to an already clipped image is insufficient.
+Independent sentinels require four 10 × 10 overflow squares extending 20 CSS pixels
+on each side, a root shadow (`14px 9px 8px rgba(255,100,0,0.8)`), a root background,
+and exclusion of the ancestor background. SVG/raster holes and disconnected islands
+must survive. Two 8 × 8 root-local marks retain their area and map within 0.5 raster px
+under combined root/ancestor translation and nonuniform positive scale.
+
+Every captured raster pixel is compared with an independent Float64 distance oracle,
+including padded exterior and inner contours. Classification stays at alpha 128/255;
+maximum distance error must be ≤1.5 raster px, contour error ≤1 px, and signs must
+agree. A missing required sentinel fails even when both captures agree and their
+exteriors are transparent. Capture/reference/SDF PNGs and numerical JSON are retained
+in browser test evidence.
+
+These are bounded paint fixtures, not automatic paint-extent discovery. The manual
+attachment still requests 32 CSS pixels of padding; this gate's 48/80 values do not
+increase that default. Paint beyond requested padding can be clipped, and paint beyond
+the reference extent is unverified. Unbounded overflow, larger shadows/filters,
+universal CSS painting, rotation/skew/perspective/negative scale, fractional DPR and
+arbitrary subpixel HTML paint are not established by this gate. See the placement and
+asset limits below. A failed required fixture holds the gate; it must not be removed,
+cropped, or padded with zeros to obtain a pass.
 
 ## Capture asset readiness
 

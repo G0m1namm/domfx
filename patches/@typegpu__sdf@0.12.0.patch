@@ -1,5 +1,5 @@
 diff --git a/jumpFlood.js b/jumpFlood.js
-index 4738954020cbb2683a80b7abfe5a10089de908c3..8ef176971e23f34ca168f71a0b4f39dc2cb61552 100644
+index 4738954020cbb2683a80b7abfe5a10089de908c3..57a9e5d9aa963c68b9e67c7ad003f7fa66934a60 100644
 --- a/jumpFlood.js
 +++ b/jumpFlood.js
 @@ -1539,6 +1539,7 @@ function createJumpFlood(options) {
@@ -10,3 +10,17 @@ index 4738954020cbb2683a80b7abfe5a10089de908c3..8ef176971e23f34ca168f71a0b4f39dc
  		floodTextureA.destroy();
  		floodTextureB.destroy();
  		sdfTexture.destroy();
+@@ -1567,6 +1568,13 @@ function createJumpFlood(options) {
+ 				sourceIdx ^= 1;
+ 				offset = Math.floor(offset / 2);
+ 			}
++			// Refine missed sites around disconnected paint before final distance
++			// output. Finalize supplies the last offset-1 neighborhood search.
++			for (const refinement of [4, 2]) {
++				offsetUniform.write(refinement);
++				prebuiltFloodPipelines[sourceIdx]?.dispatchWorkgroups(workgroupsX, workgroupsY);
++				sourceIdx ^= 1;
++			}
+ 			prebuiltFinalizePipelines[sourceIdx]?.dispatchWorkgroups(workgroupsX, workgroupsY);
+ 		}
+ 		const pipelines = [

@@ -130,6 +130,17 @@ export async function prepareCaptureAssets(target: Element) {
 
   for (const element of [target, ...target.querySelectorAll('*')]) {
     const style = view.getComputedStyle(element);
+    // SnapDOM 2.24.15 temporarily edits these source styles while cloning.
+    // Reject before it can trigger an endless observer/capture feedback cycle.
+    if (
+      style.contentVisibility === 'auto' ||
+      (element === target &&
+        style.outlineStyle !== 'none' &&
+        Number.parseFloat(style.outlineWidth) > 0 &&
+        (style.borderStyle === 'none' || Number.parseFloat(style.borderWidth) === 0))
+    ) {
+      throw new CaptureError('unsupported-asset', 'capture source style mutation');
+    }
     if (style.display === 'none' || (element.parentElement && hidden.has(element.parentElement))) {
       hidden.add(element);
       continue;

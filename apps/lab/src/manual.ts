@@ -1,6 +1,7 @@
 import { attachFire, type EffectHandle } from '@domfx/browser';
 
 import { verifyMemory } from './memory-checks.js';
+import { createMotionFixture } from './motion-fixture.js';
 import { verifyRefresh } from './refresh-checks.js';
 import {
   verifyDocumentIsolation,
@@ -40,6 +41,8 @@ declare global {
   interface Window {
     manual: {
       effect: EffectHandle;
+      createMotionFixture: typeof createMotionFixture;
+      motionFixture?: ReturnType<typeof createMotionFixture>;
       attach: typeof attachFire;
       capture: typeof capture;
       verifyRefresh: typeof verifyRefresh;
@@ -53,6 +56,7 @@ declare global {
 }
 window.manual = {
   effect,
+  createMotionFixture,
   attach: attachFire,
   capture,
   verifyRefresh,

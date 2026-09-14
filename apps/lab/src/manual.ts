@@ -2,6 +2,7 @@ import { attachFire, type EffectHandle } from '@domfx/browser';
 
 import { verifyMemory } from './memory-checks.js';
 import { createMotionFixture } from './motion-fixture.js';
+import { createPlacementFixture } from './placement-fixture.js';
 import { verifyRefresh } from './refresh-checks.js';
 import {
   verifyDocumentIsolation,
@@ -41,6 +42,8 @@ declare global {
   interface Window {
     manual: {
       effect: EffectHandle;
+      createPlacementFixture: typeof createPlacementFixture;
+      placementFixture?: Awaited<ReturnType<typeof createPlacementFixture>>;
       createMotionFixture: typeof createMotionFixture;
       motionFixture?: ReturnType<typeof createMotionFixture>;
       attach: typeof attachFire;
@@ -56,6 +59,7 @@ declare global {
 }
 window.manual = {
   effect,
+  createPlacementFixture,
   createMotionFixture,
   attach: attachFire,
   capture,

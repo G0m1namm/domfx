@@ -168,6 +168,9 @@ test('host seek/reverse reproduces GPU output through one scheduled commit witho
     if (!canvas) {
       throw new Error('missing-effect-layer');
     }
+    // Hand the existing geometry frame from the native clock to the fake clock.
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
     let commits = 0;
     const getTexture = GPUCanvasContext.prototype.getCurrentTexture;
     GPUCanvasContext.prototype.getCurrentTexture = function () {
@@ -200,6 +203,8 @@ test('host seek/reverse reproduces GPU output through one scheduled commit witho
         callback(performance.now());
       }
     }
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    document.dispatchEvent(new Event('visibilitychange'));
     const initial = { time: effect.time, intensity: effect.intensity };
     const children = timeline.getChildren();
     const child = { count: children.length, paused: children[0].paused() };
@@ -238,14 +243,14 @@ test('host seek/reverse reproduces GPU output through one scheduled commit witho
     initial: { time: 1.5, intensity: 0.85 },
     child: { count: 1, paused: false },
     beforeFrame: { requests: 1, commits: 0, time: 3.5, intensity: 0.55 },
-    afterFrame: { commits: 1, pending: 0 },
+    afterFrame: { commits: 1, pending: 1 },
     changed: true,
     repeated: true,
     restored: { time: 1.5, intensity: 0.85 },
     seed: 314,
     captures: 0,
     commits: 4,
-    pending: 0,
+    pending: 1,
     raster: 'fresh',
   });
   await testInfo.attach('binding-checks.json', {

@@ -3,7 +3,7 @@ import type { CaptureFrame, ClockMode, EffectHandle, EffectReason } from '@domfx
 import { captureElementWithReservation, measureCapture } from './browser.js';
 import type { PreparedGpuFrame } from './gpu.js';
 import { estimateFrameMemory, memoryFor, type AllocationReservation } from './memory.js';
-import { measureEffectPlacement, scaleToViewport } from './placement.js';
+import { isPlacementMutation, measureEffectPlacement, scaleToViewport } from './placement.js';
 import { acquireRenderer, type AttachmentRenderer } from './renderer-service.js';
 import { schedulerFor } from './scheduler.js';
 
@@ -139,6 +139,7 @@ export function attachFireWithAdapters(
   const disposalCallbacks = new Set<() => void>();
 
   let canvas: HTMLCanvasElement | undefined;
+  let lastPlacement: ReturnType<typeof measureEffectPlacement> | undefined;
   claimed.add(target);
   owners.set(document, claimed);
 
@@ -152,7 +153,13 @@ export function attachFireWithAdapters(
     claimed.delete(target);
   }
 
-  const observer = new view.MutationObserver(() => stale());
+  const observer = new view.MutationObserver(checkMutations);
+
+  function checkMutations(records: MutationRecord[]) {
+    if (records.some((record) => !isPlacementMutation(record, target))) {
+      stale();
+    }
+  }
 
   function assetChanged() {
     // Initial/explicit captures establish readiness themselves. Their expected
@@ -252,9 +259,7 @@ export function attachFireWithAdapters(
   function invalidate() {
     suspendForMotion();
     // Preserve immediate stale-output hiding even though rendering is deferred.
-    if (observer.takeRecords().length) {
-      stale();
-    }
+    checkMutations(observer.takeRecords());
     if (raster === 'refreshing' && document.hidden) {
       stale();
     }
@@ -276,13 +281,13 @@ export function attachFireWithAdapters(
     if (running() && lastTimestamp !== undefined) {
       time += Math.max(0, timestamp - lastTimestamp) / 1000;
     }
-    if (dirty || running()) {
-      paint();
-    }
+    // Placement follows layout even when the caller owns or pauses time. Reuse
+    // the presented pixels unless controls or the ambient clock need new output.
+    paint(dirty || running());
 
     dirty = false;
     lastTimestamp = running() ? timestamp : undefined;
-    return running();
+    return lifecycle === 'active' && raster === 'fresh';
   }
 
   function unavailable(error: unknown, fallback: EffectReason = 'renderer-failed') {
@@ -316,11 +321,9 @@ export function attachFireWithAdapters(
     cleanup();
   }
 
-  function paint() {
+  function paint(render = true) {
     suspendForMotion();
-    if (observer.takeRecords().length) {
-      stale();
-    }
+    checkMutations(observer.takeRecords());
     if (
       lifecycle === 'disposed' ||
       lifecycle === 'unavailable' ||
@@ -344,19 +347,32 @@ export function attachFireWithAdapters(
 
     try {
       const placement = measureEffectPlacement(target, host, frame);
-      canvas.style.left = `${placement.left}px`;
-      canvas.style.top = `${placement.top}px`;
-      canvas.style.width = `${placement.width}px`;
-      canvas.style.height = `${placement.height}px`;
-      canvas.style.display = 'block';
+      if (
+        !lastPlacement ||
+        placement.left !== lastPlacement.left ||
+        placement.top !== lastPlacement.top ||
+        placement.width !== lastPlacement.width ||
+        placement.height !== lastPlacement.height
+      ) {
+        canvas.style.left = `${placement.left}px`;
+        canvas.style.top = `${placement.top}px`;
+        canvas.style.width = `${placement.width}px`;
+        canvas.style.height = `${placement.height}px`;
+        lastPlacement = placement;
+      }
+      if (canvas.style.display !== 'block') {
+        canvas.style.display = 'block';
+      }
 
-      prepared.render(
-        motionPolicy === 'static' ? 0 : time,
-        seed,
-        intensity,
-        1 / frame.pixelToLocal.a,
-      );
-      prepared.present(context.getCurrentTexture());
+      if (render) {
+        prepared.render(
+          motionPolicy === 'static' ? 0 : time,
+          seed,
+          intensity,
+          1 / frame.pixelToLocal.a,
+        );
+        prepared.present(context.getCurrentTexture());
+      }
 
       lifecycle = 'active';
       reason = undefined;
@@ -368,9 +384,7 @@ export function attachFireWithAdapters(
 
   function current(requestedRevision: number, requestedGeneration: number) {
     suspendForMotion();
-    if (observer.takeRecords().length) {
-      stale();
-    }
+    checkMutations(observer.takeRecords());
     if (
       raster === 'refreshing' &&
       (!target.isConnected ||
@@ -510,8 +524,8 @@ export function attachFireWithAdapters(
             }
             if (running()) {
               lastTimestamp = now();
-              scheduler.schedule(commit);
             }
+            scheduler.schedule(commit);
           }
         } catch (error) {
           // A superseded failure cannot reject requests for the newer revision.
@@ -576,6 +590,7 @@ export function attachFireWithAdapters(
     subtree: true,
     childList: true,
     attributes: true,
+    attributeOldValue: true,
     characterData: true,
   });
   target.addEventListener('load', assetChanged, true);
@@ -628,9 +643,6 @@ export function attachFireWithAdapters(
     pause() {
       paused = true;
       lastTimestamp = undefined;
-      if (!dirty) {
-        scheduler.cancel(commit);
-      }
     },
 
     resume() {

@@ -84,6 +84,19 @@ These checks run in both development and production.
 Fake animation-frame tests use the real attachment, capture and GPU renderer to verify
 one shared frame request, one commit per dirty target, manual time ownership, ambient
 pause/seek/resume, immutable seed, no per-frame capture, and cancellation on disposal.
+Manual and paused attachments retain geometry frame participation without extra GPU
+commits. Fractional placement fixtures run at DPR 1 and 2 in both projects. Three colored
+SVG alpha islands are captured through the real adapter; their coverage-weighted raster
+pixel centers map through the actual effect layer into viewport coordinates and are
+compared with independently measured live landmark centers (one physical pixel maximum
+per axis). Cases include target/ancestor/host nonuniform scales, transform origins,
+individual transform properties, sibling layout shifts and a sampled Web Animation.
+Each stage saves geometry JSON and a screenshot, with browser/GPU, viewport, DPR,
+visibility and reduced-motion details. Time, capture count, render count and output
+pixels must remain unchanged. Mixed paint changes, descendant transforms and unsupported
+rotation verify that the placement exception cannot bypass stale/unavailable behavior.
+The landmarks use SVG to avoid Chromium's local HTML background edge snapping during
+foreignObject capture; these checks do not establish arbitrary CSS subpixel paint fidelity.
 
 Shared-service checks concurrently attach a ring and disconnected islands in separate
 hosts and one shared host. Both captured SDFs are compared with the numerical oracle;

@@ -58,6 +58,56 @@ These results cover this machine and build path, not broad browser support.
 See the [project README](https://github.com/G0m1namm/domfx#readme) for development
 instructions. MIT licensed; dependencies retain their own licenses.
 
+## Capture asset readiness
+
+`captureElement(target)` waits for the selected HTML images to decode and loads the
+font faces requested by visible subtree text (including `::before`/`::after` text
+and form values). Required web fonts must also appear as valid embedded data in
+SnapDOM's snapshot. System-font text continues to use the browser's installed fonts.
+A rejected face or missing embedding fails capture even if the page displays fallback
+text. Matching faces in declared font stacks are checked conservatively; this is not
+an individual-glyph fallback resolver. Required font loading also waits for the
+Document's current font loading cycle to settle before capture geometry is read.
+
+PNG, JPEG and WebP assets are fetched using ordinary CORS and `same-origin`
+credentials, decoded, and embedded into the clone. HTML images use `currentSrc`,
+including the browser's selected `picture`/`srcset` source. CSS background URL layers
+are embedded while preserving their background sizing/positioning and gradient layers.
+Data/blob URLs are subject to the same MIME/decode checks. No proxy, credential retry,
+external service, placeholder, or asset repair is used. Lazy image sources must already
+be selected by the browser; capture does not rewrite `src`, loading attributes or styles.
+Resource fetch/decode/font waits have a ten-second bound per wait. No automatic retry
+or persistent domfx asset cache is created.
+
+Capture rejects with exported `CaptureError`; branch on its `code`, inspect `asset`
+and `cause` for diagnostics. Codes are `asset-timeout`, `image-load-failed`,
+`asset-fetch-failed`, `font-load-failed`, `font-embed-failed`, `unsupported-asset`,
+`capture-decode-failed`, and `capture-readback-failed`. Fetch failures include HTTP,
+CORS and fetch timeouts. Attachment initialization preserves `reason: 'capture-failed'`
+and places the typed error's message in `reasonDetail`; explicit refresh rejects with
+the underlying error. Failed capture releases its temporary canvas storage and leaves
+the original target usable. Returned frame release remains idempotent.
+
+The verified asset fixtures cover a delayed PNG image, PNG background and static
+TrueType font, broken image/background/font bytes, denied and permitted cross-origin
+PNG embedding, unembeddable programmatic fonts, and snapshot decode/readback cleanup.
+Development and production tests save live-target/frame PNGs and JSON checks. See the
+[fixture definitions](../../apps/lab/public/asset-fixtures/README.md).
+
+Explicitly unsupported asset cases include SVG image documents (which may themselves
+omit external resources), SVG `image`/`use`/`feImage`, image inputs, iframe/object/embed/video elements, open
+shadow roots, background `image-set()`, and other URL-bearing paint such as masks,
+border/list images and generated image content. Programmatic fonts without an
+embeddable source and fonts whose descriptors/embedding cannot be verified reject.
+Animated raster frames, complex font fallback/shaping, closed shadow roots, and
+broader CSS painting fidelity are not verified. Do not treat a successful capture as
+a claim of universal asset or CSS support.
+
+Font loading signals are conservatively Document-wide. Expected image/font events
+while a capture establishes readiness are allowed; later signals invalidate pending
+work or hide fresh output. After a change, call `refresh()` explicitly. Stylesheet
+edits that emit no observed mutation/font event still require caller invalidation.
+
 ## Manual fire attachment
 
 For caller-owned timelines, use the optional [`@domfx/gsap` binding](../gsap/README.md).
@@ -185,7 +235,7 @@ this notification to detach bindings without replacing the handle's `dispose()` 
 Lifecycle is `suspended` during initialization, `active` while rendering,
 `unavailable` after failure, or `disposed`. Raster health is independently
 `refreshing` during capture or replacement, `fresh` after preparation, or `stale` when
-invalidated. Target subtree mutations, target asset load events and window resize
+invalidated. Target subtree mutations, target asset load/error events, document font loading events and window resize
 hide stale output; call `refresh()` to capture again. There is no automatic refresh/retry
 loop. Document hiding suspends existing output and resumes it when visible.
 
@@ -247,7 +297,7 @@ contract, including cleanup after initial disposal; refresh promises are separat
 
 Placement supports translation and positive axis-aligned scale, including a scaled
 host. Rotation, skew, perspective and CSS zoom reject. Scrolling and control writes
-update placement. This is a bounded snapshot API: stylesheet/font changes,
+update placement. This is a bounded snapshot API: stylesheet changes,
 ancestor layout/paint changes, arbitrary clipping/stacking contexts, and continuous
 layout tracking are not comprehensively detected or supported. Dispose before
 changing those conditions. The caller must provide a host whose compositing lets

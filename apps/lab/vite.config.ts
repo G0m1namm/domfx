@@ -10,6 +10,7 @@ export default defineConfig({
         main: resolve(import.meta.dirname, 'index.html'),
         manual: resolve(import.meta.dirname, 'manual.html'),
         gsap: resolve(import.meta.dirname, 'gsap.html'),
+        assets: resolve(import.meta.dirname, 'assets.html'),
       },
     },
   },

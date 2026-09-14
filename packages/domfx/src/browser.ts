@@ -1,5 +1,6 @@
 import type { CaptureFrame } from '@domfx/core';
 
+import { CaptureError, prepareCaptureAssets } from './capture-assets.js';
 import { estimateFrameMemory } from './memory.js';
 import { scaleToViewport } from './placement.js';
 
@@ -29,13 +30,17 @@ export async function captureElementWithReservation(
   element: Element,
   options: { paddingCss?: number; dpr?: number } = {},
   reserve?: (width: number, height: number) => void,
+  assetsReady?: () => void,
 ): Promise<CaptureFrame> {
   const padding = options.paddingCss ?? 32;
   const dpr = options.dpr ?? element.ownerDocument.defaultView!.devicePixelRatio;
   if (!(padding >= 0) || !Number.isFinite(padding) || !(dpr > 0) || !Number.isFinite(dpr)) {
     throw new Error('invalid-capture-options');
   }
+  const assets = await prepareCaptureAssets(element);
+  assetsReady?.();
   const { snapdom } = await import('@zumer/snapdom');
+  let assetFailure: unknown;
   const snapshot = await snapdom(element, {
     dpr,
     outerTransforms: false,
@@ -43,10 +48,16 @@ export async function captureElementWithReservation(
     fast: true,
     reconcile: true,
     embedFonts: true,
+    cache: 'disabled',
+    compress: false,
+    placeholders: false,
+    resolvePicturePlaceholders: false,
     plugins: [
       {
         name: 'domfx-target-local',
-        afterClone({ clone }) {
+        afterClone(context) {
+          assets.embedImages(context);
+          const { clone } = context;
           // outerTransforms:false preserves scale in SnapDOM 2.24.15. Strip the
           // selected root's transform too; descendant transforms remain its paint.
           if (!clone) {
@@ -56,9 +67,20 @@ export async function captureElementWithReservation(
             clone.style.setProperty(property, 'none', 'important');
           }
         },
+        async beforeRender(context) {
+          try {
+            await assets.beforeRender(context);
+          } catch (error) {
+            // Let SnapDOM finish removing its temporary sandbox before rejecting.
+            assetFailure = error;
+          }
+        },
       },
     ],
   });
+  if (assetFailure) {
+    throw assetFailure;
+  }
   const { w0, h0, contentX, contentY } = snapshot.meta;
   const widthCss = w0 + padding * 2;
   const heightCss = h0 + padding * 2;
@@ -69,33 +91,42 @@ export async function captureElementWithReservation(
   // SnapDOM's crop clamps to its existing viewBox. Expand the serialized SVG's
   // viewport instead, so overflow/shadows are painted into the requested exterior.
   const svgText = decodeURIComponent(snapshot.url.slice(snapshot.url.indexOf(',') + 1));
-  const svg = new DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement;
+  const view = element.ownerDocument.defaultView!;
+  const svg = new view.DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement;
   svg.setAttribute(
     'viewBox',
     `${contentX - padding} ${contentY - padding} ${widthCss} ${heightCss}`,
   );
   svg.setAttribute('width', String(widthCss));
   svg.setAttribute('height', String(heightCss));
-  const image = new Image();
+  const image = element.ownerDocument.createElement('img');
   image.src =
     'data:image/svg+xml;charset=utf-8,' +
-    encodeURIComponent(new XMLSerializer().serializeToString(svg));
+    encodeURIComponent(new view.XMLSerializer().serializeToString(svg));
   const canvas = element.ownerDocument.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   let pixels = new Uint8Array();
   try {
-    await image.decode();
+    try {
+      await image.decode();
+    } catch (cause) {
+      throw new CaptureError('capture-decode-failed', 'snapshot', cause);
+    }
     const context = canvas.getContext('2d', { willReadFrequently: true });
     if (!context) {
       throw new Error('capture-context-unavailable');
     }
     context.drawImage(image, 0, 0, width, height);
-    pixels = new Uint8Array(context.getImageData(0, 0, width, height).data);
+    try {
+      pixels = new Uint8Array(context.getImageData(0, 0, width, height).data);
+    } catch (cause) {
+      throw new CaptureError('capture-readback-failed', 'snapshot', cause);
+    }
   } finally {
     canvas.width = 0;
     canvas.height = 0;
-    image.src = '';
+    image.removeAttribute('src');
   }
   let released = false;
   return {

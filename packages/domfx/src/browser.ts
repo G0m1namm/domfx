@@ -1,11 +1,34 @@
 import type { CaptureFrame } from '@domfx/core';
 
+import { estimateFrameMemory } from './memory.js';
+import { scaleToViewport } from './placement.js';
+
+export function measureCapture(element: Element) {
+  const padding = 32;
+  const dpr = element.ownerDocument.defaultView!.devicePixelRatio;
+  const scale = scaleToViewport(element);
+  const rect = element.getBoundingClientRect();
+  return {
+    width: Math.ceil((rect.width / scale.x + padding * 2) * dpr),
+    height: Math.ceil((rect.height / scale.y + padding * 2) * dpr),
+  };
+}
+
 /** Capture a snapshot of untransformed target-local paint, including a requested
  * exterior BEFORE rasterization. This is a bounded spike adapter, not a CSS painter.
  */
 export async function captureElement(
   element: Element,
   options: { paddingCss?: number; dpr?: number } = {},
+): Promise<CaptureFrame> {
+  return captureElementWithReservation(element, options);
+}
+
+/** Internal pre-raster admission hook for attachment-owned reservations. */
+export async function captureElementWithReservation(
+  element: Element,
+  options: { paddingCss?: number; dpr?: number } = {},
+  reserve?: (width: number, height: number) => void,
 ): Promise<CaptureFrame> {
   const padding = options.paddingCss ?? 32;
   const dpr = options.dpr ?? element.ownerDocument.defaultView!.devicePixelRatio;
@@ -41,9 +64,8 @@ export async function captureElement(
   const heightCss = h0 + padding * 2;
   const width = Math.ceil(widthCss * dpr);
   const height = Math.ceil(heightCss * dpr);
-  if (width * height > 1_000_000) {
-    throw new Error('capture-budget');
-  }
+  estimateFrameMemory(width, height);
+  reserve?.(width, height);
   // SnapDOM's crop clamps to its existing viewBox. Expand the serialized SVG's
   // viewport instead, so overflow/shadows are painted into the requested exterior.
   const svgText = decodeURIComponent(snapshot.url.slice(snapshot.url.indexOf(',') + 1));

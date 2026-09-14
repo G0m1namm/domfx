@@ -1,5 +1,5 @@
 import { attachFire, type EffectHandle } from '@domfx/browser';
-import { GpuExperiment } from '@domfx/browser/experimental';
+import { GpuExperiment, memoryFor } from '@domfx/browser/experimental';
 import { classifyAlpha } from '@domfx/core';
 
 import { signedDistanceOracle } from './diagnostics/distance-oracle.js';
@@ -518,6 +518,7 @@ export async function verifySharedDeviceLoss() {
       observation.requests === 1 && observation.destroys === 1,
       'loss releases service without retry',
     );
+    check(memoryFor(document).bytes === 0, 'device loss releases reservations');
     return { allocation: observation.allocation(), destroys: observation.destroys };
   } finally {
     effects.forEach((effect) => effect.dispose());

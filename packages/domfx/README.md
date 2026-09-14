@@ -116,7 +116,7 @@ unavailable and disposed attachments leave the scheduler, without a retry loop.
 `ready` settles after initialization, including cleanup of cancelled initial work.
 Environmental failures resolve with `lifecycle: 'unavailable'` and a typed `EffectReason`
 code in `reason`. Initial failures include `no-webgpu`, `no-adapter`, `capture-failed`,
-`empty-mask`, `capture-budget`, `aggregate-budget`, `missing-exterior`,
+`empty-mask`, `capture-budget`, `target-budget`, `aggregate-budget`, `missing-exterior`,
 `canvas-webgpu-unavailable`, `renderer-failed`, and `reduced-motion`.
 `reasonDetail` preserves the underlying message for diagnostics; branch on `reason`.
 Failed setup releases its capture pixels, canvas backing store, listeners and GPU resources
@@ -136,6 +136,33 @@ preparation retains a service reference until its late resources are released, b
 the device and removes the Document's service entry. A later attachment creates a fresh
 service. Failed initialization also releases the entry; it does not retry automatically.
 Devices and textures are never shared across Documents.
+
+Attachment admission reserves memory synchronously before capture starts. Limits are
+1,000,000 padded capture pixels, 48,000,000 bytes steady per target, 88,000,000 bytes
+per target during replacement, and 144,000,000 bytes per Document (decimal MB).
+Reservations include other targets, pending captures/preparations and retained frames,
+including work still completing after disposal. No quality reduction or coverage crop
+is used to fit a budget. Pixel rejection reports `capture-budget`, per-target rejection
+`target-budget`, and Document rejection `aggregate-budget`. Refresh budget failures
+reject the promise and leave the attachment unavailable with stale, hidden output.
+
+For a raster of P pixels, known managed GPU allocations are 36P + 20 bytes (source,
+SDF/JFA, fire texture and uniforms). Admission additionally estimates 4P bytes for one
+RGBA output surface and reserves 4P CPU capture bytes until the capture frame is
+released: 44P + 20 pending, then 40P + 20 retained. Actual SnapDOM dimensions are
+checked before rasterization; returned capture dimensions and prepared-frame bytes
+are reconciled before presentation. Reconciliation replaces an entry, so estimates
+and their actual resources are never added twice. The previous frame remains charged
+until replacement presentation finishes and destroys it.
+
+The output surface is an estimate, not a known GPU allocation. This budget excludes
+browser-owned capture canvases, image decoding, temporary pixel copies, DOM/SVG and
+font caches, additional compositor/swapchain surfaces, pipelines, driver overhead and
+experimental diagnostic readbacks. It is neither total process memory nor total VRAM.
+The experimental renderer's `managedBytes` remains the separate known GPU-frame
+allocation count. Reservations are released after success transfers ownership or after
+failure, supersession, disposal or device-loss cleanup finishes; non-cancellable work
+retains its reservation until its late result is released.
 
 `onDispose(callback)` subscribes to disposal and returns an idempotent unsubscribe
 function. Disposal removes output and runs immediate cleanup before notifying each listener

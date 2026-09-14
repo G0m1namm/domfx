@@ -1,5 +1,5 @@
 import { type CaptureFrame, type EffectHandle } from '@domfx/browser';
-import { attachFireWithAdapters, GpuExperiment } from '@domfx/browser/experimental';
+import { attachFireWithAdapters, GpuExperiment, memoryFor } from '@domfx/browser/experimental';
 
 function deferred() {
   let resolve = () => {};
@@ -11,6 +11,7 @@ function deferred() {
 
 /** Controlled adapter timing; rendering and canvas presentation still use WebGPU. */
 export async function verifyRefresh() {
+  const baseline = memoryFor(document).bytes;
   const checks: string[] = [];
   function check(condition: boolean, name: string) {
     if (!condition) {
@@ -180,7 +181,9 @@ export async function verifyRefresh() {
         'prepared frames released once',
       );
       check(
-        f.service.managedBytes === 0 && f.deviceDestroys === 1,
+        f.service.managedBytes === 0 &&
+          f.deviceDestroys === 1 &&
+          memoryFor(document).bytes === baseline,
         'disposed renderer releases allocations',
       );
     }
@@ -232,6 +235,10 @@ export async function verifyRefresh() {
         'unavailable refresh rejects without retry',
       );
       f.effect.dispose();
+      check(
+        memoryFor(document).bytes === baseline,
+        'revision cleanup restores reservation baseline',
+      );
     }
 
     {
@@ -324,6 +331,7 @@ export async function verifyRefresh() {
       );
       next.effect.dispose();
     }
+    check(memoryFor(document).bytes === baseline, 'all refresh reservations released');
     return checks;
   } finally {
     for (const effect of effects) {

@@ -482,7 +482,18 @@ export async function verifyDocumentIsolation() {
 }
 
 /** Simulate the loss notification; all successful preparation/presentation is real GPU work. */
-export async function verifySharedDeviceLoss() {
+export async function verifySharedDeviceLoss(
+  stage:
+    | 'active'
+    | 'initialization'
+    | 'capture'
+    | 'pipelines'
+    | 'prepare'
+    | 'validation'
+    | 'prepared' = 'active',
+  refresh = false,
+  lossReason: GPUDeviceLostReason = 'unknown',
+) {
   const fixture = targets(true);
   const observation = observeServices();
   const effects: EffectHandle[] = [];
@@ -491,38 +502,296 @@ export async function verifySharedDeviceLoss() {
     lose = resolve;
   });
   const create = GpuExperiment.create;
+  const decode = HTMLImageElement.prototype.decode;
+  const gate = deferred();
+  const entered = deferred();
+  const bothPreparing = deferred();
+  const completed: Promise<unknown>[] = [];
+  const frames: { releases: number; destroys: number; presents: number; prepared: boolean }[] = [];
+  let blocking = !refresh;
+  let blocked = 0;
+  let preparing = 0;
+  let afterLoss = false;
+  let lateAllocations = 0;
+  let lateSubmissions = 0;
+  const message = 'controlled shared device loss';
+  async function wait() {
+    blocked += 1;
+    if (stage !== 'capture' || blocked === 2) {
+      entered.resolve();
+    }
+    await gate.promise;
+  }
+  HTMLImageElement.prototype.decode = async function () {
+    await decode.call(this);
+    if (blocking && stage === 'capture') {
+      await wait();
+    }
+  };
   GpuExperiment.create = async (gpu) => {
     const service = await create(gpu);
-    Object.defineProperty(service.device, 'lost', { value: lost });
+    // Only the original generation receives the injected notification.
+    if (observation.requests !== 1) {
+      return service;
+    }
+    const device = service.device;
+    Object.defineProperty(device, 'lost', { value: lost });
+    const createTexture = device.createTexture.bind(device);
+    const createBuffer = device.createBuffer.bind(device);
+    const submit = device.queue.submit.bind(device.queue);
+    device.createTexture = (descriptor) => {
+      lateAllocations += Number(afterLoss);
+      return createTexture(descriptor);
+    };
+    device.createBuffer = (descriptor) => {
+      lateAllocations += Number(afterLoss);
+      return createBuffer(descriptor);
+    };
+    device.queue.submit = (commands) => {
+      lateSubmissions += Number(afterLoss);
+      submit(commands);
+    };
+    const pipeline = device.createComputePipelineAsync.bind(device);
+    device.createComputePipelineAsync = async (descriptor) => {
+      const result = await pipeline(descriptor);
+      if (blocking && stage === 'pipelines') {
+        await wait();
+      }
+      return result;
+    };
+    const popScope = device.popErrorScope.bind(device);
+    device.popErrorScope = async () => {
+      const error = await popScope();
+      if (blocking && stage === 'validation') {
+        await wait();
+      }
+      return error;
+    };
+    const submitted = device.queue.onSubmittedWorkDone.bind(device.queue);
+    device.queue.onSubmittedWorkDone = async () => {
+      await submitted();
+      if (blocking && stage === 'prepare') {
+        await wait();
+      }
+    };
+    const prepare = service.prepare.bind(service);
+    service.prepare = (frame) => {
+      preparing += 1;
+      if (preparing === 2) {
+        bothPreparing.resolve();
+      }
+      const counts = { releases: 0, destroys: 0, presents: 0, prepared: false };
+      frames.push(counts);
+      if (!('release' in frame) || typeof frame.release !== 'function') {
+        throw new Error('missing capture release');
+      }
+      const release = frame.release.bind(frame);
+      frame.release = () => {
+        counts.releases += 1;
+        release();
+      };
+      const pending = prepare(frame).then(async (prepared) => {
+        counts.prepared = true;
+        const destroy = prepared.destroy.bind(prepared);
+        const present = prepared.present.bind(prepared);
+        let destroyed = false;
+        prepared.destroy = () => {
+          if (!destroyed) {
+            counts.destroys += 1;
+            destroyed = true;
+          }
+          destroy();
+        };
+        prepared.present = (texture) => {
+          counts.presents += 1;
+          present(texture);
+        };
+        if (blocking && stage === 'prepared') {
+          await wait();
+        }
+        return prepared;
+      });
+      completed.push(pending.catch(() => {}));
+      return pending;
+    };
+    if (stage === 'initialization') {
+      await wait();
+    }
     return service;
   };
+  const sibling = document.createElement('div');
+  document.body.append(sibling);
+  const animation = sibling.animate([{ opacity: 0.2 }, { opacity: 1 }], {
+    duration: 1000,
+    iterations: Infinity,
+  });
   try {
     for (const target of fixture.elements) {
       effects.push(attachFire(target, { host: fixture.hosts[0] }));
     }
-    await Promise.all(effects.map((effect) => effect.ready));
-    check(
-      effects.every((effect) => effect.lifecycle === 'active'),
-      'both targets initially active',
+    const settlements: Promise<unknown>[] = [];
+    if (refresh || stage === 'active') {
+      await Promise.all(effects.map((effect) => effect.ready));
+      check(
+        effects.every((effect) => effect.lifecycle === 'active'),
+        'both targets initially active',
+      );
+    }
+    const layers = [...fixture.container.querySelectorAll('canvas')];
+    if (refresh) {
+      preparing = 0;
+      blocking = true;
+    }
+    if (stage !== 'active') {
+      for (const effect of effects) {
+        settlements.push(effect.refresh().catch((error: Error) => error.message));
+      }
+      await entered.promise;
+      if (stage !== 'initialization' && stage !== 'capture') {
+        await bothPreparing.promise;
+      }
+    }
+    const pendingBytes = memoryFor(document).bytes;
+    const retainedBytes = layers.reduce(
+      (sum, layer) => sum + layer.width * layer.height * 40 + 20,
+      0,
     );
-    lose({ reason: 'unknown', message: 'controlled shared device loss' });
+    const animationTime = Number(animation.currentTime);
+    afterLoss = true;
+    lose({ reason: lossReason, message });
+    if (stage === 'initialization') {
+      gate.resolve();
+    }
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     check(
       effects.every(
-        (effect) => effect.lifecycle === 'unavailable' && effect.reason === 'device-lost',
+        (effect) =>
+          effect.lifecycle === 'unavailable' &&
+          effect.reason === 'device-lost' &&
+          effect.reasonDetail === message &&
+          effect.raster === 'stale',
       ),
       'loss reaches both owners',
     );
     check(!fixture.container.querySelector('canvas'), 'loss removes all layers');
     check(
+      layers.every((layer) => !layer.isConnected && layer.width === 0 && layer.height === 0),
+      'loss releases canvas backing stores',
+    );
+    check(
+      memoryFor(document).bytes === pendingBytes - retainedBytes,
+      'only non-cancellable work retains reservations until settlement',
+    );
+    check(
       observation.requests === 1 && observation.destroys === 1,
       'loss releases service without retry',
     );
+    check(
+      (await Promise.all(settlements)).every((result) => result === message),
+      'affected refreshes reject immediately with loss detail',
+    );
+    for (const effect of effects) {
+      effect.time = 4;
+      effect.intensity = 0.5;
+      effect.resume();
+      check(
+        (await effect.refresh().catch((error: Error) => error.message)) === 'effect-unavailable',
+        'unavailable refresh does not retry',
+      );
+    }
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+    check(
+      animation.playState === 'running' && Number(animation.currentTime) > animationTime,
+      'unrelated page animation continues',
+    );
+    check(
+      fixture.elements.every(
+        (target) => target.isConnected && getComputedStyle(target).visibility === 'visible',
+      ),
+      'original DOM remains visible',
+    );
+    check(observation.requests === 1, 'control writes and frames do not recreate device');
+
+    // Explicit new ownership must not join a lost service still draining old work.
+    const replacementTarget = document.createElement('div');
+    replacementTarget.style.cssText = fixture.elements[0].style.cssText;
+    fixture.hosts[0].append(replacementTarget);
+    blocking = false;
+    const replacement = attachFire(replacementTarget, { host: fixture.hosts[0] });
+    effects.push(replacement);
+    await replacement.ready;
+    check(
+      replacement.lifecycle === 'active' && observation.requests === 2,
+      'explicit attachment uses a fresh service before old work settles',
+    );
+    gate.resolve();
+    await Promise.all(completed);
+    await Promise.all(effects.map((effect) => effect.ready));
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    check(
+      effects.slice(0, 2).every((effect) => effect.reason === 'device-lost'),
+      'late failure preserves loss reason',
+    );
+    check(lateAllocations === 0 && lateSubmissions === 0, 'no GPU work resumes after loss');
+    check(
+      frames.every((frame) => frame.releases === 1 && frame.presents <= 1),
+      'captured frames release once',
+    );
+    check(
+      frames.every((frame) => frame.destroys === Number(frame.prepared)),
+      'all returned GPU frames destroyed',
+    );
+    check(
+      frames.slice(refresh || stage === 'active' ? 2 : 0).every((frame) => frame.presents === 0),
+      'late prepared frames never present',
+    );
+    // Releasing the old generation cannot evict the replacement entry.
+    const next = attachFire(fixture.elements[0], { host: fixture.hosts[0] });
+    effects.push(next);
+    await next.ready;
+    check(
+      next.lifecycle === 'active' && observation.requests === 2,
+      'old cleanup preserves replacement service',
+    );
+    effects.forEach((effect) => {
+      effect.dispose();
+      effect.dispose();
+    });
     check(memoryFor(document).bytes === 0, 'device loss releases reservations');
-    return { allocation: observation.allocation(), destroys: observation.destroys };
+    check(
+      observation.services.every((service) => service.errors.length === 0),
+      'no GPU errors',
+    );
+    return {
+      stage,
+      refresh,
+      lossReason,
+      pendingBytes,
+      frames,
+      lateAllocations,
+      lateSubmissions,
+      adapter: {
+        vendor: observation.services[0].adapterInfo.vendor,
+        architecture: observation.services[0].adapterInfo.architecture,
+        description: observation.services[0].adapterInfo.description,
+      },
+      method:
+        'Simulated device.lost notification with real capture and GPU preparation; not physical hardware loss.',
+      allocation: observation.allocation(),
+      destroys: observation.destroys,
+    };
   } finally {
+    blocking = false;
+    gate.resolve();
     effects.forEach((effect) => effect.dispose());
+    await Promise.all(completed);
+    await Promise.all(effects.map((effect) => effect.ready));
+    HTMLImageElement.prototype.decode = decode;
     observation.restore();
+    animation.cancel();
+    sibling.remove();
     fixture.container.remove();
   }
 }

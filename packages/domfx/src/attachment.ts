@@ -243,7 +243,7 @@ export function attachFireWithAdapters(
   }
 
   function unavailable(error: unknown, fallback: EffectReason = 'renderer-failed') {
-    if (lifecycle === 'disposed') {
+    if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
       return;
     }
 
@@ -375,9 +375,7 @@ export function attachFireWithAdapters(
         }
         service = await adapters.createRenderer();
         unwatchDeviceLoss = watchDeviceLoss(service.device, (info) => {
-          if (info.reason !== 'destroyed') {
-            unavailable(new Error(info.message), 'device-lost');
-          }
+          unavailable(new Error(info.message), 'device-lost');
         });
       }
       while (

@@ -137,6 +137,17 @@ the device and removes the Document's service entry. A later attachment creates 
 service. Failed initialization also releases the entry; it does not retry automatically.
 Devices and textures are never shared across Documents.
 
+Device loss makes every affected attachment unavailable with `reason: 'device-lost'`
+and the loss message in `reasonDetail`, including when the device reports `destroyed`.
+Pending refresh promises reject immediately with that message. Loss removes the
+decorative canvases, stops scheduling and retires the shared service immediately.
+Queued preparation and work resuming after an async GPU wait cannot allocate or submit
+more GPU work. Non-cancellable capture/preparation retains its reservation until it
+settles and releases late resources; late results never restore output or replace the
+loss reason. Original DOM and unrelated page animations remain usable.
+There is no automatic recreation or retry. Explicitly attaching a new handle creates
+a new service; cleanup of the lost generation cannot remove that replacement service.
+
 Attachment admission reserves memory synchronously before capture starts. Limits are
 1,000,000 padded capture pixels, 48,000,000 bytes steady per target, 88,000,000 bytes
 per target during replacement, and 144,000,000 bytes per Document (decimal MB).

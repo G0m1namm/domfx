@@ -137,12 +137,16 @@ export class GpuExperiment {
     return pending;
   }
 
-  private async prepareFrame(
-    frame: Pick<CaptureFrame, 'width' | 'height' | 'pixels'>,
-  ): Promise<PreparedGpuFrame> {
+  private assertAvailable() {
     if (this.destroyed) {
       throw new Error('renderer-disposed');
     }
+  }
+
+  private async prepareFrame(
+    frame: Pick<CaptureFrame, 'width' | 'height' | 'pixels'>,
+  ): Promise<PreparedGpuFrame> {
+    this.assertAvailable();
     const { width, height, pixels } = frame;
     if (
       !Number.isInteger(width) ||
@@ -196,8 +200,10 @@ export class GpuExperiment {
         getColor: copyNearestColor,
       }).with(root.createBindGroup(sourceLayout, { source: source.createView() }));
       await runner.initAsync();
+      this.assertAvailable();
       runner.run();
       await device.queue.onSubmittedWorkDone();
+      this.assertAvailable();
       const sdfTexture = root.unwrap(runner.sdfOutput);
       output = device.createTexture({
         label: 'domfx fire output',
@@ -288,6 +294,7 @@ export class GpuExperiment {
       };
       const error = await device.popErrorScope();
       scopeOpen = false;
+      this.assertAvailable();
       if (error) {
         throw new Error(error.message);
       }

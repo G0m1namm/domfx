@@ -80,6 +80,17 @@ Fake animation-frame tests use the real attachment, capture and GPU renderer to 
 one shared frame request, one commit per dirty target, manual time ownership, ambient
 pause/seek/resume, immutable seed, no per-frame capture, and cancellation on disposal.
 
+Shared-service checks concurrently attach a ring and disconnected islands in separate
+hosts and one shared host. Both captured SDFs are compared with the numerical oracle;
+canvas readbacks verify independent time/intensity and reproducible surviving output
+after disposing either target. Service/fire-pipeline creation counts, managed bytes and
+observed live GPUBuffer bytes verify sharing and the surviving-target allocation baseline.
+Controlled initialization/preparation delays cover disposal, reattachment, late cleanup,
+shared initialization failure and isolated preparation failure. A same-origin iframe
+checks Document/device isolation and owning-Document capability detection. A simulated
+device-loss notification checks cleanup of both owners. Successful rendering always uses
+real GPU work; notification injection does not establish hardware-loss behavior.
+
 The `/gsap.html` optional-package consumer verifies starting control snapshots,
 callback-suppressed host seeking, reverse and fixed-time GPU output, one scheduled
 commit for multiple writes, and no per-frame capture. It checks ambient rejection,

@@ -121,11 +121,21 @@ code in `reason`. Initial failures include `no-webgpu`, `no-adapter`, `capture-f
 `reasonDetail` preserves the underlying message for diagnostics; branch on `reason`.
 Failed setup releases its capture pixels, canvas backing store, listeners and GPU resources
 before `ready` settles.
-The original target remains visible and interactive. Each handle owns one renderer
-and a pointer-transparent, `aria-hidden` canvas appended directly to its host,
-outside the captured subtree. Disposal removes output immediately; pending initial
-capture/preparation is allowed to settle and releases its late resources before
-`ready` resolves. Renderer/device sharing is deferred.
+The original target remains visible and interactive. Attachments in the same Document
+share one renderer/device and its fire pipeline, including concurrent initialization.
+Each handle owns its prepared raster, parameters and a pointer-transparent, `aria-hidden`
+canvas appended directly to its host, outside the captured subtree. Targets may share
+a host or use separate hosts; their placement, controls and disposal remain independent.
+GPU preparations run serially to keep validation scopes and the aggregate allocation
+budget isolated; capture remains independent per target. SDF executors and their
+preparation pipelines retain their existing per-frame lifetime.
+
+Disposal removes that target's output immediately. Pending initialization, capture or
+preparation retains a service reference until its late resources are released, before
+`ready` resolves. Disposing one target preserves the others; the last reference releases
+the device and removes the Document's service entry. A later attachment creates a fresh
+service. Failed initialization also releases the entry; it does not retry automatically.
+Devices and textures are never shared across Documents.
 
 `onDispose(callback)` subscribes to disposal and returns an idempotent unsubscribe
 function. Disposal removes output and runs immediate cleanup before notifying each listener

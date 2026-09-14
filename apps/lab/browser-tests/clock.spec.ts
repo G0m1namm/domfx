@@ -27,11 +27,14 @@ test('fake frames batch targets, keep manual ownership, and pause/seek/resume am
       throw new Error('fixture');
     }
     const ambient = attach(second, { host, clock: 'ambient', time: 4, seed: 71 });
-    ambient.pause(); // Pausing before readiness must prevent automatic participation.
+    ambient.pause(); // Pausing before readiness must prevent automatic time advancement.
     await ambient.ready;
     if (ambient.lifecycle !== 'active') {
       throw new Error(ambient.reasonDetail ?? 'ambient unavailable');
     }
+    // Cancel the native geometry frame before installing the controlled clock.
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
     const layers = host.querySelectorAll('canvas');
     const commits = new Map<HTMLCanvasElement | OffscreenCanvas, number>();
     const getTexture = GPUCanvasContext.prototype.getCurrentTexture;
@@ -70,6 +73,8 @@ test('fake frames batch targets, keep manual ownership, and pause/seek/resume am
         callback(now);
       }
     }
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    document.dispatchEvent(new Event('visibilitychange'));
     const counts = () => [...layers].map((canvas) => commits.get(canvas) ?? 0);
     manual.resume(); // Manual ownership cannot be converted to ambient by resume.
     manual.time = 1;
@@ -110,7 +115,7 @@ test('fake frames batch targets, keep manual ownership, and pause/seek/resume am
     ambient.time = -2;
     tick(250);
     const runningSeek = ambient.time;
-    // A pause must retain dirty writes, while removing continuous participation.
+    // A pause must retain dirty writes, while keeping geometry tracking active.
     ambient.intensity = 0;
     ambient.pause();
     tick(16);
@@ -158,15 +163,15 @@ test('fake frames batch targets, keep manual ownership, and pause/seek/resume am
     modes: ['manual', 'ambient'],
     manualPaused: true,
     beforeFrame: { requests: 1, counts: [0, 0], time: 2 },
-    batch: { requests: 1, counts: [1, 1], pending: 0 },
+    batch: { requests: 2, counts: [1, 1], pending: 1 },
     pausedTime: 6,
     advanced: { time: 6.25, manualTime: 2, changed: true, counts: [1, 2] },
-    pendingAfterPause: 0,
+    pendingAfterPause: 1,
     frozenTime: 6.25,
-    sought: { time: 6, paused: true, same: true, pending: 0 },
+    sought: { time: 6, paused: true, same: true, pending: 1 },
     resumed: { time: 6.5, seed: 71 },
     runningSeek: -1.75,
-    pausedWrite: { pending: 0, counts: [1, 6] },
+    pausedWrite: { pending: 1, counts: [1, 6] },
     pendingWithManual: 1,
     pendingAfterDisposal: 0,
     afterAmbientDisposal: [2, 26],
@@ -198,6 +203,8 @@ for (const ending of ['stale', 'renderer-failed'] as const) {
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       const started = ambient.time > 1 && !ambient.paused;
       ambient.pause();
+      Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+      document.dispatchEvent(new Event('visibilitychange'));
       let now = 1000;
       let nextId = 0;
       const callbacks = new Map<number, FrameRequestCallback>();
@@ -217,6 +224,9 @@ for (const ending of ['stale', 'renderer-failed'] as const) {
           callback(now);
         }
       }
+      Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+      document.dispatchEvent(new Event('visibilitychange'));
+      tick(0); // Restore visibility before establishing the resumed clock origin.
       ambient.time = 3;
       ambient.resume();
       tick(250);

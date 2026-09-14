@@ -1,5 +1,25 @@
 import type { CaptureFrame } from '@domfx/core';
 
+/** Only the selected root's outer transform is excluded from captured paint. */
+export function isPlacementMutation(record: MutationRecord, target: Element): boolean {
+  if (
+    record.target !== target ||
+    record.type !== 'attributes' ||
+    record.attributeName !== 'style'
+  ) {
+    return false;
+  }
+  const before = target.ownerDocument.createElement('div').style;
+  const after = target.ownerDocument.createElement('div').style;
+  before.cssText = record.oldValue ?? '';
+  after.cssText = target.getAttribute('style') ?? '';
+  for (const property of ['transform', 'transform-origin', 'translate', 'rotate', 'scale']) {
+    before.removeProperty(property);
+    after.removeProperty(property);
+  }
+  return before.cssText === after.cssText;
+}
+
 /** Accumulated positive axis-aligned scale from local CSS pixels to viewport pixels. */
 export function scaleToViewport(element: Element): { x: number; y: number } {
   const view = element.ownerDocument.defaultView;

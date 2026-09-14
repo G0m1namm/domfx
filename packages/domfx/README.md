@@ -235,7 +235,7 @@ this notification to detach bindings without replacing the handle's `dispose()` 
 Lifecycle is `suspended` during initialization, `active` while rendering,
 `unavailable` after failure, or `disposed`. Raster health is independently
 `refreshing` during capture or replacement, `fresh` after preparation, or `stale` when
-invalidated. Target subtree mutations, target asset load/error events, document font loading events and window resize
+invalidated. Target subtree paint mutations, target asset load/error events, document font loading events and window resize
 hide stale output; call `refresh()` to capture again. There is no automatic refresh/retry
 loop. Document hiding suspends existing output and resumes it when visible.
 
@@ -295,12 +295,23 @@ In all cases late capture/preparation completes only to release its resources ex
 it cannot resurrect an invalidated attachment. `ready` retains its nonrejecting initialization
 contract, including cleanup after initial disposal; refresh promises are separate from it.
 
-Placement supports translation and positive axis-aligned scale, including a scaled
-host. Rotation, skew, perspective and CSS zoom reject. Scrolling and control writes
-update placement. This is a bounded snapshot API: stylesheet changes,
-ancestor layout/paint changes, arbitrary clipping/stacking contexts, and continuous
-layout tracking are not comprehensively detected or supported. Dispose before
-changing those conditions. The caller must provide a host whose compositing lets
+Placement supports fractional translation and positive axis-aligned scale, including
+target, ancestor and host transforms. Fresh, visible attachments check geometry on the
+shared Document animation frame even in manual mode or while paused. Pure placement
+updates reuse the presented pixels without advancing time, recapturing or rendering
+again. Unchanged placement does not write layer styles. Inline changes limited to the
+selected root's `transform`, `transform-origin`, `translate`, `rotate` and `scale` do
+not invalidate captured paint; unsupported transforms still make the effect unavailable.
+Descendant transforms affect captured paint and require explicit refresh, as do other
+target style/class mutations. Stale, hidden, unavailable and disposed output stops tracking.
+
+Marked SVG alpha landmarks are verified within one physical pixel at DPR 1 and 2
+under nested nonuniform scales and fractional offsets. This is not a universal CSS
+paint guarantee: Chromium's HTML background snapping in foreignObject capture can
+lose subpixel edges before placement. Rotation, negative scale, skew, perspective and
+CSS zoom remain unsupported. This is a bounded snapshot API: changes to target size
+or painted appearance through stylesheets or ancestors still require explicit refresh;
+arbitrary clipping/stacking contexts are not comprehensively supported. The caller must provide a host whose compositing lets
 its decorative child overlap the target. The attachment does not change target styles.
 The pinned SnapDOM adapter can temporarily change source styles when capturing a
 focused borderless target with an outline; this is conservatively detected as stale

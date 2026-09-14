@@ -10,6 +10,7 @@ export type EffectReason =
   | 'empty-mask'
   | 'missing-exterior'
   | 'aggregate-budget'
+  | 'target-budget'
   | 'renderer-failed'
   | 'canvas-webgpu-unavailable'
   | 'device-lost'

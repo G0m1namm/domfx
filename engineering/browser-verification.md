@@ -98,6 +98,17 @@ rotation verify that the placement exception cannot bypass stale/unavailable beh
 The landmarks use SVG to avoid Chromium's local HTML background edge snapping during
 foreignObject capture; these checks do not establish arbitrary CSS subpixel paint fidelity.
 
+Bordered scrolling fixtures use the same landmarks at DPR 1 and 2 with window, host
+and inner scroll offsets under nonuniform scales. Two nested positioned rectangular
+overflow clips are compared to native clipping of an independently placed child through
+browser hit testing. The fixture verifies fully clipped output and scrolling back into
+view, unchanged time, capture/render counts and canvas pixels, and saves geometry JSON
+and screenshots at every stage. Rounded overflow, clip paths, masks, paint containment,
+overflow clip margins, static clipping ancestors and fixed-position ancestors must
+become unavailable both during live tracking and initial attachment, removing the canvas
+while preserving the target. This bounded fixture does not establish arbitrary clipping
+or stacking support.
+
 Shared-service checks concurrently attach a ring and disconnected islands in separate
 hosts and one shared host. Both captured SDFs are compared with the numerical oracle;
 canvas readbacks verify independent time/intensity and reproducible surviving output

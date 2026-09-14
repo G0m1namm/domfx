@@ -74,7 +74,12 @@ renderer. They verify revision coalescing, promise settlement, atomic replacemen
 exactly-once frame release, and invalidation/disposal during both stages. A changed DOM
 silhouette is refreshed on the same canvas and compared with a fresh attachment at the
 same time/seed; runtime reduced motion and simulated document hiding invalidate pending
-capture. These checks run in both development and production.
+capture. Reduced-motion checks reject canvas creation and GPU access at startup,
+verify retained and late allocation release during initialization/capture/preparation,
+and require suspension to survive preference reversal and control writes. Static opt-in
+checks use real capture/GPU output to verify time-zero pixels, no ambient rendering,
+preference changes during capture/preparation, and disposal before late completion.
+These checks run in both development and production.
 
 Fake animation-frame tests use the real attachment, capture and GPU renderer to verify
 one shared frame request, one commit per dirty target, manual time ownership, ambient

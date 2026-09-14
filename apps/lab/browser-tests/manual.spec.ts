@@ -221,13 +221,22 @@ for (const mode of ['missing-gpu', 'reduced-motion'] as const) {
       await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
     } else {
       await page.emulateMedia({ reducedMotion: 'reduce' });
-      await page.addInitScript(() =>
+      await page.addInitScript(() => {
         Object.defineProperty(navigator, 'gpu', {
           get() {
             throw new Error('unexpected-gpu-access');
           },
-        }),
-      );
+        });
+        const createElement = Document.prototype.createElement;
+        Document.prototype.createElement = function (
+          ...args: Parameters<Document['createElement']>
+        ) {
+          if (args[0].toLowerCase() === 'canvas') {
+            throw new Error('unexpected-canvas-allocation');
+          }
+          return Reflect.apply(createElement, this, args);
+        };
+      });
     }
     await page.goto('/manual.html');
     await expect(page.locator('#state')).toContainText('"lifecycle":"unavailable"');
@@ -285,16 +294,29 @@ test('disposal during GPU preparation releases late resources', async ({ page })
   expect(errors).toEqual([]);
 });
 
-test('runtime reduced motion suspends and resumes the same manual raster', async ({ page }) => {
+test('runtime reduced motion releases output without automatic recovery', async ({ page }) => {
   await page.goto('/manual.html');
   await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect.poll(() => page.evaluate(() => window.manual.effect.lifecycle)).toBe('suspended');
-  await expect(page.locator('#manual-host canvas')).toBeHidden();
+  await expect(page.locator('#manual-host canvas')).toHaveCount(0);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect.poll(() => page.evaluate(() => window.manual.effect.lifecycle)).toBe('active');
-  await expect(page.locator('#manual-host canvas')).toBeVisible();
-  expect(await page.evaluate(() => window.manual.effect.raster)).toBe('fresh');
+  const state = await page.evaluate(async () => {
+    const effect = window.manual.effect;
+    effect.time = 9;
+    effect.resume();
+    window.dispatchEvent(new Event('resize'));
+    const error = await effect.refresh().catch((error: Error) => error.message);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    return { lifecycle: effect.lifecycle, raster: effect.raster, reason: effect.reason, error };
+  });
+  expect(state).toEqual({
+    lifecycle: 'suspended',
+    raster: 'stale',
+    reason: 'reduced-motion',
+    error: 'reduced-motion',
+  });
+  await expect(page.locator('#manual-host canvas')).toHaveCount(0);
 });
 
 for (const mode of [
@@ -481,6 +503,8 @@ test('programmer errors never register a target', async ({ page }) => {
       [svgTarget, { host: svg }, 'invalid-effect-host'],
       [target, { host, clock: 'invalid' }, 'invalid-clock-mode'],
       [target, { host, clock: null }, 'invalid-clock-mode'],
+      [target, { host, motion: 'animate' }, 'invalid-motion-policy'],
+      [target, { host, motion: null }, 'invalid-motion-policy'],
     ];
     for (const parameter of ['seed', 'time', 'intensity']) {
       for (const value of [NaN, Infinity, -Infinity, Number.MAX_VALUE, null, '1']) {
@@ -535,6 +559,6 @@ test('programmer errors never register a target', async ({ page }) => {
     }
     return results;
   });
-  expect(results.length).toBe(38);
+  expect(results.length).toBe(40);
   expect(results.every(Boolean)).toBe(true);
 });

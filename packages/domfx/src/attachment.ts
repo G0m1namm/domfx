@@ -12,6 +12,8 @@ export interface FireOptions {
   readonly host: HTMLElement;
   /** Defaults to manual for externally owned time. */
   readonly clock?: ClockMode;
+  /** Respect reduced motion by default; static always paints at time zero. */
+  readonly motion?: 'respect' | 'static';
   readonly seed?: number;
   readonly time?: number;
   readonly intensity?: number;
@@ -72,6 +74,11 @@ export function attachFireWithAdapters(
     throw new Error('invalid-clock-mode');
   }
 
+  const motionPolicy = options.motion === undefined ? 'respect' : options.motion;
+  if (motionPolicy !== 'respect' && motionPolicy !== 'static') {
+    throw new Error('invalid-motion-policy');
+  }
+
   const { host } = options;
   if (
     !(host instanceof view.HTMLElement) ||
@@ -101,7 +108,8 @@ export function attachFireWithAdapters(
   const scheduler = schedulerFor(document, view);
   const now = () => view.performance.now();
 
-  let paused = clock === 'manual';
+  let paused = clock === 'manual' || motionPolicy === 'static';
+  let motionSuspended = false;
   let dirty = false;
   let lastTimestamp: number | undefined;
 
@@ -129,9 +137,7 @@ export function attachFireWithAdapters(
   }
   const disposalCallbacks = new Set<() => void>();
 
-  const canvas = document.createElement('canvas');
-  canvas.setAttribute('aria-hidden', 'true');
-  canvas.style.cssText = 'position:absolute;pointer-events:none;display:none;';
+  let canvas: HTMLCanvasElement | undefined;
   claimed.add(target);
   owners.set(document, claimed);
 
@@ -148,7 +154,7 @@ export function attachFireWithAdapters(
   const observer = new view.MutationObserver(() => stale());
 
   function stale() {
-    if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
+    if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
       return;
     }
 
@@ -158,7 +164,9 @@ export function attachFireWithAdapters(
     lifecycle = 'suspended';
     reason = 'stale-raster';
     reasonDetail = undefined;
-    canvas.style.display = 'none';
+    if (canvas) {
+      canvas.style.display = 'none';
+    }
     scheduler.cancel(commit);
     lastTimestamp = undefined;
   }
@@ -172,13 +180,15 @@ export function attachFireWithAdapters(
     view?.removeEventListener('resize', stale);
     document.removeEventListener('scroll', invalidate, true);
     document.removeEventListener('visibilitychange', invalidate);
-    motion.removeEventListener('change', invalidate);
+    motion.removeEventListener('change', suspendForMotion);
 
     context?.unconfigure();
     context = null;
-    canvas.remove();
-    canvas.width = 0;
-    canvas.height = 0;
+    if (canvas) {
+      canvas.remove();
+      canvas.width = 0;
+      canvas.height = 0;
+    }
 
     prepared?.destroy();
     prepared = undefined;
@@ -202,17 +212,37 @@ export function attachFireWithAdapters(
     lifecycle = 'suspended';
     reason = reasonCode;
     reasonDetail = undefined;
-    canvas.style.display = 'none';
+    if (canvas) {
+      canvas.style.display = 'none';
+    }
     scheduler.cancel(commit);
     lastTimestamp = undefined;
   }
 
+  function suspendForMotion() {
+    if (motionPolicy === 'static' || !motion.matches) {
+      return;
+    }
+    if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
+      return;
+    }
+
+    generation += 1;
+    rejectRefreshes(new Error('refresh-invalidated'));
+    motionSuspended = true;
+    raster = 'stale';
+    suspend('reduced-motion');
+    cleanup();
+    frame = undefined;
+  }
+
   function invalidate() {
+    suspendForMotion();
     // Preserve immediate stale-output hiding even though rendering is deferred.
     if (observer.takeRecords().length) {
       stale();
     }
-    if (raster === 'refreshing' && (motion.matches || document.hidden)) {
+    if (raster === 'refreshing' && document.hidden) {
       stale();
     }
     if (lifecycle === 'disposed' || lifecycle === 'unavailable' || raster !== 'fresh') {
@@ -220,8 +250,8 @@ export function attachFireWithAdapters(
     }
 
     // A hidden document may not receive another frame to hide its output.
-    if (motion.matches || document.hidden) {
-      suspend(motion.matches ? 'reduced-motion' : 'target-not-visible');
+    if (document.hidden) {
+      suspend('target-not-visible');
       return;
     }
 
@@ -243,7 +273,7 @@ export function attachFireWithAdapters(
   }
 
   function unavailable(error: unknown, fallback: EffectReason = 'renderer-failed') {
-    if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
+    if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
       return;
     }
 
@@ -274,6 +304,7 @@ export function attachFireWithAdapters(
   }
 
   function paint() {
+    suspendForMotion();
     if (observer.takeRecords().length) {
       stale();
     }
@@ -283,7 +314,8 @@ export function attachFireWithAdapters(
       raster !== 'fresh' ||
       !prepared ||
       !frame ||
-      !context
+      !context ||
+      !canvas
     ) {
       return;
     }
@@ -292,8 +324,8 @@ export function attachFireWithAdapters(
       stale();
       return;
     }
-    if (motion.matches || document.hidden || target.getClientRects().length === 0) {
-      suspend(motion.matches ? 'reduced-motion' : 'target-not-visible');
+    if (document.hidden || target.getClientRects().length === 0) {
+      suspend('target-not-visible');
       return;
     }
 
@@ -305,7 +337,12 @@ export function attachFireWithAdapters(
       canvas.style.height = `${placement.height}px`;
       canvas.style.display = 'block';
 
-      prepared.render(time, seed, intensity, 1 / frame.pixelToLocal.a);
+      prepared.render(
+        motionPolicy === 'static' ? 0 : time,
+        seed,
+        intensity,
+        1 / frame.pixelToLocal.a,
+      );
       prepared.present(context.getCurrentTexture());
 
       lifecycle = 'active';
@@ -317,6 +354,7 @@ export function attachFireWithAdapters(
   }
 
   function current(requestedRevision: number, requestedGeneration: number) {
+    suspendForMotion();
     if (observer.takeRecords().length) {
       stale();
     }
@@ -324,7 +362,6 @@ export function attachFireWithAdapters(
       raster === 'refreshing' &&
       (!target.isConnected ||
         !host.contains(target) ||
-        motion.matches ||
         document.hidden ||
         target.getClientRects().length === 0)
     ) {
@@ -369,10 +406,8 @@ export function attachFireWithAdapters(
 
   async function refreshLoop() {
     try {
-      if (!service && lifecycle !== 'disposed' && lifecycle !== 'unavailable') {
-        if (motion.matches) {
-          throw new Error('reduced-motion');
-        }
+      suspendForMotion();
+      if (!service && lifecycle !== 'disposed' && lifecycle !== 'unavailable' && !motionSuspended) {
         service = await adapters.createRenderer();
         unwatchDeviceLoss = watchDeviceLoss(service.device, (info) => {
           unavailable(new Error(info.message), 'device-lost');
@@ -424,6 +459,11 @@ export function attachFireWithAdapters(
 
           // No await between installing and painting the replacement. Keep the
           // previous resources alive until presentation has consumed the new frame.
+          if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.setAttribute('aria-hidden', 'true');
+            canvas.style.cssText = 'position:absolute;pointer-events:none;display:none;';
+          }
           canvas.width = nextFrame.width;
           canvas.height = nextFrame.height;
           context ??= canvas.getContext('webgpu');
@@ -487,7 +527,7 @@ export function attachFireWithAdapters(
       .then(refreshLoop)
       .finally(() => {
         work = undefined;
-        if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
+        if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
           cleanup();
           frame = undefined;
         } else if (raster === 'refreshing') {
@@ -501,6 +541,10 @@ export function attachFireWithAdapters(
   function refresh(): Promise<void> {
     if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
       return Promise.reject(new Error(`effect-${lifecycle}`));
+    }
+    suspendForMotion();
+    if (motionSuspended) {
+      return Promise.reject(new Error('reduced-motion'));
     }
     // Mutations already queued before this explicit request belong to its capture.
     observer.takeRecords();
@@ -522,8 +566,11 @@ export function attachFireWithAdapters(
   view.addEventListener('resize', stale);
   document.addEventListener('scroll', invalidate, true);
   document.addEventListener('visibilitychange', invalidate);
-  motion.addEventListener('change', invalidate);
+  motion.addEventListener('change', suspendForMotion);
 
+  if (motionPolicy === 'respect' && motion.matches) {
+    unavailable(new Error('reduced-motion'));
+  }
   const ready = startRefresh();
 
   return {
@@ -567,7 +614,7 @@ export function attachFireWithAdapters(
     },
 
     resume() {
-      if (clock === 'manual' || !paused) {
+      if (clock === 'manual' || motionPolicy === 'static' || !paused) {
         return;
       }
       paused = false;

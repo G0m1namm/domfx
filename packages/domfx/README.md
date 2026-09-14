@@ -109,7 +109,7 @@ called before `ready`, and do not recapture. Manual mode is always paused. An ex
 time write while ambient is running resets the time origin to that value; subsequent
 frames add elapsed time from the write. Ambient time is the last committed time when
 read. Clock pause is independent of lifecycle suspension: pausing keeps fresh output
-visible, and seeking while paused does not resume the clock. Existing visibility/motion
+visible, and seeking while paused does not resume the clock. Document visibility
 suspension stops frame scheduling; resumption excludes the suspended interval. Stale,
 unavailable and disposed attachments leave the scheduler, without a retry loop.
 
@@ -187,8 +187,35 @@ Lifecycle is `suspended` during initialization, `active` while rendering,
 `refreshing` during capture or replacement, `fresh` after preparation, or `stale` when
 invalidated. Target subtree mutations, target asset load events and window resize
 hide stale output; call `refresh()` to capture again. There is no automatic refresh/retry
-loop. Reduced motion at startup avoids capture/GPU allocation; runtime reduced
-motion or document hiding suspends existing output and resumes it when permitted.
+loop. Document hiding suspends existing output and resumes it when visible.
+
+`motion` defaults to `'respect'`. Initial reduced motion resolves `ready` with
+`lifecycle: 'unavailable'` and `reason: 'reduced-motion'` before capture, canvas creation
+or GPU allocation. Enabling reduced motion later leaves the handle and target claim
+intact with `lifecycle: 'suspended'`, `raster: 'stale'` and `reason: 'reduced-motion'`.
+It immediately removes/zero-sizes the output canvas, releases retained allocations,
+stops scheduling, and removes listeners/observers. Pending work is invalidated;
+non-cancellable capture/preparation releases its late results and service reference
+when it settles. Other attachments retain their own resources.
+
+Changing the preference back does not restart the attachment. Control writes,
+`resume()` and `refresh()` cannot recover it; refresh rejects with `reduced-motion`.
+An explicit retry API is deferred. To create output again when permitted, dispose
+the suspended handle and explicitly attach a new one.
+
+Choose `motion: 'static'` to opt into a deterministic decoration that always paints
+at time zero, regardless of the OS preference or requested clock:
+
+```ts
+const effect = attachFire(target, { host, motion: 'static', seed: 314 });
+await effect.ready;
+```
+
+Static attachments remain paused, and `resume()` is a no-op even with `clock: 'ambient'`.
+Time writes remain readable configuration, but rendering always uses zero; intensity
+writes and explicit refresh still work. Preference changes never start animation or
+invalidate a static capture. This opt-in permits static output under reduced motion;
+there is no animated override.
 
 Explicit refresh hides output synchronously, retains the same decorative canvas, and
 serializes capture/preparation per attachment. A reattached target also waits for any
@@ -211,8 +238,9 @@ A newest capture/preparation failure rejects affected refresh promises with the 
 error and makes the attachment unavailable with stale, hidden output. Superseded failures
 do not reject newer requests. There is no retry: refresh on an unavailable or disposed
 handle rejects with `effect-unavailable` or `effect-disposed`. Mutation, asset load, resize,
-or a visibility/motion invalidation during pending work rejects with `refresh-invalidated`;
-call refresh explicitly once conditions permit. Disposal rejects pending promises immediately.
+or a visibility/motion invalidation during pending work rejects with `refresh-invalidated`.
+Mutation and visibility invalidations allow an explicit refresh once conditions permit;
+reduced-motion suspension requires the recovery policy described above. Disposal rejects pending promises immediately.
 In all cases late capture/preparation completes only to release its resources exactly once;
 it cannot resurrect an invalidated attachment. `ready` retains its nonrejecting initialization
 contract, including cleanup after initial disposal; refresh promises are separate from it.

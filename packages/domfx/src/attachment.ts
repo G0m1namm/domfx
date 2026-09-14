@@ -256,7 +256,7 @@ export function attachFireWithAdapters(
     frame = undefined;
   }
 
-  function invalidate() {
+  function invalidate(event?: Event) {
     suspendForMotion();
     // Preserve immediate stale-output hiding even though rendering is deferred.
     checkMutations(observer.takeRecords());
@@ -273,7 +273,7 @@ export function attachFireWithAdapters(
       return;
     }
 
-    dirty = true;
+    dirty ||= event?.type !== 'scroll';
     scheduler.schedule(commit);
   }
 
@@ -352,12 +352,14 @@ export function attachFireWithAdapters(
         placement.left !== lastPlacement.left ||
         placement.top !== lastPlacement.top ||
         placement.width !== lastPlacement.width ||
-        placement.height !== lastPlacement.height
+        placement.height !== lastPlacement.height ||
+        placement.clipPath !== lastPlacement.clipPath
       ) {
         canvas.style.left = `${placement.left}px`;
         canvas.style.top = `${placement.top}px`;
         canvas.style.width = `${placement.width}px`;
         canvas.style.height = `${placement.height}px`;
+        canvas.style.clipPath = placement.clipPath;
         lastPlacement = placement;
       }
       if (canvas.style.display !== 'block') {

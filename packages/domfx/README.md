@@ -318,6 +318,29 @@ focused borderless target with an outline; this is conservatively detected as st
 and invalidates capture. Attach before focusing such a target, or refresh after focus
 moves away.
 
+Bordered hosts support window, host and nested scrolling with the same placement-only
+tracking while manual or paused. Rectangular `overflow: auto`, `scroll` and `hidden`
+clips on positioned HTML ancestors between target and host are intersected and applied
+to the canvas in host coordinates. A fully clipped layer remains fresh and can reappear
+on scrolling back without capture or another GPU render. The host and its ancestors
+clip the appended canvas natively; their clipping is not copied into the capture.
+
+Host insertion remains explicit: the host must contain the target, establish the
+canvas's positioned containing block, and allow its decorative child to overlap the
+target in the caller's stacking order. Intermediate clipping ancestors must themselves
+be positioned HTML elements. Bypassed rounded overflow, `clip-path`, masks, legacy
+`clip`, paint containment, `content-visibility`, and `overflow: clip` (including clip
+margins) are held as unsupported. Fixed-position targets or intermediate ancestors are
+also unsupported because they can escape the shared clipping chain. These cases resolve
+initialization, or stop live tracking, with `lifecycle: 'unavailable'` and
+`reason: 'unsupported-placement'`; output is removed and the original target remains
+usable. No wrapper insertion, reparenting or cross-host/top-layer composition is performed.
+
+The scrolling fixture checks two nested rectangular clips against native browser hit
+testing, alongside landmark placement, saved screenshots, unchanged capture/render
+counts and fully clipped/re-entry stages at DPR 1 and 2. These checks do not establish
+support for arbitrary clipping shapes or stacking contexts.
+
 Run the lab and open `/manual.html` to exercise the root-export consumer with Seek,
 Zero intensity and Dispose controls. The browser suite covers it in development
 and production alongside the existing numerical capture/fire fixtures.

@@ -59,24 +59,125 @@ export function scaleToViewport(element: Element): { x: number; y: number } {
   return { x, y };
 }
 
+/** Client metrics are integers; keep fractional borders while retaining scrollbar gutters. */
+function clientOrigin(element: HTMLElement, style: CSSStyleDeclaration) {
+  const left = Number.parseFloat(style.borderLeftWidth);
+  const top = Number.parseFloat(style.borderTopWidth);
+  return {
+    x: left + element.clientLeft - Math.round(left),
+    y: top + element.clientTop - Math.round(top),
+  };
+}
+
+/** The host's own clip is native. Reproduce only rectangular clips bypassed by insertion. */
+function measureClip(target: Element, host: HTMLElement) {
+  const view = host.ownerDocument.defaultView!;
+  let left = -Infinity;
+  let top = -Infinity;
+  let right = Infinity;
+  let bottom = Infinity;
+
+  for (let node: Element | null = target; node && node !== host; node = node.parentElement) {
+    const style = view.getComputedStyle(node);
+    if (style.position === 'fixed') {
+      throw new Error('unsupported-placement');
+    }
+    // The selected target's own clipping is captured paint, not an ancestor clip.
+    if (node === target) {
+      continue;
+    }
+    if (
+      style.clipPath !== 'none' ||
+      style.maskImage !== 'none' ||
+      style.clip !== 'auto' ||
+      /\b(paint|strict|content)\b/.test(style.contain) ||
+      style.contentVisibility !== 'visible'
+    ) {
+      throw new Error('unsupported-placement');
+    }
+    const clipX = style.overflowX !== 'visible';
+    const clipY = style.overflowY !== 'visible';
+    if (!clipX && !clipY) {
+      continue;
+    }
+    if (
+      !(node instanceof view.HTMLElement) ||
+      style.position === 'static' ||
+      style.overflowX === 'clip' ||
+      style.overflowY === 'clip' ||
+      [
+        style.borderTopLeftRadius,
+        style.borderTopRightRadius,
+        style.borderBottomLeftRadius,
+        style.borderBottomRightRadius,
+      ].some((radius) => Number.parseFloat(radius) !== 0)
+    ) {
+      throw new Error('unsupported-placement');
+    }
+    const scale = scaleToViewport(node);
+    const rect = node.getBoundingClientRect();
+    const origin = clientOrigin(node, style);
+    const paddingWidth =
+      rect.width / scale.x -
+      Number.parseFloat(style.borderLeftWidth) -
+      Number.parseFloat(style.borderRightWidth);
+    const paddingHeight =
+      rect.height / scale.y -
+      Number.parseFloat(style.borderTopWidth) -
+      Number.parseFloat(style.borderBottomWidth);
+    const width = paddingWidth - (Math.round(paddingWidth) - node.clientWidth);
+    const height = paddingHeight - (Math.round(paddingHeight) - node.clientHeight);
+    if (clipX) {
+      left = Math.max(left, rect.left + origin.x * scale.x);
+      right = Math.min(right, rect.left + (origin.x + width) * scale.x);
+    }
+    if (clipY) {
+      top = Math.max(top, rect.top + origin.y * scale.y);
+      bottom = Math.min(bottom, rect.top + (origin.y + height) * scale.y);
+    }
+  }
+  return { left, top, right, bottom };
+}
+
 /** Measure the captured raster in effect-host CSS pixels before writing layer styles. */
 export function measureEffectPlacement(target: Element, host: HTMLElement, frame: CaptureFrame) {
   const targetScale = scaleToViewport(target);
   const hostScale = scaleToViewport(host);
   const targetRect = target.getBoundingClientRect();
   const hostRect = host.getBoundingClientRect();
+  const hostOrigin = clientOrigin(host, host.ownerDocument.defaultView!.getComputedStyle(host));
 
   const scaleX = targetScale.x / hostScale.x;
   const scaleY = targetScale.y / hostScale.y;
   const targetOriginX =
-    (targetRect.left - hostRect.left) / hostScale.x - host.clientLeft + host.scrollLeft;
+    (targetRect.left - hostRect.left) / hostScale.x - hostOrigin.x + host.scrollLeft;
   const targetOriginY =
-    (targetRect.top - hostRect.top) / hostScale.y - host.clientTop + host.scrollTop;
+    (targetRect.top - hostRect.top) / hostScale.y - hostOrigin.y + host.scrollTop;
+
+  const clip = measureClip(target, host);
+  const viewportLeft = targetRect.left + frame.pixelToLocal.e * targetScale.x;
+  const viewportTop = targetRect.top + frame.pixelToLocal.f * targetScale.y;
+  const width = frame.width * frame.pixelToLocal.a * scaleX;
+  const height = frame.height * frame.pixelToLocal.d * scaleY;
+  const insetLeft = Math.min(width, Math.max(0, (clip.left - viewportLeft) / hostScale.x));
+  const insetTop = Math.min(height, Math.max(0, (clip.top - viewportTop) / hostScale.y));
+  const insetRight = Math.min(
+    width,
+    Math.max(0, width - (clip.right - viewportLeft) / hostScale.x),
+  );
+  const insetBottom = Math.min(
+    height,
+    Math.max(0, height - (clip.bottom - viewportTop) / hostScale.y),
+  );
 
   return {
     left: targetOriginX + frame.pixelToLocal.e * scaleX,
     top: targetOriginY + frame.pixelToLocal.f * scaleY,
-    width: frame.width * frame.pixelToLocal.a * scaleX,
-    height: frame.height * frame.pixelToLocal.d * scaleY,
+    width,
+    height,
+    clipPath:
+      insetTop || insetRight || insetBottom || insetLeft
+        ? `inset(${insetTop}px ${insetRight}px ${insetBottom}px ${insetLeft}px)`
+        : 'none',
   };
 }

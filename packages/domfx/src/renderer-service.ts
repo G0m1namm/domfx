@@ -10,14 +10,29 @@ interface ServiceEntry {
 
 const services = new WeakMap<Document, ServiceEntry>();
 
+function retire(document: Document, entry: ServiceEntry) {
+  // Old reservations can drain after an explicit attachment creates a new service.
+  if (services.get(document) === entry) {
+    services.delete(document);
+  }
+  entry.renderer?.destroy();
+  entry.renderer = undefined;
+}
+
 /** Each acquisition owns one reference, including while initialization is pending. */
 export async function acquireRenderer(document: Document): Promise<AttachmentRenderer> {
   let entry = services.get(document);
   if (!entry) {
-    entry = {
+    const created: ServiceEntry = {
       owners: 0,
-      ready: GpuExperiment.create(document.defaultView?.navigator.gpu ?? null),
+      ready: GpuExperiment.create(document.defaultView?.navigator.gpu ?? null).then((renderer) => {
+        created.renderer = renderer;
+        // Retire immediately, even when a lease still owns non-cancellable work.
+        void renderer.device.lost.then(() => retire(document, created));
+        return renderer;
+      }),
     };
+    entry = created;
     services.set(document, entry);
   }
   const shared = entry;
@@ -31,14 +46,12 @@ export async function acquireRenderer(document: Document): Promise<AttachmentRen
     released = true;
     shared.owners -= 1;
     if (shared.owners === 0) {
-      services.delete(document);
-      shared.renderer?.destroy();
+      retire(document, shared);
     }
   }
 
   try {
     const renderer = await shared.ready;
-    shared.renderer = renderer;
     return {
       device: renderer.device,
       prepare: (frame) => renderer.prepare(frame),

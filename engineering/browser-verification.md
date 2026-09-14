@@ -88,8 +88,15 @@ observed live GPUBuffer bytes verify sharing and the surviving-target allocation
 Controlled initialization/preparation delays cover disposal, reattachment, late cleanup,
 shared initialization failure and isolated preparation failure. A same-origin iframe
 checks Document/device isolation and owning-Document capability detection. A simulated
-device-loss notification checks cleanup of both owners. Successful rendering always uses
-real GPU work; notification injection does not establish hardware-loss behavior.
+device-loss notification checks cleanup of both owners. Controlled loss also covers
+pending service initialization, initial and refresh capture, asynchronous pipeline
+creation, submitted preparation, final validation, and late prepared results. Checks
+require immediate refresh rejection with loss details, removal/zero sizing of canvases,
+no further GPU allocation/submission, pending reservation cleanup, and continued page
+animation and DOM interaction. Explicit new attachments use a fresh service while old
+work drains; late cleanup must preserve that replacement entry. Both `unknown` and
+`destroyed` loss notifications invalidate live owners. Successful rendering always uses
+real GPU work; these are simulated notifications, not physical hardware-loss evidence.
 
 Memory admission checks hold three one-million-pixel captures pending and require a
 fourth to reject before capture. Concurrent replacements verify retained-frame and
@@ -127,7 +134,7 @@ CI uploads `.scratch/agent/` as `browser-gpu-evidence` for seven days, including
 Pixel readbacks establish shader output; screenshot attachments help diagnosis but
 are not visual-diff assertions. Accounted bytes are not a driver-memory leak detector.
 Performance observations, especially SwiftShader timings, are not release thresholds.
-Other browsers, fractional DPR, expanded geometry, device loss, and
+Other browsers, fractional DPR, expanded geometry, physical device loss, and
 additional runtime motion-preference changes need their own scenarios when relevant to a change.
 
 The implementation follows Playwright's [web-server lifecycle](https://playwright.dev/docs/test-webserver)

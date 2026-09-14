@@ -128,6 +128,7 @@ export function attachFireWithAdapters(
   let work: Promise<void> | undefined;
   let revision = 1;
   let generation = 0;
+  let awaitingAssets = true;
   const refreshes: { resolve: () => void; reject: (error: unknown) => void }[] = [];
 
   function rejectRefreshes(error: unknown) {
@@ -153,6 +154,14 @@ export function attachFireWithAdapters(
 
   const observer = new view.MutationObserver(() => stale());
 
+  function assetChanged() {
+    // Initial/explicit captures establish readiness themselves. Their expected
+    // load events must not invalidate the revision waiting for those assets.
+    if (raster === 'fresh' || (raster === 'refreshing' && !awaitingAssets)) {
+      stale();
+    }
+  }
+
   function stale() {
     if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
       return;
@@ -176,7 +185,11 @@ export function attachFireWithAdapters(
     lastTimestamp = undefined;
 
     observer.disconnect();
-    target.removeEventListener('load', stale, true);
+    target.removeEventListener('load', assetChanged, true);
+    target.removeEventListener('error', assetChanged, true);
+    document.fonts.removeEventListener('loading', assetChanged);
+    document.fonts.removeEventListener('loadingdone', assetChanged);
+    document.fonts.removeEventListener('loadingerror', assetChanged);
     view?.removeEventListener('resize', stale);
     document.removeEventListener('scroll', invalidate, true);
     document.removeEventListener('visibilitychange', invalidate);
@@ -388,7 +401,10 @@ export function attachFireWithAdapters(
       }
       const estimate = measureCapture(target);
       reserve(estimate.width, estimate.height);
-      return adapters.capture(target, {}, reserve);
+      awaitingAssets = true;
+      return adapters.capture(target, {}, reserve, () => {
+        awaitingAssets = false;
+      });
     });
     const settled = captured
       .then(
@@ -562,7 +578,11 @@ export function attachFireWithAdapters(
     attributes: true,
     characterData: true,
   });
-  target.addEventListener('load', stale, true);
+  target.addEventListener('load', assetChanged, true);
+  target.addEventListener('error', assetChanged, true);
+  document.fonts.addEventListener('loading', assetChanged);
+  document.fonts.addEventListener('loadingdone', assetChanged);
+  document.fonts.addEventListener('loadingerror', assetChanged);
   view.addEventListener('resize', stale);
   document.addEventListener('scroll', invalidate, true);
   document.addEventListener('visibilitychange', invalidate);

@@ -423,7 +423,7 @@ for (const mode of [
     if (mode === 'capture-failed' || mode === 'renderer-failed') {
       expect(await page.evaluate(() => window.manual.effect.reasonDetail)).toBe(
         mode === 'capture-failed'
-          ? 'injected capture decode failure'
+          ? 'capture-decode-failed: snapshot: injected capture decode failure'
           : 'injected renderer construction failure',
       );
     }

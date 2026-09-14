@@ -1,8 +1,9 @@
 import type { CaptureFrame, ClockMode, EffectHandle, EffectReason } from '@domfx/core';
 
 import { captureElement } from './browser.js';
-import { GpuExperiment, type PreparedGpuFrame } from './gpu.js';
+import type { PreparedGpuFrame } from './gpu.js';
 import { measureEffectPlacement, scaleToViewport } from './placement.js';
+import { acquireRenderer, type AttachmentRenderer } from './renderer-service.js';
 import { schedulerFor } from './scheduler.js';
 
 export interface FireOptions {
@@ -27,11 +28,19 @@ function finite(value: number): number {
   return value;
 }
 
-type AttachmentRenderer = Pick<GpuExperiment, 'device' | 'prepare' | 'destroy'>;
+// Clear the callback on cleanup so a shared device does not retain disposed targets.
+function watchDeviceLoss(device: GPUDevice, callback: (info: GPUDeviceLostInfo) => void) {
+  const subscription: { callback?: typeof callback } = { callback };
+  void device.lost.then((info) => subscription.callback?.(info));
+  return () => {
+    subscription.callback = undefined;
+  };
+}
 
 /** Internal adapter seam for controlled lifecycle verification in the lab. */
 export interface AttachmentAdapters {
   capture: typeof captureElement;
+  /** One owned reference; destroy releases it. attachFire supplies a shared service lease. */
   createRenderer: () => Promise<AttachmentRenderer>;
 }
 
@@ -39,7 +48,7 @@ export interface AttachmentAdapters {
 export function attachFire(target: Element, options: FireOptions): EffectHandle {
   return attachFireWithAdapters(target, options, {
     capture: captureElement,
-    createRenderer: () => GpuExperiment.create(),
+    createRenderer: () => acquireRenderer(target.ownerDocument),
   });
 }
 
@@ -101,6 +110,7 @@ export function attachFireWithAdapters(
   let reasonDetail: string | undefined;
 
   let service: AttachmentRenderer | undefined;
+  let unwatchDeviceLoss: (() => void) | undefined;
   let prepared: PreparedGpuFrame | undefined;
   let frame: CaptureFrame | undefined;
   let context: GPUCanvasContext | null = null;
@@ -169,6 +179,8 @@ export function attachFireWithAdapters(
 
     prepared?.destroy();
     prepared = undefined;
+    unwatchDeviceLoss?.();
+    unwatchDeviceLoss = undefined;
 
     // Pending preparation owns the device until its late result is released.
     if (!work) {
@@ -347,7 +359,7 @@ export function attachFireWithAdapters(
           throw new Error('reduced-motion');
         }
         service = await adapters.createRenderer();
-        void service.device.lost.then((info) => {
+        unwatchDeviceLoss = watchDeviceLoss(service.device, (info) => {
           if (info.reason !== 'destroyed') {
             unavailable(new Error(info.message), 'device-lost');
           }

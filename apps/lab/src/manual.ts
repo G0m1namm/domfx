@@ -1,6 +1,12 @@
 import { attachFire, type EffectHandle } from '@domfx/browser';
 
 import { verifyRefresh } from './refresh-checks.js';
+import {
+  verifyDocumentIsolation,
+  verifySharedDeviceLoss,
+  verifySharedInitialization,
+  verifySharedTargets,
+} from './shared-service-checks.js';
 
 const host = document.querySelector<HTMLElement>('#manual-host');
 const target = document.querySelector<HTMLButtonElement>('#manual-target');
@@ -36,10 +42,23 @@ declare global {
       attach: typeof attachFire;
       capture: typeof capture;
       verifyRefresh: typeof verifyRefresh;
+      verifySharedTargets: typeof verifySharedTargets;
+      verifySharedInitialization: typeof verifySharedInitialization;
+      verifyDocumentIsolation: typeof verifyDocumentIsolation;
+      verifySharedDeviceLoss: typeof verifySharedDeviceLoss;
     };
   }
 }
-window.manual = { effect, attach: attachFire, capture, verifyRefresh };
+window.manual = {
+  effect,
+  attach: attachFire,
+  capture,
+  verifyRefresh,
+  verifySharedTargets,
+  verifySharedInitialization,
+  verifyDocumentIsolation,
+  verifySharedDeviceLoss,
+};
 void effect.ready.then(report);
 let clicks = 0;
 target.onclick = () => {

@@ -77,6 +77,7 @@ export interface PreparedGpuFrame {
 export class GpuExperiment {
   private readonly prepared = new Set<PreparedGpuFrame>();
   private readonly pipeline: GPURenderPipeline;
+  private preparation: Promise<void> = Promise.resolve();
   private destroyed = false;
   readonly errors: string[] = [];
   private constructor(
@@ -98,11 +99,11 @@ export class GpuExperiment {
     });
   }
 
-  static async create(): Promise<GpuExperiment> {
-    if (!navigator.gpu) {
+  static async create(gpu: GPU | null = navigator.gpu ?? null): Promise<GpuExperiment> {
+    if (!gpu) {
       throw new Error('no-webgpu');
     }
-    const adapter = await navigator.gpu.requestAdapter();
+    const adapter = await gpu.requestAdapter();
     if (!adapter) {
       throw new Error('no-adapter');
     }
@@ -125,7 +126,18 @@ export class GpuExperiment {
     return [...this.prepared].reduce((sum, frame) => sum + frame.managedBytes, 0);
   }
 
-  async prepare(
+  prepare(frame: Pick<CaptureFrame, 'width' | 'height' | 'pixels'>): Promise<PreparedGpuFrame> {
+    // Validation scopes are device-wide stacks; budget checks must also include
+    // the preceding preparation's allocations before admitting another frame.
+    const pending = this.preparation.then(() => this.prepareFrame(frame));
+    this.preparation = pending.then(
+      () => {},
+      () => {},
+    );
+    return pending;
+  }
+
+  private async prepareFrame(
     frame: Pick<CaptureFrame, 'width' | 'height' | 'pixels'>,
   ): Promise<PreparedGpuFrame> {
     if (this.destroyed) {

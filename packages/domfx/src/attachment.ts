@@ -47,7 +47,7 @@ export interface AttachmentAdapters {
   createRenderer: () => Promise<AttachmentRenderer>;
 }
 
-/** Batch control writes and explicitly refresh captured paint. */
+/** Batch control writes and refresh observed changes to captured paint. */
 export function attachFire(target: Element, options: FireOptions): EffectHandle {
   return attachFireWithAdapters(target, options, {
     capture: captureElementWithReservation,
@@ -154,19 +154,57 @@ export function attachFireWithAdapters(
   }
 
   const observer = new view.MutationObserver(checkMutations);
+  let observedSize = targetSize();
+  const resizeObserver = new view.ResizeObserver(() => {
+    try {
+      const size = targetSize();
+      // Dividing viewport coordinates by accumulated transforms can add float noise.
+      const changed =
+        Math.abs(size.width - observedSize.width) > 0.0001 ||
+        Math.abs(size.height - observedSize.height) > 0.0001;
+      observedSize = size;
+      if (changed) {
+        assetChanged();
+      }
+    } catch (error) {
+      unavailable(error);
+    }
+  });
+
+  function targetSize() {
+    const scale = scaleToViewport(target);
+    const rect = target.getBoundingClientRect();
+    return { width: rect.width / scale.x, height: rect.height / scale.y };
+  }
 
   function checkMutations(records: MutationRecord[]) {
     if (records.some((record) => !isPlacementMutation(record, target))) {
-      stale();
+      observePaint();
     }
   }
 
   function assetChanged() {
     // Initial/explicit captures establish readiness themselves. Their expected
     // load events must not invalidate the revision waiting for those assets.
-    if (raster === 'fresh' || (raster === 'refreshing' && !awaitingAssets)) {
-      stale();
+    if (raster !== 'refreshing' || !awaitingAssets) {
+      observePaint();
     }
+  }
+
+  function observePaint() {
+    stale();
+    if (raster === 'stale' && lifecycle === 'suspended' && !motionSuspended) {
+      scheduler.schedule(refreshObserved);
+    }
+  }
+
+  function refreshObserved() {
+    // One capture request for all signals before this frame. refresh owns failure
+    // reporting and cleanup; observer work has no caller to receive its rejection.
+    if (!document.hidden && target.isConnected && host.contains(target)) {
+      void refresh().catch(() => {});
+    }
+    return false;
   }
 
   function stale() {
@@ -189,15 +227,17 @@ export function attachFireWithAdapters(
 
   function cleanup() {
     scheduler.cancel(commit);
+    scheduler.cancel(refreshObserved);
     lastTimestamp = undefined;
 
     observer.disconnect();
+    resizeObserver.disconnect();
     target.removeEventListener('load', assetChanged, true);
     target.removeEventListener('error', assetChanged, true);
     document.fonts.removeEventListener('loading', assetChanged);
     document.fonts.removeEventListener('loadingdone', assetChanged);
     document.fonts.removeEventListener('loadingerror', assetChanged);
-    view?.removeEventListener('resize', stale);
+    view?.removeEventListener('resize', observePaint);
     document.removeEventListener('scroll', invalidate, true);
     document.removeEventListener('visibilitychange', invalidate);
     motion.removeEventListener('change', suspendForMotion);
@@ -416,9 +456,12 @@ export function attachFireWithAdapters(
         return undefined;
       }
       const estimate = measureCapture(target);
+      observedSize = targetSize();
       reserve(estimate.width, estimate.height);
       awaitingAssets = true;
       return adapters.capture(target, {}, reserve, () => {
+        // Asset-driven layout is already part of this capture's readiness boundary.
+        observedSize = targetSize();
         awaitingAssets = false;
       });
     });
@@ -580,6 +623,8 @@ export function attachFireWithAdapters(
     }
     // Mutations already queued before this explicit request belong to its capture.
     observer.takeRecords();
+    scheduler.cancel(refreshObserved);
+    awaitingAssets = true;
     revision += 1;
     raster = 'refreshing';
     suspend('stale-raster');
@@ -595,12 +640,13 @@ export function attachFireWithAdapters(
     attributeOldValue: true,
     characterData: true,
   });
+  resizeObserver.observe(target, { box: 'border-box' });
   target.addEventListener('load', assetChanged, true);
   target.addEventListener('error', assetChanged, true);
   document.fonts.addEventListener('loading', assetChanged);
   document.fonts.addEventListener('loadingdone', assetChanged);
   document.fonts.addEventListener('loadingerror', assetChanged);
-  view.addEventListener('resize', stale);
+  view.addEventListener('resize', observePaint);
   document.addEventListener('scroll', invalidate, true);
   document.addEventListener('visibilitychange', invalidate);
   motion.addEventListener('change', suspendForMotion);

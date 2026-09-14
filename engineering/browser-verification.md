@@ -153,7 +153,7 @@ broken assets, an unembeddable programmatic font, explicit SVG-image rejection, 
 cross-origin PNGs with CORS denied/permitted, and injected snapshot decode/readback
 failures with zero-sized temporary canvases. Failure cases preserve the target and
 pointer/keyboard interaction. An attachment waits through initial asset loading;
-subsequent font/load/error signals hide stale output without automatic refresh.
+subsequent font/load/error signals hide stale output and automatically refresh.
 Cross-origin fetches must send no cookies. Controlled network delays and injected
 readback errors are identified as such; they do not claim physical network/GPU failure.
 
@@ -180,3 +180,12 @@ The implementation follows Playwright's [web-server lifecycle](https://playwrigh
 and [Chromium channel guidance](https://playwright.dev/docs/browsers), with the Linux
 software backend based on [Vercel's verified WebGPU preset](https://github.com/vercel-labs/agent-browser/blob/main/skill-data/core/references/webgpu.md).
 See also Chromium's [SwiftShader documentation](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/gpu/swiftshader.md).
+
+Automatic invalidation fixtures verify one capture per paint burst, replacement pixels
+matching a fresh attachment, stylesheet-driven target resizing, placement reuse,
+descendant paint refresh, explicit-refresh coalescing and disposal of queued work.
+Real snapshot readback hashes record changed text, image, background and delayed-font
+paint; no capture or renderer mock supplies those pixels. Stylesheet hide/show verifies
+size-triggered recovery without a hidden-target retry loop. Injected decode failure verifies stale/unavailable diagnostics
+without unhandled rejections or retries. Source-mutating SnapDOM styles reject before
+creating capture feedback loops. These run in both browser projects.

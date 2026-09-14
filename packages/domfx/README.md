@@ -105,8 +105,8 @@ a claim of universal asset or CSS support.
 
 Font loading signals are conservatively Document-wide. Expected image/font events
 while a capture establishes readiness are allowed; later signals invalidate pending
-work or hide fresh output. After a change, call `refresh()` explicitly. Stylesheet
-edits that emit no observed mutation/font event still require caller invalidation.
+work or hide fresh output and schedule a fresh capture. Stylesheet edits that emit
+no observed size/mutation/font event still require explicit `refresh()`.
 
 ## Manual fire attachment
 
@@ -235,9 +235,16 @@ this notification to detach bindings without replacing the handle's `dispose()` 
 Lifecycle is `suspended` during initialization, `active` while rendering,
 `unavailable` after failure, or `disposed`. Raster health is independently
 `refreshing` during capture or replacement, `fresh` after preparation, or `stale` when
-invalidated. Target subtree paint mutations, target asset load/error events, document font loading events and window resize
-hide stale output; call `refresh()` to capture again. There is no automatic refresh/retry
-loop. Document hiding suspends existing output and resumes it when visible.
+invalidated. Target subtree paint mutations, target size changes, target asset load/error
+events, document font loading events and window resize hide stale output immediately
+and schedule a fresh capture. Signals before the next shared animation frame coalesce
+into one refresh; an explicit `refresh()` absorbs already queued observer work.
+Observers cover only the selected target subtree, excluding the decorative canvas.
+There is no per-frame capture or automatic retry after failure. Observer-triggered
+failures update lifecycle, raster health and diagnostics through the same refresh
+contract, without an unhandled promise rejection. Disposal removes observers/listeners
+and cancels queued captures. Document hiding suspends existing output and resumes it
+when visible; paint invalidated while hidden needs explicit refresh once visible.
 
 `motion` defaults to `'respect'`. Initial reduced motion resolves `ready` with
 `lifecycle: 'unavailable'` and `reason: 'reduced-motion'` before capture, canvas creation
@@ -289,8 +296,8 @@ error and makes the attachment unavailable with stale, hidden output. Superseded
 do not reject newer requests. There is no retry: refresh on an unavailable or disposed
 handle rejects with `effect-unavailable` or `effect-disposed`. Mutation, asset load, resize,
 or a visibility/motion invalidation during pending work rejects with `refresh-invalidated`.
-Mutation and visibility invalidations allow an explicit refresh once conditions permit;
-reduced-motion suspension requires the recovery policy described above. Disposal rejects pending promises immediately.
+Observed paint invalidations schedule a replacement automatically; visibility invalidations
+allow an explicit refresh once conditions permit. Reduced-motion suspension requires the recovery policy described above. Disposal rejects pending promises immediately.
 In all cases late capture/preparation completes only to release its resources exactly once;
 it cannot resurrect an invalidated attachment. `ready` retains its nonrejecting initialization
 contract, including cleanup after initial disposal; refresh promises are separate from it.
@@ -302,21 +309,26 @@ updates reuse the presented pixels without advancing time, recapturing or render
 again. Unchanged placement does not write layer styles. Inline changes limited to the
 selected root's `transform`, `transform-origin`, `translate`, `rotate` and `scale` do
 not invalidate captured paint; unsupported transforms still make the effect unavailable.
-Descendant transforms affect captured paint and require explicit refresh, as do other
+Descendant transforms affect captured paint and automatically refresh, as do other
 target style/class mutations. Stale, hidden, unavailable and disposed output stops tracking.
 
 Marked SVG alpha landmarks are verified within one physical pixel at DPR 1 and 2
 under nested nonuniform scales and fractional offsets. This is not a universal CSS
 paint guarantee: Chromium's HTML background snapping in foreignObject capture can
 lose subpixel edges before placement. Rotation, negative scale, skew, perspective and
-CSS zoom remain unsupported. This is a bounded snapshot API: changes to target size
-or painted appearance through stylesheets or ancestors still require explicit refresh;
-arbitrary clipping/stacking contexts are not comprehensively supported. The caller must provide a host whose compositing lets
+CSS zoom remain unsupported. This is a bounded snapshot API. Resize observation catches
+target border-box size changes, including those caused by ancestor layout or stylesheets.
+Paint changes from ancestor styles, external stylesheets (including CSSOM edits),
+pseudo-states such as hover/focus, and CSS animations require explicit `refresh()`
+when they emit no observed signal. Canvas drawing also requires explicit refresh for
+each desired snapshot; video elements remain unsupported even with explicit refresh.
+There is no automatic video/canvas frame capture. Arbitrary clipping/stacking contexts
+are not comprehensively supported. The caller must provide a host whose compositing lets
 its decorative child overlap the target. The attachment does not change target styles.
-The pinned SnapDOM adapter can temporarily change source styles when capturing a
-focused borderless target with an outline; this is conservatively detected as stale
-and invalidates capture. Attach before focusing such a target, or refresh after focus
-moves away.
+The pinned SnapDOM adapter temporarily edits source styles for a borderless target
+with an outline, or subtree `content-visibility:auto`. Capture rejects those cases
+with `CaptureError` code `unsupported-asset` before source mutation can create a
+refresh loop. Attach before focusing an outlined borderless target, or provide a border.
 
 Bordered hosts support window, host and nested scrolling with the same placement-only
 tracking while manual or paused. Rectangular `overflow: auto`, `scroll` and `hidden`

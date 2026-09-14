@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Capture asset fixtures</title>
+    <script type="module" src="/src/assets.ts"></script>
+    <style>
+      body { margin: 40px; font-family: sans-serif; background: white; }
+      #host { position: relative; }
+      #target { display: block; margin: 0; border: 0; padding: 0; width: 160px; height: 80px; background: white; color: black; font: 40px/80px sans-serif; text-align: left; }
+      #target img { display: block; width: 40px; height: 40px; }
+      #frame { display: block; margin-top: 40px; }
+    </style>
+  </head>
+  <body>
+    <h1>Capture asset fixtures</h1>
+    <div id="host"><button id="target" aria-label="Asset target"></button></div>
+    <canvas id="frame"></canvas>
+    <pre id="state">Ready for a fixture</pre>
+  </body>
+</html>

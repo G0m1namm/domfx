@@ -123,6 +123,16 @@ Each test has a three-minute deadline; the browser suite has a ten-minute deadli
 The harness also requires report evidence from both projects, with no skipped tests,
 expected failures, retries, or reporter errors. A command exit code alone is insufficient.
 
+The `/assets.html` consumer verifies delayed font/image/background readiness by
+comparing the visible target with the returned frame and saving both PNGs. It checks
+broken assets, an unembeddable programmatic font, explicit SVG-image rejection, actual
+cross-origin PNGs with CORS denied/permitted, and injected snapshot decode/readback
+failures with zero-sized temporary canvases. Failure cases preserve the target and
+pointer/keyboard interaction. An attachment waits through initial asset loading;
+subsequent font/load/error signals hide stale output without automatic refresh.
+Cross-origin fetches must send no cookies. Controlled network delays and injected
+readback errors are identified as such; they do not claim physical network/GPU failure.
+
 ## Evidence and interpretation
 
 The harness writes browser evidence alongside its summary in

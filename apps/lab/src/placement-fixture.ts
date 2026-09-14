@@ -2,7 +2,7 @@ import { captureElement, type ClockMode } from '@domfx/browser';
 import { attachFireWithAdapters, GpuExperiment } from '@domfx/browser/experimental';
 
 /** Colored alpha islands give independent, visible landmarks in the captured paint. */
-export async function createPlacementFixture(clock: ClockMode) {
+export async function createPlacementFixture(clock: ClockMode, scrolling = false) {
   const outer = document.createElement('div');
   outer.style.cssText =
     'position:absolute;left:85.25px;top:115.375px;transform:translate(7.125px,3.25px) scale(1.1,.9);transform-origin:19.25px 31.5px';
@@ -41,7 +41,34 @@ export async function createPlacementFixture(clock: ClockMode) {
     return marker;
   });
   ancestor.append(target);
-  host.append(spacer, ancestor);
+  if (scrolling) {
+    outer.style.width = '1800px';
+    outer.style.height = '1600px';
+    host.style.width = '190px';
+    host.style.height = '145px';
+    host.style.overflow = 'auto';
+    ancestor.id = 'placement-scroll';
+    ancestor.style.position = 'relative';
+    ancestor.style.width = '135.375px';
+    ancestor.style.height = '95.625px';
+    ancestor.style.border = '5px solid gray';
+    ancestor.style.overflow = 'auto';
+    const content = document.createElement('div');
+    content.style.cssText = 'width:450px;height:350px;padding:15.25px';
+    content.append(target);
+    ancestor.append(content);
+    const extent = document.createElement('div');
+    extent.style.cssText = 'width:450px;height:350px';
+    host.append(extent);
+  }
+  host.prepend(spacer, ancestor);
+  if (scrolling) {
+    const clipper = document.createElement('div');
+    clipper.style.cssText =
+      'position:relative;width:145.375px;height:85.625px;overflow:hidden;border:4.5px solid silver';
+    host.insertBefore(clipper, ancestor);
+    clipper.append(ancestor);
+  }
   outer.append(host);
   document.body.append(outer);
   let captures = 0;
@@ -116,6 +143,21 @@ export async function createPlacementFixture(clock: ClockMode) {
   const initialPixels = canvas.toDataURL();
   return {
     effect,
+    scroll(kind: 'window' | 'host' | 'inner' | 'outside' | 'restore') {
+      if (kind === 'window') {
+        window.scrollTo(23.5, 37.5);
+      } else if (kind === 'host') {
+        host.scrollTo(17.5, 21.5);
+      } else if (kind === 'inner') {
+        ancestor.scrollTo(27.5, 19.5);
+      } else if (kind === 'outside') {
+        ancestor.scrollTo(250.5, 230.5);
+      } else {
+        ancestor.scrollTo(0, 0);
+        host.scrollTo(0, 0);
+        window.scrollTo(0, 0);
+      }
+    },
     sample() {
       const layer = canvas.getBoundingClientRect();
       return {

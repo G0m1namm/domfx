@@ -36,10 +36,17 @@ Browser launch flags are restricted to the local test browser.
 
 ## Required scenarios
 
-Each project runs the following scenarios at a 1280 × 900 viewport and device pixel ratio 2:
+Each project runs the following scenarios at a 1280 × 900 viewport and device pixel ratio 2,
+with the normal capture/GPU scenario additionally running at actual DPR 1:
 
 - **Normal rendering:** existing capture fixtures and GPU distance fields agree with
-  the independent numerical oracle; fire reproduces at fixed time and changes with
+  the independent numerical oracle over every raster pixel. All seven capture fixtures
+  run at both DPRs, comparing 48 CSS-pixel padding with an 80 CSS-pixel reference,
+  requiring transparent exterior bands and independent paint/coordinate sentinels.
+  See [the exact paint extent and limits](../packages/domfx/README.md#padded-capture-fidelity).
+  Capture/reference/SDF PNGs accompany the JSON report. Injected loss of required cyan
+  overflow in both rasters must fail even when reference overlap and transparency agree;
+  fire reproduces at fixed time and changes with
   time; zero intensity is transparent; GSAP cleanup preserves its caller-owned sibling.
   Exercise Play, Seek, Reverse, pointer/keyboard interaction, overlay attributes, and
   Dispose. Disposal must remove the overlay and release accounted GPU allocations.

@@ -27,7 +27,7 @@ export default defineConfig({
           (name) => name !== '@typegpu/sdf' && (id === name || id.startsWith(`${name}/`)),
         ),
       output: {
-        banner: `/*! Bundled @typegpu/sdf 0.12.0 (executor cleanup patched)\n${readFileSync(
+        banner: `/*! Bundled @typegpu/sdf 0.12.0 (executor cleanup and refinement patched)\n${readFileSync(
           resolve(import.meta.dirname, 'node_modules/@typegpu/sdf/LICENSE'),
           'utf8',
         )}*/`,

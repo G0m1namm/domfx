@@ -13,6 +13,11 @@ const element = <T extends Element = HTMLElement>(id: string) =>
 const status = element('status');
 const images: Record<string, string> = {};
 const report: Record<string, unknown> = {};
+declare global {
+  interface Window {
+    domfxEvidence?: { report: Record<string, unknown>; images: Record<string, string> };
+  }
+}
 const automation = new URLSearchParams(location.search).has('automation');
 if (automation) {
   Object.assign(window, { domfxEvidence: { report, images } });
@@ -93,6 +98,7 @@ function fieldPicture(
   picture(name, width, height, bytes, visible);
 }
 function compare(mask: Uint8Array, width: number, height: number, gpu: Float32Array) {
+  check(gpu.length === width * height, 'GPU readback must cover the full raster');
   const truth = exactDistanceField(mask, width, height);
   let maxError = 0;
   let squaredError = 0;
@@ -130,6 +136,14 @@ function compare(mask: Uint8Array, width: number, height: number, gpu: Float32Ar
   check(result.pass, `GPU oracle failed: ${JSON.stringify(result)}`);
   return result;
 }
+function verifiedMask(frame: Pick<CaptureFrame, 'width' | 'height' | 'pixels'>) {
+  const mask = classifyAlpha(frame);
+  check(
+    mask.every((value, i) => value === Number(frame.pixels[i * 4 + 3] >= 128)),
+    'alpha classification must retain threshold 128',
+  );
+  return mask;
+}
 function boundaryAlpha(frame: CaptureFrame, marginCss = 0): number {
   const mx = Math.max(1, Math.ceil(marginCss / frame.pixelToLocal.a));
   const my = Math.max(1, Math.ceil(marginCss / frame.pixelToLocal.d));
@@ -149,6 +163,81 @@ function alphaAt(frame: CaptureFrame, localX: number, localY: number) {
   return Array.from(
     frame.pixels.subarray((y * frame.width + x) * 4, (y * frame.width + x) * 4 + 4),
   );
+}
+function verifyCapturePaint(id: string, frame: CaptureFrame) {
+  if (id === 'guard') {
+    const overflow = [
+      [-15, 15],
+      [25, -15],
+      [79, 15],
+      [25, 55],
+    ].map(([x, y]) => alphaAt(frame, x, y));
+    const background = alphaAt(frame, 30, 20);
+    const shadow = alphaAt(frame, 76, 32);
+    check(
+      overflow.every(
+        (pixel) => pixel[0] === 0 && pixel[1] === 255 && pixel[2] === 255 && pixel[3] === 255,
+      ),
+      'overflow sentinel missing',
+    );
+    check(background[3] === 0, 'ancestor background was captured');
+    check(shadow[0] > 240 && shadow[3] > 0, 'root shadow missing');
+    return { overflow, transparentInterior: background, rootShadow: shadow };
+  }
+  if (id === 'card') {
+    const background = alphaAt(frame, 10, 20);
+    check(background.join(',') === '231,221,200,255', 'selected root background missing');
+    return { background };
+  }
+  if (id === 'vector' || id === 'transparent') {
+    const hole = alphaAt(frame, 32, 32);
+    const inside = alphaAt(frame, 15, 32);
+    const island = alphaAt(frame, id === 'vector' ? 83 : 80, 32);
+    check(
+      hole[3] === 0 && inside[3] === 255 && island[3] >= 128,
+      'inner contour or island missing',
+    );
+    return { hole, inside, island };
+  }
+  if (id !== 'transformed') {
+    return undefined;
+  }
+  check(
+    frame.contentBounds.width === 80 && frame.contentBounds.height === 48,
+    'transformed content bounds',
+  );
+  const landmarks = [
+    [255, 0, 0, 4, 4],
+    [0, 136, 255, 76, 44],
+  ].map(([r, g, b, expectedX, expectedY]) => {
+    let coverage = 0;
+    let sumX = 0;
+    let sumY = 0;
+    for (let y = 0; y < frame.height; y += 1) {
+      for (let x = 0; x < frame.width; x += 1) {
+        const i = (y * frame.width + x) * 4;
+        if (frame.pixels[i] !== r || frame.pixels[i + 1] !== g || frame.pixels[i + 2] !== b) {
+          continue;
+        }
+        const weight = frame.pixels[i + 3] / 255;
+        coverage += weight;
+        sumX += (x + 0.5) * weight;
+        sumY += (y + 0.5) * weight;
+      }
+    }
+    const { a, d, e, f } = frame.pixelToLocal;
+    const localX = (sumX / coverage) * a + e;
+    const localY = (sumY / coverage) * d + f;
+    const errorRasterPx = [Math.abs(localX - expectedX) / a, Math.abs(localY - expectedY) / d];
+    // Independent fixture geometry: two opaque 8 × 8 CSS-pixel squares.
+    check(Math.abs(coverage * a * d - 64) < 0.01, 'target scale was baked into marker area');
+    check(
+      errorRasterPx.every((error) => error <= 0.5),
+      'marked pixels map to wrong local coordinates',
+    );
+    return { expected: [expectedX, expectedY], actual: [localX, localY], coverage, errorRasterPx };
+  });
+  return { landmarks, pass: true };
 }
 function createRaster() {
   const canvas = document.createElement('canvas');
@@ -225,7 +314,7 @@ async function runNumericalFixtures(gpu: GpuExperiment) {
     const prepared = await gpu.prepare(frame);
     try {
       const values = await prepared.readSdf();
-      results[name] = compare(classifyAlpha(frame), width, height, values);
+      results[name] = compare(verifiedMask(frame), width, height, values);
       fieldPicture(`sdf-${name}`, width, height, values);
     } finally {
       prepared.destroy();
@@ -237,76 +326,107 @@ async function captureFixture(gpu: GpuExperiment, id: string, dpr: number) {
   const start = performance.now();
   const frame = await captureElement(element(id), { dpr, paddingCss: 48 });
   const captureMs = performance.now() - start;
-  const larger = await captureElement(element(id), { dpr, paddingCss: 80 });
-  const offset = 32 * dpr;
-  let maxAlphaDifference = 0;
-  let omittedPaintPixels = 0;
-  for (let y = 0; y < larger.height; y++) {
-    for (let x = 0; x < larger.width; x++) {
-      const lx = x - offset;
-      const ly = y - offset;
-      const alpha = larger.pixels[(y * larger.width + x) * 4 + 3];
-      if (lx >= 0 && ly >= 0 && lx < frame.width && ly < frame.height) {
-        maxAlphaDifference = Math.max(
-          maxAlphaDifference,
-          Math.abs(alpha - frame.pixels[(ly * frame.width + lx) * 4 + 3]),
-        );
-      } else if (alpha) {
-        omittedPaintPixels++;
+  let larger: CaptureFrame | undefined;
+  let prepared: PreparedGpuFrame | undefined;
+  try {
+    larger = await captureElement(element(id), { dpr, paddingCss: 80 });
+    picture(
+      `capture-${id}-dpr${dpr}`,
+      frame.width,
+      frame.height,
+      frame.pixels,
+      id === 'target' ? 'capture' : undefined,
+    );
+    picture(`reference-${id}-dpr${dpr}`, larger.width, larger.height, larger.pixels);
+    const offset = 32 * dpr;
+    check(
+      frame.pixels.length === frame.width * frame.height * 4,
+      'capture rows must be tightly packed',
+    );
+    check(
+      frame.width === Math.ceil((frame.contentBounds.width + 96) * dpr) &&
+        frame.height === Math.ceil((frame.contentBounds.height + 96) * dpr) &&
+        Object.values(frame.padding).every((padding) => padding === 48) &&
+        frame.contentBounds.x === 0 &&
+        frame.contentBounds.y === 0 &&
+        frame.pixelToLocal.e === -48 &&
+        frame.pixelToLocal.f === -48,
+      'padded capture metadata mismatch',
+    );
+    let maxAlphaDifference = 0;
+    let omittedPaintPixels = 0;
+    for (let y = 0; y < larger.height; y++) {
+      for (let x = 0; x < larger.width; x++) {
+        const lx = x - offset;
+        const ly = y - offset;
+        const alpha = larger.pixels[(y * larger.width + x) * 4 + 3];
+        if (lx >= 0 && ly >= 0 && lx < frame.width && ly < frame.height) {
+          maxAlphaDifference = Math.max(
+            maxAlphaDifference,
+            Math.abs(alpha - frame.pixels[(ly * frame.width + lx) * 4 + 3]),
+          );
+        } else if (alpha) {
+          omittedPaintPixels++;
+        }
       }
     }
-  }
-  const capturedBoundaryMaxAlpha = boundaryAlpha(frame);
-  const exterior20pxMaxAlpha = boundaryAlpha(frame, 20);
-  check(
-    omittedPaintPixels === 0 && capturedBoundaryMaxAlpha === 0 && exterior20pxMaxAlpha === 0,
-    `capture exterior failed for ${id}`,
-  );
-  check(
-    maxAlphaDifference <= 1,
-    `capture alignment failed for ${id}: alpha difference ${maxAlphaDifference}`,
-  );
-  larger.release();
-  const prepared = await gpu.prepare(frame);
-  const values = await prepared.readSdf();
-  const numerical = compare(classifyAlpha(frame), frame.width, frame.height, values);
-  const details = {
-    dpr,
-    dimensions: [frame.width, frame.height],
-    captureMs,
-    prepareMs: prepared.prepareMs,
-    mapping: frame.pixelToLocal,
-    contentBounds: frame.contentBounds,
-    managedGpuBytes: prepared.managedBytes,
-    cpuRgbaBytes: frame.pixels.byteLength,
-    capturedBoundaryMaxAlpha,
-    exterior20pxMaxAlpha,
-    maxAlphaDifference,
-    omittedPaintPixels,
-    numerical,
-  };
-  picture(
-    `capture-${id}-dpr${dpr}`,
-    frame.width,
-    frame.height,
-    frame.pixels,
-    id === 'target' ? 'capture' : undefined,
-  );
-  fieldPicture(
-    `sdf-${id}-dpr${dpr}`,
-    frame.width,
-    frame.height,
-    values,
-    id === 'target' ? 'sdf' : undefined,
-  );
-  if (id === 'target') {
-    const maskPixels = new Uint8Array(frame.pixels.length);
-    classifyAlpha(frame).forEach((value, i) =>
-      maskPixels.set([value * 255, value * 255, value * 255, 255], i * 4),
+    const referenceBoundaryMaxAlpha = boundaryAlpha(larger);
+    const capturedBoundaryMaxAlpha = boundaryAlpha(frame);
+    const exterior20pxMaxAlpha = boundaryAlpha(frame, 20);
+    check(
+      omittedPaintPixels === 0 &&
+        referenceBoundaryMaxAlpha === 0 &&
+        capturedBoundaryMaxAlpha === 0 &&
+        exterior20pxMaxAlpha === 0,
+      `capture exterior failed for ${id}`,
     );
-    picture('mask-target', frame.width, frame.height, maskPixels, 'mask');
+    check(
+      maxAlphaDifference <= 1,
+      `capture alignment failed for ${id}: alpha difference ${maxAlphaDifference}`,
+    );
+    const sentinels = verifyCapturePaint(id, frame);
+    prepared = await gpu.prepare(frame);
+    const values = await prepared.readSdf();
+    const numerical = compare(verifiedMask(frame), frame.width, frame.height, values);
+    const details = {
+      dpr,
+      dimensions: [frame.width, frame.height],
+      captureMs,
+      prepareMs: prepared.prepareMs,
+      mapping: frame.pixelToLocal,
+      contentBounds: frame.contentBounds,
+      managedGpuBytes: prepared.managedBytes,
+      cpuRgbaBytes: frame.pixels.byteLength,
+      referenceBoundaryMaxAlpha,
+      capturedBoundaryMaxAlpha,
+      sentinels,
+      exterior20pxMaxAlpha,
+      maxAlphaDifference,
+      omittedPaintPixels,
+      numerical,
+    };
+    fieldPicture(
+      `sdf-${id}-dpr${dpr}`,
+      frame.width,
+      frame.height,
+      values,
+      id === 'target' ? 'sdf' : undefined,
+    );
+    if (id === 'target') {
+      const maskPixels = new Uint8Array(frame.pixels.length);
+      classifyAlpha(frame).forEach((value, i) =>
+        maskPixels.set([value * 255, value * 255, value * 255, 255], i * 4),
+      );
+      picture('mask-target', frame.width, frame.height, maskPixels, 'mask');
+    }
+    return { frame, prepared, details };
+  } catch (error) {
+    prepared?.destroy();
+    frame.release();
+    throw error;
+  } finally {
+    larger?.release();
   }
-  return { frame, prepared, details };
 }
 async function warmMeasurements(gpu: GpuExperiment) {
   const samples: Array<{ captureMs: number; prepareMs: number; totalMs: number }> = [];
@@ -389,6 +509,8 @@ async function main() {
       userAgent: navigator.userAgent,
       viewport: [innerWidth, innerHeight],
       devicePixelRatio,
+      visibility: document.visibilityState,
+      reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
       build: import.meta.env.DEV ? 'Vite development' : 'Vite production',
     };
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -414,6 +536,8 @@ async function main() {
       },
       viewport: [innerWidth, innerHeight],
       devicePixelRatio,
+      visibility: document.visibilityState,
+      reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
       date: new Date().toISOString(),
       powerMode: 'unmeasured',
       refreshRate: 'unmeasured',
@@ -429,32 +553,9 @@ async function main() {
     for (const id of ['rounded', 'vector', 'transparent', 'card', 'guard', 'transformed']) {
       status.textContent = `Checking ${id} capture and GPU distances…`;
       await sleepFrame();
-      const { frame, prepared, details } = await captureFixture(gpu, id, 1);
-      if (id === 'guard') {
-        const overflow = alphaAt(frame, -15, 15);
-        const background = alphaAt(frame, 30, 20);
-        const shadow = alphaAt(frame, 76, 22);
-        check(
-          overflow[1] > 240 && overflow[2] > 240 && overflow[3] === 255,
-          'overflow sentinel missing',
-        );
-        check(background[3] === 0, 'ancestor background was captured');
-        check(shadow[3] > 0, 'root shadow missing');
-        report.captureGuard = { overflow, transparentInterior: background, rootShadow: shadow };
-      }
+      const { frame, prepared, details } = await captureFixture(gpu, id, devicePixelRatio);
       if (id === 'transformed') {
-        const origin = alphaAt(frame, 4, 4);
-        const corner = alphaAt(frame, 76, 44);
-        const gap = alphaAt(frame, 12, 12);
-        check(
-          origin[0] === 255 &&
-            origin[3] === 255 &&
-            corner[2] === 255 &&
-            corner[3] === 255 &&
-            gap[3] === 0,
-          'target scale was baked into capture',
-        );
-        report.transformCapture = { origin, corner, gap, pass: true };
+        report.transformCapture = details.sentinels;
       }
       captured[id] = details;
       report.captures = captured;

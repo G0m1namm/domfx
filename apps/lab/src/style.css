@@ -136,6 +136,17 @@ h2 {
   height: 10px;
   background: #00ffff;
 }
+.overflow-mark.top-mark {
+  left: 20px;
+  top: -20px;
+}
+.overflow-mark.right-mark {
+  left: 74px;
+}
+.overflow-mark.bottom-mark {
+  left: 20px;
+  top: 50px;
+}
 .origin-mark {
   position: absolute;
   left: 0;

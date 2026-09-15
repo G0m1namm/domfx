@@ -15,13 +15,13 @@
       <div class="controls">
         <button id="play" disabled>Play</button><button id="seek" disabled>Seek 1.5s</button>
         <button id="reverse" disabled>Reverse</button
-        ><button id="dispose" disabled>Dispose effect</button>
+        ><button id="dispose" disabled>Dispose all effects</button>
         <button id="save" disabled>Save experiment evidence</button>
       </div>
       <p id="clock">Manual clock · seed 314 · intensity 0.85</p>
       <section class="diagnostics">
         <figure>
-          <figcaption>Captured paint</figcaption>
+          <figcaption>Initial headline capture</figcaption>
           <canvas id="capture"></canvas>
         </figure>
         <figure>
@@ -37,29 +37,30 @@
           <canvas id="fire"></canvas>
         </figure>
       </section>
-      <h2>Capture fixtures</h2>
+      <h2>Live fire gallery</h2>
       <p class="note">
-        Original DOM remains selectable and interactive. These are the exact elements sampled below.
+        Five public attachments. The SVG and raster share a scrolling host; the headline, button and
+        card have separate hosts. Original DOM remains selectable and interactive.
       </p>
       <p id="interaction" class="note">Rounded button clicks: 0</p>
       <div class="fixtures">
         <div class="fixture-host">
           <button id="rounded">Rounded <span>button</span></button>
         </div>
-        <div class="fixture-host">
-          <svg
-            id="vector"
-            width="100"
-            height="70"
-            viewBox="0 0 100 70"
-            aria-label="Ring and strokes"
-          >
-            <path fill="#a8d5ff" fill-rule="evenodd" d="M10 5h55v55H10z M22 17v31h31V17z" />
-            <path stroke="#ffba68" stroke-width="5" d="M73 12l20 44" />
-          </svg>
-        </div>
-        <div class="fixture-host">
-          <img id="transparent" width="96" height="64" alt="Transparent ring raster fixture" />
+        <div id="shared-host" class="fixture-host shared-host">
+          <div class="shared-content">
+            <svg
+              id="vector"
+              width="100"
+              height="70"
+              viewBox="0 0 100 70"
+              aria-label="Ring and strokes"
+            >
+              <path fill="#a8d5ff" fill-rule="evenodd" d="M10 5h55v55H10z M22 17v31h31V17z" />
+              <path stroke="#ffba68" stroke-width="5" d="M73 12l20 44" />
+            </svg>
+            <img id="transparent" width="96" height="64" alt="Transparent ring raster fixture" />
+          </div>
         </div>
         <div class="fixture-host">
           <article id="card">
@@ -68,6 +69,13 @@
             <a href="#results">Inspect results →</a>
           </article>
         </div>
+      </div>
+      <div id="gallery-controls" class="gallery-controls"></div>
+      <h2>Capture extent fixtures</h2>
+      <p class="note">
+        Required overflow and transform capture gates; these two are diagnostics only.
+      </p>
+      <div class="fixtures">
         <div class="fixture-host guard-host">
           <div id="guard">
             <span class="overflow-mark"></span><span class="overflow-mark top-mark"></span>

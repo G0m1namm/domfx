@@ -1,11 +1,12 @@
 import { gsap } from 'gsap';
 
-import { captureElement } from '@domfx/browser';
-import { GpuExperiment, type PreparedGpuFrame } from '@domfx/browser/experimental';
+import { captureElement, type EffectHandle } from '@domfx/browser';
+import { GpuExperiment, memoryFor, type PreparedGpuFrame } from '@domfx/browser/experimental';
 import { classifyAlpha, type CaptureFrame } from '@domfx/core';
 
 import { exactDistanceField } from './diagnostics/distance-oracle.js';
 import { verifyPreparationResources } from './diagnostics/preparation-resources.js';
+import { createGallery } from './gallery.js';
 import './style.css';
 
 const element = <T extends Element = HTMLElement>(id: string) =>
@@ -15,6 +16,7 @@ const images: Record<string, string> = {};
 const report: Record<string, unknown> = {};
 declare global {
   interface Window {
+    domfxGallery?: ReturnType<typeof createGallery>;
     domfxEvidence?: { report: Record<string, unknown>; images: Record<string, string> };
   }
 }
@@ -29,6 +31,7 @@ element<HTMLButtonElement>('rounded').onclick = () => {
 let service: GpuExperiment | undefined;
 let live: PreparedGpuFrame | undefined;
 let stop = () => {};
+let gallery: ReturnType<typeof createGallery> | undefined;
 const sleepFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 function showReport() {
@@ -412,14 +415,33 @@ async function captureFixture(gpu: GpuExperiment, id: string, dpr: number) {
       values,
       id === 'target' ? 'sdf' : undefined,
     );
-    if (id === 'target') {
-      const maskPixels = new Uint8Array(frame.pixels.length);
-      classifyAlpha(frame).forEach((value, i) =>
-        maskPixels.set([value * 255, value * 255, value * 255, 255], i * 4),
-      );
-      picture('mask-target', frame.width, frame.height, maskPixels, 'mask');
-    }
-    return { frame, prepared, details };
+    const maskPixels = new Uint8Array(frame.pixels.length);
+    classifyAlpha(frame).forEach((value, i) =>
+      maskPixels.set([value * 255, value * 255, value * 255, 255], i * 4),
+    );
+    picture(
+      `mask-${id}-dpr${dpr}`,
+      frame.width,
+      frame.height,
+      maskPixels,
+      id === 'target' ? 'mask' : undefined,
+    );
+    prepared.render(1.5, 314, 0.85, 1 / frame.pixelToLocal.a);
+    const fire = await prepared.readFire();
+    firePicture(`fire-${id}-dpr${dpr}`, frame.width, frame.height, fire);
+    check(
+      fire.some((value, i) => i % 4 === 3 && value > 0),
+      `empty fire for ${id}`,
+    );
+    return {
+      frame,
+      prepared,
+      details: {
+        ...details,
+        padding: frame.padding,
+        fire: { pass: true, time: 1.5, seed: 314, intensity: 0.85, hash: hash(fire) },
+      },
+    };
   } catch (error) {
     prepared?.destroy();
     frame.release();
@@ -602,8 +624,16 @@ async function main() {
     report.warmMeasurements = await warmMeasurements(gpu);
     report.gpuErrors = gpu.errors;
     check(gpu.errors.length === 0, 'uncaptured GPU validation errors');
-    attachDemo(hero.frame, hero.prepared);
     hero.frame.release();
+    hero.prepared.destroy();
+    live = undefined;
+    gallery = createGallery(images, report, showReport);
+    if (automation) {
+      window.domfxGallery = gallery;
+    }
+    await gallery.ready;
+    attachDemo(gallery.headline);
+    await gallery.saveLiveEvidence();
     check(
       !automation || !new URLSearchParams(location.search).has('inject-failure'),
       'injected assertion failure',
@@ -614,6 +644,7 @@ async function main() {
     element<HTMLButtonElement>('save').disabled = !import.meta.env.DEV;
   } catch (error) {
     stop();
+    gallery?.dispose();
     live?.destroy();
     service?.destroy();
     report.outcome =
@@ -627,85 +658,22 @@ async function main() {
     console.error(error);
   }
 }
-function attachDemo(frame: CaptureFrame, prepared: PreparedGpuFrame) {
-  const host = element('host');
-  const target = element('target');
-  const canvas = document.createElement('canvas');
-  canvas.width = frame.width;
-  canvas.height = frame.height;
-  canvas.className = 'effect';
-  canvas.setAttribute('aria-hidden', 'true');
-  const context = canvas.getContext('webgpu')!;
-  context.configure({
-    device: service!.device,
-    format: 'rgba8unorm',
-    alphaMode: 'premultiplied',
-    usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-  });
-  host.append(canvas);
-  const params = { time: 1.5, intensity: 0.85 };
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let dirty = true;
-  let raf = 0;
-  let disposed = false;
-  const controls = {
-    get time() {
-      return params.time;
-    },
-    set time(value: number) {
-      params.time = value;
-      dirty = true;
-    },
-    get intensity() {
-      return params.intensity;
-    },
-    set intensity(value: number) {
-      params.intensity = value;
-      dirty = true;
-    },
+function attachDemo(effect: EffectHandle) {
+  const updateClock = () => {
+    element('clock').textContent =
+      `Manual clock · ${effect.time.toFixed(2)}s · seed ${effect.seed} · intensity ${effect.intensity}`;
   };
-  const timeline = gsap.timeline({ paused: true, repeat: -1 });
-  const sibling = gsap.to({ value: 0 }, { value: 1, duration: 4, paused: true });
-  timeline.add(sibling, 0);
-  sibling.paused(false);
-  const child = gsap.to(controls, { time: 5.5, duration: 4, ease: 'none', paused: true });
-  timeline.add(child, 0);
-  child.paused(false);
-  const tick = () => {
-    if (disposed) {
-      return;
-    }
-    const targetRect = target.getBoundingClientRect();
-    const hostRect = host.getBoundingClientRect();
-    const sx = targetRect.width / frame.contentBounds.width;
-    const sy = targetRect.height / frame.contentBounds.height;
-    canvas.style.left = `${targetRect.left - hostRect.left - host.clientLeft + host.scrollLeft + frame.pixelToLocal.e * sx}px`;
-    canvas.style.top = `${targetRect.top - hostRect.top - host.clientTop + host.scrollTop + frame.pixelToLocal.f * sy}px`;
-    canvas.style.width = `${frame.width * frame.pixelToLocal.a * sx}px`;
-    canvas.style.height = `${frame.height * frame.pixelToLocal.d * sy}px`;
-    if (dirty) {
-      prepared.render(reduced ? 0 : params.time, 314, params.intensity, 1 / frame.pixelToLocal.a);
-      prepared.present(context.getCurrentTexture());
-      dirty = false;
-      element('clock').textContent =
-        `Manual clock · ${params.time.toFixed(2)}s · seed 314 · intensity ${params.intensity}`;
-    }
-    raf = requestAnimationFrame(tick);
-  };
-  stop = () => {
-    if (disposed) {
-      return;
-    }
-    disposed = true;
-    cancelAnimationFrame(raf);
-    timeline.remove(child);
-    child.kill();
-    // This demo owns its host timeline; a reusable adapter must never kill a caller's.
+  const timeline = gsap.timeline({ paused: true, repeat: -1, onUpdate: updateClock });
+  timeline.to(effect, { time: 5.5, duration: 4, ease: 'none' });
+  effect.onDispose(() => {
     timeline.kill();
-    sibling.kill();
-    context.unconfigure();
-    canvas.remove();
-    prepared.destroy();
+    for (const id of ['play', 'seek', 'reverse']) {
+      element<HTMLButtonElement>(id).disabled = true;
+    }
+  });
+  stop = () => {
+    timeline.kill();
+    gallery?.dispose();
     for (const id of ['play', 'seek', 'reverse', 'dispose']) {
       element<HTMLButtonElement>(id).disabled = true;
     }
@@ -713,31 +681,29 @@ function attachDemo(frame: CaptureFrame, prepared: PreparedGpuFrame) {
   for (const id of ['play', 'seek', 'reverse', 'dispose']) {
     element<HTMLButtonElement>(id).disabled = false;
   }
-  element<HTMLButtonElement>('play').onclick = () => {
-    if (!reduced) {
-      timeline.play();
-    }
-  };
+  element<HTMLButtonElement>('play').onclick = () => timeline.play();
   element<HTMLButtonElement>('seek').onclick = () => {
     timeline.pause(0);
-    controls.time = 1.5;
+    effect.time = 1.5;
+    updateClock();
   };
-  element<HTMLButtonElement>('reverse').onclick = () => {
-    if (!reduced) {
-      timeline.reverse(timeline.time() || 4);
-    }
-  };
+  element<HTMLButtonElement>('reverse').onclick = () => timeline.reverse(timeline.time() || 4);
   element<HTMLButtonElement>('dispose').onclick = () => {
     stop();
     service?.destroy();
-    report.disposal = { managedBytes: service?.managedBytes, overlayRemoved: !canvas.isConnected };
+    report.disposal = {
+      managedBytes: service?.managedBytes,
+      attachmentReservedBytes: memoryFor(document).bytes,
+      overlayRemoved: document.querySelectorAll('canvas[data-gallery-target]').length === 0,
+    };
     showReport();
-    status.textContent = 'Effect disposed. Original DOM remains usable.';
+    status.textContent = 'Effects disposed. Original DOM remains usable.';
   };
-  tick();
+  updateClock();
 }
 element<HTMLButtonElement>('save').onclick = async () => {
   try {
+    await gallery?.saveLiveEvidence();
     const response = await fetch('/__evidence', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -756,12 +722,14 @@ window.addEventListener(
   'pagehide',
   () => {
     stop();
+    gallery?.dispose();
     service?.destroy();
   },
   { once: true },
 );
 import.meta.hot?.dispose(() => {
   stop();
+  gallery?.dispose();
   service?.destroy();
 });
 void main();

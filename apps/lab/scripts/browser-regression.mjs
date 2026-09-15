@@ -116,7 +116,11 @@ try {
     await page.locator('#dispose').click();
     const disposal = await page.evaluate(() => window.domfxEvidence.report.disposal);
     result.checks.disposal = disposal;
-    if (disposal.managedBytes !== 0 || !disposal.overlayRemoved) {
+    if (
+      disposal.managedBytes !== 0 ||
+      disposal.attachmentReservedBytes !== 0 ||
+      !disposal.overlayRemoved
+    ) {
       throw new Error('disposal assertion failed');
     }
     await page.locator('#rounded').click();

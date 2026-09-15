@@ -20,7 +20,7 @@ export async function verifyRefresh() {
     checks.push(name);
   }
   const host = document.createElement('div');
-  host.style.cssText = 'position:relative;width:40px;height:40px';
+  host.style.cssText = 'position:absolute;left:0;top:0;width:40px;height:40px';
   const target = document.createElement('div');
   target.style.cssText = 'width:7px;height:5px';
   host.append(target);
@@ -274,7 +274,14 @@ export async function verifyRefresh() {
     }
 
     for (const stage of ['capture', 'prepare'] as const) {
-      for (const transition of ['dispose', 'mutation', 'resize', 'detach'] as const) {
+      for (const transition of [
+        'dispose',
+        'mutation',
+        'resize',
+        'detach',
+        'hidden',
+        'offscreen',
+      ] as const) {
         const f = await fixture();
         const entered = f.block(stage);
         const result = f.effect.refresh().catch((error: Error) => error.message);
@@ -286,9 +293,31 @@ export async function verifyRefresh() {
           await Promise.resolve();
         } else if (transition === 'resize') {
           window.dispatchEvent(new Event('resize'));
+        } else if (transition === 'hidden') {
+          Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+          document.dispatchEvent(new Event('visibilitychange'));
+        } else if (transition === 'offscreen') {
+          target.style.transform = 'translateY(2000px)';
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
         } else {
           target.remove();
           f.effect.time = 2;
+        }
+        if (transition === 'hidden' || transition === 'offscreen') {
+          check(
+            (await result) === 'refresh-invalidated',
+            `${stage}/${transition} rejects before late work`,
+          );
+          check(
+            host.querySelector('canvas')?.style.display === 'none',
+            `${stage}/${transition} hides output`,
+          );
+          if (transition === 'hidden') {
+            Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+            document.dispatchEvent(new Event('visibilitychange'));
+          } else {
+            target.style.transform = '';
+          }
         }
         f.release();
         check(
@@ -301,6 +330,17 @@ export async function verifyRefresh() {
           f.events.every((event) => event !== 'present:1'),
           `${stage}/${transition} prevents late commit`,
         );
+        if (transition === 'hidden' || transition === 'offscreen') {
+          check(
+            f.effect.raster === 'stale',
+            `${stage}/${transition} re-entry cannot revive stale paint`,
+          );
+          await f.effect.refresh();
+          check(
+            f.effect.lifecycle === 'active',
+            `${stage}/${transition} explicit refresh recovers`,
+          );
+        }
         f.effect.dispose();
         // Observed invalidations can start another capture on an intervening
         // frame. Disposal must drain that work before asserting final cleanup.

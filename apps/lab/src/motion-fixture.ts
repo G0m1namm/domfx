@@ -14,7 +14,7 @@ type Stage = 'renderer' | 'capture' | 'prepare';
 /** Delay real browser/GPU work to exercise preference changes at async boundaries. */
 export function createMotionFixture(motion: FireOptions['motion'], initialStage?: Stage) {
   const host = document.createElement('div');
-  host.style.cssText = 'position:relative;width:80px;height:80px';
+  host.style.cssText = 'position:absolute;left:0;top:0;width:80px;height:80px';
   const target = document.createElement('div');
   target.style.cssText = 'width:24px;height:24px;background:blue;border-radius:50%';
   host.append(target);

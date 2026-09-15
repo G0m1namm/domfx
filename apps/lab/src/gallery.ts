@@ -127,9 +127,13 @@ export function createGallery(
           ? ''
           : 'translate(12px, 6px) scale(1.1, 0.9)';
       });
-      action('Refresh', () => effect.refresh());
+      action('Refresh', () => {
+        target.scrollIntoView({ block: 'center', behavior: 'instant' });
+        return effect.refresh();
+      });
       if (id === 'rounded') {
         action('Change content', async () => {
+          target.scrollIntoView({ block: 'center', behavior: 'instant' });
           const child = target.querySelector('span');
           if (child) {
             child.textContent = child.textContent === 'button' ? 'B8O 88' : 'button';
@@ -147,9 +151,17 @@ export function createGallery(
     throw error;
   }
   const ready = Promise.all(entries.map(({ effect }) => effect.ready))
-    .then(() => {
+    .then(async () => {
+      const position = { left: scrollX, top: scrollY };
       for (const entry of entries) {
         const { id, target, host, effect } = entry;
+        // Initialization verifies each live fixture while it is in the viewport.
+        target.scrollIntoView({ block: 'center', behavior: 'instant' });
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        if (effect.lifecycle === 'suspended' && effect.raster === 'stale') {
+          await effect.refresh().catch(() => {});
+        }
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
         if (effect.lifecycle !== 'active' || effect.raster !== 'fresh') {
           throw new Error(
             `required live fixture ${id}: ${effect.reasonDetail ?? effect.lifecycle}`,
@@ -169,6 +181,7 @@ export function createGallery(
         entry.layer.classList.add('effect');
         entry.controls.disabled = false;
       }
+      window.scrollTo({ ...position, behavior: 'instant' });
       update();
     })
     .catch((error: unknown) => {
@@ -179,19 +192,27 @@ export function createGallery(
     if (disposed) {
       return;
     }
-    // WebGPU canvas storage is transient. Repaint and read in the same frame.
-    for (const { effect } of entries) {
-      if (effect.lifecycle === 'active') {
-        const time = effect.time;
-        effect.time = time;
+    const position = { left: scrollX, top: scrollY };
+    for (const { id, target, effect, layer } of entries) {
+      if (effect.lifecycle === 'disposed' || effect.lifecycle === 'unavailable') {
+        continue;
       }
-    }
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    for (const { id, effect, layer } of entries) {
+      target.scrollIntoView({ block: 'center', behavior: 'instant' });
+      // Intersection delivery restores geometry before the diagnostic repaint.
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      // Leave the current frame before writing controls: its shared scheduler
+      // may still have callbacks, which would present before our readback frame.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      // WebGPU canvas storage is transient. Repaint and read in the same frame.
+      const time = effect.time;
+      effect.time = time;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       if (effect.lifecycle === 'active' && layer) {
         images[`live-fire-${id}-dpr${devicePixelRatio}`] = layer.toDataURL();
       }
     }
+    window.scrollTo({ ...position, behavior: 'instant' });
     update();
   }
   const headline = entries[0].effect;

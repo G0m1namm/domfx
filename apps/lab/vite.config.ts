@@ -11,6 +11,7 @@ export default defineConfig({
         manual: resolve(import.meta.dirname, 'manual.html'),
         gsap: resolve(import.meta.dirname, 'gsap.html'),
         assets: resolve(import.meta.dirname, 'assets.html'),
+        accessibility: resolve(import.meta.dirname, 'accessibility.html'),
       },
     },
   },

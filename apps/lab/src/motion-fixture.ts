@@ -88,6 +88,8 @@ export function createMotionFixture(motion: FireOptions['motion'], initialStage?
     },
   );
   return {
+    host,
+    target,
     effect,
     stats,
     get entered() {

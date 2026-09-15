@@ -15,6 +15,7 @@ export type EffectReason =
   | 'canvas-webgpu-unavailable'
   | 'device-lost'
   | 'unsupported-placement'
+  | 'unsupported-composition'
   | 'reduced-motion'
   | 'target-not-visible'
   | 'stale-raster';

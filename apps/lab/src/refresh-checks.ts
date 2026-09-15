@@ -42,6 +42,7 @@ export async function verifyRefresh() {
       let stage: 'capture' | 'prepare' = 'capture';
       let fail = false;
       let deviceDestroys = 0;
+      const disposed = deferred();
       const effect = attachFireWithAdapters(
         target,
         { host, time: 1.5 },
@@ -112,6 +113,7 @@ export async function verifyRefresh() {
             destroy() {
               deviceDestroys += 1;
               service.destroy();
+              disposed.resolve();
             },
           }),
         },
@@ -126,6 +128,7 @@ export async function verifyRefresh() {
         releases,
         destroys,
         service,
+        disposed: disposed.promise,
         get captures() {
           return captures;
         },
@@ -299,6 +302,9 @@ export async function verifyRefresh() {
           `${stage}/${transition} prevents late commit`,
         );
         f.effect.dispose();
+        // Observed invalidations can start another capture on an intervening
+        // frame. Disposal must drain that work before asserting final cleanup.
+        await f.disposed;
         check(
           f.releases.every((n) => n === 1) && f.destroys.every((n) => n === 1),
           `${stage}/${transition} releases once`,

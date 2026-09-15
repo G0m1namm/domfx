@@ -55,52 +55,62 @@ async function gallerySnapshot(page: Page) {
       throw new Error('gallery unavailable');
     }
     await gallery.saveLiveEvidence();
-    return gallery.entries
-      .filter(({ effect }) => effect.lifecycle !== 'disposed')
-      .map((entry) => {
-        const { id, effect, target, layer } = entry;
-        if (!layer) {
-          throw new Error(`missing layer: ${id}`);
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = layer.width;
-        canvas.height = layer.height;
-        const context = canvas.getContext('2d');
-        if (!context) {
-          throw new Error('readback unavailable');
-        }
-        context.drawImage(layer, 0, 0);
-        const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-        const alphaPixels = pixels.filter((value, index) => index % 4 === 3 && value > 0).length;
-        let hash = 2166136261;
-        for (const byte of pixels) {
-          hash = Math.imul(hash ^ byte, 16777619);
-        }
-        const targetBounds = target.getBoundingClientRect();
-        const layerBounds = layer.getBoundingClientRect();
-        return {
-          id,
-          time: effect.time,
-          intensity: effect.intensity,
-          alphaPixels,
-          lifecycle: effect.lifecycle,
-          raster: effect.raster,
-          paused: effect.paused,
-          fire: (hash >>> 0).toString(16),
-          target: {
-            left: targetBounds.left,
-            top: targetBounds.top,
-            width: targetBounds.width,
-            height: targetBounds.height,
-          },
-          layer: {
-            left: layerBounds.left,
-            top: layerBounds.top,
-            width: layerBounds.width,
-            height: layerBounds.height,
-          },
-        };
+    const position = { left: scrollX, top: scrollY };
+    const samples = [];
+    for (const entry of gallery.entries.filter(({ effect }) => effect.lifecycle !== 'disposed')) {
+      const { id, effect, target, layer } = entry;
+      target.scrollIntoView({ block: 'center', behavior: 'instant' });
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      const time = effect.time;
+      effect.time = time;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      if (!layer) {
+        throw new Error(`missing layer: ${id}`);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = layer.width;
+      canvas.height = layer.height;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        throw new Error('readback unavailable');
+      }
+      context.drawImage(layer, 0, 0);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      const alphaPixels = pixels.filter((value, index) => index % 4 === 3 && value > 0).length;
+      let hash = 2166136261;
+      for (const byte of pixels) {
+        hash = Math.imul(hash ^ byte, 16777619);
+      }
+      const targetBounds = target.getBoundingClientRect();
+      const layerBounds = layer.getBoundingClientRect();
+      samples.push({
+        id,
+        time: effect.time,
+        intensity: effect.intensity,
+        alphaPixels,
+        lifecycle: effect.lifecycle,
+        raster: effect.raster,
+        paused: effect.paused,
+        fire: (hash >>> 0).toString(16),
+        target: {
+          left: targetBounds.left,
+          top: targetBounds.top,
+          width: targetBounds.width,
+          height: targetBounds.height,
+        },
+        layer: {
+          left: layerBounds.left,
+          top: layerBounds.top,
+          width: layerBounds.width,
+          height: layerBounds.height,
+        },
       });
+    }
+    window.scrollTo({ ...position, behavior: 'instant' });
+    return samples;
   });
 }
 
@@ -140,7 +150,7 @@ async function verifyGallery(page: Page, dpr: number) {
     if (initial[i].id === 'vector') {
       expect(sought[i].fire).not.toBe(initial[i].fire);
     } else {
-      expect(sought[i].fire).toBe(initial[i].fire);
+      expect(sought[i].fire, sought[i].id).toBe(initial[i].fire);
     }
   }
   await svg.getByLabel('Intensity').fill('0');

@@ -6,6 +6,7 @@ import { estimateFrameMemory, memoryFor, type AllocationReservation } from './me
 import {
   assertEffectComposition,
   isPlacementMutation,
+  isTargetVisible,
   measureEffectPlacement,
   scaleToViewport,
 } from './placement.js';
@@ -115,6 +116,7 @@ export function attachFireWithAdapters(
   let paused = clock === 'manual' || motionPolicy === 'static';
   let motionSuspended = false;
   let dirty = false;
+  let visibilitySuspended = document.hidden;
   let lastTimestamp: number | undefined;
 
   let lifecycle: EffectHandle['lifecycle'] = 'suspended';
@@ -157,6 +159,11 @@ export function attachFireWithAdapters(
     claimed.delete(target);
   }
 
+  const intersectionObserver = new view.IntersectionObserver(visibilityChanged, {
+    // Edge adjacency is intersecting with zero area. Also wake when positive
+    // area enters, even if isIntersecting stays true across that boundary.
+    threshold: [0, Number.EPSILON],
+  });
   const observer = new view.MutationObserver(checkMutations);
   let observedSize = { width: 0, height: 0 };
   const resizeObserver = new view.ResizeObserver(() => {
@@ -168,6 +175,7 @@ export function attachFireWithAdapters(
         Math.abs(size.height - observedSize.height) > 0.0001;
       observedSize = size;
       if (changed) {
+        syncVisibility();
         assetChanged();
       }
     } catch (error) {
@@ -200,7 +208,13 @@ export function attachFireWithAdapters(
 
   function observePaint() {
     stale();
-    if (raster === 'stale' && lifecycle === 'suspended' && !motionSuspended) {
+    if (
+      raster === 'stale' &&
+      lifecycle === 'suspended' &&
+      !motionSuspended &&
+      !visibilitySuspended &&
+      !document.hidden
+    ) {
       scheduler.schedule(refreshObserved);
     }
   }
@@ -208,7 +222,7 @@ export function attachFireWithAdapters(
   function refreshObserved() {
     // One capture request for all signals before this frame. refresh owns failure
     // reporting and cleanup; observer work has no caller to receive its rejection.
-    if (!document.hidden && target.isConnected && host.contains(target)) {
+    if (syncVisibility() && target.isConnected && host.contains(target)) {
       void refresh().catch(() => {});
     }
     return false;
@@ -239,6 +253,7 @@ export function attachFireWithAdapters(
 
     observer.disconnect();
     resizeObserver.disconnect();
+    intersectionObserver.disconnect();
     target.removeEventListener('load', assetChanged, true);
     target.removeEventListener('error', assetChanged, true);
     document.fonts.removeEventListener('loading', assetChanged);
@@ -246,7 +261,7 @@ export function attachFireWithAdapters(
     document.fonts.removeEventListener('loadingerror', assetChanged);
     view?.removeEventListener('resize', observePaint);
     document.removeEventListener('scroll', invalidate, true);
-    document.removeEventListener('visibilitychange', invalidate);
+    document.removeEventListener('visibilitychange', visibilityChanged);
     motion.removeEventListener('change', suspendForMotion);
 
     context?.unconfigure();
@@ -303,28 +318,67 @@ export function attachFireWithAdapters(
     frame = undefined;
   }
 
+  function syncVisibility() {
+    if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
+      return false;
+    }
+    try {
+      visibilitySuspended = document.hidden || !isTargetVisible(target);
+    } catch (error) {
+      unavailable(error);
+      return false;
+    }
+    if (visibilitySuspended) {
+      scheduler.cancel(refreshObserved);
+      if (raster === 'refreshing') {
+        stale();
+      } else if (raster === 'fresh') {
+        suspend('target-not-visible');
+      }
+      return false;
+    }
+    return true;
+  }
+
+  function visibilityChanged() {
+    if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
+      return;
+    }
+    if (document.hidden) {
+      intersectionObserver.disconnect();
+    } else {
+      intersectionObserver.observe(target);
+    }
+    checkMutations(observer.takeRecords());
+    if (checkComposition() && syncVisibility() && raster === 'fresh') {
+      // Re-entry must place the retained raster before making it visible. It
+      // does not itself change pixels or the caller's manual/paused time.
+      scheduler.schedule(commit);
+    }
+  }
+
   function invalidate(event?: Event) {
     suspendForMotion();
-    // Preserve immediate stale-output hiding even though rendering is deferred.
     checkMutations(observer.takeRecords());
-    if (raster === 'refreshing' && document.hidden) {
-      stale();
-    }
-    if (lifecycle === 'disposed' || lifecycle === 'unavailable' || raster !== 'fresh') {
-      return;
-    }
-
-    // A hidden document may not receive another frame to hide its output.
+    dirty ||= !event;
     if (document.hidden) {
-      suspend('target-not-visible');
+      syncVisibility();
+    }
+    if (
+      lifecycle === 'disposed' ||
+      lifecycle === 'unavailable' ||
+      raster !== 'fresh' ||
+      visibilitySuspended
+    ) {
       return;
     }
-
-    dirty ||= event?.type !== 'scroll';
     scheduler.schedule(commit);
   }
 
   function commit(timestamp: number) {
+    if (!checkComposition() || !syncVisibility()) {
+      return false;
+    }
     if (running() && lastTimestamp !== undefined) {
       time += Math.max(0, timestamp - lastTimestamp) / 1000;
     }
@@ -336,7 +390,7 @@ export function attachFireWithAdapters(
     lastTimestamp = running() ? timestamp : undefined;
     return (
       (lifecycle === 'active' && raster === 'fresh') ||
-      (lifecycle === 'suspended' && raster === 'refreshing' && !document.hidden)
+      (lifecycle === 'suspended' && raster === 'refreshing' && !visibilitySuspended)
     );
   }
 
@@ -414,8 +468,7 @@ export function attachFireWithAdapters(
       stale();
       return;
     }
-    if (document.hidden || target.getClientRects().length === 0) {
-      suspend('target-not-visible');
+    if (!syncVisibility()) {
       return;
     }
 
@@ -466,10 +519,7 @@ export function attachFireWithAdapters(
     checkMutations(observer.takeRecords());
     if (
       raster === 'refreshing' &&
-      (!target.isConnected ||
-        !host.contains(target) ||
-        document.hidden ||
-        target.getClientRects().length === 0)
+      (!target.isConnected || !host.contains(target) || !syncVisibility())
     ) {
       stale();
     }
@@ -679,6 +729,9 @@ export function attachFireWithAdapters(
     characterData: true,
   });
   resizeObserver.observe(target, { box: 'border-box' });
+  if (!document.hidden) {
+    intersectionObserver.observe(target);
+  }
   target.addEventListener('load', assetChanged, true);
   target.addEventListener('error', assetChanged, true);
   document.fonts.addEventListener('loading', assetChanged);
@@ -686,7 +739,7 @@ export function attachFireWithAdapters(
   document.fonts.addEventListener('loadingerror', assetChanged);
   view.addEventListener('resize', observePaint);
   document.addEventListener('scroll', invalidate, true);
-  document.addEventListener('visibilitychange', invalidate);
+  document.addEventListener('visibilitychange', visibilityChanged);
   motion.addEventListener('change', suspendForMotion);
 
   if (motionPolicy === 'respect' && motion.matches) {

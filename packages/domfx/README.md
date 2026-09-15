@@ -200,8 +200,12 @@ called before `ready`, and do not recapture. Manual mode is always paused. An ex
 time write while ambient is running resets the time origin to that value; subsequent
 frames add elapsed time from the write. Ambient time is the last committed time when
 read. Clock pause is independent of lifecycle suspension: pausing keeps fresh output
-visible, and seeking while paused does not resume the clock. Document visibility
-suspension stops frame scheduling; resumption excludes the suspended interval. Stale,
+visible, and seeking while paused does not resume the clock. Document hiding and a target leaving the viewport (including rectangular ancestor
+overflow clips) suspend rendering and placement frame scheduling. Ambient time freezes
+at its last committed value; resumption excludes the suspended interval. An intersection
+observer wakes offscreen targets, and re-entry synchronizes geometry before showing
+fresh output, including manual and paused attachments. Control writes made while
+suspended are retained for the next visible frame. Stale,
 unavailable and disposed attachments leave the scheduler, without a retry loop.
 
 `ready` settles after initialization, including cleanup of cancelled initial work.
@@ -286,7 +290,10 @@ There is no per-frame capture or automatic retry after failure. Observer-trigger
 failures update lifecycle, raster health and diagnostics through the same refresh
 contract, without an unhandled promise rejection. Disposal removes observers/listeners
 and cancels queued captures. Document hiding suspends existing output and resumes it
-when visible; paint invalidated while hidden needs explicit refresh once visible.
+when visible; paint invalidated while hidden or offscreen needs explicit refresh once
+visible. Initial attachment or explicit refresh while offscreen leaves stale output
+suspended; call `refresh()` once the target is in view. Visibility changes invalidate
+pending captures/preparations, whose late results are released without presentation.
 
 `motion` defaults to `'respect'`. Initial reduced motion resolves `ready` with
 `lifecycle: 'unavailable'` and `reason: 'reduced-motion'` before capture, canvas creation
@@ -375,8 +382,9 @@ refresh loop. Attach before focusing an outlined borderless target, or provide a
 Bordered hosts support window, host and nested scrolling with the same placement-only
 tracking while manual or paused. Rectangular `overflow: auto`, `scroll` and `hidden`
 clips on positioned HTML ancestors between target and host are intersected and applied
-to the canvas in host coordinates. A fully clipped layer remains fresh and can reappear
-on scrolling back without capture or another GPU render. The host and its ancestors
+to the canvas in host coordinates. A fully clipped target suspends its layer and geometry tracking while retaining fresh
+pixels. It can reappear on scrolling back without capture or another GPU render when
+controls are unchanged. The host and its ancestors
 clip the appended canvas natively; their clipping is not copied into the capture.
 
 Host insertion remains explicit: the host must contain the target, establish the

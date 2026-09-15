@@ -150,6 +150,34 @@ function measureClip(target: Element, host: HTMLElement) {
   return { left, top, right, bottom };
 }
 
+/** Target intersection with the viewport and native ancestor overflow clips. */
+export function isTargetVisible(target: Element): boolean {
+  const view = target.ownerDocument.defaultView!;
+  const rect = target.getBoundingClientRect();
+  let left = Math.max(0, rect.left);
+  let top = Math.max(0, rect.top);
+  let right = Math.min(view.innerWidth, rect.right);
+  let bottom = Math.min(view.innerHeight, rect.bottom);
+  for (let node = target.parentElement; node; node = node.parentElement) {
+    const style = view.getComputedStyle(node);
+    if (style.overflowX === 'visible' && style.overflowY === 'visible') {
+      continue;
+    }
+    const bounds = node.getBoundingClientRect();
+    const scale = scaleToViewport(node);
+    const origin = clientOrigin(node, style);
+    if (style.overflowX !== 'visible') {
+      left = Math.max(left, bounds.left + origin.x * scale.x);
+      right = Math.min(right, bounds.left + (origin.x + node.clientWidth) * scale.x);
+    }
+    if (style.overflowY !== 'visible') {
+      top = Math.max(top, bounds.top + origin.y * scale.y);
+      bottom = Math.min(bottom, bounds.top + (origin.y + node.clientHeight) * scale.y);
+    }
+  }
+  return right > left && bottom > top;
+}
+
 /** Check admission and pending work without needing captured pixels. */
 export function assertEffectComposition(target: Element, host: HTMLElement) {
   scaleToViewport(target);

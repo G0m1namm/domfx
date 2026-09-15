@@ -533,6 +533,7 @@ test('programmer errors never register a target', async ({ page }) => {
       results.push(error instanceof Error && error.message === 'invalid-effect-host');
     }
     document.body.append(host);
+    host.scrollIntoView({ block: 'center', behavior: 'instant' });
     const wrapper = document.createElement('div');
     target.before(wrapper);
     wrapper.append(target);

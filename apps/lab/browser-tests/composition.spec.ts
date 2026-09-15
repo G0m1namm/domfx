@@ -57,6 +57,7 @@ for (const phase of ['initial', 'live'] as const) {
         const results = [];
         for (const entry of cases) {
           const outer = document.createElement('div');
+          outer.style.cssText = 'position:absolute;left:0;top:0';
           const host = document.createElement('div');
           host.style.cssText = 'position:relative;width:150px;height:100px';
           const ancestor = document.createElement('div');

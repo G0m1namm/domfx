@@ -20,7 +20,7 @@ function check(condition: boolean, name: string) {
 
 function targets(sharedHost: boolean) {
   const container = document.createElement('div');
-  container.style.cssText = 'display:flex;gap:80px;padding:50px';
+  container.style.cssText = 'position:absolute;left:0;top:0;display:flex;gap:80px;padding:50px';
   const firstHost = document.createElement('div');
   firstHost.style.cssText = 'position:relative;width:240px;height:100px';
   const secondHost = sharedHost ? firstHost : firstHost.cloneNode();

@@ -132,6 +132,7 @@ export function attachFireWithAdapters(
   let frame: CaptureFrame | undefined;
   let context: GPUCanvasContext | null = null;
   let work: Promise<void> | undefined;
+  let retryWork: Promise<void> | undefined;
   let revision = 1;
   let generation = 0;
   let awaitingAssets = true;
@@ -194,7 +195,7 @@ export function attachFireWithAdapters(
   }
 
   function checkConnection(records: MutationRecord[] = connectionObserver.takeRecords()) {
-    if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
+    if (lifecycle === 'disposed') {
       return false;
     }
     // Keep removal terminal even when the caller reinserts before delivery.
@@ -207,7 +208,7 @@ export function attachFireWithAdapters(
       dispose();
       return false;
     }
-    return true;
+    return lifecycle !== 'unavailable';
   }
 
   function checkMutations(records: MutationRecord[]) {
@@ -275,7 +276,7 @@ export function attachFireWithAdapters(
     observer.disconnect();
     resizeObserver.disconnect();
     intersectionObserver.disconnect();
-    if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
+    if (lifecycle === 'disposed') {
       connectionObserver.disconnect();
     }
     target.removeEventListener('load', assetChanged, true);
@@ -294,7 +295,9 @@ export function attachFireWithAdapters(
       canvas.remove();
       canvas.width = 0;
       canvas.height = 0;
+      canvas = undefined;
     }
+    lastPlacement = undefined;
 
     prepared?.destroy();
     prepared = undefined;
@@ -440,6 +443,7 @@ export function attachFireWithAdapters(
       case 'unsupported-placement':
       case 'unsupported-composition':
       case 'reduced-motion':
+      case 'effect-target-owned':
         reason = reasonDetail;
         break;
       default:
@@ -455,6 +459,9 @@ export function attachFireWithAdapters(
       return false;
     }
     try {
+      if (host.ownerDocument !== document || view?.getComputedStyle(host).position === 'static') {
+        throw new Error('unsupported-placement');
+      }
       assertEffectComposition(target, host);
       return true;
     } catch (error) {
@@ -720,6 +727,9 @@ export function attachFireWithAdapters(
     if (motionSuspended) {
       return Promise.reject(new Error('reduced-motion'));
     }
+    if (retryWork) {
+      return Promise.reject(new Error('effect-retrying'));
+    }
     // Mutations already queued before this explicit request belong to its capture.
     observer.takeRecords();
     scheduler.cancel(refreshObserved);
@@ -760,41 +770,103 @@ export function attachFireWithAdapters(
     }
   }
 
-  for (let ancestor = target.parentNode; ancestor; ancestor = ancestor.parentNode) {
-    connectionObserver.observe(ancestor, { childList: true });
+  function observe() {
+    for (let ancestor = target.parentNode; ancestor; ancestor = ancestor.parentNode) {
+      connectionObserver.observe(ancestor, { childList: true });
+    }
+    observer.observe(target, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeOldValue: true,
+      characterData: true,
+    });
+    resizeObserver.observe(target, { box: 'border-box' });
+    if (!document.hidden) {
+      intersectionObserver.observe(target);
+    }
+    target.addEventListener('load', assetChanged, true);
+    target.addEventListener('error', assetChanged, true);
+    document.fonts.addEventListener('loading', assetChanged);
+    document.fonts.addEventListener('loadingdone', assetChanged);
+    document.fonts.addEventListener('loadingerror', assetChanged);
+    view?.addEventListener('resize', observePaint);
+    document.addEventListener('scroll', invalidate, true);
+    document.addEventListener('visibilitychange', visibilityChanged);
+    motion.addEventListener('change', suspendForMotion);
   }
-  observer.observe(target, {
-    subtree: true,
-    childList: true,
-    attributes: true,
-    attributeOldValue: true,
-    characterData: true,
-  });
-  resizeObserver.observe(target, { box: 'border-box' });
-  if (!document.hidden) {
-    intersectionObserver.observe(target);
-  }
-  target.addEventListener('load', assetChanged, true);
-  target.addEventListener('error', assetChanged, true);
-  document.fonts.addEventListener('loading', assetChanged);
-  document.fonts.addEventListener('loadingdone', assetChanged);
-  document.fonts.addEventListener('loadingerror', assetChanged);
-  view.addEventListener('resize', observePaint);
-  document.addEventListener('scroll', invalidate, true);
-  document.addEventListener('visibilitychange', visibilityChanged);
-  motion.addEventListener('change', suspendForMotion);
 
-  if (motionPolicy === 'respect' && motion.matches) {
-    unavailable(new Error('reduced-motion'));
-  } else if (checkComposition()) {
-    observedSize = targetSize();
-    scheduler.schedule(commit);
+  function initialize() {
+    observe();
+    if (motionPolicy === 'respect' && motion.matches) {
+      unavailable(new Error('reduced-motion'));
+    } else if (checkComposition()) {
+      observedSize = targetSize();
+      scheduler.schedule(commit);
+    }
   }
+
+  function retry(): Promise<void> {
+    checkConnection();
+    if (lifecycle === 'disposed') {
+      return Promise.reject(new Error('effect-disposed'));
+    }
+    if (retryWork) {
+      return retryWork;
+    }
+
+    // Stop the old generation immediately. Its non-cancellable work still owns
+    // resources until startRefresh's finally has completed.
+    generation += 1;
+    rejectRefreshes(new Error('refresh-invalidated'));
+    raster = 'stale';
+    if (lifecycle !== 'unavailable') {
+      suspend('stale-raster');
+    }
+    cleanup();
+    retryWork = Promise.resolve()
+      .then(async () => {
+        await work;
+        cleanup();
+        frame = undefined;
+        checkConnection();
+        if (lifecycle === 'disposed') {
+          return;
+        }
+
+        motionSuspended = false;
+        lifecycle = 'suspended';
+        reason = undefined;
+        reasonDetail = undefined;
+        if (
+          !ownsTarget &&
+          [...claimed].some((other) => other.contains(target) || target.contains(other))
+        ) {
+          unavailable(new Error('effect-target-owned'));
+          return;
+        }
+        claimed.add(target);
+        ownsTarget = true;
+        revision += 1;
+        raster = 'refreshing';
+        awaitingAssets = true;
+        dirty = false;
+        initialize();
+        await startRefresh();
+      })
+      .finally(() => {
+        retryWork = undefined;
+      });
+    return retryWork;
+  }
+
+  initialize();
   const ready = startRefresh();
 
   return {
     ready,
     refresh,
+    retry,
 
     get lifecycle() {
       return lifecycle;

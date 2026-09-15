@@ -15,6 +15,7 @@ function attachment() {
   const effect: EffectHandle = {
     ready: Promise.resolve(),
     refresh: () => Promise.resolve(),
+    retry: () => Promise.resolve(),
     get lifecycle() {
       return disposed ? 'disposed' : 'active';
     },

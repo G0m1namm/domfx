@@ -35,6 +35,7 @@ Play, Seek and Reverse controls.
 | `pnpm lint:boundaries`              | Check workspace dependencies and imports after building                    |
 | `pnpm test:tooling`                 | Test commit conventions and forbidden dependency edges                     |
 | `pnpm test:packed`                  | Verify packed GPU dev/prod and missing-transform rejection                 |
+| `pnpm test:packed:contracts`        | Verify packed Node imports, strict types and dependency/export boundaries  |
 | `pnpm hooks:install`                | Install or repair Lefthook's pre-commit, commit-message and pre-push hooks |
 | `pnpm demo`                         | Build packages and start the development lab                               |
 | `pnpm build:demo`                   | Build packages and the production lab in `apps/lab/dist`                   |

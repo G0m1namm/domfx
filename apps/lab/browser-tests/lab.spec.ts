@@ -37,7 +37,8 @@ const test = base.extend<{ browserErrors: string[] }>({
 async function terminalReport(page: Page): Promise<unknown> {
   // Both PASS and FAIL are terminal: fail immediately on an explicit lab failure.
   await expect(page.locator('#report')).toContainText('"outcome":', { timeout: 150_000 });
-  return JSON.parse(await page.locator('#report').innerText());
+  // The raw report lives in a disclosure; read its JSON even while it is closed.
+  return JSON.parse((await page.locator('#report').textContent()) ?? '');
 }
 
 async function clockTime(page: Page): Promise<number> {

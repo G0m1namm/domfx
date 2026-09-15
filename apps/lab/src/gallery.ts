@@ -41,7 +41,10 @@ export function createGallery(
           clock: effect.clock,
           paused: effect.paused,
         };
-        state.value = `${details.lifecycle} · ${details.raster} · ${details.paused ? 'paused' : 'playing'}`;
+        state.value = `${details.lifecycle} · ${details.raster} · ${details.clock === 'manual' ? 'manual clock' : details.paused ? 'paused' : 'playing'}`;
+        if (details.reason) {
+          state.value += ` · ${details.reasonDetail ?? details.reason}`;
+        }
         return [id, details];
       }),
     );
@@ -70,7 +73,7 @@ export function createGallery(
       legend.textContent = labels[index];
       const state = document.createElement('output');
       controls.append(legend, state);
-      required('gallery-controls').append(controls);
+      required(`controls-${id}`).replaceChildren(controls);
       const effect = attachFire(target, {
         host,
         clock: id === 'target' ? 'manual' : 'ambient',
@@ -100,6 +103,9 @@ export function createGallery(
         label.append(input);
         controls.append(label);
       }
+      const actions = document.createElement('div');
+      actions.className = 'gallery-actions';
+      controls.append(actions);
       const action = (name: string, run: () => void | Promise<void>) => {
         const button = document.createElement('button');
         button.textContent = name;
@@ -111,7 +117,7 @@ export function createGallery(
           }
           update();
         };
-        controls.append(button);
+        actions.append(button);
       };
       if (id !== 'target') {
         action('Play / pause', () => (effect.paused ? effect.resume() : effect.pause()));

@@ -7,7 +7,6 @@ import { classifyAlpha, type CaptureFrame } from '@domfx/core';
 import { exactDistanceField } from './diagnostics/distance-oracle.js';
 import { verifyPreparationResources } from './diagnostics/preparation-resources.js';
 import { createGallery } from './gallery.js';
-import './style.css';
 
 const element = <T extends Element = HTMLElement>(id: string) =>
   document.getElementById(id)! as unknown as T;
@@ -36,6 +35,35 @@ const sleepFrame = () => new Promise<void>((resolve) => requestAnimationFrame(()
 
 function showReport() {
   element('report').textContent = JSON.stringify(report, null, 2);
+  const outcome = typeof report.outcome === 'string' ? report.outcome : '';
+  const tone = outcome.startsWith('PASS')
+    ? 'pass'
+    : outcome.startsWith('UNAVAILABLE')
+      ? 'unavailable'
+      : outcome === 'FAIL'
+        ? 'fail'
+        : 'pending';
+  const summary = element('result-summary');
+  summary.dataset.tone = tone;
+  summary.textContent = outcome || 'Checks are running. No final render result yet.';
+  const error = element('result-error');
+  error.hidden = !report.error && !report.galleryError;
+  error.textContent = String(report.galleryError ?? report.error ?? '');
+  const checks = [
+    ['check-capture', report.captures, 7],
+    ['check-fire', report.fire],
+    ['check-gsap', report.gsap],
+    ['check-resources', report.preparationResources],
+  ] as const;
+  for (const [id, value, count] of checks) {
+    const completed =
+      typeof value === 'object' &&
+      value !== null &&
+      (count ? Object.keys(value).length === count : 'pass' in value && value.pass === true);
+    const node = element(id);
+    node.textContent = completed ? 'PASS' : tone === 'pending' ? 'Pending' : 'Not completed';
+    node.dataset.tone = completed ? 'pass' : tone;
+  }
 }
 function check(condition: boolean, message: string): void {
   if (!condition) {
@@ -189,7 +217,7 @@ function verifyCapturePaint(id: string, frame: CaptureFrame) {
   }
   if (id === 'card') {
     const background = alphaAt(frame, 10, 20);
-    check(background.join(',') === '231,221,200,255', 'selected root background missing');
+    check(background.join(',') === '194,197,219,255', 'selected root background missing');
     return { background };
   }
   if (id === 'vector' || id === 'transparent') {
@@ -241,20 +269,6 @@ function verifyCapturePaint(id: string, frame: CaptureFrame) {
     return { expected: [expectedX, expectedY], actual: [localX, localY], coverage, errorRasterPx };
   });
   return { landmarks, pass: true };
-}
-function createRaster() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 96;
-  canvas.height = 64;
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = '#efc878';
-  ctx.beginPath();
-  ctx.arc(32, 32, 27, 0, Math.PI * 2);
-  ctx.arc(32, 32, 13, 0, Math.PI * 2, true);
-  ctx.fill();
-  ctx.fillStyle = '#7bd7ff';
-  ctx.fillRect(75, 12, 14, 40);
-  element<HTMLImageElement>('transparent').src = canvas.toDataURL();
 }
 async function runNumericalFixtures(gpu: GpuExperiment) {
   const results: Record<string, unknown> = {};
@@ -541,7 +555,6 @@ async function main() {
       showReport();
       return;
     }
-    createRaster();
     await document.fonts.ready;
     await element<HTMLImageElement>('transparent').decode();
     const coldStart = performance.now();
@@ -640,7 +653,7 @@ async function main() {
     );
     report.outcome = 'PASS: capture, GPU signed distances and deterministic GPU fire';
     showReport();
-    status.textContent = 'Spike passed: real capture → verified GPU SDF → deterministic GPU fire.';
+    status.textContent = 'PASS · Capture, GPU distance fields, and deterministic fire verified.';
     element<HTMLButtonElement>('save').disabled = !import.meta.env.DEV;
   } catch (error) {
     stop();
@@ -652,7 +665,7 @@ async function main() {
         ? 'UNAVAILABLE: no GPU'
         : 'FAIL';
     report.error = error instanceof Error ? error.stack : String(error);
-    status.textContent = `Experiment failed: ${error instanceof Error ? error.message : String(error)}`;
+    status.textContent = `${report.outcome === 'UNAVAILABLE: no GPU' ? 'Effect unavailable' : 'Experiment failed'}: ${error instanceof Error ? error.message : String(error)}`;
     showReport();
     element<HTMLButtonElement>('save').disabled = !import.meta.env.DEV;
     console.error(error);

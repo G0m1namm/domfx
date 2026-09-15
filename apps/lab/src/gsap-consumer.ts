@@ -14,6 +14,14 @@ const timeline = gsap.timeline({ paused: true, onUpdate: report });
 const binding = bindFire(effect, timeline, { time: 5.5, intensity: 0.25, duration: 4 });
 
 function report() {
+  const summary = document.querySelector<HTMLElement>('#effect-summary');
+  if (summary) {
+    const label = `${effect.lifecycle} · ${effect.raster}${effect.reason ? ` · ${effect.reason}` : ''}`;
+    if (summary.textContent !== label) {
+      summary.textContent = label;
+    }
+    summary.dataset.tone = effect.lifecycle === 'unavailable' ? 'unavailable' : 'pending';
+  }
   if (state) {
     state.textContent = JSON.stringify({
       lifecycle: effect.lifecycle,

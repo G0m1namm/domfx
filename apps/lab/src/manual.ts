@@ -19,6 +19,14 @@ if (!host || !target || !state) {
 }
 const effect = attachFire(target, { host, seed: 314, time: 1.5, intensity: 0.85 });
 function report() {
+  const summary = document.querySelector<HTMLElement>('#effect-summary');
+  if (summary) {
+    const label = `${effect.lifecycle} · ${effect.raster}${effect.reason ? ` · ${effect.reason}` : ''}`;
+    if (summary.textContent !== label) {
+      summary.textContent = label;
+    }
+    summary.dataset.tone = effect.lifecycle === 'unavailable' ? 'unavailable' : 'pending';
+  }
   if (state) {
     state.textContent = JSON.stringify({
       lifecycle: effect.lifecycle,

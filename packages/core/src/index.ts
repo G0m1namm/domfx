@@ -14,6 +14,7 @@ export type EffectReason =
   | 'renderer-failed'
   | 'canvas-webgpu-unavailable'
   | 'device-lost'
+  | 'effect-target-owned'
   | 'unsupported-placement'
   | 'unsupported-composition'
   | 'reduced-motion'
@@ -27,6 +28,10 @@ export interface ManualEffectHandle {
   /** Hide stale output and capture again. Resolves after this or a newer revision
    * commits; rejects on failure, invalidation, disposal or an unavailable handle. */
   refresh(): Promise<void>;
+  /** Tear down and reinitialize with retained controls. Concurrent calls share one
+   * attempt. Like ready, resolves after work/cleanup; inspect lifecycle and reason.
+   * Rejects if already disposed. Never retries automatically. */
+  retry(): Promise<void>;
   readonly lifecycle: 'active' | 'suspended' | 'unavailable' | 'disposed';
   readonly raster: 'fresh' | 'refreshing' | 'stale';
   readonly reason: EffectReason | undefined;

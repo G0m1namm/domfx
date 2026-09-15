@@ -266,3 +266,10 @@ Gallery initialization and saved live evidence visit each target in the viewport
 restore the window scroll position. Pixel/placement assertions sample each target while
 visible; offscreen layers no longer render solely for diagnostic readback. Lifecycle
 fixtures that exercise capture and GPU work are positioned inside the viewport.
+
+Explicit retry fixtures run real capture and WebGPU in both projects. Controlled renderer,
+capture and preparation delays verify coalescing, teardown ordering, device destruction,
+motion changes, disposal and removal. Admission checks cover composition, host placement,
+assets, capture/aggregate budgets, visibility and replacement ownership, with exactly-once
+resource release and retained controls. Device destruction is intentional test input, not
+physical hardware-loss coverage.

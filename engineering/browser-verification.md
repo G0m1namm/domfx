@@ -220,6 +220,15 @@ size-triggered recovery without a hidden-target retry loop. Injected decode fail
 without unhandled rejections or retries. Source-mutating SnapDOM styles reject before
 creating capture feedback loops. These run in both browser projects.
 
+Lifecycle fixtures cover initial zero size and repeated zero-width/zero-height recovery,
+requiring no capture/preparation while zero-sized and one fresh capture on visible recovery.
+Real capture and GPU preparation are delayed across zero/nonzero transitions and removal;
+late results must release exactly once without presentation. Target/host removal while
+active, zero-sized, document-hidden or reduced-motion-suspended permanently disposes the
+handle. Same-task reinsertion cannot revive it; a new attachment succeeds. Repeated disposal
+must notify once and return managed allocations and reservations to baseline. These checks
+run in development and production; timing gates simulate ordering, not resource failure.
+
 ## Five-class live gallery
 
 The main lab attaches fire through `attachFire` to the headline with counters, rounded

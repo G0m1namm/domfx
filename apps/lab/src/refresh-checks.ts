@@ -301,7 +301,9 @@ export async function verifyRefresh() {
           await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
         } else {
           target.remove();
-          f.effect.time = 2;
+          await Promise.resolve();
+          check(f.effect.lifecycle === 'disposed', `${stage}/detach disposes before late work`);
+          check(!host.querySelector('canvas'), `${stage}/detach removes output immediately`);
         }
         if (transition === 'hidden' || transition === 'offscreen') {
           check(
@@ -321,7 +323,10 @@ export async function verifyRefresh() {
         }
         f.release();
         check(
-          (await result) === (transition === 'dispose' ? 'effect-disposed' : 'refresh-invalidated'),
+          (await result) ===
+            (transition === 'dispose' || transition === 'detach'
+              ? 'effect-disposed'
+              : 'refresh-invalidated'),
           `${stage}/${transition} rejects pending refresh`,
         );
         // Let the late adapter complete its finally before checking ownership.
@@ -341,6 +346,7 @@ export async function verifyRefresh() {
             `${stage}/${transition} explicit refresh recovers`,
           );
         }
+        f.effect.dispose();
         f.effect.dispose();
         // Observed invalidations can start another capture on an intervening
         // frame. Disposal must drain that work before asserting final cleanup.

@@ -165,8 +165,12 @@ export function attachFireWithAdapters(
     threshold: [0, Number.EPSILON],
   });
   const observer = new view.MutationObserver(checkMutations);
+  const connectionObserver = new view.MutationObserver(checkConnection);
   let observedSize = { width: 0, height: 0 };
   const resizeObserver = new view.ResizeObserver(() => {
+    if (!checkConnection()) {
+      return;
+    }
     try {
       const size = targetSize();
       // Dividing viewport coordinates by accumulated transforms can add float noise.
@@ -187,6 +191,23 @@ export function attachFireWithAdapters(
     const scale = scaleToViewport(target);
     const rect = target.getBoundingClientRect();
     return { width: rect.width / scale.x, height: rect.height / scale.y };
+  }
+
+  function checkConnection(records: MutationRecord[] = connectionObserver.takeRecords()) {
+    if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
+      return false;
+    }
+    // Keep removal terminal even when the caller reinserts before delivery.
+    // Observe ancestry separately: suspended output does not run frame checks.
+    if (
+      !target.isConnected ||
+      !host.contains(target) ||
+      records.some((record) => [...record.removedNodes].some((node) => node.contains(target)))
+    ) {
+      dispose();
+      return false;
+    }
+    return true;
   }
 
   function checkMutations(records: MutationRecord[]) {
@@ -254,6 +275,9 @@ export function attachFireWithAdapters(
     observer.disconnect();
     resizeObserver.disconnect();
     intersectionObserver.disconnect();
+    if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
+      connectionObserver.disconnect();
+    }
     target.removeEventListener('load', assetChanged, true);
     target.removeEventListener('error', assetChanged, true);
     document.fonts.removeEventListener('loading', assetChanged);
@@ -319,7 +343,7 @@ export function attachFireWithAdapters(
   }
 
   function syncVisibility() {
-    if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
+    if (!checkConnection() || motionSuspended) {
       return false;
     }
     try {
@@ -427,13 +451,7 @@ export function attachFireWithAdapters(
   }
 
   function checkComposition() {
-    if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
-      return false;
-    }
-    // Detached elements have no reliable computed composition. Preserve the
-    // existing stale-raster invalidation instead of reporting unsupported CSS.
-    if (!target.isConnected || !host.contains(target)) {
-      stale();
+    if (!checkConnection() || motionSuspended) {
       return false;
     }
     try {
@@ -464,10 +482,6 @@ export function attachFireWithAdapters(
       return;
     }
 
-    if (!target.isConnected || !host.contains(target)) {
-      stale();
-      return;
-    }
     if (!syncVisibility()) {
       return;
     }
@@ -517,10 +531,7 @@ export function attachFireWithAdapters(
       return false;
     }
     checkMutations(observer.takeRecords());
-    if (
-      raster === 'refreshing' &&
-      (!target.isConnected || !host.contains(target) || !syncVisibility())
-    ) {
+    if (raster === 'refreshing' && !syncVisibility()) {
       stale();
     }
     return (
@@ -701,6 +712,7 @@ export function attachFireWithAdapters(
   }
 
   function refresh(): Promise<void> {
+    checkConnection();
     if (lifecycle === 'disposed' || lifecycle === 'unavailable') {
       return Promise.reject(new Error(`effect-${lifecycle}`));
     }
@@ -721,6 +733,36 @@ export function attachFireWithAdapters(
     return promise;
   }
 
+  function dispose() {
+    if (lifecycle === 'disposed') {
+      return;
+    }
+    generation += 1;
+    rejectRefreshes(new Error('effect-disposed'));
+    lifecycle = 'disposed';
+    raster = 'stale';
+    reason = undefined;
+    reasonDetail = undefined;
+    releaseOwnership();
+    cleanup();
+    const callbacks = [...disposalCallbacks];
+    disposalCallbacks.clear();
+    const errors: unknown[] = [];
+    for (const callback of callbacks) {
+      try {
+        callback();
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+    if (errors.length) {
+      throw new AggregateError(errors, 'effect-disposal-callback-failed');
+    }
+  }
+
+  for (let ancestor = target.parentNode; ancestor; ancestor = ancestor.parentNode) {
+    connectionObserver.observe(ancestor, { childList: true });
+  }
   observer.observe(target, {
     subtree: true,
     childList: true,
@@ -830,31 +872,6 @@ export function attachFireWithAdapters(
       };
     },
 
-    dispose() {
-      if (lifecycle === 'disposed') {
-        return;
-      }
-      generation += 1;
-      rejectRefreshes(new Error('effect-disposed'));
-      lifecycle = 'disposed';
-      raster = 'stale';
-      reason = undefined;
-      reasonDetail = undefined;
-      releaseOwnership();
-      cleanup();
-      const callbacks = [...disposalCallbacks];
-      disposalCallbacks.clear();
-      const errors: unknown[] = [];
-      for (const callback of callbacks) {
-        try {
-          callback();
-        } catch (error) {
-          errors.push(error);
-        }
-      }
-      if (errors.length) {
-        throw new AggregateError(errors, 'effect-disposal-callback-failed');
-      }
-    },
+    dispose,
   };
 }

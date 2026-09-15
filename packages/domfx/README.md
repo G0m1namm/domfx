@@ -285,7 +285,7 @@ invalidated. Target subtree paint mutations, target size changes, target asset l
 events, document font loading events and window resize hide stale output immediately
 and schedule a fresh capture. Signals before the next shared animation frame coalesce
 into one refresh; an explicit `refresh()` absorbs already queued observer work.
-Observers cover only the selected target subtree, excluding the decorative canvas.
+Paint mutation observers cover only the selected target subtree, excluding the decorative canvas.
 There is no per-frame capture or automatic retry after failure. Observer-triggered
 failures update lifecycle, raster health and diagnostics through the same refresh
 contract, without an unhandled promise rejection. Disposal removes observers/listeners
@@ -295,12 +295,26 @@ visible. Initial attachment or explicit refresh while offscreen leaves stale out
 suspended; call `refresh()` once the target is in view. Visibility changes invalidate
 pending captures/preparations, whose late results are released without presentation.
 
+Zero width or height suspends output with stale raster health. Initial zero size
+does not capture or prepare a GPU frame; retained output stays hidden while zero-sized.
+An observed return to nonzero, visible size coalesces into one current refresh before
+showing output. Repeated size transitions invalidate obsolete work without a retry loop.
+
+Observed removal of the target or an ancestor permanently disposes the attachment,
+including while output is suspended or capture/preparation is pending. Removal stays
+terminal if the caller reinserts before the observer callback. Disposal removes output,
+releases the target claim, notifies `onDispose` listeners once, and rejects pending refreshes
+with `effect-disposed`; late work only releases its resources. Reinsertion requires a new
+`attachFire()` call. Live attachments observe child-list changes along the target's ancestry
+so disconnect detection does not depend on animation frames or document visibility.
+
 `motion` defaults to `'respect'`. Initial reduced motion resolves `ready` with
 `lifecycle: 'unavailable'` and `reason: 'reduced-motion'` before capture, canvas creation
 or GPU allocation. Enabling reduced motion later leaves the handle and target claim
 intact with `lifecycle: 'suspended'`, `raster: 'stale'` and `reason: 'reduced-motion'`.
 It immediately removes/zero-sizes the output canvas, releases retained allocations,
-stops scheduling, and removes listeners/observers. Pending work is invalidated;
+stops scheduling, and removes paint/geometry listeners and observers. Only ancestry
+removal observation remains until disposal. Pending work is invalidated;
 non-cancellable capture/preparation releases its late results and service reference
 when it settles. Other attachments retain their own resources.
 

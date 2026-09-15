@@ -12,12 +12,21 @@ function deferred() {
 type Stage = 'renderer' | 'capture' | 'prepare';
 
 /** Delay real browser/GPU work to exercise preference changes at async boundaries. */
-export function createMotionFixture(motion: FireOptions['motion'], initialStage?: Stage) {
+export function createMotionFixture(
+  motion: FireOptions['motion'],
+  initialStage?: Stage,
+  ancestor?: HTMLElement,
+) {
   const host = document.createElement('div');
   host.style.cssText = 'position:absolute;left:0;top:0;width:80px;height:80px';
   const target = document.createElement('div');
   target.style.cssText = 'width:24px;height:24px;background:blue;border-radius:50%';
-  host.append(target);
+  if (ancestor) {
+    ancestor.append(target);
+    host.append(ancestor);
+  } else {
+    host.append(target);
+  }
   document.body.append(host);
   const baseline = memoryFor(document).bytes;
   const stats = {

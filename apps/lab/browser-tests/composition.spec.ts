@@ -147,10 +147,8 @@ for (const stage of ['renderer', 'capture', 'prepare'] as const) {
         async ({ stage, css }) => {
           await window.manual.effect.ready;
           window.manual.effect.dispose();
-          const fixture = window.manual.createMotionFixture('respect', stage);
           const ancestor = document.createElement('div');
-          fixture.host.append(ancestor);
-          ancestor.append(fixture.target);
+          const fixture = window.manual.createMotionFixture('respect', stage, ancestor);
           await fixture.entered;
           ancestor.style.cssText = css;
           for (let i = 0; i < 3; i += 1) {

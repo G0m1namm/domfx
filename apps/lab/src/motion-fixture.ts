@@ -110,6 +110,9 @@ export function createMotionFixture(
       entered = deferred();
       gate = deferred();
     },
+    loseDevice() {
+      service?.device.destroy();
+    },
     release() {
       gate.resolve();
     },

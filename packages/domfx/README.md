@@ -241,7 +241,7 @@ Queued preparation and work resuming after an async GPU wait cannot allocate or 
 more GPU work. Non-cancellable capture/preparation retains its reservation until it
 settles and releases late resources; late results never restore output or replace the
 loss reason. Original DOM and unrelated page animations remain usable.
-There is no automatic recreation or retry. Explicitly attaching a new handle creates
+There is no automatic recreation or retry. Calling `retry()` or explicitly attaching a new handle creates
 a new service; cleanup of the lost generation cannot remove that replacement service.
 
 Attachment admission reserves memory synchronously before capture starts. Limits are
@@ -320,8 +320,7 @@ when it settles. Other attachments retain their own resources.
 
 Changing the preference back does not restart the attachment. Control writes,
 `resume()` and `refresh()` cannot recover it; refresh rejects with `reduced-motion`.
-An explicit retry API is deferred. To create output again when permitted, dispose
-the suspended handle and explicitly attach a new one.
+Call `await effect.retry()` to recheck the preference and recreate output when permitted.
 
 Choose `motion: 'static'` to opt into a deterministic decoration that always paints
 at time zero, regardless of the OS preference or requested clock:
@@ -356,7 +355,7 @@ try {
 
 A newest capture/preparation failure rejects affected refresh promises with the underlying
 error and makes the attachment unavailable with stale, hidden output. Superseded failures
-do not reject newer requests. There is no retry: refresh on an unavailable or disposed
+do not reject newer requests. Refresh on an unavailable or disposed
 handle rejects with `effect-unavailable` or `effect-disposed`. Mutation, asset load, resize,
 or a visibility/motion invalidation during pending work rejects with `refresh-invalidated`.
 Observed paint invalidations schedule a replacement automatically; visibility invalidations
@@ -364,6 +363,42 @@ allow an explicit refresh once conditions permit. Reduced-motion suspension requ
 In all cases late capture/preparation completes only to release its resources exactly once;
 it cannot resurrect an invalidated attachment. `ready` retains its nonrejecting initialization
 contract, including cleanup after initial disposal; refresh promises are separate from it.
+
+### Explicit retry
+
+`retry(): Promise<void>` tears down the current output, waits for pending renderer,
+capture and preparation work to release its resources, and starts one fresh initialization.
+Concurrent calls return the same promise, including calls while teardown is pending.
+It works during initialization, active output, suspension or unavailability. Time, intensity,
+seed, clock, pause state and `onDispose` subscriptions stay on the same handle; retry does
+not notify disposal listeners or create animation bindings.
+
+```ts
+await effect.retry();
+if (effect.lifecycle === 'unavailable') {
+  console.log(effect.reason); // Conditions still prevent output.
+}
+```
+
+Like `ready`, the promise resolves after the attempt and any cleanup; inspect `lifecycle`,
+`raster`, `reason` and `reasonDetail` for the result. `ready` remains the original initialization
+promise. Calling retry on an already disposed handle rejects with `effect-disposed`;
+disposal during an attempt prevents revival and lets the pending retry settle after cleanup.
+Observed removal remains terminal, including for unavailable handles and remove/reinsert
+within one task. Unavailable handles retain only ancestry removal observation until disposal.
+
+Retry rechecks target/host connection, ownership, positioned host, supported composition,
+reduced motion, visibility, asset readiness and allocation budgets. An unavailable handle
+releases its target claim; if a replacement owns that target or an overlapping subtree,
+retry reports `effect-target-owned` without disturbing the replacement. Offscreen retry
+stays suspended with stale raster health; visibility alone does not commit stale paint.
+Call `refresh()` or `retry()` when visible. Static motion continues to render at time zero.
+
+Retry invalidates pending refresh promises with `refresh-invalidated`. Refresh during a
+retry cannot start another generation and rejects (`effect-retrying`, or the current
+unavailable/disposed/reduced-motion rejection). Late results only release old resources.
+Failures retain typed reasons and never schedule another retry. Control writes and caller
+animation bindings remain valid, but cannot trigger recovery themselves.
 
 Placement supports fractional translation and positive axis-aligned scale, including
 target, ancestor and host transforms. Fresh, visible attachments check geometry on the
@@ -450,7 +485,7 @@ observed target mutations, and on shared animation frames while initialization/r
 is pending or fresh output is tracked. A violation observed during pending work invalidates
 that generation even if CSS becomes supported again before completion. Late resources
 are released without presenting; `ready` waits for that cleanup. There is no automatic
-retry: restore supported CSS and attach a new handle. Refresh of an unavailable handle
+retry: restore supported CSS and call `retry()` or attach a new handle. Refresh of an unavailable handle
 rejects with `effect-unavailable`.
 
 The caller must maintain a valid positioned host/containing block and compatible stacking

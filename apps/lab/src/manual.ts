@@ -4,6 +4,7 @@ import { verifyMemory } from './memory-checks.js';
 import { createMotionFixture } from './motion-fixture.js';
 import { createPlacementFixture } from './placement-fixture.js';
 import { verifyRefresh } from './refresh-checks.js';
+import { verifyRetryConditions } from './retry-checks.js';
 import {
   verifyDocumentIsolation,
   verifySharedDeviceLoss,
@@ -57,6 +58,7 @@ declare global {
       attach: typeof attachFire;
       capture: typeof capture;
       verifyRefresh: typeof verifyRefresh;
+      verifyRetryConditions: typeof verifyRetryConditions;
       verifyMemory: typeof verifyMemory;
       verifySharedTargets: typeof verifySharedTargets;
       verifySharedInitialization: typeof verifySharedInitialization;
@@ -72,6 +74,7 @@ window.manual = {
   attach: attachFire,
   capture,
   verifyRefresh,
+  verifyRetryConditions,
   verifyMemory,
   verifySharedTargets,
   verifySharedInitialization,

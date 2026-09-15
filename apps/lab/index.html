@@ -4,92 +4,290 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>domfx · GPU fire experiment</title>
+    <title>Live gallery · domfx lab</title>
+    <link rel="stylesheet" href="/src/ui.css" />
+    <link rel="stylesheet" href="/src/style.css" />
     <script type="module" src="/src/main.ts"></script>
   </head>
-  <body>
-    <main>
-      <p class="eyebrow">domfx · capture → GPU distance → fire</p>
-      <section id="host" class="host"><h1 id="target">B8O 2026</h1></section>
-      <p id="status" role="status">Preparing the GPU experiment…</p>
-      <div class="controls">
-        <button id="play" disabled>Play</button><button id="seek" disabled>Seek 1.5s</button>
-        <button id="reverse" disabled>Reverse</button
-        ><button id="dispose" disabled>Dispose effect</button>
-        <button id="save" disabled>Save experiment evidence</button>
-      </div>
-      <p id="clock">Manual clock · seed 314 · intensity 0.85</p>
-      <section class="diagnostics">
-        <figure>
-          <figcaption>Captured paint</figcaption>
-          <canvas id="capture"></canvas>
-        </figure>
-        <figure>
-          <figcaption>Alpha ≥ 128</figcaption>
-          <canvas id="mask"></canvas>
-        </figure>
-        <figure>
-          <figcaption>GPU SDF readback</figcaption>
-          <canvas id="sdf"></canvas>
-        </figure>
-        <figure>
-          <figcaption>GPU fire readback</figcaption>
-          <canvas id="fire"></canvas>
-        </figure>
+  <body class="index-page">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="domfx lab home"
+        ><span class="brand-mark" aria-hidden="true"></span>domfx</a
+      >
+      <nav class="site-nav" aria-label="Lab navigation">
+        <a href="/" aria-current="page">Gallery</a>
+        <a href="/manual.html">Manual</a>
+        <a href="/gsap.html">GSAP</a>
+        <a href="/assets.html">Assets</a><a href="https://github.com/G0m1namm/domfx">GitHub ↗</a>
+      </nav>
+    </header>
+    <main id="main" class="page">
+      <noscript
+        ><p class="status-line">
+          JavaScript is disabled. The examples remain visible; interactive controls and GPU
+          diagnostics require JavaScript.
+        </p></noscript
+      >
+      <section class="page-intro">
+        <p class="eyebrow">The rendering lab</p>
+        <h1 class="page-title">Real elements. Remarkable edges.</h1>
+        <p class="intro-copy">
+          Explore fire that follows your HTML. Five live targets, independent controls, and the
+          capture pipeline behind every effect.
+        </p>
       </section>
-      <h2>Capture fixtures</h2>
-      <p class="note">
-        Original DOM remains selectable and interactive. These are the exact elements sampled below.
-      </p>
-      <p id="interaction" class="note">Rounded button clicks: 0</p>
-      <div class="fixtures">
-        <div class="fixture-host">
-          <button id="rounded">Rounded <span>button</span></button>
+      <section class="page-section run-section" aria-label="Experiment status">
+        <p id="status" class="status-line" role="status">Preparing the GPU experiment…</p>
+        <div class="run-actions">
+          <span class="note">Capture → Distance field → Fire</span>
+          <div class="ui-controls">
+            <button id="dispose" disabled>Dispose all effects</button
+            ><button id="save" disabled>Save experiment evidence</button>
+          </div>
         </div>
-        <div class="fixture-host">
-          <svg
-            id="vector"
-            width="100"
-            height="70"
-            viewBox="0 0 100 70"
-            aria-label="Ring and strokes"
-          >
-            <path fill="#a8d5ff" fill-rule="evenodd" d="M10 5h55v55H10z M22 17v31h31V17z" />
-            <path stroke="#ffba68" stroke-width="5" d="M73 12l20 44" />
-          </svg>
+        <p id="save-note" class="note">Evidence saving is available in the development lab.</p>
+      </section>
+      <section class="page-section" aria-labelledby="gallery-title">
+        <div class="section-heading">
+          <span class="section-index">01 /</span>
+          <h2 id="gallery-title">Live fire gallery</h2>
+          <p class="note">Original DOM. Independent effects.</p>
         </div>
-        <div class="fixture-host">
-          <img id="transparent" width="96" height="64" alt="Transparent ring raster fixture" />
-        </div>
-        <div class="fixture-host">
-          <article id="card">
-            <strong>A composite card</strong>
-            <p>Paint and semantics</p>
-            <a href="#results">Inspect results →</a>
+        <div id="gallery-controls" class="example-grid">
+          <article class="example example-wide headline-example">
+            <div class="example-heading">
+              <h3>Typography</h3>
+              <span class="example-tag">01 / HTML</span>
+            </div>
+            <div class="example-body">
+              <div class="preview-pane">
+                <div class="local-scroll" tabindex="0" role="region" aria-label="Headline preview">
+                  <section id="host" class="host"><h2 id="target">B8O 2026</h2></section>
+                </div>
+                <p class="preview-caption">Every letter, counter, and edge.</p>
+              </div>
+              <div class="example-settings">
+                <div class="ui-controls">
+                  <button id="play" class="primary-action" disabled>Play</button
+                  ><button id="seek" disabled>Seek 1.5s</button
+                  ><button id="reverse" disabled>Reverse</button>
+                </div>
+                <p id="clock" class="note">Manual clock · seed 314 · intensity 0.85</p>
+                <div id="controls-target" class="gallery-controls">
+                  <p class="controls-placeholder note">
+                    Controls become available after verification.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="example">
+            <div class="example-heading">
+              <h3>Interaction</h3>
+              <span class="example-tag">02 / Button</span>
+            </div>
+            <div class="fixture-host button-host">
+              <button id="rounded">Rounded <span>button</span></button>
+            </div>
+            <p id="interaction" class="preview-caption">Rounded button clicks: 0</p>
+            <div id="controls-rounded" class="gallery-controls">
+              <p class="controls-placeholder note">Controls become available after verification.</p>
+            </div>
+          </article>
+          <article class="example">
+            <div class="example-heading">
+              <h3>Composition</h3>
+              <span class="example-tag">03 / Card</span>
+            </div>
+            <div class="fixture-host card-host">
+              <article id="card">
+                <strong>A composite card</strong>
+                <p>Paint and semantics</p>
+                <a href="#results">Inspect results →</a>
+              </article>
+            </div>
+            <p class="preview-caption">One surface. Multiple elements.</p>
+            <div id="controls-card" class="gallery-controls">
+              <p class="controls-placeholder note">Controls become available after verification.</p>
+            </div>
+          </article>
+          <article class="example example-wide">
+            <div class="example-heading">
+              <h3>Shapes in motion</h3>
+              <span class="example-tag">04–05 / SVG + Image</span>
+            </div>
+            <div class="shared-example-body">
+              <div class="preview-pane">
+                <div
+                  class="local-scroll"
+                  tabindex="0"
+                  role="region"
+                  aria-label="Shared preview frame"
+                >
+                  <div
+                    id="shared-host"
+                    class="fixture-host shared-host"
+                    tabindex="0"
+                    role="region"
+                    aria-label="Shared scrolling host for SVG and raster"
+                  >
+                    <div class="shared-content">
+                      <svg
+                        id="vector"
+                        width="100"
+                        height="70"
+                        viewBox="0 0 100 70"
+                        role="img"
+                        aria-label="Silver ring and strokes"
+                      >
+                        <path
+                          fill="#c2c5db"
+                          fill-rule="evenodd"
+                          d="M10 5h55v55H10z M22 17v31h31V17z"
+                        />
+                        <path stroke="#c2c5db" stroke-width="5" d="M73 12l20 44" />
+                        <path fill="#6153b7" d="M10 5h55v1H10z" />
+                        <path fill="#f047fe" d="M10 6h55v1H10z" />
+                        <path fill="#e6dc6a" d="M10 7h55v1H10z" />
+                      </svg>
+                      <img
+                        id="transparent"
+                        src="/examples/silver-ring.png"
+                        width="96"
+                        height="64"
+                        alt="Silver ring and separate bar on a transparent background"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <p class="preview-caption">Shared scrolling host · Scroll to test alignment ↔</p>
+              </div>
+              <div class="shared-settings">
+                <div id="controls-vector" class="gallery-controls">
+                  <p class="controls-placeholder note">
+                    SVG controls become available after verification.
+                  </p>
+                </div>
+                <div id="controls-transparent" class="gallery-controls">
+                  <p class="controls-placeholder note">
+                    Image controls become available after verification.
+                  </p>
+                </div>
+              </div>
+            </div>
           </article>
         </div>
-        <div class="fixture-host guard-host">
-          <div id="guard">
-            <span class="overflow-mark"></span><span class="overflow-mark top-mark"></span>
-            <span class="overflow-mark right-mark"></span
-            ><span class="overflow-mark bottom-mark"></span>
-            <span class="origin-mark"></span>
-          </div>
+      </section>
+      <section class="page-section" aria-labelledby="pipeline-title">
+        <div class="section-heading">
+          <span class="section-index">02 /</span>
+          <h2 id="pipeline-title">Inside the pipeline</h2>
+          <p class="note">Initial headline snapshots · not live output</p>
         </div>
-        <div class="fixture-host transform-host">
-          <div class="transform-ancestor">
-            <div id="transformed">
-              <span class="origin-mark"></span><span class="corner-mark"></span>
+        <div class="diagnostics">
+          <figure>
+            <figcaption><span>01</span> Source capture</figcaption>
+            <canvas id="capture" aria-label="Initial headline capture"></canvas>
+          </figure>
+          <figure>
+            <figcaption><span>02</span> Coverage mask · α ≥ 128</figcaption>
+            <canvas id="mask" aria-label="Coverage mask"></canvas>
+          </figure>
+          <figure>
+            <figcaption><span>03</span> Signed distance field</figcaption>
+            <canvas id="sdf" aria-label="GPU signed distance field"></canvas>
+          </figure>
+          <figure>
+            <figcaption><span>04</span> Rendered fire</figcaption>
+            <canvas id="fire" aria-label="Initial GPU fire"></canvas>
+          </figure>
+        </div>
+        <p class="note">
+          Pink/orange = outside · Blue = inside. Distances use opposite-class pixel centers. Saved
+          evidence includes each target’s capture, mask, distance field, fire, and current live
+          output.
+        </p>
+      </section>
+      <section class="page-section" aria-labelledby="extent-title">
+        <div class="section-heading">
+          <span class="section-index">03 /</span>
+          <h2 id="extent-title">Capture boundaries</h2>
+          <p class="note">Diagnostic fixtures · original test colors</p>
+        </div>
+        <div class="extent-grid">
+          <article>
+            <h3 class="panel-title">Overflow &amp; shadows</h3>
+            <p class="note">Verifies paint beyond the target without capturing its ancestor.</p>
+            <div
+              class="local-scroll"
+              tabindex="0"
+              role="region"
+              aria-label="Overflow capture fixture"
+            >
+              <div class="fixtures">
+                <div class="fixture-host guard-host">
+                  <div id="guard">
+                    <span class="overflow-mark"></span><span class="overflow-mark top-mark"></span
+                    ><span class="overflow-mark right-mark"></span
+                    ><span class="overflow-mark bottom-mark"></span
+                    ><span class="origin-mark"></span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </article>
+          <article>
+            <h3 class="panel-title">Transform &amp; coordinates</h3>
+            <p class="note">Verifies target-local pixels through translation and positive scale.</p>
+            <div
+              class="local-scroll"
+              tabindex="0"
+              role="region"
+              aria-label="Transform capture fixture"
+            >
+              <div class="fixtures">
+                <div class="fixture-host transform-host">
+                  <div class="transform-ancestor">
+                    <div id="transformed">
+                      <span class="origin-mark"></span><span class="corner-mark"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
         </div>
-      </div>
-      <h2 id="results">Experiment results</h2>
-      <p class="note">
-        Distances use opposite-class pixel centers. Pink/orange = outside, blue = inside.
-        Performance numbers are wall-clock observations, not GPU timestamps.
-      </p>
-      <pre id="report">Running…</pre>
+      </section>
+      <section class="page-section" aria-labelledby="results">
+        <div class="section-heading">
+          <span class="section-index">04 /</span>
+          <h2 id="results">Experiment results</h2>
+        </div>
+        <p id="result-summary" class="status-line">Checks are preparing. No render result yet.</p>
+        <p id="result-error" class="note" hidden></p>
+        <div class="check-grid">
+          <div><span>Capture &amp; distance</span><strong id="check-capture">Pending</strong></div>
+          <div><span>GPU fire</span><strong id="check-fire">Pending</strong></div>
+          <div><span>GSAP seeking</span><strong id="check-gsap">Pending</strong></div>
+          <div><span>Resource lifecycle</span><strong id="check-resources">Pending</strong></div>
+        </div>
+        <p class="note">
+          Results apply to this browser and GPU. Timings are wall-clock observations, not GPU
+          timestamps or performance guarantees.
+        </p>
+        <details class="report-disclosure">
+          <summary>Full experiment report · JSON</summary>
+          <pre id="report" class="raw-report">Running…</pre>
+        </details>
+      </section>
     </main>
+    <footer class="site-footer">
+      <p>domfx / browser experiments</p>
+      <p>
+        Experimental · WebGPU required for effects ·
+        <a href="https://github.com/G0m1namm/domfx#development">Setup &amp; source ↗</a>
+      </p>
+    </footer>
   </body>
 </html>

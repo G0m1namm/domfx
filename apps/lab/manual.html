@@ -4,25 +4,98 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>Manual fire attachment</title>
+    <title>Manual attachment · domfx lab</title>
+    <link rel="stylesheet" href="/src/ui.css" />
     <script type="module" src="/src/manual.ts"></script>
     <style>
-      body { margin: 60px; font-family: sans-serif; background: #17202b; color: white; }
-      #manual-host { position: relative; padding: 48px; border: 4px solid #76879c; width: 400px; }
-      #manual-target { display: block; width: 160px; height: 64px; border: 0; border-radius: 18px; background: #538caf; color: white; }
-      nav { margin-top: 48px; }
+      #manual-host { position: relative; padding: 48px; border: 4px solid transparent; width: 400px; }
+      #manual-target { display: block; width: 160px; height: 64px; border: 0; border-radius: 18px; background: linear-gradient(175deg, #6153b7 0%, #f047fe 3%, #e6dc6a 6%, #c2c5db 10%, #e8eaf3 44%, #c2c5db 85%, #9296ad 100%); color: #191920; font: 500 14px/1.4 system-ui, sans-serif; cursor: pointer; }
+      #manual-target:focus-visible { outline: 3px solid #e6dc6a; outline-offset: 4px; }
     </style>
   </head>
-  <body>
-    <h1>Manual attachment consumer</h1>
-    <div id="manual-host">
-      <button id="manual-target">Original <span>target</span></button>
-    </div>
-    <nav>
-      <button id="seek">Seek 1.5s</button> <button id="zero">Zero intensity</button>
-      <button id="dispose">Dispose</button>
-    </nav>
-    <p id="clicks">Target clicks: 0</p>
-    <pre id="state">Preparing…</pre>
+  <body class="manual-page">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="domfx lab home"
+        ><span class="brand-mark" aria-hidden="true"></span>domfx</a
+      >
+      <nav class="site-nav" aria-label="Lab navigation">
+        <a href="/">Gallery</a>
+        <a href="/manual.html" aria-current="page">Manual</a>
+        <a href="/gsap.html">GSAP</a>
+        <a href="/assets.html">Assets</a><a href="https://github.com/G0m1namm/domfx">GitHub ↗</a>
+      </nav>
+    </header>
+    <main id="main" class="page">
+      <noscript
+        ><p class="status-line">
+          JavaScript is disabled. The examples remain visible; interactive controls and GPU
+          diagnostics require JavaScript.
+        </p></noscript
+      >
+      <section class="page-intro">
+        <p class="eyebrow">Direct control / Public browser API</p>
+        <h1 class="page-title">Manual attachment</h1>
+        <p class="intro-copy">
+          Set an exact frame. Change the intensity. The original button stays interactive
+          throughout.
+        </p>
+      </section>
+      <section class="page-section consumer-layout">
+        <div class="consumer-preview">
+          <p class="preview-label">Live example / HTML button</p>
+          <div class="local-scroll" tabindex="0" role="region" aria-label="Button effect preview">
+            <div id="manual-host">
+              <button id="manual-target">Original <span>target</span></button>
+            </div>
+          </div>
+          <p id="clicks" class="preview-label">Target clicks: 0</p>
+        </div>
+        <div class="consumer-settings">
+          <h2 class="panel-title">Effect controls</h2>
+          <p class="note">
+            Time and intensity are explicit inputs. Disposal removes the effect and releases its
+            resources; the source element remains.
+          </p>
+          <div class="ui-controls">
+            <button id="seek" class="primary-action">Seek 1.5s</button
+            ><button id="zero">Zero intensity</button><button id="dispose">Dispose</button>
+          </div>
+          <p id="effect-summary" class="status-line" role="status">Preparing the attachment…</p>
+          <details class="report-disclosure">
+            <summary>Attachment state · JSON</summary>
+            <pre id="state" class="raw-report">Preparing…</pre>
+          </details>
+        </div>
+      </section>
+      <section class="page-section">
+        <div class="section-heading">
+          <span class="section-index">API /</span>
+          <h2>How it works</h2>
+        </div>
+        <pre class="raw-report code-example"><code>const effect = attachFire(target, {
+  host, time: 1.5, intensity: 0.85, seed: 314,
+});
+await effect.ready;
+
+effect.time = 1.5;
+effect.intensity = 0;
+// Release the attachment when finished.
+effect.dispose();</code></pre>
+        <p class="note">
+          Experimental local packages.
+          <a href="https://github.com/G0m1namm/domfx/tree/main/packages/domfx"
+            >Read the API and lifecycle notes ↗</a
+          >
+        </p>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <p>domfx / browser experiments</p>
+      <p>
+        Experimental · WebGPU required for effects ·
+        <a href="https://github.com/G0m1namm/domfx#development">Setup &amp; source ↗</a>
+      </p>
+    </footer>
   </body>
 </html>

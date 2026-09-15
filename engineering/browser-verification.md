@@ -91,8 +91,14 @@ These checks run in both development and production.
 Fake animation-frame tests use the real attachment, capture and GPU renderer to verify
 one shared frame request, one commit per dirty target, manual time ownership, ambient
 pause/seek/resume, immutable seed, no per-frame capture, and cancellation on disposal.
-Manual and paused attachments retain geometry frame participation without extra GPU
-commits. Fractional placement fixtures run at DPR 1 and 2 in both projects. Three colored
+Visible manual and paused attachments retain geometry frame participation without extra GPU
+commits. Fake-clock visibility tests cover manual, paused and running effects leaving
+the viewport: no scheduled work, placement reads or GPU renders during suspension,
+no ambient catch-up, retained control writes, and geometry synchronization before
+showing output on offscreen/document re-entry. Disposal while hidden prevents observer
+wakeups. A real viewport-edge fixture verifies re-entry from zero-area adjacency.
+Delayed capture/preparation fixtures verify immediate visibility invalidation,
+late resource release, stale re-entry and explicit refresh recovery. Fractional placement fixtures run at DPR 1 and 2 in both projects. Three colored
 SVG alpha islands are captured through the real adapter; their coverage-weighted raster
 pixel centers map through the actual effect layer into viewport coordinates and are
 compared with independently measured live landmark centers (one physical pixel maximum
@@ -108,7 +114,7 @@ foreignObject capture; these checks do not establish arbitrary CSS subpixel pain
 Bordered scrolling fixtures use the same landmarks at DPR 1 and 2 with window, host
 and inner scroll offsets under nonuniform scales. Two nested positioned rectangular
 overflow clips are compared to native clipping of an independently placed child through
-browser hit testing. The fixture verifies fully clipped output and scrolling back into
+browser hit testing. The fixture verifies suspension for fully clipped targets and scrolling back into
 view, unchanged time, capture/render counts and canvas pixels, and saves geometry JSON
 and screenshots at every stage. Rounded overflow, clip paths, masks, paint containment,
 overflow clip margins, static clipping ancestors and fixed-position ancestors must
@@ -246,3 +252,8 @@ and numerical checks passed. Required targets and completed diagnostic images re
 partial attachments are disposed. This prevents capture-only coverage from passing the
 live gallery gate. Existing overflow/paint failure fixtures remain required, and supported
 geometry stays within the documented capture and rectangular clipping limits.
+
+Gallery initialization and saved live evidence visit each target in the viewport, then
+restore the window scroll position. Pixel/placement assertions sample each target while
+visible; offscreen layers no longer render solely for diagnostic readback. Lifecycle
+fixtures that exercise capture and GPU work are positioned inside the viewport.

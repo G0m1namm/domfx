@@ -282,3 +282,179 @@ for (const ending of ['stale', 'renderer-failed'] as const) {
     });
   });
 }
+
+for (const mode of ['manual', 'paused', 'running'] as const) {
+  test(`${mode} offscreen work sleeps and re-entry synchronizes before showing output`, async ({
+    page,
+  }) => {
+    await page.goto('/manual.html');
+    await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
+    const result = await page.evaluate(async (mode) => {
+      window.manual.effect.dispose();
+      const fixture = await window.manual.createPlacementFixture(
+        mode === 'manual' ? 'manual' : 'ambient',
+      );
+      const effect = fixture.effect;
+      const target = document.querySelector<HTMLElement>('#placement-target')!;
+      const layer = document.querySelector<HTMLCanvasElement>('#placement-host > canvas')!;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      const hide = (hidden: boolean) => {
+        Object.defineProperty(document, 'hidden', { configurable: true, value: hidden });
+        document.dispatchEvent(new Event('visibilitychange'));
+      };
+      hide(true);
+      let now = 1000;
+      let nextId = 0;
+      const callbacks = new Map<number, FrameRequestCallback>();
+      performance.now = () => now;
+      window.requestAnimationFrame = (callback) => {
+        callbacks.set(++nextId, callback);
+        return nextId;
+      };
+      window.cancelAnimationFrame = (id) => {
+        callbacks.delete(id);
+      };
+      function tick(milliseconds: number) {
+        now += milliseconds;
+        const batch = [...callbacks.values()];
+        callbacks.clear();
+        for (const callback of batch) {
+          callback(now);
+        }
+      }
+      hide(false);
+      tick(0);
+      if (mode === 'running') {
+        effect.resume();
+      }
+      tick(250);
+      const before = effect.time;
+      const transform = target.style.transform;
+      target.style.transform = 'translateY(2000px)';
+      tick(250);
+      const offscreen = {
+        time: effect.time,
+        lifecycle: effect.lifecycle,
+        pending: callbacks.size,
+        display: layer.style.display,
+      };
+      let reads = 0;
+      const bounds = target.getBoundingClientRect.bind(target);
+      target.getBoundingClientRect = () => {
+        reads += 1;
+        return bounds();
+      };
+      const renders = fixture.sample().renders;
+      reads = 0;
+      for (let index = 0; index < 5; index += 1) {
+        document.dispatchEvent(new Event('scroll'));
+        tick(2000);
+      }
+      const sleeping = {
+        reads,
+        pending: callbacks.size,
+        time: effect.time,
+        renders: fixture.sample().renders - renders,
+      };
+      // Controls can change while suspended; they must not schedule or show output.
+      effect.intensity = 0.4;
+      const pendingAfterWrite = callbacks.size;
+      target.style.transform = transform;
+      fixture.move('ancestor');
+      // Native intersection delivery wakes the controlled frame scheduler.
+      for (let index = 0; index < 100 && callbacks.size === 0; index += 1) {
+        await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      }
+      const beforeReentry = { pending: callbacks.size, display: layer.style.display };
+      tick(16);
+      const reentry = fixture.sample();
+      tick(250);
+      const after = effect.time;
+      hide(true);
+      fixture.move('layout');
+      tick(10_000);
+      hide(false);
+      const beforeDocumentReentry = layer.style.display;
+      tick(16);
+      const documentReentry = fixture.sample();
+      hide(true);
+      effect.dispose();
+      hide(false);
+      target.style.transform = 'translateX(10px)';
+      document.dispatchEvent(new Event('scroll'));
+      await new Promise<void>((resolve) => setTimeout(resolve, 30));
+      const disposed = {
+        pending: callbacks.size,
+        layers: document.querySelectorAll('#placement-host > canvas').length,
+      };
+      fixture.dispose();
+      return {
+        before,
+        offscreen,
+        sleeping,
+        pendingAfterWrite,
+        beforeReentry,
+        reentry,
+        after,
+        beforeDocumentReentry,
+        documentReentry,
+        disposed,
+      };
+    }, mode);
+    const time = mode === 'running' ? 3 : 2.75;
+    expect(result.before).toBe(time);
+    expect(result.offscreen).toEqual({ time, lifecycle: 'suspended', pending: 0, display: 'none' });
+    expect(result.sleeping).toEqual({ reads: 0, pending: 0, time, renders: 0 });
+    expect(result.pendingAfterWrite).toBe(0);
+    expect(result.beforeReentry).toEqual({ pending: 1, display: 'none' });
+    expect(result.reentry).toMatchObject({
+      lifecycle: 'active',
+      raster: 'fresh',
+      captures: 1,
+      time,
+    });
+    expect(result.after).toBe(time + (mode === 'running' ? 0.25 : 0));
+    expect(result.beforeDocumentReentry).toBe('none');
+    expect(result.documentReentry).toMatchObject({
+      lifecycle: 'active',
+      raster: 'fresh',
+      captures: 1,
+      time: result.after,
+    });
+    for (const sample of [result.reentry, result.documentReentry]) {
+      for (const point of sample.points) {
+        expect(point.errorPhysical).toBeLessThanOrEqual(1);
+      }
+    }
+    expect(result.disposed).toEqual({ pending: 0, layers: 0 });
+  });
+}
+
+test('a target touching the viewport edge wakes when positive area re-enters', async ({ page }) => {
+  await page.goto('/manual.html');
+  await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
+  await page.evaluate(async () => {
+    window.manual.effect.dispose();
+    const host = document.createElement('div');
+    host.id = 'edge-host';
+    host.style.cssText = 'position:absolute;left:0;top:0;width:100px;height:100px';
+    const target = document.createElement('div');
+    target.style.cssText = 'width:20px;height:20px;background:white';
+    host.append(target);
+    document.body.append(host);
+    window.manual.effect = window.manual.attach(target, { host, time: 7 });
+    await window.manual.effect.ready;
+    host.style.top = `${innerHeight}px`;
+  });
+  await expect.poll(() => page.evaluate(() => window.manual.effect.lifecycle)).toBe('suspended');
+  // Let the observer record edge adjacency before moving one pixel into view.
+  await page.evaluate(async () => {
+    for (let i = 0; i < 3; i += 1) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+    document.querySelector<HTMLElement>('#edge-host')!.style.top = `${innerHeight - 1}px`;
+  });
+  await expect.poll(() => page.evaluate(() => window.manual.effect.lifecycle)).toBe('active');
+  expect(await page.evaluate(() => window.manual.effect.time)).toBe(7);
+  await page.evaluate(() => window.manual.effect.dispose());
+});

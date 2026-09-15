@@ -145,7 +145,7 @@ for (const dpr of [1, 2]) {
             contentType: 'image/png',
           });
           expect(sample).toMatchObject({
-            lifecycle: 'active',
+            lifecycle: step === 'outside' ? 'suspended' : 'active',
             raster: 'fresh',
             time: 2.75,
             paused: true,
@@ -153,8 +153,10 @@ for (const dpr of [1, 2]) {
             samePixels: true,
             dpr,
           });
-          for (const point of sample.points) {
-            expect(point.errorPhysical).toBeLessThanOrEqual(1);
+          if (step !== 'outside') {
+            for (const point of sample.points) {
+              expect(point.errorPhysical).toBeLessThanOrEqual(1);
+            }
           }
           expect(sample.mismatches).toBe(0);
           expect(sample.renders).toBe(1);

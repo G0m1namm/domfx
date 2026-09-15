@@ -21,7 +21,8 @@ export async function verifyMemory() {
     checks.push(name);
   }
   const host = document.createElement('div');
-  host.style.cssText = 'position:relative';
+  host.style.cssText =
+    'position:absolute;left:0;top:0;display:grid;grid-template-columns:repeat(2,436px)';
   const targets = Array.from({ length: 4 }, () => {
     const target = document.createElement('div');
     // At DPR 2 the requested padded raster is exactly 1,000,000 pixels.

@@ -170,7 +170,7 @@ effect.dispose(); // Safe before ready, and safe to call twice.
 
 `host` must be a connected, positioned HTML element and `target` a strict descendant
 in the same document. Duplicate or nested target ownership throws synchronously,
-as do invalid options, non-HTML hosts, invalid host geometry and nonfinite/out-of-float32-range
+as do invalid options, non-HTML or unpositioned hosts and nonfinite/out-of-float32-range
 parameters. Rejected calls never claim ownership. Unavailable attachments release their
 claim automatically; a later attachment can use the target without disposing the failed
 handle first. Disposing that old handle cannot release the new attachment's claim.
@@ -208,7 +208,8 @@ unavailable and disposed attachments leave the scheduler, without a retry loop.
 Environmental failures resolve with `lifecycle: 'unavailable'` and a typed `EffectReason`
 code in `reason`. Initial failures include `no-webgpu`, `no-adapter`, `capture-failed`,
 `empty-mask`, `capture-budget`, `target-budget`, `aggregate-budget`, `missing-exterior`,
-`canvas-webgpu-unavailable`, `renderer-failed`, and `reduced-motion`.
+`canvas-webgpu-unavailable`, `renderer-failed`, `unsupported-placement`,
+`unsupported-composition`, and `reduced-motion`.
 `reasonDetail` preserves the underlying message for diagnostics; branch on `reason`.
 Failed setup releases its capture pixels, canvas backing store, listeners and GPU resources
 before `ready` settles.
@@ -393,6 +394,52 @@ The scrolling fixture checks two nested rectangular clips against native browser
 testing, alongside landmark placement, saved screenshots, unchanged capture/render
 counts and fully clipped/re-entry stages at DPR 1 and 2. These checks do not establish
 support for arbitrary clipping shapes or stacking contexts.
+
+### Composition detection and caller obligations
+
+Detected unsupported CSS is an environmental no-effect result: `attachFire()` returns a handle,
+`ready` resolves, and the handle reports `lifecycle: 'unavailable'`, `raster: 'stale'`
+and one of the reasons below. Invalid options/host relationships and ownership conflicts
+still throw synchronously. A detected runtime violation removes and zero-sizes output,
+releases ownership and stops scheduling. It does not alter the original target's styles,
+focus or event handlers. Native effects of the caller's CSS still apply to the target
+(for example, zero scale makes it invisible).
+
+| Scope inspected through computed styles                                 | Detected rejection                                                                                                                                                                                                                                                                                                            | Reason                    |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Target and every `parentElement`, including host and ancestors above it | A transform matrix that is not 2D, has nonzero off-diagonal terms, or has zero/negative X/Y scale; non-`none` perspective; individual rotation other than `none`/`0deg`; individual scale with more than two components or nonpositive/nonfinite values; three-component individual translation; zoom other than `1`/`normal` | `unsupported-placement`   |
+| Target through ancestors below the host (host excluded)                 | Opacity other than `1`, filter or backdrop-filter other than `none`, mix-blend-mode other than `normal`                                                                                                                                                                                                                       | `unsupported-composition` |
+| Target through ancestors below the host                                 | Fixed positioning                                                                                                                                                                                                                                                                                                             | `unsupported-placement`   |
+| Intermediate ancestors only (target and host excluded)                  | Clip paths, mask images, legacy clip, paint/strict/content containment, non-visible content-visibility; overflow clipping on non-HTML or static elements, rounded overflow or `overflow: clip`                                                                                                                                | `unsupported-placement`   |
+
+These are conservative computed-value checks, not a general CSS capability detector.
+Even visually neutral values such as `filter: blur(0px)` reject. The selected root's
+opacity/filter/blending is rejected because capturing alpha cannot reproduce the original
+and its separate fire layer as one compositing group. See the CSS
+[group compositing model](https://www.w3.org/TR/compositing-1/#groups).
+The target's own clipping and descendant paint remain capture responsibilities, subject
+to the capture/asset limits above. They are not scanned by the intermediate-ancestor rules.
+Host and outer ancestor opacity, filters and clipping apply natively to the shared subtree;
+they are not rejected by these group/clip checks. This does not establish support for every
+combination of native effects.
+
+Checks run before initialization starts, at async capture/preparation boundaries, on
+observed target mutations, and on shared animation frames while initialization/refresh
+is pending or fresh output is tracked. A violation observed during pending work invalidates
+that generation even if CSS becomes supported again before completion. Late resources
+are released without presenting; `ready` waits for that cleanup. There is no automatic
+retry: restore supported CSS and attach a new handle. Refresh of an unavailable handle
+rejects with `effect-unavailable`.
+
+The caller must maintain a valid positioned host/containing block and compatible stacking
+order. Detection does not prove arbitrary z-index/stacking isolation, occlusion by siblings,
+top-layer/popover/dialog composition, motion paths, preserve-3d contexts, shadow/slot ancestry,
+or arbitrary descendant CSS fidelity. No bounding-rectangle approximation establishes support
+for rejected transforms. Computed-style sampling can miss changes that begin and end between
+checks; hidden or stale output stops frame tracking, and background documents may not get
+animation frames. Ancestor/stylesheet/pseudo-state paint changes still need explicit `refresh()`
+when no observed paint signal is emitted. A successful handle reports only the bounded
+checks and capture behavior, not universal CSS compatibility.
 
 Run the lab and open `/manual.html` to exercise the root-export consumer with Seek,
 Zero intensity and Dispose controls. The browser suite covers it in development

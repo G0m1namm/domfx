@@ -9,7 +9,12 @@ test('controlled refresh revisions settle in order and release every frame once'
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/manual.html');
   await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
-  const checks = await page.evaluate(() => window.manual.verifyRefresh());
+  const checks = await page.evaluate(() => {
+    // The fixture dispatches Document-wide resize signals. Keep the unrelated
+    // manual example from refreshing against its reservation baseline.
+    window.manual.effect.dispose();
+    return window.manual.verifyRefresh();
+  });
   await testInfo.attach('refresh-checks.json', {
     body: JSON.stringify(checks, null, 2),
     contentType: 'application/json',

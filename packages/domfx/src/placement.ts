@@ -47,6 +47,7 @@ export function scaleToViewport(element: Element): { x: number; y: number } {
       (style.rotate !== 'none' && style.rotate !== '0deg') ||
       scale.length > 2 ||
       scale.some((value) => !Number.isFinite(value) || value <= 0) ||
+      (style.translate !== 'none' && style.translate.split(/\s+/).length > 2) ||
       (style.zoom !== '1' && style.zoom !== 'normal')
     ) {
       throw new Error('unsupported-placement');
@@ -81,6 +82,16 @@ function measureClip(target: Element, host: HTMLElement) {
     const style = view.getComputedStyle(node);
     if (style.position === 'fixed') {
       throw new Error('unsupported-placement');
+    }
+    // The layer bypasses this group. Captured alpha cannot reproduce group
+    // opacity, filters or blending of the original target together with its fire.
+    if (
+      style.opacity !== '1' ||
+      style.filter !== 'none' ||
+      style.backdropFilter !== 'none' ||
+      style.mixBlendMode !== 'normal'
+    ) {
+      throw new Error('unsupported-composition');
     }
     // The selected target's own clipping is captured paint, not an ancestor clip.
     if (node === target) {
@@ -137,6 +148,12 @@ function measureClip(target: Element, host: HTMLElement) {
     }
   }
   return { left, top, right, bottom };
+}
+
+/** Check admission and pending work without needing captured pixels. */
+export function assertEffectComposition(target: Element, host: HTMLElement) {
+  scaleToViewport(target);
+  measureClip(target, host);
 }
 
 /** Measure the captured raster in effect-host CSS pixels before writing layer styles. */

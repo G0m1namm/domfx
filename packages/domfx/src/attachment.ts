@@ -3,7 +3,12 @@ import type { CaptureFrame, ClockMode, EffectHandle, EffectReason } from '@domfx
 import { captureElementWithReservation, measureCapture } from './browser.js';
 import type { PreparedGpuFrame } from './gpu.js';
 import { estimateFrameMemory, memoryFor, type AllocationReservation } from './memory.js';
-import { isPlacementMutation, measureEffectPlacement, scaleToViewport } from './placement.js';
+import {
+  assertEffectComposition,
+  isPlacementMutation,
+  measureEffectPlacement,
+  scaleToViewport,
+} from './placement.js';
 import { acquireRenderer, type AttachmentRenderer } from './renderer-service.js';
 import { schedulerFor } from './scheduler.js';
 
@@ -102,7 +107,6 @@ export function attachFireWithAdapters(
     0,
     Math.min(1, finite(options.intensity === undefined ? 1 : options.intensity)),
   );
-  scaleToViewport(target);
 
   const motion = view.matchMedia('(prefers-reduced-motion: reduce)');
   const scheduler = schedulerFor(document, view);
@@ -154,7 +158,7 @@ export function attachFireWithAdapters(
   }
 
   const observer = new view.MutationObserver(checkMutations);
-  let observedSize = targetSize();
+  let observedSize = { width: 0, height: 0 };
   const resizeObserver = new view.ResizeObserver(() => {
     try {
       const size = targetSize();
@@ -178,6 +182,9 @@ export function attachFireWithAdapters(
   }
 
   function checkMutations(records: MutationRecord[]) {
+    if (records.length && !checkComposition()) {
+      return;
+    }
     if (records.some((record) => !isPlacementMutation(record, target))) {
       observePaint();
     }
@@ -327,7 +334,10 @@ export function attachFireWithAdapters(
 
     dirty = false;
     lastTimestamp = running() ? timestamp : undefined;
-    return lifecycle === 'active' && raster === 'fresh';
+    return (
+      (lifecycle === 'active' && raster === 'fresh') ||
+      (lifecycle === 'suspended' && raster === 'refreshing' && !document.hidden)
+    );
   }
 
   function unavailable(error: unknown, fallback: EffectReason = 'renderer-failed') {
@@ -350,6 +360,7 @@ export function attachFireWithAdapters(
       case 'target-budget':
       case 'canvas-webgpu-unavailable':
       case 'unsupported-placement':
+      case 'unsupported-composition':
       case 'reduced-motion':
         reason = reasonDetail;
         break;
@@ -361,8 +372,31 @@ export function attachFireWithAdapters(
     cleanup();
   }
 
+  function checkComposition() {
+    if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
+      return false;
+    }
+    // Detached elements have no reliable computed composition. Preserve the
+    // existing stale-raster invalidation instead of reporting unsupported CSS.
+    if (!target.isConnected || !host.contains(target)) {
+      stale();
+      return false;
+    }
+    try {
+      assertEffectComposition(target, host);
+      return true;
+    } catch (error) {
+      unavailable(error);
+      return false;
+    }
+  }
+
   function paint(render = true) {
     suspendForMotion();
+    // Pending work has no raster to place yet, but must observe invalid CSS too.
+    if (raster === 'refreshing' && !checkComposition()) {
+      return;
+    }
     checkMutations(observer.takeRecords());
     if (
       lifecycle === 'disposed' ||
@@ -426,6 +460,9 @@ export function attachFireWithAdapters(
 
   function current(requestedRevision: number, requestedGeneration: number) {
     suspendForMotion();
+    if (!checkComposition()) {
+      return false;
+    }
     checkMutations(observer.takeRecords());
     if (
       raster === 'refreshing' &&
@@ -630,6 +667,7 @@ export function attachFireWithAdapters(
     suspend('stale-raster');
     const promise = new Promise<void>((resolve, reject) => refreshes.push({ resolve, reject }));
     void startRefresh();
+    scheduler.schedule(commit);
     return promise;
   }
 
@@ -653,6 +691,9 @@ export function attachFireWithAdapters(
 
   if (motionPolicy === 'respect' && motion.matches) {
     unavailable(new Error('reduced-motion'));
+  } else if (checkComposition()) {
+    observedSize = targetSize();
+    scheduler.schedule(commit);
   }
   const ready = startRefresh();
 

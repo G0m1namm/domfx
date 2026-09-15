@@ -116,6 +116,23 @@ become unavailable both during live tracking and initial attachment, removing th
 while preserving the target. This bounded fixture does not establish arbitrary clipping
 or stacking support.
 
+Composition fixtures additionally reject representative matrix and individual rotation,
+skew/perspective, zero/negative scale, three-component translation and zoom on the target,
+intermediate ancestor, host and an outer ancestor. Target/intermediate opacity, filter,
+backdrop-filter and blending reject with `unsupported-composition`; intermediate clip,
+mask and containment cases retain `unsupported-placement`. The initial/live matrix saves
+JSON states and requires no canvas, unchanged target styles, focus and click handlers.
+Real pointer and keyboard input also reaches the original button after rejection.
+Controlled delays after real renderer creation, capture and GPU preparation verify that
+an ancestor becoming unsupported invalidates initial work before it settles. Restoring CSS
+before releasing each delay must not revive the handle; all late allocations are released
+exactly once, and a new attachment succeeds. These delays simulate ordering, not GPU failure.
+An explicit refresh also rejects immediately during blocked preparation, releases old and
+late output, and preserves its unavailable reason after CSS is restored. A shared-host
+opacity/filter and target-clip fixture verifies that the bypass checks keep their documented scope.
+The [composition contract](../packages/domfx/README.md#composition-detection-and-caller-obligations)
+enumerates the detected computed styles and remaining caller obligations.
+
 Shared-service checks concurrently attach a ring and disconnected islands in separate
 hosts and one shared host. Both captured SDFs are compared with the numerical oracle;
 canvas readbacks verify independent time/intensity and reproducible surviving output

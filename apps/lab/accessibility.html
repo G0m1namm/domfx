@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Interaction and accessibility · domfx lab</title>
+    <script type="module" src="/src/accessibility.ts"></script>
+    <style>
+      body { margin: 32px; color: #202030; background: #fff; font: 18px/1.5 system-ui, sans-serif; }
+      button, input { font: inherit; }
+      button { padding: 8px 16px; }
+      :focus-visible { outline: 3px solid #1748d2; outline-offset: 5px; }
+      #host { position: relative; padding: 40px; width: 480px; }
+      #target { padding: 24px; border: 2px solid #888; border-radius: 16px; background: #f3f3fa; }
+      #target p { margin: 16px 0; }
+      #selectable { white-space: nowrap; }
+      #controls { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Interaction and accessibility</h1>
+      <p>Compare the original content before attachment and after each lifecycle change.</p>
+      <div id="specimen">
+        <button id="before">Before target</button>
+        <div id="host">
+          <section id="target" aria-label="Original content">
+            <button id="activate" type="button" aria-describedby="help">Activate original</button>
+            <p id="help">This button keeps its original handlers.</p>
+            <p><a id="link" href="#destination">Original link</a></p>
+            <label for="editor">Original input</label>
+            <input id="editor" value="Editable text" />
+            <p><span id="selectable">Select this original text.</span></p>
+          </section>
+        </div>
+        <button id="after">After target</button>
+      </div>
+      <p id="destination">Link destination</p>
+      <p id="activations">Property handler: 0; listener: 0</p>
+      <div id="controls" aria-label="Fixture controls">
+        <button id="attach">Attach effect</button>
+        <button id="revert">Revert borrowed context</button>
+        <button id="revert-owned">Revert owned context</button>
+        <button id="dispose">Dispose effect</button>
+      </div>
+      <p id="state" role="status">No effect</p>
+      <p>
+        For reduced motion, change the browser or OS preference after attaching. Reload for a fresh
+        baseline.
+      </p>
+    </main>
+  </body>
+</html>

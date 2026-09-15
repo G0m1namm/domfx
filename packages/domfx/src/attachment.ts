@@ -1,6 +1,7 @@
-import type { CaptureFrame, ClockMode, EffectHandle, EffectReason } from '@domfx/core';
+import type { CaptureFrame, EffectHandle, EffectReason } from '@domfx/core';
 
-import { captureElementWithReservation, measureCapture } from './browser.js';
+import { type captureElementWithReservation, measureCapture } from './browser.js';
+import type { FireOptions } from './fire-options.js';
 import type { PreparedGpuFrame } from './gpu.js';
 import { estimateFrameMemory, memoryFor, type AllocationReservation } from './memory.js';
 import {
@@ -10,20 +11,8 @@ import {
   measureEffectPlacement,
   scaleToViewport,
 } from './placement.js';
-import { acquireRenderer, type AttachmentRenderer } from './renderer-service.js';
+import type { AttachmentRenderer } from './renderer-service.js';
 import { schedulerFor } from './scheduler.js';
-
-export interface FireOptions {
-  /** Positioned HTML container; target must be a strict descendant. */
-  readonly host: HTMLElement;
-  /** Defaults to manual for externally owned time. */
-  readonly clock?: ClockMode;
-  /** Respect reduced motion by default; static always paints at time zero. */
-  readonly motion?: 'respect' | 'static';
-  readonly seed?: number;
-  readonly time?: number;
-  readonly intensity?: number;
-}
 
 const owners = new WeakMap<Document, Set<Element>>();
 // A disposed owner may still be capturing when this target is reattached.
@@ -51,14 +40,6 @@ export interface AttachmentAdapters {
   capture: typeof captureElementWithReservation;
   /** One owned reference; destroy releases it. attachFire supplies a shared service lease. */
   createRenderer: () => Promise<AttachmentRenderer>;
-}
-
-/** Batch control writes and refresh observed changes to captured paint. */
-export function attachFire(target: Element, options: FireOptions): EffectHandle {
-  return attachFireWithAdapters(target, options, {
-    capture: captureElementWithReservation,
-    createRenderer: () => acquireRenderer(target.ownerDocument),
-  });
 }
 
 export function attachFireWithAdapters(

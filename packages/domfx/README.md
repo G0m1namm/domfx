@@ -16,8 +16,31 @@ The browser package runs `unplugin-typegpu` when building: its emitted JavaScrip
 includes TypeGPU callback metadata and inline fire WGSL. No separate shader files,
 runtime asset copy, source aliases or consumer TypeGPU plugin are required.
 Runtime dependencies (`@domfx/core`, TypeGPU and SnapDOM) remain external and
-must be installed with the package. CommonJS, SSR and other bundlers are not
-verified by this path.
+must be installed with the package. CommonJS and other bundlers are not verified
+by this path. Node import safety and root declarations have a separate gate below.
+
+### Node imports and consumer types
+
+Run `pnpm test:packed:contracts` for the hardware-independent gate, also included in
+`pnpm check` and CI. It installs core/browser tarballs and TypeScript in a fresh
+temporary consumer outside the workspace, without GSAP, source aliases or repository
+development types. The printed directory retains the consumer and tarballs for inspection.
+Installation uses the declared dependency ranges and requires registry access.
+
+Core, browser and the existing `/experimental` lab entry import in separate Node
+processes with `window`, `document` and `navigator` absent. A second pass guards
+browser globals and resource APIs against import-time DOM/GPU work or scheduling.
+Core cannot load external modules; browser imports cannot load GSAP. This verifies
+import safety for SSR, not server-side capture or rendering: call `attachFire` and
+`captureElement` only with real browser elements.
+
+Root declarations compile with TypeScript 5.9.3, strict checking and
+`skipLibCheck: false` under NodeNext and Bundler resolution. Core needs only ES2022;
+browser consumers add DOM/DOM.Iterable, without WebGPU or GSAP ambient types.
+Export allowlists reject accidental public renderer/oracle exports and extra package
+subpaths; private source/dist imports are rejected. `/experimental` retains its
+explicit lab-only renderer and adapter exports and is outside this root declaration
+contract. Its GPU types still require the lab's WebGPU type setup.
 
 The SDF executor from pinned `@typegpu/sdf` 0.12.0 is bundled with its MIT notice.
 The repository's pnpm patch adds `offsetUniform.buffer.destroy()` to executor cleanup;

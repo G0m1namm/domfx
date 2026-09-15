@@ -4,20 +4,76 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>Capture asset fixtures</title>
+    <title>Capture assets · domfx lab</title>
+    <link rel="stylesheet" href="/src/ui.css" />
     <script type="module" src="/src/assets.ts"></script>
     <style>
-      body { margin: 40px; font-family: sans-serif; background: white; }
       #host { position: relative; }
       #target { display: block; margin: 0; border: 0; padding: 0; width: 160px; height: 80px; background: white; color: black; font: 40px/80px sans-serif; text-align: left; }
       #target img { display: block; width: 40px; height: 40px; }
       #frame { display: block; margin-top: 40px; }
+      .asset-stage { position: relative; overflow: auto; padding: 32px; }
     </style>
   </head>
-  <body>
-    <h1>Capture asset fixtures</h1>
-    <div id="host"><button id="target" aria-label="Asset target"></button></div>
-    <canvas id="frame"></canvas>
-    <pre id="state">Ready for a fixture</pre>
+  <body class="assets-page">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="domfx lab home"
+        ><span class="brand-mark" aria-hidden="true"></span>domfx</a
+      >
+      <nav class="site-nav" aria-label="Lab navigation">
+        <a href="/">Gallery</a>
+        <a href="/manual.html">Manual</a>
+        <a href="/gsap.html">GSAP</a>
+        <a href="/assets.html" aria-current="page">Assets</a
+        ><a href="https://github.com/G0m1namm/domfx">GitHub ↗</a>
+      </nav>
+    </header>
+    <main id="main" class="page">
+      <noscript
+        ><p class="status-line">
+          JavaScript is disabled. The examples remain visible; interactive controls and GPU
+          diagnostics require JavaScript.
+        </p></noscript
+      >
+      <section class="page-intro">
+        <p class="eyebrow">Diagnostics / Asset readiness</p>
+        <h1 class="page-title">Capture assets</h1>
+        <p class="intro-copy">
+          Inspect image decoding, background images, and font readiness before capture. These
+          fixtures retain their original colors for pixel verification.
+        </p>
+      </section>
+      <section class="page-section consumer-layout">
+        <div class="consumer-preview">
+          <p class="preview-label">Source / Asset target</p>
+          <div class="asset-stage">
+            <div id="host"><button id="target" aria-label="Asset target"></button></div>
+          </div>
+          <p class="preview-label">Output / Captured pixels</p>
+          <div class="asset-stage">
+            <canvas id="frame" aria-label="Asset capture output"></canvas>
+          </div>
+        </div>
+        <div class="consumer-settings">
+          <h2 class="panel-title">Fixture runner</h2>
+          <p class="note">
+            The browser test suite loads each asset scenario, captures the target, and checks the
+            resulting pixels. The empty target is the starting state.
+          </p>
+          <p class="note">Scenarios run through the automated browser tests.</p>
+          <pre id="state" class="raw-report">Ready for a fixture</pre>
+          <p class="note">Use the gallery or manual example for interactive effect controls.</p>
+          <a class="text-link" href="/manual.html">Open the manual example →</a>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <p>domfx / browser experiments</p>
+      <p>
+        Experimental · WebGPU required for effects ·
+        <a href="https://github.com/G0m1namm/domfx#development">Setup &amp; source ↗</a>
+      </p>
+    </footer>
   </body>
 </html>

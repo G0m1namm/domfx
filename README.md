@@ -18,7 +18,10 @@ pnpm demo
 
 Open the printed loopback address in a WebGPU-enabled browser. With reduced
 motion disabled, the lab automatically checks capture, GPU distances, fire and
-GSAP seeking. It also provides Play, Seek, Reverse and Dispose controls.
+GSAP seeking. The main page renders a five-class gallery (headline, button, SVG, transparent raster
+and card) through public attachments, with two targets in one scrolling host. Per-target
+controls exercise time, intensity, refresh, placement and disposal; the headline retains
+Play, Seek and Reverse controls.
 
 | Command                             | Result                                                                     |
 | ----------------------------------- | -------------------------------------------------------------------------- |

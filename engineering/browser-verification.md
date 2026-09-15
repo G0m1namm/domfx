@@ -196,3 +196,36 @@ paint; no capture or renderer mock supplies those pixels. Stylesheet hide/show v
 size-triggered recovery without a hidden-target retry loop. Injected decode failure verifies stale/unavailable diagnostics
 without unhandled rejections or retries. Source-mutating SnapDOM styles reject before
 creating capture feedback loops. These run in both browser projects.
+
+## Five-class live gallery
+
+The main lab attaches fire through `attachFire` to the headline with counters, rounded
+button with children, stroked/holed SVG, transparent raster and composite card. SVG and
+raster share a bordered rectangular scrolling host; the other three have separate hosts.
+Each target has independent time, intensity, refresh, move/scale and disposal controls.
+The headline uses the manual clock with GSAP controls; the others start paused with
+ambient Play / pause controls. Change content updates the button and calls public refresh.
+
+The normal-rendering checks require all five live layers at DPR 1 and 2 in development
+and production. Canvas pixel readbacks verify nonempty fire, independent controls,
+zero intensity, deterministic restoration, changed-content refresh and surviving output
+after shared/separate-host disposal. Manual and paused targets retain their time and
+reproduce their pixels through translation, positive axis-aligned scale and host scrolling.
+`gallery-checks.json` saves numerical viewport bounds, pixel hashes and control snapshots;
+final disposal requires zero attachment reservations and no live layers. Existing
+placement/shared-service fixtures additionally gate raster reuse and GPU resource cleanup.
+
+For each class, `capture-`, `mask-`, `sdf-` and `fire-<target>-dpr<N>.png` record the
+initial diagnostic capture with **48 CSS-pixel padding**, a threshold of 128, the full-raster
+SDF oracle check, and fire at time 1.5/seed 314/intensity 0.85. Separate
+`live-fire-<target>-dpr<N>.png` files record actual public attachment canvases with their
+**32 CSS-pixel padding** and the controls in `report.gallery`. The diagnostics describe
+the initial paint; live files describe the last saved active output, with disposed targets'
+last images retained. They are not interchangeable pixel baselines. The development
+Save experiment evidence button and automated browser runner save both sets.
+
+An injected SVG canvas-context failure must report FAIL even though its diagnostic capture
+and numerical checks passed. Required targets and completed diagnostic images remain;
+partial attachments are disposed. This prevents capture-only coverage from passing the
+live gallery gate. Existing overflow/paint failure fixtures remain required, and supported
+geometry stays within the documented capture and rectangular clipping limits.

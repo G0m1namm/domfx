@@ -189,6 +189,13 @@ readback errors are identified as such; they do not claim physical network/GPU f
 
 ## Evidence and interpretation
 
+The `/accessibility.html` fixture compares pointer/keyboard activation, forward and
+reverse focus order, text selection and accessible content with a no-effect baseline.
+It repeats those checks under active layers, after borrowed/owned GSAP context
+cleanup, initial unavailability, runtime reduced motion and disposal in both projects.
+See [the accessibility verification record](accessibility-verification.md) for saved
+input assertions, manual observations and explicitly untested assistive technology.
+
 The harness writes browser evidence alongside its summary in
 `.scratch/agent/run-*/browser/`. Standalone browser runs use `.scratch/browser/` and
 replace that standalone result on the next run. `DOMFX_BROWSER_OUTPUT_DIR` selects

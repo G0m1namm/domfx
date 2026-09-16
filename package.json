@@ -37,6 +37,7 @@
     "hooks:install": "lefthook install",
     "prepare": "lefthook install",
     "measure:steady": "node apps/lab/scripts/measure-performance.mjs --steady",
+    "measure:layout": "node apps/lab/scripts/measure-layout.mjs",
     "measure:performance": "node apps/lab/scripts/measure-performance.mjs",
     "test:browser:evidence": "node apps/lab/scripts/browser-regression.mjs"
   },

@@ -12,6 +12,7 @@ export default defineConfig({
         gsap: resolve(import.meta.dirname, 'gsap.html'),
         assets: resolve(import.meta.dirname, 'assets.html'),
         accessibility: resolve(import.meta.dirname, 'accessibility.html'),
+        performance: resolve(import.meta.dirname, 'performance.html'),
       },
     },
   },

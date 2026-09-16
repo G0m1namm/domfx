@@ -15,6 +15,7 @@
     "changeset": "changeset",
     "release:status": "changeset status",
     "release:artifacts": "node scripts/check-release-artifacts.mjs",
+    "release:rehearse": "pnpm build && node scripts/rehearse-release.mjs",
     "release:check": "pnpm check && pnpm build:demo && pnpm release:status && pnpm release:artifacts",
     "build": "pnpm --filter \"./packages/**\" -r build",
     "build:demo": "pnpm build && pnpm --filter @domfx/lab build",

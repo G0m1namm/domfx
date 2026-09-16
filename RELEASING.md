@@ -34,17 +34,56 @@ no-release change with `pnpm changeset --empty`.
 
 ## Available now
 
-| Command                  | Purpose                                                               |
-| ------------------------ | --------------------------------------------------------------------- |
-| `pnpm changeset`         | Record a package change; no version bump or publication               |
-| `pnpm release:status`    | Inspect pending version changes without applying them                 |
-| `pnpm release:artifacts` | Inspect package file lists after building; no tarballs or publication |
-| `pnpm release:check`     | Run checks, production build, release status and artifact inspection  |
+| Command                  | Purpose                                                                |
+| ------------------------ | ---------------------------------------------------------------------- |
+| `pnpm changeset`         | Record a package change; no version bump or publication                |
+| `pnpm release:status`    | Inspect pending version changes without applying them                  |
+| `pnpm release:artifacts` | Inspect package file lists after building; no tarballs or publication  |
+| `pnpm release:rehearse`  | Rehearse standalone/GSAP tarball consumers, SSR, types and GPU cleanup |
+| `pnpm release:check`     | Run checks, production build, release status and artifact inspection   |
 
 Artifact inspection allows only package metadata, README, license, changelog and
 compiled JavaScript/declarations. It checks that every declared export is present.
 It does **not** prove shader execution, fresh-consumer installation, SSR safety or
 API readiness. Those remain separate release gates.
+
+## Local artifact rehearsal
+
+Install Chromium once with `pnpm --filter @domfx/lab exec playwright install chromium`,
+then run `pnpm release:rehearse`. It builds and packs the current core, browser and
+GSAP libraries without changing versions or publishing. A desktop session and a
+WebGPU-capable Chromium are required. `DOMFX_BROWSER_EXECUTABLE` optionally selects
+an existing Chromium executable. Missing GPU/browser support fails the rehearsal.
+
+The command creates two temporary consumers outside the repository, both using the
+same local tarballs. The standalone consumer installs no GSAP; the other explicitly
+installs GSAP with strict peer validation. A local core-tarball override resolves
+the packed internal version without a registry release. This is tarball consumption,
+not workspace linking. Consumers use stock Vite with no source aliases or TypeGPU
+plugin, and compile their actual fixture under strict NodeNext and Bundler resolution
+with declaration checking enabled. The existing core/browser SSR and export checks
+run from the standalone install; the optional adapter also imports without browser globals.
+
+Production checks use public `attachFire`/`bindFire` APIs with real capture and GPU
+rendering: nonempty pixels, forward/backward seek, zero/restored intensity, changed
+silhouette refresh, controlled unsupported-composition failure and explicit retry,
+retained controls/binding, repeated disposal, original-target interaction and reattachment.
+Binding cleanup must preserve a caller-owned timeline sibling. Cleanup checks observe
+removed/zero-sized canvases and released target ownership; they do not measure total
+VRAM or replace the lab's resource-accounting and lifecycle stress checks.
+
+The printed temporary directory retains `report.json`, tarballs, command logs, installed
+consumers, production builds and per-stage PNGs. The report records artifact SHA-256s,
+actual tar file inventories/manifests, resolved install paths, source revision/dirty
+state, lockfile and production asset hashes, Node/browser/GPU environment and checks.
+Archive that directory when retaining release evidence; the OS may remove temporary files.
+Artifact inspection checks required exports, transformed shader metadata, the existing
+file allowlist, fixture/test paths and common private-key/token signatures. This is a
+bounded accidental-content check, not a comprehensive secret or Git-history audit.
+
+A passing run covers these Vite/Chromium consumers on the recorded GPU. It does not
+establish broad browser/bundler support, physical device-loss recovery or publication
+readiness. Run `pnpm agent:verify` separately for the full repository gate.
 
 For a local version rehearsal, use a disposable checkout and run
 `pnpm changeset version`, followed by `pnpm install --lockfile-only` and

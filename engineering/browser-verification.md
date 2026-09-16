@@ -280,3 +280,51 @@ motion changes, disposal and removal. Admission checks cover composition, host p
 assets, capture/aggregate budgets, visibility and replacement ownership, with exactly-once
 resource release and retained controls. Device destruction is intentional test input, not
 physical hardware-loss coverage.
+
+## Lifecycle stress and soak
+
+The `/stress.html` fixture runs seeds `29` and `24301` in both projects. Each seed
+executes 660 recorded operations over 28 two-target cycles. A fixed integer PRNG
+selects control values, failure injection, target operation order and reverse completion
+order; balanced capture/preparation and transition coverage keeps every seed useful.
+Gates hold real capture frames or prepared GPU frames across visibility, zero size,
+device destruction, retry, GSAP context revert and disposal. Current-generation failures
+must become unavailable; obsolete failures cannot change the newer lifecycle state.
+This controls completion ordering, not every native browser task or GPU timing.
+
+Refresh promises must reject on invalidation before late work completes. Explicit
+deadlines detect unresolved readiness, gate, refresh and retry promises. Obsolete frame
+tokens detect attempted stale rendering even if the attachment catches the render error.
+Every cycle checks exactly-once frame cleanup, empty attachment reservations, managed
+allocations, native buffer/texture lifetimes, observer registrations, scheduled frames,
+GSAP binding children and canvases. Caller-owned GSAP siblings survive context cleanup;
+the GSAP ticker is identified before attachments start and excluded from scheduler counts.
+Fresh visibility re-entry preserves time and capture count; stale re-entry requires
+explicit refresh. Existing fake-clock cases separately verify ambient no-catch-up time.
+
+A separate public `attachFire` soak runs 24 two-target cycles with real shared-service
+ownership, native offscreen/scroll re-entry, refresh and alternating disposal order.
+Each cycle holds live output for 250 ms, checks nonempty and reproducible fixed-time
+pixels, verifies the survivor still renders, and requires all observed resources to return
+to baseline. Concurrent canvases are associated by placement rather than append order.
+The JSON records actual duration, iteration count, browser/adapter, viewport, DPR,
+visibility, motion preference, resource samples and memory-method limits.
+
+Run only these checks after building with:
+
+```sh
+pnpm build:demo
+pnpm --filter @domfx/lab exec playwright test stress.spec.ts
+```
+
+They also run in `pnpm agent:verify`. Passing cases attach `seeded-lifecycle.json`
+and `lifecycle-soak.json`; failures retain the seed/operation trace in the error and
+the usual Playwright trace/screenshot. Replay a seed with `--grep 'races: 29'` or
+`--grep 'races: 24301'`. Keep newly discovered failing seeds in the fixed seed list
+in `apps/lab/browser-tests/stress.spec.ts` before fixing their cause.
+
+Resource counters measure explicit ownership and destruction, not garbage collection,
+process heap, driver/pipeline caches, canvas backing-store bytes or total VRAM.
+Seeded document visibility and intentional device destruction are injected conditions;
+the public soak exercises native scrolling and successful GPU output, not physical
+device loss. These bounded runs do not establish long-session or cross-device stability.

@@ -1,5 +1,8 @@
 # Initialization and rebuild measurements
 
+For public attachment CPU/layout/allocation scaling at 1/10/50 targets, see the
+[separate investigation](layout-allocation-investigation.md) and `pnpm measure:layout`.
+
 Issue [#30](https://github.com/G0m1namm/domfx/issues/30) measures candidate gates on a
 specific environment. The gallery prerequisite [#27](https://github.com/G0m1namm/domfx/issues/27)
 completed in PR #66; its live-gallery correctness checks remain in `pnpm agent:verify`.

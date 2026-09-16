@@ -32,6 +32,7 @@ Play, Seek and Reverse controls.
 | `pnpm typecheck`                    | Build dependencies and check all workspaces/configs                              |
 | `pnpm test:browser:evidence`        | Build and run production browser fixtures; save JSON, PNGs and logs              |
 | `pnpm measure:steady`               | Compare no-effect/one/two-target steady GPU timestamps or 60 Hz responsiveness   |
+| `pnpm measure:layout`               | Profile public ambient attachments and matching baselines at 1/10/50 targets     |
 | `pnpm measure:performance`          | Measure five clean-profile starts per one/two-target condition and warm rebuilds |
 | `pnpm test`                         | Build dependencies and run placement, numerical and adapter unit tests           |
 | `pnpm check`                        | Check formatting/lint, build, validate boundaries, typecheck and run tests       |

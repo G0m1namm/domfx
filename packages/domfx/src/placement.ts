@@ -1,6 +1,7 @@
 import type { CaptureFrame } from '@domfx/core';
 
 import { EffectError } from './effect-error.js';
+import { calculateEffectPlacement, type PlacementGeometry } from './placement-geometry.js';
 
 /** Only the selected root's outer transform is excluded from captured paint. */
 export function isPlacementMutation(record: MutationRecord, target: Element): boolean {
@@ -194,37 +195,24 @@ export function measureEffectPlacement(target: Element, host: HTMLElement, frame
   const hostRect = host.getBoundingClientRect();
   const hostOrigin = clientOrigin(host, host.ownerDocument.defaultView!.getComputedStyle(host));
 
-  const scaleX = targetScale.x / hostScale.x;
-  const scaleY = targetScale.y / hostScale.y;
-  const targetOriginX =
-    (targetRect.left - hostRect.left) / hostScale.x - hostOrigin.x + host.scrollLeft;
-  const targetOriginY =
-    (targetRect.top - hostRect.top) / hostScale.y - hostOrigin.y + host.scrollTop;
-
-  const clip = measureClip(target, host);
-  const viewportLeft = targetRect.left + frame.pixelToLocal.e * targetScale.x;
-  const viewportTop = targetRect.top + frame.pixelToLocal.f * targetScale.y;
-  const width = frame.width * frame.pixelToLocal.a * scaleX;
-  const height = frame.height * frame.pixelToLocal.d * scaleY;
-  const insetLeft = Math.min(width, Math.max(0, (clip.left - viewportLeft) / hostScale.x));
-  const insetTop = Math.min(height, Math.max(0, (clip.top - viewportTop) / hostScale.y));
-  const insetRight = Math.min(
-    width,
-    Math.max(0, width - (clip.right - viewportLeft) / hostScale.x),
-  );
-  const insetBottom = Math.min(
-    height,
-    Math.max(0, height - (clip.bottom - viewportTop) / hostScale.y),
-  );
-
-  return {
-    left: targetOriginX + frame.pixelToLocal.e * scaleX,
-    top: targetOriginY + frame.pixelToLocal.f * scaleY,
-    width,
-    height,
-    clipPath:
-      insetTop || insetRight || insetBottom || insetLeft
-        ? `inset(${insetTop}px ${insetRight}px ${insetBottom}px ${insetLeft}px)`
-        : 'none',
+  const geometry: PlacementGeometry = {
+    target: {
+      viewportOrigin: { x: targetRect.left, y: targetRect.top },
+      scaleToViewport: targetScale,
+    },
+    host: {
+      viewportOrigin: { x: hostRect.left, y: hostRect.top },
+      scaleToViewport: hostScale,
+      clientOriginCss: hostOrigin,
+      scrollCss: { x: host.scrollLeft, y: host.scrollTop },
+    },
+    clipViewport: measureClip(target, host),
+    capture: {
+      width: frame.width,
+      height: frame.height,
+      pixelToTargetLocal: frame.pixelToLocal,
+    },
   };
+
+  return calculateEffectPlacement(geometry);
 }

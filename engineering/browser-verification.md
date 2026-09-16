@@ -6,6 +6,11 @@ They run real capture and WebGPU code; no renderer mock supplies the successful 
 The [browser/device support record](browser-support.md) maps these fixtures to actual
 tested environments and keeps missing coverage separate from observed passes.
 
+Placement arithmetic also has independent numeric tests in `packages/domfx/tests`.
+Run `pnpm --filter @domfx/browser test` without a browser, display or GPU; the test
+compilation excludes DOM types. These tests run in `pnpm test` and `pnpm check`.
+The browser fixtures below retain coverage of actual measurement and clipping behavior.
+
 ## Setup and commands
 
 After `pnpm install --frozen-lockfile`, install the browser once, and again after a

@@ -15,7 +15,7 @@ console.log(`Packed contract consumer: ${directory}`);
 const artifacts = join(directory, 'artifacts');
 mkdirSync(artifacts);
 const dependencies = {};
-for (const path of ['packages/core', 'packages/domfx']) {
+for (const path of ['packages/core', 'packages/domfx', 'packages/gsap']) {
   const cwd = join(root, path);
   const manifest = readJson(join(cwd, 'package.json'));
   run(cwd, 'pnpm', ['--config.ignore-scripts=true', 'pack', '--pack-destination', artifacts]);
@@ -24,11 +24,12 @@ for (const path of ['packages/core', 'packages/domfx']) {
 }
 const consumer = join(directory, 'consumer');
 cpSync(join(root, 'scripts/fixtures/packed-contracts'), consumer, { recursive: true });
+const { '@domfx/gsap': gsapPackage, ...standaloneDependencies } = dependencies;
 writeJson(join(consumer, 'package.json'), {
   name: 'domfx-packed-contracts',
   private: true,
   type: 'module',
-  dependencies,
+  dependencies: standaloneDependencies,
   devDependencies: {
     typescript: readJson(join(root, 'node_modules/typescript/package.json')).version,
   },
@@ -38,7 +39,7 @@ writeFileSync(
   `overrides:\n  '@domfx/core': ${JSON.stringify(dependencies['@domfx/core'])}\nautoInstallPeers: false\n`,
 );
 run(consumer, 'pnpm', ['install', '--ignore-scripts']);
-for (const name of Object.keys(dependencies)) {
+for (const name of Object.keys(standaloneDependencies)) {
   const installed = realpathSync(join(consumer, 'node_modules', name));
   assert.ok(installed.startsWith(realpathSync(directory)));
   const manifest = readJson(join(installed, 'package.json'));
@@ -58,4 +59,31 @@ for (const entry of ['@domfx/core', '@domfx/browser', '@domfx/browser/experiment
   }
 }
 run(consumer, process.execPath, ['types.mjs']);
+// Preserve the standalone checks above before installing the optional animation adapter.
+run(consumer, 'pnpm', [
+  'add',
+  '--ignore-scripts',
+  gsapPackage,
+  `gsap@${readJson(join(root, 'apps/lab/node_modules/gsap/package.json')).version}`,
+]);
+for (const module of ['NodeNext', 'ESNext']) {
+  run(consumer, 'pnpm', [
+    'exec',
+    'tsc',
+    '--strict',
+    '--noEmit',
+    '--skipLibCheck',
+    'false',
+    '--target',
+    'ES2022',
+    '--module',
+    module,
+    '--moduleResolution',
+    module === 'NodeNext' ? 'NodeNext' : 'Bundler',
+    '--lib',
+    'ES2022,DOM,DOM.Iterable',
+    'semantics.ts',
+  ]);
+  console.log(`Public type acceptance/rejection: strict ${module}: PASS`);
+}
 console.log('Packed SSR, declarations and export/dependency boundaries: PASS');

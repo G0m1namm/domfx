@@ -514,7 +514,8 @@ export async function verifySharedDeviceLoss(
   let afterLoss = false;
   let lateAllocations = 0;
   let lateSubmissions = 0;
-  const message = 'controlled shared device loss';
+  // A driver diagnostic resembling another reason must still classify as device loss.
+  const message = lossReason === 'destroyed' ? 'no-adapter' : 'controlled shared device loss';
   async function wait() {
     blocked += 1;
     if (stage !== 'capture' || blocked === 2) {

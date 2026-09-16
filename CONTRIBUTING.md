@@ -87,6 +87,13 @@ apps; diagnostic distance oracles belong only to the lab. GSAP belongs in the op
 adapter and its lab consumers. For library edits, rebuild with `pnpm build`; the lab imports compiled packages,
 not source aliases. Restart `pnpm demo` after rebuilding to refresh dependencies.
 
+`pnpm check` includes the display-free packed consumer checks. The compile-only
+`scripts/fixtures/packed-contracts/semantics.ts` fixture protects public attachment,
+control and GSAP binding types with valid examples, explained `@ts-expect-error`
+cases and exact promise-type checks. It uses packed declarations in strict NodeNext
+and Bundler modes; run it directly with `pnpm test:packed:contracts`. These checks
+establish type acceptance/rejection, not browser/GPU behavior or browser-package SSR support.
+
 Before proposing a change:
 
 1. Run `pnpm agent:verify`: it runs `pnpm check`, `pnpm build:demo`, then the

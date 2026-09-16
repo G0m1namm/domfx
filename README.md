@@ -38,6 +38,7 @@ Play, Seek and Reverse controls.
 | `pnpm test:tooling`                 | Test commit conventions and forbidden dependency edges                           |
 | `pnpm test:packed`                  | Verify packed GPU dev/prod and missing-transform rejection                       |
 | `pnpm test:packed:contracts`        | Verify packed Node imports, strict types and dependency/export boundaries        |
+| `pnpm release:rehearse`             | Verify fresh standalone/GSAP tarball consumers, public GPU lifecycle and types   |
 | `pnpm hooks:install`                | Install or repair Lefthook's pre-commit, commit-message and pre-push hooks       |
 | `pnpm demo`                         | Build packages and start the development lab                                     |
 | `pnpm build:demo`                   | Build packages and the production lab in `apps/lab/dist`                         |
@@ -102,6 +103,8 @@ Workspace manifests and import boundaries are checked locally and in CI.
 
 See [RELEASING.md](RELEASING.md) for versioning and release gates.
 `pnpm release:check` validates local release preparation without publishing.
+`pnpm release:rehearse` records fresh production consumers and actual tarball/GPU evidence;
+see [local artifact rehearsal](RELEASING.md#local-artifact-rehearsal) for setup and limits.
 All packages remain private; the lab and future website are not npm releases.
 
 ## License

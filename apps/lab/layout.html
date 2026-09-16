@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>domfx public attachment scaling</title>
+    <style>
+      body { margin: 64px; font-family: sans-serif; }
+      #host { position: relative; display: grid; grid-template-columns: repeat(10, 24px); gap: 80px; }
+      .target { width: 24px; height: 16px; border-radius: 4px; background: #345; }
+    </style>
+  </head>
+  <body>
+    <h1>Public attachment scaling</h1>
+    <div id="host"></div>
+    <script type="module" src="/src/layout.ts"></script>
+  </body>
+</html>

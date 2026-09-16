@@ -35,6 +35,7 @@
     "test:browser:built": "pnpm --filter @domfx/lab test:browser",
     "hooks:install": "lefthook install",
     "prepare": "lefthook install",
+    "measure:performance": "node apps/lab/scripts/measure-performance.mjs",
     "test:browser:evidence": "node apps/lab/scripts/browser-regression.mjs"
   },
   "devDependencies": {

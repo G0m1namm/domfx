@@ -12,7 +12,16 @@ export interface Controls {
   verifyCleanup(): void;
 }
 
-export async function rehearse(bind?: (effect: EffectHandle) => Controls) {
+export async function rehearse(
+  start: (
+    target: Element,
+    host: HTMLElement,
+  ) => {
+    effect: EffectHandle;
+    controls?: Controls;
+    dispose?: () => void;
+  },
+) {
   const report = document.querySelector('#report');
   const host = document.querySelector('#host');
   const target = document.querySelector('#target');
@@ -22,8 +31,9 @@ export async function rehearse(bind?: (effect: EffectHandle) => Controls) {
   );
   const checks: string[] = [];
   const pixels: Record<string, { hash: string; nonzeroAlpha: number; png: string }> = {};
-  let effect = attachFire(target, { host, clock: 'manual', time: 0, intensity: 0.8, seed: 314 });
-  let controls: Controls | undefined;
+  const started = start(target, host);
+  let effect = started.effect;
+  let controls = started.controls;
   let clicks = 0;
   target.addEventListener('click', () => {
     clicks += 1;
@@ -76,7 +86,6 @@ export async function rehearse(bind?: (effect: EffectHandle) => Controls) {
   try {
     await effect.ready;
     active();
-    controls = bind?.(effect);
     const initial = await sample('initial', 1.5);
     check(initial.nonzeroAlpha > 0, 'GPU output is empty');
     check((await sample('seek', 2.5)).hash !== initial.hash, 'seek must change pixels');
@@ -139,6 +148,8 @@ export async function rehearse(bind?: (effect: EffectHandle) => Controls) {
     effect.onDispose(() => {
       disposed += 1;
     });
+    started.dispose?.();
+    started.dispose?.();
     effect.dispose();
     effect.dispose();
     check(effect.lifecycle === 'disposed' && disposed === 1, 'idempotent disposal');
@@ -170,6 +181,7 @@ export async function rehearse(bind?: (effect: EffectHandle) => Controls) {
     report.textContent = JSON.stringify({ outcome: 'FAIL', error: String(error), checks, pixels });
   } finally {
     controls?.dispose();
+    started.dispose?.();
     effect.dispose();
   }
 }

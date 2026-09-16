@@ -49,6 +49,10 @@ API readiness. Those remain separate release gates.
 
 ## Local artifact rehearsal
 
+The [consumer quickstart](QUICKSTART.md) documents the local installation path and
+the standalone/GSAP setup modules in `examples/quickstart/`. The rehearsal copies
+those exact modules into its fresh consumers and exercises them through public APIs.
+
 Install Chromium once with `pnpm --filter @domfx/lab exec playwright install chromium`,
 then run `pnpm release:rehearse`. It builds and packs the current core, browser and
 GSAP libraries without changing versions or publishing. A desktop session and a

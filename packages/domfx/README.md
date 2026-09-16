@@ -26,8 +26,10 @@ by this path. Node import safety and root declarations have a separate gate belo
 
 Run `pnpm test:packed:contracts` for the hardware-independent gate, also included in
 `pnpm check` and CI. It installs core/browser tarballs and TypeScript in a fresh
-temporary consumer outside the workspace, without GSAP, source aliases or repository
-development types. The printed directory retains the consumer and tarballs for inspection.
+temporary consumer outside the workspace, initially without GSAP and with no source aliases
+or repository development types. After standalone checks, it adds the packed GSAP adapter
+and GSAP for semantic type acceptance/rejection cases. The printed directory retains the
+consumer and tarballs for inspection.
 Installation uses the declared dependency ranges and requires registry access.
 
 Core, browser and the existing `/experimental` lab entry import in separate Node

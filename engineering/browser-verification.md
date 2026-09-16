@@ -3,6 +3,8 @@
 The lab owns the Playwright suite and its pinned Chromium dependency. Tests consume
 built package exports and exercise both Vite development and the production preview.
 They run real capture and WebGPU code; no renderer mock supplies the successful result.
+The [browser/device support record](browser-support.md) maps these fixtures to actual
+tested environments and keeps missing coverage separate from observed passes.
 
 ## Setup and commands
 

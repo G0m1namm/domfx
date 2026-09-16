@@ -82,6 +82,8 @@ Test-only Float64 distance oracles stay in the lab, outside consumer runtime.
 The lab exercises capture → GPU distance field → fire rendering and prints its
 verification results. Local fixture checks have passed, but they do not establish
 broad browser support or performance guarantees.
+See the [browser/device support record](engineering/browser-support.md) for measured
+environments, unavailable behavior, accessibility and performance evidence, and untested coverage.
 
 The existing lab scenarios run automatically in Chromium for development and
 production builds. An experimental [manual attachment API](packages/domfx/README.md#manual-fire-attachment)

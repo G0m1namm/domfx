@@ -243,6 +243,10 @@ code in `reason`. Initial failures include `no-webgpu`, `no-adapter`, `capture-f
 `canvas-webgpu-unavailable`, `renderer-failed`, `unsupported-placement`,
 `unsupported-composition`, and `reduced-motion`.
 `reasonDetail` preserves the underlying message for diagnostics; branch on `reason`.
+Internal failures carry typed codes independent of diagnostic wording. Unknown external
+capture errors use `capture-failed`; renderer setup, preparation and paint errors use
+`renderer-failed`, even when their messages resemble a reason code. Explicit refresh
+preserves the underlying rejection value, including `CaptureError` metadata and causes.
 Failed setup releases its capture pixels, canvas backing store, listeners and GPU resources
 before `ready` settles.
 The original target remains visible and interactive. Attachments in the same Document

@@ -1,6 +1,7 @@
 import type { CaptureFrame, EffectHandle, EffectReason } from '@domfx/core';
 
 import { type captureElementWithReservation, measureCapture } from './browser.js';
+import { EffectError, normalizeEffectError } from './effect-error.js';
 import type { FireOptions } from './fire-options.js';
 import type { PreparedGpuFrame } from './gpu.js';
 import { estimateFrameMemory, memoryFor, type AllocationReservation } from './memory.js';
@@ -402,34 +403,22 @@ export function attachFireWithAdapters(
     );
   }
 
-  function unavailable(error: unknown, fallback: EffectReason = 'renderer-failed') {
+  function unavailable(
+    error: unknown,
+    fallback: 'capture-failed' | 'renderer-failed' = 'renderer-failed',
+  ) {
     if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
       return;
     }
 
+    const failure = normalizeEffectError(error, fallback);
     generation += 1;
+    // Preserve the adapter's rejection value, including public CaptureError metadata.
     rejectRefreshes(error);
     lifecycle = 'unavailable';
     raster = 'stale';
-    reasonDetail = error instanceof Error ? error.message : String(error);
-    switch (reasonDetail) {
-      case 'no-webgpu':
-      case 'no-adapter':
-      case 'capture-budget':
-      case 'empty-mask':
-      case 'missing-exterior':
-      case 'aggregate-budget':
-      case 'target-budget':
-      case 'canvas-webgpu-unavailable':
-      case 'unsupported-placement':
-      case 'unsupported-composition':
-      case 'reduced-motion':
-      case 'effect-target-owned':
-        reason = reasonDetail;
-        break;
-      default:
-        reason = fallback;
-    }
+    reasonDetail = failure.message;
+    reason = failure.code;
 
     releaseOwnership();
     cleanup();
@@ -441,7 +430,7 @@ export function attachFireWithAdapters(
     }
     try {
       if (host.ownerDocument !== document || view?.getComputedStyle(host).position === 'static') {
-        throw new Error('unsupported-placement');
+        throw new EffectError('unsupported-placement');
       }
       assertEffectComposition(target, host);
       return true;
@@ -571,7 +560,7 @@ export function attachFireWithAdapters(
       if (!service && lifecycle !== 'disposed' && lifecycle !== 'unavailable' && !motionSuspended) {
         service = await adapters.createRenderer();
         unwatchDeviceLoss = watchDeviceLoss(service.device, (info) => {
-          unavailable(new Error(info.message), 'device-lost');
+          unavailable(new EffectError('device-lost', info.message, info));
         });
       }
       while (
@@ -593,7 +582,7 @@ export function attachFireWithAdapters(
             reservation = memory.reserve(target, estimate);
           }
         };
-        let failureReason: EffectReason = 'capture-failed';
+        let failureReason: 'capture-failed' | 'renderer-failed' = 'capture-failed';
         try {
           if (!current(requestedRevision, requestedGeneration)) {
             continue;
@@ -629,7 +618,7 @@ export function attachFireWithAdapters(
           canvas.height = nextFrame.height;
           context ??= canvas.getContext('webgpu');
           if (!context) {
-            throw new Error('canvas-webgpu-unavailable');
+            throw new EffectError('canvas-webgpu-unavailable');
           }
           context.configure({
             device: service.device,
@@ -780,7 +769,7 @@ export function attachFireWithAdapters(
   function initialize() {
     observe();
     if (motionPolicy === 'respect' && motion.matches) {
-      unavailable(new Error('reduced-motion'));
+      unavailable(new EffectError('reduced-motion'));
     } else if (checkComposition()) {
       observedSize = targetSize();
       scheduler.schedule(commit);
@@ -823,7 +812,7 @@ export function attachFireWithAdapters(
           !ownsTarget &&
           [...claimed].some((other) => other.contains(target) || target.contains(other))
         ) {
-          unavailable(new Error('effect-target-owned'));
+          unavailable(new EffectError('effect-target-owned'));
           return;
         }
         claimed.add(target);

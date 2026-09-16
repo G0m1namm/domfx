@@ -1,3 +1,5 @@
+import { EffectError } from './effect-error.js';
+
 /** Managed textures/buffers, CPU pixels and one estimated RGBA output surface.
  * Browser capture intermediates, swapchain multiplicity and driver overhead are excluded.
  */
@@ -7,7 +9,7 @@ export function estimateFrameMemory(width: number, height: number) {
   }
   const pixels = width * height;
   if (pixels > 1_000_000) {
-    throw new Error('capture-budget');
+    throw new EffectError('capture-budget');
   }
   return { managedBytes: pixels * 36 + 20, captureBytes: pixels * 4, outputBytes: pixels * 4 };
 }
@@ -41,7 +43,7 @@ export class AllocationLedger {
         const bytes = values.reduce((sum, value) => sum + value, 0);
         // A pending capture must fit steady state after its CPU pixels are released.
         if (next.managedBytes + next.outputBytes > 48_000_000) {
-          throw new Error('target-budget');
+          throw new EffectError('target-budget');
         }
         let targetBytes = bytes;
         let documentBytes = bytes;
@@ -54,10 +56,10 @@ export class AllocationLedger {
           }
         }
         if (targetBytes > 88_000_000) {
-          throw new Error('target-budget');
+          throw new EffectError('target-budget');
         }
         if (documentBytes > 144_000_000) {
-          throw new Error('aggregate-budget');
+          throw new EffectError('aggregate-budget');
         }
         this.entries.set(reservation, { owner, bytes });
       },

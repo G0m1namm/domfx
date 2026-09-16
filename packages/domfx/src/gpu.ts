@@ -3,6 +3,8 @@ import { d, std, tgpu, type TgpuRoot } from 'typegpu';
 
 import type { CaptureFrame } from '@domfx/core';
 
+import { EffectError } from './effect-error.js';
+
 const sourceLayout = tgpu.bindGroupLayout({ source: { texture: d.texture2d() } });
 const classifyMask = (coord: d.v2u) => {
   'use gpu';
@@ -110,11 +112,11 @@ export class GpuExperiment {
     measureTimestamps = false,
   ): Promise<GpuExperiment> {
     if (!gpu) {
-      throw new Error('no-webgpu');
+      throw new EffectError('no-webgpu');
     }
     const adapter = await gpu.requestAdapter();
     if (!adapter) {
-      throw new Error('no-adapter');
+      throw new EffectError('no-adapter');
     }
     const device = await adapter.requestDevice({
       requiredFeatures:
@@ -174,16 +176,16 @@ export class GpuExperiment {
       width > this.device.limits.maxTextureDimension2D ||
       height > this.device.limits.maxTextureDimension2D
     ) {
-      throw new Error('capture-budget');
+      throw new EffectError('capture-budget');
     }
     if (!pixels.some((value, i) => i % 4 === 3 && value >= 128)) {
-      throw new Error('empty-mask');
+      throw new EffectError('empty-mask');
     }
     if (!pixels.some((value, i) => i % 4 === 3 && value < 128)) {
-      throw new Error('missing-exterior');
+      throw new EffectError('missing-exterior');
     }
     if (this.managedBytes + width * height * 36 + 20 > 144_000_000) {
-      throw new Error('aggregate-budget');
+      throw new EffectError('aggregate-budget');
     }
 
     const started = performance.now();
@@ -309,7 +311,7 @@ export class GpuExperiment {
       scopeOpen = false;
       this.assertAvailable();
       if (error) {
-        throw new Error(error.message);
+        throw new EffectError('renderer-failed', error.message, error);
       }
       this.prepared.add(prepared);
       return prepared;

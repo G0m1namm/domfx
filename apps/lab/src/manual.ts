@@ -1,5 +1,6 @@
 import { attachFire, type EffectHandle } from '@domfx/browser';
 
+import { verifyFailureClassification } from './failure-checks.js';
 import { verifyMemory } from './memory-checks.js';
 import { createMotionFixture } from './motion-fixture.js';
 import { createPlacementFixture } from './placement-fixture.js';
@@ -58,6 +59,7 @@ declare global {
       attach: typeof attachFire;
       capture: typeof capture;
       verifyRefresh: typeof verifyRefresh;
+      verifyFailureClassification: typeof verifyFailureClassification;
       verifyRetryConditions: typeof verifyRetryConditions;
       verifyMemory: typeof verifyMemory;
       verifySharedTargets: typeof verifySharedTargets;
@@ -74,6 +76,7 @@ window.manual = {
   attach: attachFire,
   capture,
   verifyRefresh,
+  verifyFailureClassification,
   verifyRetryConditions,
   verifyMemory,
   verifySharedTargets,

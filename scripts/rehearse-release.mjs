@@ -128,6 +128,7 @@ try {
       cpSync(join(root, 'scripts/fixtures/release-consumer', file), join(cwd, file));
     }
     cpSync(join(root, `scripts/fixtures/release-consumer/${kind}.ts`), join(cwd, 'main.ts'));
+    cpSync(join(root, `examples/quickstart/${kind}.ts`), join(cwd, 'quickstart.ts'));
     const installedDependencies = { ...dependencies };
     if (kind === 'standalone') {
       delete installedDependencies['@domfx/gsap'];

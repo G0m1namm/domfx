@@ -6,6 +6,9 @@ This repository contains a working browser feasibility experiment in a pnpm
 monorepo. Packages are private and experimental; the manual attachment
 API is experimental and there is no published installation command yet.
 
+Start with the [consumer quickstart](QUICKSTART.md) for verified standalone and GSAP
+examples, local tarball installation, lifecycle ownership and support limits.
+
 ## Development
 
 Use Node 22.22.3 (`.nvmrc`) and pnpm 11.5.0 (`packageManager`). From the repository root:

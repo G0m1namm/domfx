@@ -78,6 +78,15 @@ canvas/device cleanup, preserved pointer/keyboard interaction, and successful re
 without disposing the failed handle. Invalid runtime options/hosts and both directions of
 nested ownership also reject without leaving claims.
 
+Failure-classification fixtures vary a real budget error's message and inject external
+errors (including lookalike codes, strings, and `CaptureError`) at renderer setup,
+capture, preparation and paint boundaries. Initialization readiness and explicit refresh
+checks require stable reasons, original rejection identity and capture causes,
+exactly-once frame/service cleanup, empty reservations and successful replacement
+attachments. Successful preparation and presentation use real WebGPU with a small
+controlled mask; existing capture fixtures cover actual DOM pixels. Both projects save
+`failure-classification.json`.
+
 Refresh checks use controlled capture/preparation delays and failures with the real GPU
 renderer. They verify revision coalescing, promise settlement, atomic replacement order,
 exactly-once frame release, and invalidation/disposal during both stages. A changed DOM

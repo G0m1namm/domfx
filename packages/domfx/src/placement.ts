@@ -1,5 +1,7 @@
 import type { CaptureFrame } from '@domfx/core';
 
+import { EffectError } from './effect-error.js';
+
 /** Only the selected root's outer transform is excluded from captured paint. */
 export function isPlacementMutation(record: MutationRecord, target: Element): boolean {
   if (
@@ -50,7 +52,7 @@ export function scaleToViewport(element: Element): { x: number; y: number } {
       (style.translate !== 'none' && style.translate.split(/\s+/).length > 2) ||
       (style.zoom !== '1' && style.zoom !== 'normal')
     ) {
-      throw new Error('unsupported-placement');
+      throw new EffectError('unsupported-placement');
     }
 
     x *= matrix.a * scale[0];
@@ -81,7 +83,7 @@ function measureClip(target: Element, host: HTMLElement) {
   for (let node: Element | null = target; node && node !== host; node = node.parentElement) {
     const style = view.getComputedStyle(node);
     if (style.position === 'fixed') {
-      throw new Error('unsupported-placement');
+      throw new EffectError('unsupported-placement');
     }
     // The layer bypasses this group. Captured alpha cannot reproduce group
     // opacity, filters or blending of the original target together with its fire.
@@ -91,7 +93,7 @@ function measureClip(target: Element, host: HTMLElement) {
       style.backdropFilter !== 'none' ||
       style.mixBlendMode !== 'normal'
     ) {
-      throw new Error('unsupported-composition');
+      throw new EffectError('unsupported-composition');
     }
     // The selected target's own clipping is captured paint, not an ancestor clip.
     if (node === target) {
@@ -104,7 +106,7 @@ function measureClip(target: Element, host: HTMLElement) {
       /\b(paint|strict|content)\b/.test(style.contain) ||
       style.contentVisibility !== 'visible'
     ) {
-      throw new Error('unsupported-placement');
+      throw new EffectError('unsupported-placement');
     }
     const clipX = style.overflowX !== 'visible';
     const clipY = style.overflowY !== 'visible';
@@ -123,7 +125,7 @@ function measureClip(target: Element, host: HTMLElement) {
         style.borderBottomRightRadius,
       ].some((radius) => Number.parseFloat(radius) !== 0)
     ) {
-      throw new Error('unsupported-placement');
+      throw new EffectError('unsupported-placement');
     }
     const scale = scaleToViewport(node);
     const rect = node.getBoundingClientRect();

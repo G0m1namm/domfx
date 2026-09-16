@@ -14,6 +14,7 @@ export default defineConfig({
         accessibility: resolve(import.meta.dirname, 'accessibility.html'),
         performance: resolve(import.meta.dirname, 'performance.html'),
         steady: resolve(import.meta.dirname, 'steady.html'),
+        stress: resolve(import.meta.dirname, 'stress.html'),
       },
     },
   },

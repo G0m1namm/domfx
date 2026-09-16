@@ -2,6 +2,9 @@
 
 Experimental DOM capture and internal TypeGPU renderer for domfx.
 
+See the [consumer quickstart](https://github.com/G0m1namm/domfx/blob/main/QUICKSTART.md)
+for local installation and a tested standalone/GSAP walkthrough.
+
 Private workspace package with a provisional name. The `/experimental` entry is
 a feasibility-test interface, not a stable public API. There is no supported npm
 installation command yet. Browser/GPU requirements and broader lifecycle support

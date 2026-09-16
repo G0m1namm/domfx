@@ -13,6 +13,7 @@ export default defineConfig({
         assets: resolve(import.meta.dirname, 'assets.html'),
         accessibility: resolve(import.meta.dirname, 'accessibility.html'),
         performance: resolve(import.meta.dirname, 'performance.html'),
+        steady: resolve(import.meta.dirname, 'steady.html'),
       },
     },
   },

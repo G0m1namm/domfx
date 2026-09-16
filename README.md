@@ -23,25 +23,26 @@ and card) through public attachments, with two targets in one scrolling host. Pe
 controls exercise time, intensity, refresh, placement and disposal; the headline retains
 Play, Seek and Reverse controls.
 
-| Command                             | Result                                                                     |
-| ----------------------------------- | -------------------------------------------------------------------------- |
-| `pnpm build`                        | Build core, then browser/GPU JavaScript and declarations                   |
-| `pnpm typecheck`                    | Build dependencies and check all workspaces/configs                        |
-| `pnpm test:browser:evidence`        | Build and run production browser fixtures; save JSON, PNGs and logs        |
-| `pnpm test`                         | Build dependencies and run four numerical tests                            |
-| `pnpm check`                        | Check formatting/lint, build, validate boundaries, typecheck and run tests |
-| `pnpm format` / `pnpm format:check` | Apply or check Oxfmt formatting and import order                           |
-| `pnpm lint` / `pnpm lint:fix`       | Check Oxlint rules or apply safe fixes                                     |
-| `pnpm lint:boundaries`              | Check workspace dependencies and imports after building                    |
-| `pnpm test:tooling`                 | Test commit conventions and forbidden dependency edges                     |
-| `pnpm test:packed`                  | Verify packed GPU dev/prod and missing-transform rejection                 |
-| `pnpm test:packed:contracts`        | Verify packed Node imports, strict types and dependency/export boundaries  |
-| `pnpm hooks:install`                | Install or repair Lefthook's pre-commit, commit-message and pre-push hooks |
-| `pnpm demo`                         | Build packages and start the development lab                               |
-| `pnpm build:demo`                   | Build packages and the production lab in `apps/lab/dist`                   |
-| `pnpm preview:demo`                 | Serve the production lab after `build:demo`                                |
-| `pnpm test:browser`                 | Build and verify the development/production lab in Chromium                |
-| `pnpm agent:verify`                 | Run repository checks, builds, and browser/GPU verification with evidence  |
+| Command                             | Result                                                                           |
+| ----------------------------------- | -------------------------------------------------------------------------------- |
+| `pnpm build`                        | Build core, then browser/GPU JavaScript and declarations                         |
+| `pnpm typecheck`                    | Build dependencies and check all workspaces/configs                              |
+| `pnpm test:browser:evidence`        | Build and run production browser fixtures; save JSON, PNGs and logs              |
+| `pnpm measure:performance`          | Measure five clean-profile starts per one/two-target condition and warm rebuilds |
+| `pnpm test`                         | Build dependencies and run four numerical tests                                  |
+| `pnpm check`                        | Check formatting/lint, build, validate boundaries, typecheck and run tests       |
+| `pnpm format` / `pnpm format:check` | Apply or check Oxfmt formatting and import order                                 |
+| `pnpm lint` / `pnpm lint:fix`       | Check Oxlint rules or apply safe fixes                                           |
+| `pnpm lint:boundaries`              | Check workspace dependencies and imports after building                          |
+| `pnpm test:tooling`                 | Test commit conventions and forbidden dependency edges                           |
+| `pnpm test:packed`                  | Verify packed GPU dev/prod and missing-transform rejection                       |
+| `pnpm test:packed:contracts`        | Verify packed Node imports, strict types and dependency/export boundaries        |
+| `pnpm hooks:install`                | Install or repair Lefthook's pre-commit, commit-message and pre-push hooks       |
+| `pnpm demo`                         | Build packages and start the development lab                                     |
+| `pnpm build:demo`                   | Build packages and the production lab in `apps/lab/dist`                         |
+| `pnpm preview:demo`                 | Serve the production lab after `build:demo`                                      |
+| `pnpm test:browser`                 | Build and verify the development/production lab in Chromium                      |
+| `pnpm agent:verify`                 | Run repository checks, builds, and browser/GPU verification with evidence        |
 
 For browser checks, first run `pnpm --filter @domfx/lab exec playwright install chromium`.
 See [browser verification](engineering/browser-verification.md) for GPU backends,
@@ -139,3 +140,8 @@ a successful GPU run. Failure reports retain completed fixture evidence. Run
 must report FAIL, include `injected assertion failure`, and exit 1. It intentionally
 fails after the fixture assertions; do not interpret an unavailable run as this proof.
 Manual `pnpm demo` and `pnpm preview:demo` controls remain available.
+
+For fresh production initialization and rebuild samples, run `pnpm measure:performance`.
+It saves raw samples, environment/asset evidence and held candidate gates separately
+from correctness checks. See [the measurement protocol](engineering/performance-measurements.md)
+for timing boundaries, thresholds and limitations.

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>domfx initialization and rebuild measurements</title>
+    <style>
+      @font-face {
+        font-family: Measurement;
+        src: url('/asset-fixtures/block.ttf');
+      }
+      body { margin: 64px; font-family: sans-serif; }
+      #host { position: relative; display: flex; align-items: center; gap: 80px; }
+      #headline { width: 280px; height: 64px; margin: 0; font: 40px/64px sans-serif; }
+      #headline span { font-family: Measurement; }
+    </style>
+  </head>
+  <body>
+    <h1>Initialization and capture-to-SDF measurements</h1>
+    <div id="host">
+      <h2 id="headline">B8O <span>A</span></h2>
+      <img id="raster" width="96" height="64" alt="Transparent ring" />
+    </div>
+    <pre id="result">Waiting for measurements.</pre>
+    <script type="module" src="/src/performance.ts"></script>
+  </body>
+</html>

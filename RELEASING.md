@@ -92,6 +92,10 @@ casually in a shared working tree. No version bump is part of this initial setup
 
 ## Enable later, through a reviewed change
 
+Review the [browser/device support record](engineering/browser-support.md) when deciding
+the proposed release scope. Its fixture passes, accessibility observations and historical
+performance candidates are separate evidence; untested environments and held gates remain open.
+
 1. Confirm npm ownership/names, package contents and public API. Pass packed-consumer
    GPU, types/SSR, lifecycle and preview-readiness gates. Review private Git history.
 2. Approve a release PR with versions/changelogs and passing CI. No publication from

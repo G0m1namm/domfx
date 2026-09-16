@@ -86,3 +86,64 @@ Results describe only the recorded machine, assets, dimensions and profile condi
 They do not establish steady-render GPU performance, cross-device guarantees or
 portable budgets. The spike's old warm P95 is not a new measurement. A failed candidate
 requires investigation or an explicit contract decision; do not relax its limit.
+
+## Steady animation and no-effect baseline
+
+Issue [#31](https://github.com/G0m1namm/domfx/issues/31) uses `pnpm measure:steady`.
+The same runner builds production assets and records the source, dependency, asset,
+OS, browser and GPU identity described above. Evidence goes to
+`.scratch/steady-performance/<timestamp>/report.json`, with build logs and screenshots.
+It runs no-effect, one-target and two-target conditions serially, each in a fresh
+visible Chromium process. All conditions display **both** fixture elements, load the
+same font/image, and use the same viewport, DPR, seed (7), intensity (1), and elapsed
+rAF clock reset to zero per trial. Browser/adapter/capability/environment mismatches
+hold the overall result. Display refresh and power mode remain operator-provided or
+`unknown`; neither is inferred from rAF.
+
+The lab uses the experimental renderer with canvas presentation and fixed placement.
+Capture and SDF preparation happen once before a one-second animation warmup, followed
+by five two-second trials per condition. The same prepared frames remain allocated
+throughout. There are no rebuilds, diagnostic pixel readbacks, or awaited GPU completion
+inside a trial. Per-frame counts, page visibility changes, reduced-motion state and
+padded target bounds guard against inactive or offscreen work being mistaken for low
+cost. This measures active fire rendering/presentation, not the public attachment's
+observer or placement overhead. It does not exercise suspension performance.
+
+When the adapter supports `timestamp-query`, only the measurement renderer requests
+it. Caller-owned timestamp writes bracket each actual fire pass. Raw unsigned 64-bit
+nanosecond pairs are saved as decimal strings; their differences are converted to
+milliseconds and summed across targets for each animation frame. Each trial's
+nearest-rank P95 must be **≤6 ms**, so a pooled statistic cannot hide a slow trial.
+This GPU duration excludes uniform uploads, queue gaps, presentation texture copies,
+browser compositing and SDF work. Equal quantized timestamps are retained as zero
+elapsed time; invalid/reset timestamps fail collection. The no-effect baseline submits
+no render passes and has no GPU samples: its GPU duration is not fabricated as zero.
+It supplies the rAF/CPU responsiveness comparison against both effect conditions.
+See the [WebGPU timestamp example](https://developer.chrome.com/blog/new-in-webgpu-121#timestamp_queries)
+for the pass timestamp/resolve mechanism.
+
+Without timestamp queries, the fallback is explicitly **responsiveness, not GPU time**.
+All five two-second trials must individually have **P95 rAF interval ≤20 ms** and
+**no main-thread long task >50 ms**. A pass requires `DOMFX_REFRESH_RATE=60`, supplied
+only after observing the display setting, and a supported long-task observer. Unknown
+or other refresh rates, missing observations, unavailable GPU, visibility changes,
+partial trials and browser errors cannot pass. Automated tests simulate capability
+absence to verify collection; they do not establish a physical 60 Hz measurement.
+
+The report retains raw rAF intervals, CPU submission wall times, GPU timestamp pairs,
+long tasks and per-target render counts. It reports signed effect-minus-baseline P95
+rAF and CPU submission deltas (positive means added cost), GPU P95, unchanged candidate
+limits and held gate states. Inapplicable gates remain `untested`; their
+`observedLimitExceeded` field still records any measured threshold breach. CPU submission includes uniform writes, encoding, submit
+and presentation calls; it is never labeled GPU time. Current prepared-frame bytes
+and instrumentation bytes are recorded. Timestamp instrumentation has at most 4096
+query slots plus two 32768-byte buffers, resolved/mapped once **after** each trial;
+query storage is implementation-dependent. Slot exhaustion fails rather than dropping
+samples. Timing resources are destroyed after each trial; layers and frames are
+released on completion/failure. Normal attachments do not request timestamps.
+
+These measurements include instrumentation overhead. They do not estimate that overhead
+as a separate uninstrumented GPU measurement, establish end-to-end GPU frame time, or
+make a cross-device performance guarantee. Serial condition order, driver caches,
+background load and power management can affect deltas. A breach stays failed with
+its original threshold; investigate it instead of adjusting the candidate.

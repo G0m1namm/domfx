@@ -65,7 +65,13 @@ export interface PreparedGpuFrame {
   readonly managedBytes: number;
   readonly prepareMs: number;
   readSdf(): Promise<Float32Array>;
-  render(time: number, seed: number, intensity: number, pixelsPerCss: number): void;
+  render(
+    time: number,
+    seed: number,
+    intensity: number,
+    pixelsPerCss: number,
+    timestampWrites?: GPURenderPassTimestampWrites,
+  ): void;
   present(destination: GPUTexture): void;
   readFire(): Promise<Uint8Array>;
   destroy(): void;
@@ -99,7 +105,10 @@ export class GpuExperiment {
     });
   }
 
-  static async create(gpu: GPU | null = navigator.gpu ?? null): Promise<GpuExperiment> {
+  static async create(
+    gpu: GPU | null = navigator.gpu ?? null,
+    measureTimestamps = false,
+  ): Promise<GpuExperiment> {
     if (!gpu) {
       throw new Error('no-webgpu');
     }
@@ -107,7 +116,10 @@ export class GpuExperiment {
     if (!adapter) {
       throw new Error('no-adapter');
     }
-    const device = await adapter.requestDevice();
+    const device = await adapter.requestDevice({
+      requiredFeatures:
+        measureTimestamps && adapter.features.has('timestamp-query') ? ['timestamp-query'] : [],
+    });
     let root: TgpuRoot | undefined;
     try {
       root = tgpu.initFromDevice({ device });
@@ -238,7 +250,7 @@ export class GpuExperiment {
             decodeFloat16(view.getUint16(i * 8, true)),
           );
         },
-        render: (time, seed, intensity, pixelsPerCss) => {
+        render: (time, seed, intensity, pixelsPerCss, timestampWrites) => {
           if (disposed) {
             throw new Error('frame-disposed');
           }
@@ -252,6 +264,7 @@ export class GpuExperiment {
           );
           const encoder = device.createCommandEncoder();
           const pass = encoder.beginRenderPass({
+            timestampWrites,
             colorAttachments: [
               {
                 view: outputTexture.createView(),

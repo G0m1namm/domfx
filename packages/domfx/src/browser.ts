@@ -4,8 +4,7 @@ import { CaptureError, prepareCaptureAssets } from './capture-assets.js';
 import { estimateFrameMemory } from './memory.js';
 import { scaleToViewport } from './placement.js';
 
-export function measureCapture(element: Element) {
-  const padding = 32;
+export function measureCapture(element: Element, padding = 32) {
   const dpr = element.ownerDocument.defaultView!.devicePixelRatio;
   const scale = scaleToViewport(element);
   const rect = element.getBoundingClientRect();

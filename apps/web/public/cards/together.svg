@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="260" viewBox="0 0 640 260">
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2b2f39"/><stop offset="1" stop-color="#15171d"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#1d2028"/><stop offset="1" stop-color="#101218"/>
+    </linearGradient>
+    <linearGradient id="seam" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#e6dc6a"/><stop offset=".36" stop-color="#c2c5db"/>
+      <stop offset=".75" stop-color="#ba91d8"/><stop offset="1" stop-color="#6153b7"/>
+    </linearGradient>
+  </defs>
+  <path d="M220 72 504-36 686 44 400 158Z" fill="url(#surface)" stroke="#3d424f"/>
+  <path d="M220 72 400 158 400 212 220 126Z" fill="url(#fold)"/>
+  <path d="M400 158 686 44 686 98 400 212Z" fill="#15171e"/>
+  <path d="M-42 118 244 10 430 88 142 202Z" fill="url(#surface)" stroke="#3d424f"/>
+  <path d="M-42 118 142 202 142 256-42 172Z" fill="url(#fold)"/>
+  <path d="M142 202 430 88 430 142 142 256Z" fill="#15171e"/>
+  <path d="M-42 118 244 10M142 202 430 88M430 146 686 44" fill="none" stroke="url(#seam)" stroke-width="2"/>
+</svg>

@@ -5,6 +5,7 @@ import { GpuExperiment, memoryFor, type PreparedGpuFrame } from '@domfx/browser/
 import { classifyAlpha, type CaptureFrame } from '@domfx/core';
 
 import { exactDistanceField } from './diagnostics/distance-oracle.js';
+import { verifyFireShape } from './diagnostics/fire-shape.js';
 import { verifyPreparationResources } from './diagnostics/preparation-resources.js';
 import { createGallery } from './gallery.js';
 
@@ -579,6 +580,9 @@ async function main() {
       build: import.meta.env.DEV ? 'Vite development' : 'Vite production',
     };
     report.numericalFixtures = await runNumericalFixtures(gpu);
+    const fireShape = await verifyFireShape(gpu, Math.min(2, devicePixelRatio));
+    report.fireShape = fireShape;
+    check(fireShape.pass, 'rising fire shape failed');
     status.textContent = 'Checking 1,000 GPU preparation/release cycles…';
     const preparationResources = await verifyPreparationResources();
     report.preparationResources = preparationResources;

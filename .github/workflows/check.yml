@@ -51,12 +51,16 @@ jobs:
           pnpm --filter @domfx/lab exec playwright install --with-deps chromium
           sudo apt-get install -y libvulkan1 mesa-vulkan-drivers
       - run: pnpm agent:verify
+      - name: Verify Astro website
+        run: pnpm test:web
       - name: Upload verification evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: browser-gpu-evidence
-          path: .scratch/agent/
+          path: |
+            .scratch/agent/
+            .scratch/web/
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

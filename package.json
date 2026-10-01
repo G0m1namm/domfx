@@ -39,7 +39,11 @@
     "measure:steady": "node apps/lab/scripts/measure-performance.mjs --steady",
     "measure:layout": "node apps/lab/scripts/measure-layout.mjs",
     "measure:performance": "node apps/lab/scripts/measure-performance.mjs",
-    "test:browser:evidence": "node apps/lab/scripts/browser-regression.mjs"
+    "test:browser:evidence": "node apps/lab/scripts/browser-regression.mjs",
+    "web": "pnpm build && pnpm --filter @domfx/web dev",
+    "build:web": "pnpm build && pnpm --filter @domfx/web build",
+    "preview:web": "pnpm --filter @domfx/web preview",
+    "test:web": "pnpm build:web && pnpm --filter @domfx/web test:browser"
   },
   "devDependencies": {
     "@changesets/cli": "3.0.2",

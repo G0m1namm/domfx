@@ -3,12 +3,14 @@
 Load the skills needed by a change rather than the full catalog. The general
 TypeScript skill and `HARNESS.md` continue to govern scope and verification.
 
-| Area                 | Skill                                                                             | Responsibility                                                                                              |
-| -------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| GPU and shaders      | [domfx-gpu-engineering](../.agents/skills/domfx-gpu-engineering/SKILL.md)         | TypeGPU/WGSL contracts, layouts, pass ordering, numerical correctness, resources, device loss, and readback |
-| Browser integration  | [domfx-browser-engineering](../.agents/skills/domfx-browser-engineering/SKILL.md) | Capture fidelity, geometry, compositing, observers, accessibility, scheduling, and cleanup                  |
-| Animation API        | [gsap-core](../.agents/skills/gsap-core/SKILL.md)                                 | Official tween, easing, playback, and media-query guidance                                                  |
-| Animation sequencing | [gsap-timeline](../.agents/skills/gsap-timeline/SKILL.md)                         | Official timeline composition, positioning, and playback guidance                                           |
+| Area                 | Skill                                                                                     | Responsibility                                                                                              |
+| -------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Architecture review  | [improve-codebase-architecture](../.agents/skills/improve-codebase-architecture/SKILL.md) | User-invoked review of architectural friction, visual candidates, and selected refactoring opportunities    |
+| Architecture design  | [codebase-design](../.agents/skills/codebase-design/SKILL.md)                             | Required vocabulary and design guidance for the architecture review skill                                   |
+| GPU and shaders      | [domfx-gpu-engineering](../.agents/skills/domfx-gpu-engineering/SKILL.md)                 | TypeGPU/WGSL contracts, layouts, pass ordering, numerical correctness, resources, device loss, and readback |
+| Browser integration  | [domfx-browser-engineering](../.agents/skills/domfx-browser-engineering/SKILL.md)         | Capture fidelity, geometry, compositing, observers, accessibility, scheduling, and cleanup                  |
+| Animation API        | [gsap-core](../.agents/skills/gsap-core/SKILL.md)                                         | Official tween, easing, playback, and media-query guidance                                                  |
+| Animation sequencing | [gsap-timeline](../.agents/skills/gsap-timeline/SKILL.md)                                 | Official timeline composition, positioning, and playback guidance                                           |
 
 For cross-boundary changes, use both GPU and browser skills. GSAP stays in the lab
 or its future optional adapter, never the independent core or browser package.
@@ -18,6 +20,16 @@ or changes to original target visibility simply because an example recommends th
 References to other GSAP skills are optional; they are not installed by this set.
 
 ## Provenance
+
+Added 2026-09-28. `improve-codebase-architecture` and its required `codebase-design`
+helper are unmodified skill bundles from
+[Matt Pocock's skills repository at c55ee46073ed923f86ce59a5eb3b6d895095d1b7](https://github.com/mattpocock/skills/tree/c55ee46073ed923f86ce59a5eb3b6d895095d1b7/skills/engineering).
+Each folder includes the upstream MIT `LICENSE` and Codex UI metadata. The review
+also uses the existing `grilling` and `domain-modeling` skills. Repository scope,
+dependency boundaries, design guidance, and verification contracts take precedence.
+Optional ignored ADRs may inform a review, but required decisions belong in the
+issue or tracked contributor guidance. Retain the license and review upstream
+changes when updating these pinned skills.
 
 Reviewed 2026-09-08. `domfx-gpu-engineering` and `domfx-browser-engineering` are
 original project guidance with primary references, covered by the project license.

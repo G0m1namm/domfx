@@ -27,6 +27,11 @@ For TypeScript implementation, refactoring, and architecture work, use
 [domfx-typescript-engineering](.agents/skills/domfx-typescript-engineering/SKILL.md).
 Apply patterns only when a current requirement warrants them.
 
+When the user asks to find architecture improvements, use
+[improve-codebase-architecture](.agents/skills/improve-codebase-architecture/SKILL.md).
+It uses [codebase-design](.agents/skills/codebase-design/SKILL.md) and the installed
+grilling and domain-modeling skills to explore candidates before implementation.
+
 For specialist work, load the relevant [skills](engineering/skills.md):
 [GPU/shaders](.agents/skills/domfx-gpu-engineering/SKILL.md),
 [browser/capture](.agents/skills/domfx-browser-engineering/SKILL.md),
@@ -36,3 +41,10 @@ Repository contracts take precedence over upstream examples, especially target
 visibility, global animation state, package boundaries, and resource ownership.
 
 Keep changes vertical, small, typed, and testable. Preserve the core's DOM/framework independence; browser and GPU details belong behind adapters. Every behavior change needs an observable verification path.
+
+## Design System
+
+Always read DESIGN.md before making any visual or UI decisions.
+All font choices, colors, spacing, and aesthetic direction are defined there.
+Do not deviate without explicit user approval.
+In QA mode, flag any code that does not match DESIGN.md.

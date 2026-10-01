@@ -68,7 +68,7 @@ export default {
   ],
   options: {
     doNotFollow: { path: '(^|/)node_modules/|/dist/' },
-    exclude: { path: '(^|/)\\.test-dist/' },
+    exclude: { path: '(^|/)\\.test-dist/|^apps/web/\\.astro/' },
     tsPreCompilationDeps: 'specify',
     tsConfig: { fileName: 'tsconfig.base.json' },
     enhancedResolveOptions: {

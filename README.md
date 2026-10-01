@@ -61,6 +61,7 @@ packages/core   → DOM/framework/GPU-independent contracts and alpha classifica
 packages/domfx  → browser capture and internal TypeGPU renderer; consumes core
 packages/gsap   → optional GSAP timeline binding; consumes core types and the GSAP peer
 apps/lab        → GPU experiment, GSAP example, diagnostics and tests; consumes packages
+apps/web        → Astro marketing draft and curated public-API examples; consumes packages
 ```
 
 One workspace lockfile governs dependencies. `@domfx/core`, `@domfx/browser` and
@@ -74,6 +75,8 @@ See [packed ESM consumption](packages/domfx/README.md#packed-esm-consumption) fo
 the supported consumer build path and Chromium setup for `pnpm test:packed`.
 Test-only Float64 distance oracles stay in the lab, outside consumer runtime.
 `apps/lab` is the diagnostic testbed, not a marketing website.
+The separate [Astro website](apps/web/README.md) runs with `pnpm web`;
+`pnpm build:web` builds its static output and `pnpm test:web` verifies its examples.
 
 ## Spike stack
 

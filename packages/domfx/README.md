@@ -119,7 +119,7 @@ exteriors are transparent. Capture/reference/SDF PNGs and numerical JSON are ret
 in browser test evidence.
 
 These are bounded paint fixtures, not automatic paint-extent discovery. The manual
-attachment still requests 32 CSS pixels of padding; this gate's 48/80 values do not
+attachment defaults to 32 CSS pixels of padding; this gate's 48/80 values do not
 increase that default. Paint beyond requested padding can be clipped, and paint beyond
 the reference extent is unverified. Unbounded overflow, larger shadows/filters,
 universal CSS painting, rotation/skew/perspective/negative scale, fractional DPR and
@@ -209,6 +209,21 @@ render commit per dirty target on the next animation frame, using one domfx sche
 per document. The initial paint completes before `ready` resolves. Frames reuse the
 prepared raster without capture. Writes after disposal update readable controls but
 cannot render or recreate resources.
+
+Fire uses soft, curling warm flames with a pale hot base and sparse rising embers.
+No texture assets or extra setup are required. `flameHeight` sets the flame size in
+target-local CSS pixels, from `8` to `64` (default `24`). Set it at attachment time;
+the library reserves capture padding for both flames and embers automatically.
+The default keeps 32 CSS pixels of padding. Larger sizes increase capture dimensions
+and count toward the existing capture and aggregate memory budgets.
+
+```ts
+const effect = attachFire(title, { host, clock: 'ambient', flameHeight: 48 });
+```
+
+Intensity controls flame reach and opacity together. Use manual time or a GSAP binding
+to change playback speed; seed varies the pattern. Identical time, seed, intensity and
+flame height reproduce the same frame, including embers. The palette remains warm.
 
 `clock` defaults to `'manual'`; the handle exposes its immutable mode. Manual time
 never advances automatically, including after `resume()`. Choose `'ambient'` to advance

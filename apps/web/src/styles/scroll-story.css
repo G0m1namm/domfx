@@ -1,0 +1,420 @@
+/* The same proportions define the opening, focused artwork, and footer return. */
+.page-shell {
+  max-width: none;
+  margin: 0;
+  border: 0;
+}
+.page-shell::before,
+.page-shell::after,
+.site-header::before,
+.site-header::after {
+  display: none;
+}
+.site-header {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 50%;
+  width: 100%;
+  max-width: 1440px;
+  transform: translateX(-50%);
+  border: 0;
+}
+.site-header .wordmark {
+  font-size: 30px;
+}
+.scroll-story {
+  --ring-size: min(650px, max(500px, 48vw));
+  --focus-size: min(480px, calc(100vw - 64px));
+}
+.scroll-story .hero {
+  position: relative;
+  height: 100svh;
+  min-height: 680px;
+  overflow: clip;
+}
+.scroll-story .hero-copy {
+  position: absolute;
+  z-index: 2;
+  top: 20%;
+  left: 24px;
+  right: 24px;
+  padding: 0;
+}
+.scroll-story h1 {
+  font-size: clamp(40px, 5vw, 72px);
+  line-height: 1.06;
+  margin-bottom: 24px;
+}
+.scroll-story .lede {
+  font-size: 18px;
+  max-width: 580px;
+  margin-bottom: 28px;
+}
+.scroll-story .hero-note {
+  margin-top: 20px;
+}
+.scroll-story .hero-instruction {
+  font-size: 12px;
+  margin-top: 12px;
+}
+.ring-fan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ring-slot {
+  --ring-width: var(--ring-size, 650px);
+  position: absolute;
+  left: 50%;
+  top: 72%;
+  width: var(--ring-width);
+  aspect-ratio: 4 / 3;
+  transform: translateX(-50%);
+  transform-origin: 50% 0;
+}
+.ring-art {
+  position: relative;
+  width: 256px;
+  transform: scale(calc(var(--ring-width) / 256px));
+  transform-origin: 0 0;
+}
+.ring-slot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.ring-slot--center {
+  z-index: 2;
+}
+.ring-slot--inner-left,
+.ring-slot--inner-right {
+  --ring-width: calc(var(--ring-size, 650px) * 0.82);
+  top: calc(72% + 85px);
+}
+.ring-slot--inner-left {
+  left: calc(50% - 360px);
+}
+.ring-slot--inner-right {
+  left: calc(50% + 360px);
+}
+.ring-slot--outer-left,
+.ring-slot--outer-right {
+  --ring-width: calc(var(--ring-size, 650px) * 0.64);
+  top: calc(72% + 155px);
+}
+.ring-slot--outer-left {
+  left: calc(50% - 660px);
+}
+.ring-slot--outer-right {
+  left: calc(50% + 660px);
+}
+.story-step {
+  position: relative;
+  min-height: 650px;
+  padding: 80px max(32px, calc((100vw - 1200px) / 2));
+}
+.stage-title {
+  max-width: 330px;
+  font-size: clamp(36px, 3.4vw, 48px);
+  line-height: 1.08;
+}
+.reveal-line {
+  display: block;
+  overflow: clip;
+  padding-block: 0.06em;
+  margin-block: -0.06em;
+}
+.reveal-line > span {
+  display: block;
+}
+.stage-description {
+  max-width: 300px;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.stage-description p {
+  margin-bottom: 16px;
+}
+.stage-description a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.static-image,
+.vector-host {
+  display: block;
+  width: var(--focus-size);
+  height: auto;
+  margin: 48px auto;
+}
+.annulus-vector {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.text-host {
+  position: relative;
+}
+.vector-host {
+  aspect-ratio: 4 / 3;
+}
+.vector-art {
+  position: relative;
+  width: 256px;
+  transform: scale(calc(var(--focus-size) / 256px));
+  transform-origin: 0 0;
+}
+.text-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+}
+.text-step p {
+  margin: 0;
+  color: var(--muted);
+}
+.text-step .text-lede {
+  max-width: 560px;
+  margin-top: 8px;
+  color: inherit;
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.45;
+}
+.text-step .selection-note {
+  max-width: 440px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+.text-host h2 {
+  font-size: clamp(40px, 8vw, 112px);
+  line-height: 1.08;
+  white-space: nowrap;
+  margin: 0;
+}
+.story-scene {
+  position: relative;
+}
+[data-story-enhanced] .story-scene {
+  height: 100svh;
+  min-height: 680px;
+  overflow: clip;
+}
+[data-story-enhanced] {
+  /* Reserve room for the heading, description and dock on shorter screens. */
+  --focus-size: min(480px, calc(100vw - 64px), calc((100svh - 480px) * 4 / 3));
+}
+[data-story-enhanced] .story-step {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  padding: 0;
+  pointer-events: none;
+}
+[data-story-enhanced] .stage-title,
+[data-story-enhanced] .stage-description,
+[data-story-enhanced] .text-step > * {
+  pointer-events: auto;
+}
+[data-story-enhanced] .static-image {
+  display: none;
+}
+[data-story-enhanced] .stage-title {
+  position: absolute;
+  top: 15%;
+  left: max(40px, calc((100vw - 1200px) / 2));
+  margin: 0;
+}
+[data-story-enhanced] .stage-description {
+  position: absolute;
+  right: max(40px, calc((100vw - 1200px) / 2));
+  bottom: max(16%, 120px);
+}
+[data-story-enhanced] .vector-host {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+.story-navigation {
+  position: absolute;
+  top: 32px;
+  right: max(32px, calc((100vw - 1200px) / 2));
+  display: flex;
+  gap: 24px;
+  z-index: 3;
+}
+.story-navigation a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.story-navigation a:hover {
+  color: #e8eaf3;
+}
+@media (min-width: 1100px) {
+  [data-story-enhanced] .stage-title {
+    max-width: min(330px, calc((100vw - var(--focus-size)) / 2 - 64px));
+  }
+  [data-story-enhanced] .stage-description {
+    max-width: min(300px, calc((100vw - var(--focus-size)) / 2 - 64px));
+  }
+}
+@media (max-width: 1099px) {
+  [data-story-enhanced] {
+    --focus-size: min(320px, calc(100vw - 64px), calc((100svh - 660px) * 4 / 3));
+  }
+  [data-story-enhanced] .stage-description {
+    font-size: 14px;
+    bottom: 100px;
+  }
+}
+.section {
+  max-width: 1200px;
+  margin-inline: auto;
+  padding: 96px 40px;
+}
+.site-footer {
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-top: 0;
+}
+.footer-return {
+  position: relative;
+  height: 620px;
+  overflow: clip;
+  margin-inline: -40px;
+  --ring-size: 650px;
+}
+.footer-callout {
+  position: absolute;
+  top: 100px;
+  left: 24px;
+  right: 24px;
+  text-align: center;
+}
+.footer-callout h2 {
+  margin-bottom: 12px;
+}
+.footer-return .ring-slot {
+  top: 62%;
+}
+.footer-return .ring-slot--inner-left,
+.footer-return .ring-slot--inner-right {
+  top: calc(62% + 85px);
+}
+.footer-return .ring-slot--outer-left,
+.footer-return .ring-slot--outer-right {
+  top: calc(62% + 155px);
+}
+.footer-grid {
+  padding-top: 48px;
+  border-top: 1px solid var(--border);
+}
+.effect-notice {
+  position: fixed;
+  z-index: 4;
+  bottom: var(--dock-space, 100px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 32px));
+  padding: 8px 12px;
+  margin: 0 !important;
+  text-align: center;
+  background: #14151b;
+  border-radius: 6px;
+}
+@media (max-width: 900px) {
+  .footer-return {
+    margin-inline: -24px;
+  }
+  [data-story-enhanced] .stage-description {
+    bottom: 120px;
+  }
+}
+@media (max-width: 600px) {
+  .scroll-story .hero-copy {
+    top: 20%;
+  }
+  .scroll-story .lede {
+    font-size: 15px;
+    max-width: 310px;
+    margin-bottom: 24px;
+  }
+  .scroll-story h1 {
+    font-size: 40px;
+  }
+  .scroll-story .hero-note,
+  .scroll-story .hero-instruction {
+    font-size: 11px;
+  }
+  .story-step {
+    padding: 64px 24px;
+    min-height: 580px;
+  }
+  [data-story-enhanced] .stage-title {
+    top: 17%;
+    left: 24px;
+    right: 24px;
+    font-size: 30px;
+  }
+  [data-story-enhanced] .stage-description {
+    left: 24px;
+    right: 24px;
+    bottom: 100px;
+    font-size: 14px;
+    max-width: 275px;
+  }
+  .text-step {
+    padding-inline: 24px;
+  }
+  [data-story-enhanced] .text-step {
+    padding-inline: 24px;
+  }
+  .text-step p {
+    max-width: 310px;
+    font-size: 15px;
+  }
+  .story-navigation {
+    top: 88px;
+    right: 24px;
+    gap: 20px;
+  }
+  .section {
+    padding: 64px 24px;
+  }
+  .footer-return {
+    height: 520px;
+    margin-inline: -16px;
+    --ring-size: 500px;
+  }
+  .footer-callout {
+    top: 72px;
+  }
+}
+@media (max-height: 800px) {
+  .scroll-story .hero-copy {
+    top: 14%;
+  }
+  .scroll-story h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    margin-bottom: 16px;
+  }
+  .scroll-story .lede {
+    margin-bottom: 20px;
+  }
+  .scroll-story .hero-note {
+    margin-top: 12px;
+  }
+  .scroll-story .hero-instruction {
+    margin-top: 8px;
+  }
+}

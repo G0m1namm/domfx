@@ -10,4 +10,6 @@ export interface FireOptions {
   readonly seed?: number;
   readonly time?: number;
   readonly intensity?: number;
+  /** Flame size in target-local CSS pixels, 8–64. Defaults to 24; padding is automatic. */
+  readonly flameHeight?: number;
 }

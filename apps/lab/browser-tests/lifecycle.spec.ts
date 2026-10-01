@@ -73,7 +73,7 @@ test('repeated zero dimensions suspend and recover with exactly one fresh captur
   });
 });
 
-test('initial zero size waits without capture or frame allocation', async ({ page }) => {
+test('initial zero size waits without capture or frame allocation @smoke', async ({ page }) => {
   await page.evaluate(async () => {
     const fixture = window.manual.createMotionFixture('respect');
     window.manual.motionFixture = fixture;

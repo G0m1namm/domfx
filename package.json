@@ -43,7 +43,10 @@
     "web": "pnpm build && pnpm --filter @domfx/web dev",
     "build:web": "pnpm build && pnpm --filter @domfx/web build",
     "preview:web": "pnpm --filter @domfx/web preview",
-    "test:web": "pnpm build:web && pnpm --filter @domfx/web test:browser"
+    "test:web": "pnpm build:web && pnpm --filter @domfx/web test:browser",
+    "test:browser:smoke": "pnpm build:demo && pnpm test:browser:smoke:built",
+    "test:browser:smoke:built": "pnpm --filter @domfx/lab exec playwright test --project production --grep @smoke",
+    "build:demo:built": "pnpm --filter @domfx/lab build"
   },
   "devDependencies": {
     "@changesets/cli": "3.0.2",

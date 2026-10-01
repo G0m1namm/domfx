@@ -199,7 +199,9 @@ for (const stage of ['renderer', 'capture', 'prepare'] as const) {
   }
 }
 
-test('rejected overlay preserves real pointer and keyboard interaction', async ({ page }) => {
+test('rejected overlay preserves real pointer and keyboard interaction @smoke', async ({
+  page,
+}) => {
   await page.goto('/manual.html');
   await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
   await page.locator('#manual-target').evaluate((target) => {

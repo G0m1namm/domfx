@@ -23,7 +23,7 @@ test('controlled refresh revisions settle in order and release every frame once'
   expect(errors).toEqual([]);
 });
 
-test('explicit refresh replaces real changed DOM pixels on the same canvas', async ({
+test('explicit refresh replaces real changed DOM pixels on the same canvas @smoke', async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];

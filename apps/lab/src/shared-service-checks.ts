@@ -2,7 +2,7 @@ import { attachFire, type EffectHandle } from '@domfx/browser';
 import { GpuExperiment, memoryFor } from '@domfx/browser/experimental';
 import { classifyAlpha } from '@domfx/core';
 
-import { signedDistanceOracle } from './diagnostics/distance-oracle.js';
+import { exactDistanceField } from './diagnostics/distance-oracle.js';
 
 function deferred() {
   let resolve = () => {};
@@ -133,7 +133,7 @@ export async function verifySharedTargets(sharedHost: boolean, disposedIndex: nu
     const prepare = service.prepare.bind(service);
     service.prepare = async (frame) => {
       const mask = classifyAlpha(frame);
-      const truth = signedDistanceOracle(mask, frame.width, frame.height);
+      const truth = exactDistanceField(mask, frame.width, frame.height);
       const prepared = await prepare(frame);
       const sdf = await prepared.readSdf();
       const result = { maxError: 0, wrongSigns: 0, width: frame.width, height: frame.height };

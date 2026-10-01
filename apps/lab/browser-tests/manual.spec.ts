@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import type {} from '../src/manual.js';
 
-test('public manual attachment paints deterministically and preserves the target', async ({
+test('public manual attachment paints deterministically and preserves the target @smoke', async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];
@@ -277,7 +277,7 @@ test('flame height reserves padding through refresh and capture admission', asyn
   expect(result).toMatchObject({ reason: 'capture-budget', recovered: true, remainingCanvases: 0 });
 });
 
-test('disposal before a late adapter result releases its device and leaves no canvas', async ({
+test('disposal before a late adapter result releases its device and leaves no canvas @smoke', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -317,7 +317,7 @@ test('disposal before a late adapter result releases its device and leaves no ca
 });
 
 for (const mode of ['missing-gpu', 'reduced-motion'] as const) {
-  test(`${mode} leaves original content usable`, async ({ page }) => {
+  test(`${mode} leaves original content usable @smoke`, async ({ page }) => {
     if (mode === 'missing-gpu') {
       await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
     } else {
@@ -395,7 +395,9 @@ test('disposal during GPU preparation releases late resources', async ({ page })
   expect(errors).toEqual([]);
 });
 
-test('runtime reduced motion releases output without automatic recovery', async ({ page }) => {
+test('runtime reduced motion releases output without automatic recovery @smoke', async ({
+  page,
+}) => {
   await page.goto('/manual.html');
   await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
   await page.emulateMedia({ reducedMotion: 'reduce' });

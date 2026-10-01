@@ -36,10 +36,42 @@ GPU scenario; it is not silently skipped. `swiftshader` runs real shaders on the
 and is the configured CI backend. The report identifies the requested backend and
 the lab records the actual adapter. Neither mode establishes broad device support.
 
+## Fast feedback and full coverage
+
+`pnpm test:browser:smoke` runs ten existing production contract tests marked `@smoke`:
+manual rendering, seeking/reversing, binding disposal, late attachment cleanup, actual
+DOM refresh, reduced motion, missing WebGPU, pointer/keyboard preservation, and initial
+zero-size behavior. It is a subset, not a replacement for complete GPU verification.
+
+CI runs that subset for ordinary PRs, full tests for library/lab/dependency/verification
+changes, and full development/production coverage weekly or on a `Check` dispatch with
+`full=true`. Full runs use four isolated runner shards with one worker each. Native
+local verification keeps its ten-minute suite limit; software GPU runs allow up to one
+hour for the complete suite. Missing capability and failing assertions remain failures;
+there are no retries or silent skips. The required `workspace` check fails if any
+applicable job fails, is cancelled, or fails to start.
+
+`DOMFX_FULL_VERIFY=1 git push` opts into the full native harness in Lefthook. Regular
+pushes keep fast repository checks and a production lab build; hooks are not server-side
+merge enforcement. Before releases and rendering changes, use `pnpm agent:verify` and
+record the applicable manual checks. CPU timing on SwiftShader is not a native GPU benchmark.
+
 The runner owns loopback servers on ports 4173 and 4174 and shuts them down when
 finished. Occupied ports fail explicitly; it never reuses an unrelated or stale lab.
 Use the normal `pnpm demo` command for interactive development outside these runs.
 Browser launch flags are restricted to the local test browser.
+
+The DPR 1 capture and injected failure cases use `?automation&functional`: they still
+execute real capture, numerical readbacks, fire and the relevant failure assertions,
+but do not repeat the DPR-independent resource soak or informational warm timings.
+Reports identify `diagnostics: "functional"`, omit those results and leave the resource
+check uncompleted. DPR 2 in both builds requires the full resource result and 30 warm
+samples. Interactive lab visits and the standalone evidence runner retain full diagnostics.
+
+Full captured rasters in shared-service checks use the existing exact separable Float64
+oracle. The exhaustive pixel-pair oracle is reserved for the small diagnostic masks;
+numerical unit tests cross-check the separable algorithm against it. GPU readbacks still
+compare every pixel with the same sign and distance tolerances.
 
 ## Required scenarios
 
@@ -57,7 +89,7 @@ with the normal capture/GPU scenario additionally running at actual DPR 1:
   time; zero intensity is transparent; GSAP cleanup preserves its caller-owned sibling.
   Exercise Play, Seek, Reverse, pointer/keyboard interaction, overlay attributes, and
   Dispose. Disposal must remove the overlay and release accounted GPU allocations.
-  The preparation regression also runs 1,000 real small-mask prepare/readback/destroy
+  The DPR 2 run in each build also runs 1,000 real small-mask prepare/readback/destroy
   cycles, alternating 7 × 5 and 9 × 5 masks with alpha values around the threshold.
   Every readback is compared to the Float64 oracle (0.002 raster-pixel tolerance).
   `preparationResources` records allocation samples at cycles 1, 10, 100 and 1,000;

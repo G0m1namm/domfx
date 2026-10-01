@@ -12,7 +12,8 @@ Owner: `G0m1namm/domfx`. Source visibility and npm publication are separate deci
 - Actions default to read-only permissions and cannot approve PRs. Private-fork
   workflows are disabled and cannot receive write tokens, secrets or variables.
 - CI uses pinned actions, an explicit read-only token, no persisted checkout
-  credentials, frozen installs and a ten-minute timeout. Superseded runs are cancelled.
+  credentials and frozen installs. Fast jobs have a fifteen-minute limit; full browser
+  shards have thirty minutes. Superseded runs are cancelled.
 
 ## Before public launch
 

@@ -37,7 +37,8 @@ setup and workspace map in [README.md](README.md).
 
 `pnpm install` installs Lefthook hooks. `pre-commit` checks formatting and lint
 across the working tree (including unstaged edits); `commit-msg` checks the message;
-`pre-push` runs `pnpm check` and `pnpm build:demo`. Reinstall with
+`pre-push` runs `pnpm check` and builds the production lab without rebuilding the libraries.
+Use `DOMFX_FULL_VERIFY=1 git push` to opt into the full browser/GPU harness in the hook. Reinstall with
 `pnpm hooks:install` if needed. Hooks validate but never format, stage or commit
 files automatically. CI repeats checks and validates PR commit ranges; push CI
 checks the latest commit without retroactively enforcing all existing history.
@@ -106,9 +107,14 @@ Before proposing a change:
 3. Describe the reason, observable result, and remaining limitations. Include
    browser/GPU details for rendering bugs. Never infer GPU success from CI alone.
 
-The GitHub workflow runs the same harness with Chromium and the SwiftShader software
-GPU, and retains browser reports and failure traces. CI exercises shaders and the lab's
-browser scenarios; it does not establish hardware performance or broad browser support.
+CI runs repository checks, website tests, and the production browser smoke suite in
+independent jobs. Pull requests changing libraries, the lab, dependencies, or verification
+infrastructure also run the complete browser suite across four separate runners, with
+one GPU worker per runner. Weekly runs and `Check` dispatches with `full=true` retain
+complete development/production coverage; release approval still requires the full harness.
+Browser reports and failure traces are retained for three days. SwiftShader exercises
+real shaders but does not establish hardware performance or broad browser support.
+Local hooks provide feedback; required CI cannot rely on contributors running them.
 
 ## Maintainer notes
 

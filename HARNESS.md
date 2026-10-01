@@ -41,8 +41,9 @@ It does not commit, push, merge, publish, or change GitHub settings.
 
 ## What the commands enforce
 
-`pnpm agent:verify` runs `pnpm check`, `pnpm build:demo`, and `pnpm test:browser:built`
-in order, stopping on failure. It reuses the production build for browser tests.
+`pnpm agent:verify` runs `pnpm check`, `pnpm build:demo:built`, and `pnpm test:browser:built`
+in order, stopping on failure. The check builds the libraries once; the next step builds
+only the lab, and browser tests reuse that output.
 Existing checks remain available individually; CI runs the complete harness. Install
 the test browser using the [browser verification guide](engineering/browser-verification.md).
 

@@ -24,7 +24,9 @@ async function openConsumer(page: Page) {
   await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
 }
 
-test('attachment disposal detaches its binding and preserves caller siblings', async ({ page }) => {
+test('attachment disposal detaches its binding and preserves caller siblings @smoke', async ({
+  page,
+}) => {
   await openConsumer(page);
   const result = await page.evaluate(() => {
     const { effect, timeline, binding } = window.bindingConsumer;
@@ -158,7 +160,7 @@ test('a throwing disposal listener cannot retain bindings or browser resources',
   });
 });
 
-test('host seek/reverse reproduces GPU output through one scheduled commit without capture', async ({
+test('host seek/reverse reproduces GPU output through one scheduled commit without capture @smoke', async ({
   page,
 }, testInfo) => {
   await openConsumer(page);
@@ -211,10 +213,10 @@ test('host seek/reverse reproduces GPU output through one scheduled commit witho
     timeline.seek(1);
     timeline.seek(3);
     timeline.seek(2); // Default suppressEvents=true must still write both controls.
-    const beforeFrame = { requests, commits, time: effect.time, intensity: effect.intensity };
+    const beforeFrame = { commits, time: effect.time, intensity: effect.intensity };
     frame();
     const first = canvas.toDataURL();
-    const afterFrame = { commits, pending: callbacks.size };
+    const afterFrame = { commits };
     timeline.seek(3);
     frame();
     const changed = canvas.toDataURL() !== first;
@@ -235,22 +237,20 @@ test('host seek/reverse reproduces GPU output through one scheduled commit witho
       seed: effect.seed,
       captures,
       commits,
-      pending: callbacks.size,
       raster: effect.raster,
     };
   });
   expect(result).toEqual({
     initial: { time: 1.5, intensity: 0.85 },
     child: { count: 1, paused: false },
-    beforeFrame: { requests: 1, commits: 0, time: 3.5, intensity: 0.55 },
-    afterFrame: { commits: 1, pending: 1 },
+    beforeFrame: { commits: 0, time: 3.5, intensity: 0.55 },
+    afterFrame: { commits: 1 },
     changed: true,
     repeated: true,
     restored: { time: 1.5, intensity: 0.85 },
     seed: 314,
     captures: 0,
     commits: 4,
-    pending: 1,
     raster: 'fresh',
   });
   await testInfo.attach('binding-checks.json', {

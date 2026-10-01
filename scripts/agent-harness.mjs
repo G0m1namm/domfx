@@ -81,7 +81,7 @@ export function runVerification(directory, run) {
     browserVerification: 'not-run',
     browserReport: join(dirname(reportPath), 'browser', 'report.json'),
     designReview: 'not-run',
-    checks: ['check', 'build:demo', 'test:browser:built'].map((command) => ({
+    checks: ['check', 'build:demo:built', 'test:browser:built'].map((command) => ({
       command,
       status: 'skipped',
     })),

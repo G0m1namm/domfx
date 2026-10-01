@@ -64,9 +64,6 @@ async function gallerySnapshot(page: Page) {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
       );
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      const time = effect.time;
-      effect.time = time;
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       if (!layer) {
         throw new Error(`missing layer: ${id}`);
       }
@@ -77,8 +74,17 @@ async function gallerySnapshot(page: Page) {
       if (!context) {
         throw new Error('readback unavailable');
       }
-      context.drawImage(layer, 0, 0);
-      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      const time = effect.time;
+      effect.time = time;
+      // Read transient WebGPU storage before this frame is presented.
+      const pixels = (
+        await new Promise<ImageData>((resolve) =>
+          requestAnimationFrame(() => {
+            context.drawImage(layer, 0, 0);
+            resolve(context.getImageData(0, 0, canvas.width, canvas.height));
+          }),
+        )
+      ).data;
       const alphaPixels = pixels.filter((value, index) => index % 4 === 3 && value > 0).length;
       let hash = 2166136261;
       for (const byte of pixels) {
@@ -236,7 +242,7 @@ for (const dpr of [1, 2]) {
       page,
       browserErrors,
     }, testInfo) => {
-      await page.goto('/?automation');
+      await page.goto(dpr === 2 ? '/?automation' : '/?automation&functional');
       const report = await terminalReport(page);
       expect(report).toMatchObject({
         outcome: 'PASS: capture, GPU signed distances and deterministic GPU fire',
@@ -269,18 +275,29 @@ for (const dpr of [1, 2]) {
           ),
         ),
         transformCapture: { pass: true },
-        preparationResources: {
-          pass: true,
-          cycles: 1000,
-          wrongSigns: 0,
-          afterCycles: { managedBytes: 0, bufferBytes: 0 },
-          afterServiceDestroy: { managedBytes: 0, bufferBytes: 0 },
-        },
         fire: { pass: true, zeroIntensityTransparent: true },
         fireShape: { pass: true, dpr },
         gsap: { pass: true, contextRevertPreservesSibling: true },
         gpuErrors: [],
       });
+      if (dpr === 2) {
+        expect(report).toMatchObject({
+          diagnostics: 'full',
+          preparationResources: {
+            pass: true,
+            cycles: 1000,
+            wrongSigns: 0,
+            afterCycles: { managedBytes: 0, bufferBytes: 0 },
+            afterServiceDestroy: { managedBytes: 0, bufferBytes: 0 },
+          },
+        });
+        expect(report).toHaveProperty('warmMeasurements.samples.length', 30);
+      } else {
+        expect(report).toHaveProperty('diagnostics', 'functional');
+        expect(report).not.toHaveProperty('preparationResources');
+        expect(report).not.toHaveProperty('warmMeasurements');
+        await expect(page.locator('#check-resources')).toHaveText('Not completed');
+      }
       const overlay = page.locator('#host canvas.effect');
       await expect(overlay).toBeVisible();
       await expect(overlay).toHaveAttribute('aria-hidden', 'true');
@@ -376,7 +393,7 @@ test('missing WebGPU is explicitly unavailable with usable original DOM', async 
 });
 
 test('injected assertion fails after completing GPU fixtures', async ({ page, browserErrors }) => {
-  await page.goto('/?automation&inject-failure');
+  await page.goto('/?automation&functional&inject-failure');
   expect(await terminalReport(page)).toMatchObject({
     outcome: 'FAIL',
     error: expect.stringContaining('injected assertion failure'),
@@ -406,7 +423,7 @@ test('missing overflow paint fails even when padded capture and reference agree'
       return result;
     };
   });
-  await page.goto('/?automation');
+  await page.goto('/?automation&functional');
   expect(await terminalReport(page)).toMatchObject({
     outcome: 'FAIL',
     error: expect.stringContaining('overflow sentinel missing'),
@@ -424,7 +441,7 @@ test('paint outside requested padding holds the capture gate', async ({ page, br
       }
     });
   });
-  await page.goto('/?automation');
+  await page.goto('/?automation&functional');
   expect(await terminalReport(page)).toMatchObject({
     outcome: 'FAIL',
     error: expect.stringContaining('capture exterior failed for guard'),
@@ -450,7 +467,7 @@ test('a required live SVG failure holds the gate and retains its capture evidenc
       return Reflect.apply(getContext, this, args);
     };
   });
-  await page.goto('/?automation');
+  await page.goto('/?automation&functional');
   expect(await terminalReport(page)).toMatchObject({
     outcome: 'FAIL',
     error: expect.stringContaining('required live fixture vector'),

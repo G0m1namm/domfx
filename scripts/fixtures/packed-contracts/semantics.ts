@@ -14,6 +14,7 @@ const effect = attachFire(target, {
   seed: 314,
   time: 1.5,
   intensity: 0.8,
+  flameHeight: 48,
 });
 const ambient = attachFire(target, { host, clock: 'ambient' });
 effect.time = -1;
@@ -45,6 +46,8 @@ export type PromiseContracts = [
 
 // @ts-expect-error The attachment seed is read-only after creation.
 effect.seed = 42;
+// @ts-expect-error Flame height is a numeric attachment option in CSS pixels.
+attachFire(target, { host, flameHeight: 'large' });
 // @ts-expect-error Clock options accept only manual or ambient modes.
 attachFire(target, { host, clock: 'automatic' });
 // @ts-expect-error An SVG element cannot serve as the required HTML effect host.

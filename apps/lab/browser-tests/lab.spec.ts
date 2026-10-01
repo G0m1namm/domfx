@@ -277,6 +277,7 @@ for (const dpr of [1, 2]) {
           afterServiceDestroy: { managedBytes: 0, bufferBytes: 0 },
         },
         fire: { pass: true, zeroIntensityTransparent: true },
+        fireShape: { pass: true, dpr },
         gsap: { pass: true, contextRevertPreservesSibling: true },
         gpuErrors: [],
       });

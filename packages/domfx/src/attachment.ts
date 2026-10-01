@@ -85,6 +85,11 @@ export function attachFireWithAdapters(
   }
 
   const seed = finite(options.seed === undefined ? 0 : options.seed);
+  const flameHeight = finite(options.flameHeight === undefined ? 24 : options.flameHeight);
+  if (flameHeight < 8 || flameHeight > 64) {
+    throw new Error('invalid-fire-parameter');
+  }
+  const paddingCss = Math.max(32, Math.ceil(flameHeight * 1.25 + 2));
   let time = finite(options.time === undefined ? 0 : options.time);
   let intensity = Math.max(
     0,
@@ -490,6 +495,8 @@ export function attachFireWithAdapters(
           seed,
           intensity,
           1 / frame.pixelToLocal.a,
+          undefined,
+          flameHeight,
         );
         prepared.present(context.getCurrentTexture());
       }
@@ -530,11 +537,11 @@ export function attachFireWithAdapters(
       if (!current(requestedRevision, requestedGeneration)) {
         return undefined;
       }
-      const estimate = measureCapture(target);
+      const estimate = measureCapture(target, paddingCss);
       observedSize = targetSize();
       reserve(estimate.width, estimate.height);
       awaitingAssets = true;
-      return adapters.capture(target, {}, reserve, () => {
+      return adapters.capture(target, { paddingCss }, reserve, () => {
         // Asset-driven layout is already part of this capture's readiness boundary.
         observedSize = targetSize();
         awaitingAssets = false;

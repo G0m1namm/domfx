@@ -57,13 +57,13 @@ lab-only and contributor-doc changes need no package bump. See
 
 ## Dependency boundaries
 
-| Workspace          | Allowed workspace dependencies               |
-| ------------------ | -------------------------------------------- |
-| `packages/core`    | None; no DOM, framework, GPU or Node imports |
-| `packages/domfx`   | Core                                         |
-| `packages/gsap`    | Core and browser package                     |
-| `apps/lab`         | Library packages, never other apps           |
-| `apps/web` (later) | Library packages, never other apps           |
+| Workspace        | Allowed workspace dependencies               |
+| ---------------- | -------------------------------------------- |
+| `packages/core`  | None; no DOM, framework, GPU or Node imports |
+| `packages/domfx` | Core                                         |
+| `packages/gsap`  | Core and browser package                     |
+| `apps/lab`       | Library packages, never other apps           |
+| `apps/web`       | Library packages, never other apps           |
 
 `workspace-boundaries.mjs` defines the direction. `pnpm lint:boundaries` checks
 manifests and imports (run `pnpm build` first). Cross-workspace dependencies must
@@ -71,10 +71,11 @@ use `workspace:*` and exported package names, not relative paths into source or
 dist. Dependencies belong to their consumers; runtime code cannot rely on
 dev-only packages. Boundary regressions are tested in `pnpm test:tooling`.
 
-The lab is a diagnostic testbed, not the marketing website. The future
-`apps/web` will own the public landing page, documentation and curated examples.
+The lab is a diagnostic testbed, not the marketing website. The separate
+`apps/web` owns the Astro landing draft and curated examples, with documentation
+links to the repository quickstart.
 Neither app imports the other; reusable example logic belongs in a package only
-when actual reuse warrants it. The website is not scaffolded yet.
+when actual reuse warrants it. See [website development](apps/web/README.md) for its commands and draft approval status.
 
 ## Verification
 

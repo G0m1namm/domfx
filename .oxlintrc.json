@@ -31,6 +31,7 @@
     "docs/**",
     ".scratch/**",
     ".agents/**",
-    "**/.pnpm-store/**"
+    "**/.pnpm-store/**",
+    "**/.astro/**"
   ]
 }

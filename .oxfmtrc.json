@@ -25,6 +25,7 @@
     "PROJECT_CONTEXT.md",
     ".scratch/**",
     ".agents/**",
-    "pnpm-lock.yaml"
+    "pnpm-lock.yaml",
+    "**/.astro/**"
   ]
 }

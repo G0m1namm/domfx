@@ -1,0 +1,17 @@
+Use case: stylized-concept.
+Create ONE original isolated 3D illustration for domfx.
+
+REFERENCE ROLES: Attach an approved domfx illustration from src/assets/illustrations as the material and lighting anchor. If available, also attach the Vivid Motion 3D Illustration System as a secondary material reference. Copy the finish and lighting, not the reference geometry. For an adjustment, designate the existing domfx image as the edit target and preserve every property except the requested change.
+
+SUBJECT: [Describe the new geometry and what it communicates. Include generous readable open spaces, thin broad surfaces and a compact silhouette.]
+PLACEMENT: [Main effect target or supporting static card; expected display size.]
+
+LOCKED MATERIAL: Very thin, broad, smoothly bent sheets. Smoked dark blue-grey glass-like body with a silver optical coating, partly translucent faces, deep graphite reflections, subtle internal optical depth and broad soft studio gradients. Precise fine silver edge reflections and a few small refractive-looking caustics. Match the approved family before adding color. Not thick opaque chrome, brushed metal, a shiny balloon, matte origami or frosted plastic.
+
+LOCKED PALETTE: Graphite #14151B/#292A35, cool silver #C2C5DB/#E8EAF3, cool blue-grey reflective depth. Restrained violet #6153B7 reflections; tiny magenta #F047FE and pale yellow #E6DC6A glints only where natural. No forced rainbow bands or neon outlines. Cool blue-grey is part of the approved artwork material, not a new UI token.
+
+LOCKED STAGING: One compact assembly, orthographic-like three-quarter view, soft upper-left studio lighting, whole object centered with generous transparent margins. Readable at 160–240px. Actual transparent alpha outside and through all openings. No floor, cast shadow, backdrop, UI card, text, watermark, logo, Fire, particles or glow halo.
+
+CHANGES FOR THIS VARIANT: [Only the intended changes; preserve material, lighting, palette and camera unless explicitly requested.]
+
+Return a transparent PNG. Compare on domfx graphite and near-black alongside the approved originals before accepting. Save the complete resolved prompt and reference roles with the new asset.

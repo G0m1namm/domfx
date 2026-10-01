@@ -1,0 +1,41 @@
+{
+  "approved": "2026-09-29",
+  "generator": "Built-in image generation tool; model and seed not exposed",
+  "reference": "https://dribbble.com/shots/27532349-3D-Illustration-System",
+  "referenceCredit": "Vivid Motion, 3D Illustration System for ThreatPoint",
+  "assets": [
+    {
+      "name": "split-shell",
+      "source": "../src/assets/illustrations/split-shell.png",
+      "prompt": "prompts/split-shell.txt",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "ea96c014b6d3f30c332cf8d688ed55867e19def8b05b453a41da143f2928b570"
+    },
+    {
+      "name": "layer-relay",
+      "source": "../src/assets/illustrations/layer-relay.png",
+      "prompt": "prompts/layer-relay.txt",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "23e1ff4f8827e5f939edf5521444c17476346b362f701534156bf7053637c728"
+    },
+    {
+      "name": "open-junction",
+      "source": "../src/assets/illustrations/open-junction.png",
+      "prompt": "prompts/open-junction.txt",
+      "width": 1374,
+      "height": 1145,
+      "sha256": "0f9672acc00593274e51a83ad7cd06a1b9b154f93e7669b57c0bd0d448eab5e1"
+    },
+    {
+      "name": "annulus",
+      "source": "../src/assets/illustrations/annulus.png",
+      "prompt": "prompts/annulus.json",
+      "width": 1448,
+      "height": 1086,
+      "sha256": "2039d9e8abbe94dce25828085edeedbf20a17c883cdd04be523eb406455fc60b",
+      "reference": "User-supplied optical-metal annulus screenshot; sphere removed and reflections adapted to the approved palette."
+    }
+  ]
+}

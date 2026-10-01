@@ -1,0 +1,30 @@
+---
+import { Image } from 'astro:assets';
+
+import annulus from '../assets/illustrations/annulus.png';
+
+interface Props {
+  live?: boolean;
+}
+const { live = false } = Astro.props;
+const positions = ['outer-left', 'inner-left', 'center', 'inner-right', 'outer-right'];
+---
+
+<div class="ring-fan" aria-label={live ? 'An arrangement of silver rings' : undefined} aria-hidden={live ? undefined : 'true'}>
+  {positions.map((position) => (
+    <div class:list={['ring-slot', `ring-slot--${position}`]}>
+      <div class="ring-art" data-effect-host>
+      <Image
+        id={live ? position === 'center' ? 'example-image' : `hero-ring-${position}` : undefined}
+        data-effect-target={live ? '' : undefined}
+        src={annulus}
+        width={960}
+        format="png"
+        loading={live ? 'eager' : 'lazy'}
+        fetchpriority={live && position === 'center' ? 'high' : 'auto'}
+        alt={live && position === 'center' ? 'Silver annular disc with violet reflections and a transparent open center' : ''}
+      />
+      </div>
+    </div>
+  ))}
+</div>

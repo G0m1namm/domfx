@@ -61,7 +61,7 @@ The original DOM remains the content and interaction surface. Reduced motion
 suppresses animated output by default. Check the typed reason and use
 [explicit recovery](/docs/troubleshooting) after correcting the condition.
 
-The [versioned browser/device record](https://github.com/G0m1namm/domfx/blob/5aa74b29636bdacb384c2f106e7b93f4b0c2ad91/engineering/browser-support.md)
+The [versioned browser/device record](https://github.com/G0m1namm/domfx/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md)
 retains full fixture, accessibility, performance and missing-coverage evidence.
 Repository source links require access while the repository is private.
 

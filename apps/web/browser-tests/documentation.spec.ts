@@ -293,7 +293,7 @@ test('every website link resolves to a native route, anchor or documented reposi
       repo,
       `${repo}/blob/main/LICENSE`,
       `${repo}/blob/main/QUICKSTART.md`,
-      `${repo}/blob/5aa74b29636bdacb384c2f106e7b93f4b0c2ad91/engineering/browser-support.md`,
+      `${repo}/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md`,
       `${repo}/tree/main/apps/lab`,
     ].sort(),
   );

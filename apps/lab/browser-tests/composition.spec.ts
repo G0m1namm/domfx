@@ -126,10 +126,14 @@ for (const phase of ['initial', 'live'] as const) {
         started: phase === 'initial' ? 'unavailable' : 'active',
         lifecycle: 'unavailable',
         actualReason: result.reason,
-        detail: result.reason,
         canvases: 0,
         usable: true,
       });
+      const property = result.css.split(':')[0];
+      expect(result.detail).toContain(`${property}:`);
+      expect(result.detail).toContain(result.at === 'target' ? 'button' : 'div');
+      expect(result.detail).toMatch(/Use |Remove /);
+      expect(result.detail?.split('. ')[0]).not.toBe(`${property}:`);
     }
     expect(errors).toEqual([]);
   });
@@ -252,10 +256,11 @@ test('unsupported composition during refresh rejects before late preparation set
   expect(result.rejected).toMatchObject({
     lifecycle: 'unavailable',
     reason: 'unsupported-composition',
-    rejection: 'unsupported-composition',
     canvases: 0,
     previousWidth: 0,
   });
+  expect(result.rejected.rejection).toContain('filter: blur(1px)');
+  expect(result.rejected.rejection).toContain('Remove');
   expect(result.settled).toMatchObject({
     lifecycle: 'unavailable',
     reason: 'unsupported-composition',

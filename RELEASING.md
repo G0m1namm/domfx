@@ -1,13 +1,18 @@
 # Releases
 
-This is preparation tooling, not an enabled publishing pipeline. All packages
-remain `private: true`; there are no publish scripts, registry credentials or
-release workflows. Repository visibility does not change package visibility.
+The first alpha uses manual Changesets preparation, a normal reviewed release PR,
+and deliberate publication of verified tarballs. Automatic version PRs can wait
+until several releases establish a useful routine; there is no generated-release
+validator. All packages currently remain `private: true`. The dispatch-only
+publication workflow is disabled unless `DOMFX_PUBLISH_ENABLED` is set to `true`.
+Repository visibility and npm publication are separate maintainer actions.
 
 ## Packages and versions
 
-- `@domfx/core`, `@domfx/browser` and `@domfx/gsap` are provisional names. Confirm npm scope/name
-  ownership before publication; then update manifests and Changesets references together.
+- `@domfx/core`, `@domfx/browser` and `@domfx/gsap` use the selected `@domfx` scope. The maintainer reports creating the organization
+  with account `g0m1namm`; verify actual publish permissions for all three packages
+  before approval. Another package named `domfx` does not determine ownership of
+  these scoped names.
 - Version libraries independently. Changesets also updates affected internal dependents.
   The workspace root and apps stay private; website deployments are separate.
 - While unpublished, use patch-only development increments: `0.0.1`, `0.0.2`,
@@ -94,28 +99,120 @@ For a local version rehearsal, use a disposable checkout and run
 `pnpm format`. This consumes changesets and edits versions/changelogs; never run it
 casually in a shared working tree. No version bump is part of this initial setup.
 
-## Enable later, through a reviewed change
+## Prepare the first alpha manually
 
-Review the [browser/device support record](engineering/browser-support.md) when deciding
-the proposed release scope. Its fixture passes, accessibility observations and historical
-performance candidates are separate evidence; untested environments and held gates remain open.
+Finish the implementation checks before freezing release artifacts. Use a clean
+release branch from the reviewed `main` commit; do not version a shared dirty tree.
+The first-alpha changeset requests `0.1.0` for all three libraries. Later releases
+remain independent and Changesets updates affected internal dependencies.
 
-1. Confirm npm ownership/names, package contents and public API. Pass packed-consumer
-   GPU, types/SSR, lifecycle and preview-readiness gates. Review private Git history.
-2. Approve a release PR with versions/changelogs and passing CI. No publication from
-   contributor PRs or ordinary feature merges; one `main` branch is enough.
-3. Configure a restricted release workflow and npm trusted publishing. Explicitly
-   choose public package access, remove `private` only from approved libraries and
-   review the prerelease tag. Never give publishing permissions to test jobs.
-4. Require maintainer approval for publication. Publish the tested artifacts, then
-   create per-package tags and release notes for the exact released commit.
-5. If publication partially fails, inspect the registry before retrying. Published
-   versions are immutable: never reuse a version for different bytes. Correct a bad
-   release with a new version and deprecate the affected one when appropriate.
+```sh
+pnpm changeset pre enter alpha
+pnpm changeset version
+pnpm install --lockfile-only
+pnpm changeset --empty
+pnpm format
+pnpm release:status --since origin/main
+pnpm release:check
+```
 
-Until those gates are approved, keep `access: restricted`, private package flags
-and private tagging disabled. These are preparation safeguards, not authorization
-to publish private npm packages. No npm account setup is automated here.
+The empty changeset records metadata-only version/changelog/lockfile preparation
+so the ordinary PR check passes after release changesets are consumed; it requests
+no extra bump. Preserve real consumer-facing changesets in feature PRs. Review the
+actual versions, pre-state, changelogs and packed dependency graph. Keep `alpha`
+prerelease mode until deliberately graduating; never publish this alpha as `latest`.
+
+In that release PR, remove `private` only from the three approved libraries,
+retain `publishConfig.access: public`, and change Changesets access to `public`.
+Root, lab, website and any other package stay private. This preparation does not
+publish; publication remains a separate approval of tested bytes.
+
+## Alpha readiness and the deferred feedback round
+
+Before approval, require public API/ownership review, licenses and redistribution
+rights, content/history review, `pnpm agent:verify`, website checks and fresh packed
+consumer proof. Review the [browser/device record](engineering/browser-support.md)
+without turning a fixture pass into broad support or performance claims.
+
+For the first **experimental alpha only**, independent developer validation moves
+after publication: the public install/docs route must exist before that round can
+test it. This exception does not waive technical, license or maintainer readiness.
+Reconcile the existing #35/#36/#41 acceptance records when presenting the release;
+do not mark independent onboarding, cleanup or developer value proved yet.
+After registry/docs proof, the maintainer may post a LinkedIn alpha invitation and
+collect comments/issues, with one opt-in round of three developers if available.
+Measure the complete install → own heading → own timeline → seek/reverse → cleanup
+journey only in actual sessions. The 2–5 minute target is a hypothesis, not a CI
+budget or a measured claim. No automated outreach or telemetry is required.
+
+## Approve and publish the exact tested bytes
+
+1. Verify `g0m1namm` can publish `@domfx/core`, `@domfx/browser`, `@domfx/gsap`.
+   Review package access, alpha versions and source history. Obtain explicit approval
+   before making source public; verify anonymous repository, license and support links
+   after changing visibility.
+2. Merge the reviewed release PR with passing `Check / workspace`. Configure GitHub
+   environment `npm` with a required maintainer reviewer and prevention of self-review
+   where feasible. Inspect the available protections for the repository's plan/visibility;
+   do not assume creating the environment itself adds an approval gate.
+3. Configure each npm package's trusted publisher for `G0m1namm/domfx`, workflow
+   filename `publish.yml`, environment `npm`, permitting direct publication. The
+   workflow uses npm 11.5.1 with the repository's Node 22.22.3 on GitHub-hosted runners.
+   For packages that do not yet exist, verify the actual npm bootstrap/setup route
+   before enabling dispatch. If an authenticated first publication is necessary,
+   the maintainer publishes the approved tarballs with MFA; never share credentials
+   in chat or substitute freshly repacked files. Then configure trusted publishing.
+4. Set `DOMFX_PUBLISH_ENABLED=true` only after those approvals/settings. Manually run
+   **Publish experimental alpha** on `main`. Preparation repeats repository/web checks,
+   packs once and tests both consumers, then uploads report, tarballs, logs and PNGs.
+   No publishing token is granted to preparation. Review its commit, package versions,
+   integrity values and GPU report before approving the environment job.
+5. Publication downloads the same run's immutable artifact set and rechecks its clean
+   revision, passing evidence (at most seven days old), identities and tarball hashes.
+   It publishes core → browser → GSAP with `--access public --tag alpha --ignore-scripts`.
+   There is no rebuild/repack in the publishing job. Missing/expired evidence or changed
+   bytes stop it. Registry integrity and the alpha tag are checked after each publish.
+6. If partially published, inspect exact versions, `dist.integrity` and tags first.
+   A rerun retains already published versions only when bytes and alpha tags match;
+   mismatches stop for maintainer inspection. Published versions are immutable.
+   Repair a bad release with new versions; never reuse one for different bytes.
+   Review any tag correction separately rather than silently moving it on retry.
+7. Create per-package tags such as `@domfx/browser@0.1.0-alpha.0` and GitHub release
+   notes for the exact released commit and its changelog/migrations. Document
+   experimental support limits and known failures; no automated tagging is needed.
+
+The local equivalent, **only after approval**, is:
+
+```sh
+node scripts/check-release-artifacts.mjs --publish <tested-evidence-directory> <approved-commit>
+```
+
+This reads `report.json` and `artifacts/`; it does not create package bytes. Download
+and retain that directory from the preparation run. npm authentication/bootstrap and
+GitHub environment protection are execution prerequisites, not proved by local tests.
+Trusted-publisher provenance depends on public repository/package eligibility;
+record actual registry evidence and do not claim provenance before observing it.
+
+## Verify the public installation route
+
+From the matching released checkout, download the tested evidence directory and run:
+
+```sh
+pnpm release:verify:registry <tested-evidence-directory> <approved-commit>
+```
+
+This verifies registry integrity against approved bytes and installs exact released
+versions into fresh standalone/GSAP consumers **without local core overrides**.
+It records resolved versions, lockfile hashes, SSR/types, stock Vite, real GPU and
+lifecycle evidence; standalone still must not install GSAP. It fails if packages
+are missing or dependencies/peers cannot resolve. It is separate from local tarball proof.
+
+Only after that pass, update site installation/upgrade instructions and the concise
+Prompt with exact verified versions and public docs. Run the exact rendered recipe
+on a real selectable heading and caller-owned timeline; retain button interaction,
+seek/reverse, unavailable/reduced-motion and early/late cleanup checks. Verify public
+source/docs links anonymously. Then invite feedback. Until then the site says
+unpublished and links to matching local artifacts, never an invented npm command.
 
 References: [Changesets configuration](https://changesets.dev/guide/config),
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).

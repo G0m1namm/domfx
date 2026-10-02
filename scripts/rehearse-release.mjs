@@ -16,14 +16,29 @@ import { pathToFileURL } from 'node:url';
 
 import { chromium } from 'playwright';
 
-import { validateArtifact } from './check-release-artifacts.mjs';
+import {
+  assertReleaseVisibility,
+  publishedArtifactMatches,
+  registryMetadata,
+  testedReleaseArtifacts,
+  validateArtifact,
+} from './check-release-artifacts.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const directory = mkdtempSync(join(tmpdir(), 'domfx-release-'));
+const registry = process.argv[2] === '--registry';
+// These same strings are rendered verbatim by Astro and tested by the website suite.
+const { gsapCode, standaloneCode } = await import(
+  pathToFileURL(join(root, 'apps/web/src/content/examples.ts')).href
+);
+const directory = process.env.DOMFX_RELEASE_OUTPUT_DIR
+  ? resolve(process.env.DOMFX_RELEASE_OUTPUT_DIR)
+  : mkdtempSync(join(tmpdir(), 'domfx-release-'));
+mkdirSync(directory, { recursive: true });
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const writeJson = (path, value) => writeFileSync(path, JSON.stringify(value, null, 2) + '\n');
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const report = {
+  mode: registry ? 'registry' : 'local-tarballs',
   outcome: 'RUNNING',
   startedAt: new Date().toISOString(),
   node: process.version,
@@ -60,61 +75,91 @@ save();
 
 try {
   const dependencies = {};
-  for (const path of ['packages/core', 'packages/domfx', 'packages/gsap']) {
-    const manifest = readJson(join(root, path, 'package.json'));
-    assert.equal(manifest.private, true, 'rehearsal must keep publishing disabled');
-    run(join(root, path), 'pnpm', [
-      '--config.ignore-scripts=true',
-      'pack',
-      '--pack-destination',
-      artifacts,
-    ]);
-    const tarball = join(
-      artifacts,
-      `${manifest.name.replace('@', '').replace('/', '-')}-${manifest.version}.tgz`,
-    );
-    const entries = execFileSync('tar', ['-tzf', tarball], { encoding: 'utf8' }).trim().split('\n');
+  if (registry) {
     assert.ok(
-      entries.every((entry) => entry.startsWith('package/') && !entry.split('/').includes('..')),
+      process.argv[3] && process.argv[4],
+      'provide tested publication evidence and approved revision',
     );
-    const files = entries
-      .filter((entry) => !entry.endsWith('/'))
-      .map((entry) => ({ path: entry.slice(8) }));
-    const packedManifest = JSON.parse(
-      execFileSync('tar', ['-xOf', tarball, 'package/package.json'], { encoding: 'utf8' }),
+    assert.equal(
+      report.revision,
+      process.argv[4],
+      'registry recipe checkout must match the released revision',
     );
-    assert.deepEqual(validateArtifact(manifest, { ...packedManifest, files }), []);
-    let shaderMetadata = false;
-    for (const file of files) {
-      assert.doesNotMatch(file.path, /(?:^|[/.])(?:__tests__|fixtures?|tests?|spec|env)(?:[/.]|$)/);
-      const contents = execFileSync('tar', ['-xOf', tarball, `package/${file.path}`], {
-        encoding: 'utf8',
-        maxBuffer: 20 * 1024 * 1024,
+    report.registry = [];
+    for (const artifact of testedReleaseArtifacts(resolve(process.argv[3]), process.argv[4])) {
+      const metadata = registryMetadata(`${artifact.name}@${artifact.version}`);
+      assert.ok(metadata, 'published package missing');
+      publishedArtifactMatches(artifact, metadata);
+      dependencies[artifact.name] = artifact.version;
+      report.registry.push({
+        name: artifact.name,
+        version: artifact.version,
+        dist: metadata.dist,
+        tags: metadata['dist-tags'],
       });
-      assert.ok(
-        !/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|\b(?:ghp_|npm_)[A-Za-z0-9]{30,}\b/.test(
-          contents,
-        ),
-        `credential signature in ${file.path}`,
+    }
+  } else {
+    for (const path of ['packages/core', 'packages/domfx', 'packages/gsap']) {
+      const manifest = readJson(join(root, path, 'package.json'));
+      assertReleaseVisibility(path, manifest);
+      run(join(root, path), 'pnpm', [
+        '--config.ignore-scripts=true',
+        'pack',
+        '--pack-destination',
+        artifacts,
+      ]);
+      const tarball = join(
+        artifacts,
+        `${manifest.name.replace('@', '').replace('/', '-')}-${manifest.version}.tgz`,
       );
-      shaderMetadata ||= file.path.endsWith('.js') && contents.includes('__TYPEGPU_META__');
+      const entries = execFileSync('tar', ['-tzf', tarball], { encoding: 'utf8' })
+        .trim()
+        .split('\n');
+      assert.ok(
+        entries.every((entry) => entry.startsWith('package/') && !entry.split('/').includes('..')),
+      );
+      const files = entries
+        .filter((entry) => !entry.endsWith('/'))
+        .map((entry) => ({ path: entry.slice(8) }));
+      const packedManifest = JSON.parse(
+        execFileSync('tar', ['-xOf', tarball, 'package/package.json'], { encoding: 'utf8' }),
+      );
+      assert.deepEqual(validateArtifact(manifest, { ...packedManifest, files }), []);
+      let shaderMetadata = false;
+      for (const file of files) {
+        assert.doesNotMatch(
+          file.path,
+          /(?:^|[/.])(?:__tests__|fixtures?|tests?|spec|env)(?:[/.]|$)/,
+        );
+        const contents = execFileSync('tar', ['-xOf', tarball, `package/${file.path}`], {
+          encoding: 'utf8',
+          maxBuffer: 20 * 1024 * 1024,
+        });
+        assert.ok(
+          !/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|\b(?:ghp_|npm_)[A-Za-z0-9]{30,}\b/.test(
+            contents,
+          ),
+          `credential signature in ${file.path}`,
+        );
+        shaderMetadata ||= file.path.endsWith('.js') && contents.includes('__TYPEGPU_META__');
+      }
+      if (manifest.name === '@domfx/browser') {
+        assert.ok(shaderMetadata, 'packed browser requires transformed shader metadata');
+      }
+      if (manifest.name === '@domfx/gsap') {
+        assert.deepEqual(packedManifest.peerDependencies, { gsap: '^3.15.0' });
+        assert.equal(packedManifest.dependencies.gsap, undefined);
+        assert.notEqual(packedManifest.peerDependenciesMeta?.gsap?.optional, true);
+      }
+      dependencies[manifest.name] = `file:${tarball}`;
+      report.artifacts.push({
+        tarball,
+        sha256: hash(readFileSync(tarball)),
+        manifest: packedManifest,
+        files,
+      });
+      save();
     }
-    if (manifest.name === '@domfx/browser') {
-      assert.ok(shaderMetadata, 'packed browser requires transformed shader metadata');
-    }
-    if (manifest.name === '@domfx/gsap') {
-      assert.deepEqual(packedManifest.peerDependencies, { gsap: '^3.15.0' });
-      assert.equal(packedManifest.dependencies.gsap, undefined);
-      assert.notEqual(packedManifest.peerDependenciesMeta?.gsap?.optional, true);
-    }
-    dependencies[manifest.name] = `file:${tarball}`;
-    report.artifacts.push({
-      tarball,
-      sha256: hash(readFileSync(tarball)),
-      manifest: packedManifest,
-      files,
-    });
-    save();
   }
 
   for (const kind of ['standalone', 'gsap']) {
@@ -129,6 +174,22 @@ try {
     }
     cpSync(join(root, `scripts/fixtures/release-consumer/${kind}.ts`), join(cwd, 'main.ts'));
     cpSync(join(root, `examples/quickstart/${kind}.ts`), join(cwd, 'quickstart.ts'));
+    writeFileSync(
+      join(cwd, 'recipe.html'),
+      `<!doctype html><html lang="en"><meta charset="utf-8"><title>Own heading recipe</title><link rel="icon" href="data:,"><style>body{margin:128px;background:#14151B;color:white;font:24px sans-serif}#recipe-host{position:relative;padding:60px;width:280px}h1{font:24px sans-serif;user-select:text}</style><div id="recipe-host"><h1 id="recipe-target">Your own heading</h1></div><script type="module" src="/recipe.ts"></script></html>`,
+    );
+    writeFileSync(
+      join(cwd, 'recipe.ts'),
+      `const host = document.querySelector('#recipe-host');
+const target = document.querySelector('#recipe-target');
+if (!(host instanceof HTMLElement) || !target) throw new Error('fixture DOM');
+${kind === 'gsap' ? gsapCode : standaloneCode}
+Object.assign(window, { recipe: { fire${kind === 'gsap' ? ', timeline, binding, cleanup' : ''} } });`,
+    );
+    writeFileSync(
+      join(cwd, 'vite.config.mjs'),
+      "export default { build: { rollupOptions: { input: { lifecycle: 'index.html', recipe: 'recipe.html' } } } };\n",
+    );
     const installedDependencies = { ...dependencies };
     if (kind === 'standalone') {
       delete installedDependencies['@domfx/gsap'];
@@ -151,12 +212,22 @@ try {
     // Published workspace ranges resolve to these exact tarballs until registry publication exists.
     writeFileSync(
       join(cwd, 'pnpm-workspace.yaml'),
-      `autoInstallPeers: false\nstrictPeerDependencies: true\noverrides:\n  '@domfx/core': ${JSON.stringify(dependencies['@domfx/core'])}\n`,
+      `autoInstallPeers: false\nstrictPeerDependencies: true\n${registry ? '' : `overrides:\n  '@domfx/core': ${JSON.stringify(dependencies['@domfx/core'])}\n`}`,
     );
     run(cwd, 'pnpm', ['install', '--ignore-scripts']);
     const installedPaths = {};
+    const installedVersions = {};
+    const consumerLockfileSha256 = hash(readFileSync(join(cwd, 'pnpm-lock.yaml')));
     for (const name of Object.keys(installedDependencies)) {
       installedPaths[name] = realpathSync(join(cwd, 'node_modules', name));
+      installedVersions[name] = readJson(join(installedPaths[name], 'package.json')).version;
+      if (registry) {
+        assert.equal(
+          installedVersions[name],
+          installedDependencies[name],
+          `registry resolved version for ${name}`,
+        );
+      }
       assert.ok(
         installedPaths[name].startsWith(`${realpathSync(cwd)}/`),
         `workspace link: ${name}`,
@@ -193,6 +264,7 @@ try {
         '--lib',
         'ES2022,DOM,DOM.Iterable',
         'main.ts',
+        'recipe.ts',
       ]);
     }
     run(cwd, 'pnpm', ['exec', 'vite', 'build']);
@@ -200,6 +272,8 @@ try {
       kind,
       directory: cwd,
       installedPaths,
+      installedVersions,
+      consumerLockfileSha256,
       outcome: 'RUNNING',
       errors: [],
       assets: {},
@@ -227,7 +301,20 @@ try {
         ...(process.env.DOMFX_BROWSER_EXECUTABLE
           ? { executablePath: process.env.DOMFX_BROWSER_EXECUTABLE }
           : {}),
-        args: ['--enable-unsafe-webgpu'],
+        args: [
+          '--enable-unsafe-webgpu',
+          ...(process.env.DOMFX_GPU_BACKEND === 'swiftshader'
+            ? process.platform === 'linux'
+              ? [
+                  '--enable-features=Vulkan',
+                  '--use-angle=vulkan',
+                  '--use-vulkan=swiftshader',
+                  '--use-webgpu-adapter=swiftshader',
+                  '--disable-vulkan-surface',
+                ]
+              : ['--use-angle=swiftshader', '--use-webgpu-adapter=swiftshader']
+            : []),
+        ],
       });
       consumer.browser = browser.version();
       page = await browser.newPage({
@@ -288,6 +375,72 @@ try {
       await page.screenshot({ path: join(cwd, 'page.png'), fullPage: true });
       assert.equal(consumer.result.outcome, 'PASS', JSON.stringify(consumer.result));
       assert.ok(consumer.environment.gpu.length > 0, 'actual GPU device evidence required');
+      assert.deepEqual(consumer.errors, []);
+      await page.goto(`http://127.0.0.1:${address.port}/recipe.html`);
+      await page.waitForFunction(() => window.recipe?.fire.lifecycle === 'active');
+      const recipeCanvas = page.locator('#recipe-host canvas');
+      assert.equal(await recipeCanvas.count(), 1);
+      if (kind === 'gsap') {
+        const controls = await page.evaluate(() => {
+          const { fire, timeline } = window.recipe;
+          timeline.pause().seek(2.5);
+          const forward = { time: fire.time, intensity: fire.intensity };
+          timeline.seek(1.5);
+          return { forward, backward: { time: fire.time, intensity: fire.intensity } };
+        });
+        assert.equal(controls.forward.time, 2);
+        assert.ok(Math.abs(controls.forward.intensity - 0.6) < 1e-6);
+        assert.equal(controls.backward.time, 1);
+        await page.evaluate(() => {
+          window.recipe.timeline.reverse();
+        });
+        await page.waitForFunction(() => window.recipe.fire.time < 0.9);
+        await page.evaluate(() => {
+          window.recipe.timeline.pause().seek(1.5);
+        });
+      } else {
+        await page.evaluate(() => window.recipe.fire.pause());
+      }
+      await page.evaluate(() => {
+        window.recipe.fire.intensity = 0;
+      });
+      const baseline = await recipeCanvas.screenshot();
+      await page.evaluate(() => {
+        window.recipe.fire.intensity = 0.8;
+      });
+      assert.notDeepEqual(
+        await recipeCanvas.screenshot(),
+        baseline,
+        'heading recipe GPU output must change pixels',
+      );
+      // Native mouse selection on the real heading; a synthetic Selection is no proof.
+      const rect = await page.locator('#recipe-target').evaluate((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const rect = range.getClientRects()[0];
+        return { left: rect.left, right: rect.right, y: rect.top + rect.height / 2 };
+      });
+      await page.mouse.move(rect.left + 1, rect.y);
+      await page.mouse.down();
+      await page.mouse.move(rect.right - 1, rect.y, { steps: 10 });
+      await page.mouse.up();
+      assert.ok(await page.evaluate(() => getSelection().toString().length > 0));
+      await recipeCanvas.screenshot({ path: join(cwd, 'heading-recipe.png') });
+      await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
+      assert.equal(await recipeCanvas.count(), 0);
+      assert.equal(await page.evaluate(() => window.recipe.fire.lifecycle), 'disposed');
+      consumer.recipe = {
+        outcome: 'PASS',
+        target: 'own selectable heading',
+        sourceSha256: hash(Buffer.from(kind === 'gsap' ? gsapCode : standaloneCode)),
+        checks: [
+          'active GPU attachment',
+          'GPU pixel change',
+          'native mouse selection',
+          ...(kind === 'gsap' ? ['own timeline', 'forward/backward seek', 'reverse playback'] : []),
+          'pagehide cleanup',
+        ],
+      };
       assert.deepEqual(consumer.errors, []);
       consumer.outcome = 'PASS';
       console.log(

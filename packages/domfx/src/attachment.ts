@@ -1,7 +1,7 @@
 import type { CaptureFrame, EffectHandle, EffectReason } from '@domfx/core';
 
 import { type captureElementWithReservation, measureCapture } from './browser.js';
-import { EffectError, normalizeEffectError } from './effect-error.js';
+import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
 import type { FireOptions } from './fire-options.js';
 import type { PreparedGpuFrame } from './gpu.js';
 import { estimateFrameMemory, memoryFor, type AllocationReservation } from './memory.js';
@@ -435,7 +435,13 @@ export function attachFireWithAdapters(
     }
     try {
       if (host.ownerDocument !== document || view?.getComputedStyle(host).position === 'static') {
-        throw new EffectError('unsupported-placement');
+        throw cssEffectError(
+          'unsupported-placement',
+          host,
+          'position',
+          view?.getComputedStyle(host).position ?? 'document-unavailable',
+          'Keep the effect host in the target document and use position: relative, absolute, fixed or sticky.',
+        );
       }
       assertEffectComposition(target, host);
       return true;

@@ -73,8 +73,8 @@ dist. Dependencies belong to their consumers; runtime code cannot rely on
 dev-only packages. Boundary regressions are tested in `pnpm test:tooling`.
 
 The lab is a diagnostic testbed, not the marketing website. The separate
-`apps/web` owns the Astro landing draft and curated examples, with documentation
-links to the repository quickstart.
+`apps/web` owns the Astro landing draft, curated examples and user documentation
+derived from the verified repository quickstart and support record.
 Neither app imports the other; reusable example logic belongs in a package only
 when actual reuse warrants it. See [website development](apps/web/README.md) for its commands and draft approval status.
 

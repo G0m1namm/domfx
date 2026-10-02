@@ -23,3 +23,15 @@ export function normalizeEffectError(error: unknown, stage: FailureStage): Effec
     ? error
     : new EffectError(stage, error instanceof Error ? error.message : String(error), error);
 }
+
+/** Describe rejected CSS only on failure; retain the typed reason for program logic. */
+export function cssEffectError(
+  code: 'unsupported-placement' | 'unsupported-composition',
+  element: Element,
+  property: string,
+  value: string,
+  correction: string,
+): EffectError {
+  const identity = element.localName + (element.id ? `#${element.id}` : '');
+  return new EffectError(code, `${identity}: ${property}: ${value}. ${correction}`);
+}

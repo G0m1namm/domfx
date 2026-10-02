@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import { Code } from 'astro:components';
 
 import annulus from '../assets/illustrations/annulus.png';
+import { codeTheme, gsapCode, standaloneCode } from '../content/examples';
 
 import AnnulusVector from '../components/AnnulusVector.astro';
 import RingFan from '../components/RingFan.astro';
@@ -13,7 +14,7 @@ import '../styles/scroll-story.css';
 import '../styles/integration.css';
 
 const repo = 'https://github.com/G0m1namm/domfx';
-const setup = `${repo}/blob/main/QUICKSTART.md`;
+const setup = '/docs/installation';
 const bindingCode = `// fire is an existing manual-clock attachment.
 timeline.addLabel('ignite', 0.5);
 const binding = bindFire(fire, timeline, {
@@ -22,58 +23,7 @@ const binding = bindFire(fire, timeline, {
   duration: 4,
   position: 'ignite',
 });`;
-const gsapCode = `import { gsap } from 'gsap';
-import { attachFire } from '@domfx/browser';
-import { bindFire } from '@domfx/gsap';
 
-await document.fonts.ready;
-const fire = attachFire(target, {
-  host, clock: 'manual', motion: 'respect',
-  time: 0, intensity: 0.8,
-  flameHeight: 32, seed: 314,
-});
-const timeline = gsap.timeline({ paused: true });
-timeline.from(target, {
-  opacity: 0, duration: 0.5, immediateRender: false,
-});
-timeline.addLabel('ignite', 0.5);
-const binding = bindFire(fire, timeline, {
-  time: 4, intensity: 0.4,
-  duration: 4, position: 'ignite',
-});
-
-// Register teardown before ready settles.
-const cleanup = () => {
-  binding.dispose();
-  timeline.kill();
-  fire.dispose();
-};
-window.addEventListener('pagehide', cleanup, { once: true });
-// Also call cleanup on component unmount.
-await fire.ready;
-if (fire.lifecycle === 'active') timeline.play();`;
-const standaloneCode = `import { attachFire } from '@domfx/browser';
-
-await document.fonts.ready;
-const fire = attachFire(target, {
-  host, clock: 'ambient', motion: 'respect',
-  intensity: 0.8, flameHeight: 32, seed: 314,
-});
-window.addEventListener('pagehide',
-  () => fire.dispose(), { once: true });
-// Also dispose on component unmount.
-await fire.ready;`;
-const codeTheme = {
-  name: 'domfx',
-  type: 'dark' as const,
-  colors: { 'editor.background': '#14151B', 'editor.foreground': '#E8EAF3' },
-  tokenColors: [
-    { scope: ['comment'], settings: { foreground: '#AEB1C1' } },
-    { scope: ['keyword', 'storage', 'entity.name.function'], settings: { foreground: '#C2C5DB' } },
-    { scope: ['string'], settings: { foreground: '#E6DC6A' } },
-    { scope: ['constant.numeric'], settings: { foreground: '#9ED9AD' } },
-  ],
-};
 ---
 
 <!doctype html>
@@ -199,7 +149,7 @@ const codeTheme = {
               <p class="start-note">Experimental and unpublished. The guide covers local tarball setup, standalone use and the optional GSAP binding.</p>
               <p class="start-note">WebGPU is required. Reduced motion or unavailable output leaves your original HTML in place.</p>
               <div class="secondary">
-                <a href={`${repo}/blob/main/engineering/browser-support.md`}>Browser support ↗</a>
+                <a href="/docs/support">Browser support ↗</a>
                 <a href={`${repo}/tree/main/apps/lab`}>Inspect the lab ↗</a>
               </div>
             </div>
@@ -211,7 +161,7 @@ const codeTheme = {
         <div class="footer-grid">
           <div class="footer-brand"><a class="wordmark" href="#top">domfx<span aria-hidden="true">.</span></a><p>GPU effects for real HTML.</p><p class="footer-note">Experimental. Fire available today.<br />Package not published yet.</p></div>
           <nav aria-label="Explore"><h2>Explore</h2><a href="#examples">Examples</a><a href={setup}>Quickstart <span aria-hidden="true">↗</span></a><a href={repo}>Source <span aria-hidden="true">↗</span></a></nav>
-          <nav aria-label="Resources"><h2>Resources</h2><a href={`${repo}/blob/main/engineering/browser-support.md`}>Browser support <span aria-hidden="true">↗</span></a><a href={`${repo}/tree/main/apps/lab`}>Diagnostic lab <span aria-hidden="true">↗</span></a></nav>
+          <nav aria-label="Resources"><h2>Resources</h2><a href="/docs/support">Browser support <span aria-hidden="true">↗</span></a><a href={`${repo}/tree/main/apps/lab`}>Diagnostic lab <span aria-hidden="true">↗</span></a></nav>
         </div>
         <div class="footer-bottom"><a href={`${repo}/blob/main/LICENSE`}>MIT licensed <span aria-hidden="true">↗</span></a><a href="#top">Back to top <span aria-hidden="true">↑</span></a></div>
       </footer>

@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
 
-import { validateArtifact } from './check-release-artifacts.mjs';
+import {
+  assertReleaseVisibility,
+  publishedArtifactMatches,
+  testedReleaseArtifacts,
+  validateArtifact,
+} from './check-release-artifacts.mjs';
 
 const manifest = {
   name: '@domfx/core',
@@ -53,3 +63,150 @@ test('requires exports and rejects paths outside dist', () => {
     'missing or unsupported export: ./src/index.ts',
   ]);
 });
+
+for (const [path, name] of [
+  ['packages/core', '@domfx/core'],
+  ['packages/domfx', '@domfx/browser'],
+  ['packages/gsap', '@domfx/gsap'],
+]) {
+  test(`allows explicit public access only for the approved identity at ${path}`, () => {
+    assert.doesNotThrow(() =>
+      assertReleaseVisibility(path, { name, private: false, publishConfig: { access: 'public' } }),
+    );
+    assert.throws(
+      () =>
+        assertReleaseVisibility(path, {
+          name: '@other/pkg',
+          private: false,
+          publishConfig: { access: 'public' },
+        }),
+      /identity/,
+    );
+    assert.throws(
+      () => assertReleaseVisibility(path, { name, private: false }),
+      /publishing is locked/,
+    );
+  });
+}
+for (const path of ['.', 'apps/lab', 'apps/web', 'packages/other']) {
+  test(`keeps ${path} private even with public publishConfig`, () => {
+    assert.throws(
+      () =>
+        assertReleaseVisibility(path, {
+          name: '@domfx/other',
+          private: false,
+          publishConfig: { access: 'public' },
+        }),
+      /publishing is locked/,
+    );
+  });
+}
+
+function releaseEvidence(t) {
+  const directory = mkdtempSync(join(tmpdir(), 'domfx-tested-artifact-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  mkdirSync(join(directory, 'artifacts'));
+  mkdirSync(join(directory, 'package'));
+  const artifacts = ['core', 'browser', 'gsap'].map((name) => {
+    const manifest = {
+      name: `@domfx/${name}`,
+      version: '0.1.0-alpha.0',
+      publishConfig: { access: 'public' },
+      ...(name === 'core' ? {} : { dependencies: { '@domfx/core': '0.1.0-alpha.0' } }),
+    };
+    writeFileSync(join(directory, 'package/package.json'), JSON.stringify(manifest));
+    const tarball = join(directory, 'artifacts', `${name}.tgz`);
+    execFileSync('tar', ['-czf', tarball, 'package'], { cwd: directory });
+    return {
+      tarball,
+      manifest,
+      sha256: createHash('sha256').update(readFileSync(tarball)).digest('hex'),
+    };
+  });
+  const report = {
+    outcome: 'PASS',
+    revision: 'approved',
+    dirty: '',
+    finishedAt: new Date().toISOString(),
+    artifacts,
+    consumers: ['standalone', 'gsap'].map((kind) => ({
+      kind,
+      outcome: 'PASS',
+      result: { outcome: 'PASS' },
+      recipe: { outcome: 'PASS' },
+      errors: [],
+      environment: { gpu: [{}] },
+    })),
+  };
+  const save = () => writeFileSync(join(directory, 'report.json'), JSON.stringify(report));
+  save();
+  return { directory, report, save };
+}
+
+test('transports the three tested alpha tarballs without repacking', (t) => {
+  const { directory } = releaseEvidence(t);
+  const artifacts = testedReleaseArtifacts(directory, 'approved');
+  assert.deepEqual(
+    artifacts.map(({ name }) => name),
+    ['@domfx/core', '@domfx/browser', '@domfx/gsap'],
+  );
+  const artifact = artifacts[0];
+  const metadata = {
+    version: artifact.version,
+    dist: { integrity: artifact.integrity },
+    'dist-tags': { alpha: artifact.version },
+  };
+  assert.doesNotThrow(() => publishedArtifactMatches(artifact, metadata));
+  assert.throws(
+    () => publishedArtifactMatches(artifact, { ...metadata, dist: { integrity: 'different' } }),
+    /bytes differ/,
+  );
+  assert.throws(
+    () => publishedArtifactMatches(artifact, { ...metadata, 'dist-tags': { alpha: 'another' } }),
+    /alpha tag/,
+  );
+});
+for (const failure of [
+  'revision',
+  'dirty',
+  'failed',
+  'expired',
+  'missing-gpu',
+  'missing-consumer',
+  'private',
+  'changed-bytes',
+  'missing-tarball',
+]) {
+  test(`stops publication with ${failure} evidence`, (t) => {
+    const { directory, report, save } = releaseEvidence(t);
+    if (failure === 'revision') {
+      report.revision = 'other';
+    }
+    if (failure === 'dirty') {
+      report.dirty = ' M package.json';
+    }
+    if (failure === 'failed') {
+      report.outcome = 'FAIL';
+    }
+    if (failure === 'expired') {
+      report.finishedAt = '2000-01-01T00:00:00Z';
+    }
+    if (failure === 'missing-gpu') {
+      report.consumers[0].environment.gpu = [];
+    }
+    if (failure === 'missing-consumer') {
+      report.consumers.pop();
+    }
+    if (failure === 'private') {
+      report.artifacts[0].manifest.private = true;
+    }
+    if (failure === 'changed-bytes') {
+      writeFileSync(report.artifacts[0].tarball, 'changed');
+    }
+    if (failure === 'missing-tarball') {
+      rmSync(report.artifacts[0].tarball);
+    }
+    save();
+    assert.throws(() => testedReleaseArtifacts(directory, 'approved'));
+  });
+}

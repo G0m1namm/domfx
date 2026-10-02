@@ -65,7 +65,7 @@ apps/web        → Astro marketing draft and curated public-API examples; consu
 ```
 
 One workspace lockfile governs dependencies. `@domfx/core`, `@domfx/browser` and
-`@domfx/gsap` and `@domfx/lab` are private local names, not reserved registry names. The lab imports
+`@domfx/gsap` and `@domfx/lab` are currently private packages. The maintainer has selected the `@domfx` npm scope; actual publication and permissions remain to be verified. The lab imports
 built package exports; it has no source aliases or TypeGPU build plugin. Shader
 transformation belongs to the browser package. The `/experimental` entry exposes
 the spike to the lab temporarily, not a supported public renderer API.
@@ -110,7 +110,7 @@ Workspace manifests and import boundaries are checked locally and in CI.
 
 ## Release preparation
 
-See [RELEASING.md](RELEASING.md) for versioning and release gates.
+See [RELEASING.md](RELEASING.md) for the manual first-alpha release PR, changelogs, approval and exact-artifact publication flow.
 `pnpm release:check` validates local release preparation without publishing.
 `pnpm release:rehearse` records fresh production consumers and actual tarball/GPU evidence;
 see [local artifact rehearsal](RELEASING.md#local-artifact-rehearsal) for setup and limits.

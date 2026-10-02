@@ -1,0 +1,48 @@
+---
+import DocsNavigation from '../components/DocsNavigation.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import { documentation } from '../content/documentation';
+import '../styles/documentation.css';
+
+const slug = Astro.url.pathname.replace(/\/$/, '').split('/').at(-1);
+const index = documentation.findIndex((page) => page.slug === slug);
+const page = documentation[index];
+if (!page) {
+  throw new Error(`Missing documentation navigation: ${slug}`);
+}
+const previous = documentation[index - 1];
+const next = documentation[index + 1];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={page.description} />
+    <meta name="theme-color" content="#14151B" />
+    <title>{page.title} — domfx docs</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/CabinetGrotesk-Medium.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body class="docs-page">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="docs-shell">
+      <SiteHeader />
+      <details class="docs-mobile-menu"><summary>Browse documentation <span aria-hidden="true">+</span></summary><DocsNavigation /></details>
+      <div class="docs-layout">
+        <aside class="docs-sidebar"><DocsNavigation /><p>Experimental.<br />Packages are unpublished.</p><a class="text-link" href="/#examples">Try the live examples ↗</a></aside>
+        <main id="main" tabindex="-1">
+          <div class="docs-breadcrumb"><a href="/docs/introduction">Docs</a><span aria-hidden="true">/</span><span>{page.group}</span></div>
+          <h1>{page.title}</h1>
+          <p class="docs-description">{page.description}</p>
+          <article class="docs-content"><slot /></article>
+          <nav class="docs-pagination" aria-label="Documentation pages">
+            {previous ? <a href={`/docs/${previous.slug}`}><span>Previous</span>{previous.title}</a> : <span />}
+            {next && <a href={`/docs/${next.slug}`}><span>Next</span>{next.title} <span aria-hidden="true">→</span></a>}
+          </nav>
+          <footer class="docs-footer"><a href="https://github.com/G0m1namm/domfx/blob/main/QUICKSTART.md">Repository quickstart ↗</a><a href="https://github.com/G0m1namm/domfx/blob/main/LICENSE">MIT licensed ↗</a></footer>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

@@ -59,10 +59,10 @@ test('static homepage is complete without JavaScript', async ({ browser, baseURL
   ).toBeVisible();
   await expect(
     page.locator('.hero').getByRole('link', { name: 'Read the quickstart', exact: false }),
-  ).toHaveAttribute('href', /QUICKSTART.md$/);
+  ).toHaveAttribute('href', /\/docs\/installation\/?$/);
   await page.getByRole('link', { name: 'View the SVG' }).click();
   await expect(page).toHaveURL(/#example-svg$/);
-  await expect(page.locator('#scroll-target')).toHaveAttribute('href', /QUICKSTART.md$/);
+  await expect(page.locator('#scroll-target')).toHaveAttribute('href', /\/docs\/installation\/?$/);
   await expect(page.locator('#features-title')).toHaveText('Put Fire onyour timeline.');
   await expect(page.locator('.package-name')).toHaveText('@domfx/gsap');
   await page.getByText('See the complete GSAP setup', { exact: true }).click();
@@ -433,13 +433,14 @@ for (const dpr of [1, 2]) {
     await expect(page.locator('#effect-play')).toHaveText('Resume');
     await center(page, 'scroll-target');
     await expect(page.locator('#start canvas')).toHaveCount(1);
-    await expect(page.locator('#scroll-target')).toHaveAttribute('href', /QUICKSTART.md$/);
-    await page.route('https://github.com/**', (route) =>
-      route.fulfill({ contentType: 'text/html', body: '<h1>Quickstart</h1>' }),
+    await expect(page.locator('#scroll-target')).toHaveAttribute(
+      'href',
+      /\/docs\/installation\/?$/,
     );
     await page.locator('#scroll-target').focus();
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/QUICKSTART.md$/);
+    await expect(page).toHaveURL(/\/docs\/installation\/?$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Installation');
     expect(errors).toEqual([]);
     await context.close();
   });
@@ -551,7 +552,11 @@ test('Prompt copies the displayed snapshot, handles failure and stays independen
   await page.locator('#prompt-target').fill('#project-title');
   const draft = await page.locator('#prompt-content').textContent();
   expect(draft).toContain('#project-title');
-  expect(draft).toContain('DOES NOT support flameHeight');
+  expect(draft).toContain('experimental and unpublished');
+  expect(draft).toContain('supporting flameHeight');
+  expect(draft).toContain('/docs/installation');
+  expect(draft).not.toContain('c2b12318');
+  expect(draft?.length).toBeLessThan(3500);
   expect(draft).toContain("clock: 'ambient'");
   await page.locator('#copy-prompt').click();
   await expect(page.locator('#copy-prompt')).toHaveText('Copied');

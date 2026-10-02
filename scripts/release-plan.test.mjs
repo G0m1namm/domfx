@@ -39,6 +39,7 @@ function workspace(t) {
     'packages/domfx/package.json',
     'packages/gsap/package.json',
     'apps/lab/package.json',
+    'apps/web/package.json',
     '.changeset/config.json',
   ]) {
     write(path, readFileSync(join(repo, path)));
@@ -109,7 +110,9 @@ test('Changesets checks detached PRs and rehearses private library versions with
       ['@domfx/gsap', '0.0.1'],
     ],
   );
-  assert.equal(plan.releases.find(({ name }) => name === '@domfx/lab')?.type, 'none');
+  for (const app of ['@domfx/lab', '@domfx/web']) {
+    assert.ok(!plan.releases.some(({ name, type }) => name === app && type !== 'none'));
+  }
   try {
     run(changeset, ['version']);
   } catch (error) {
@@ -122,9 +125,66 @@ test('Changesets checks detached PRs and rehearses private library versions with
     assert.match(readFileSync(join(root, path, 'CHANGELOG.md'), 'utf8'), /0\.0\.1/);
   }
   assert.equal(readJson(join(root, 'apps/lab/package.json')).version, '0.0.0');
+  assert.equal(readJson(join(root, 'apps/web/package.json')).version, '0.0.0');
   assert.equal(readJson(join(root, 'package.json')).version, '0.0.0');
   assert.equal(run('git', ['tag']).trim(), '');
   assert.equal(run('git', ['rev-list', '--count', 'HEAD']).trim(), '1');
+});
+
+test('manual alpha release metadata passes ordinary changeset CI without another bump', (t) => {
+  const { root, write } = workspace(t);
+  const run = (command, args) =>
+    execFileSync(command, args, {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 30_000,
+      env: { ...process.env, LEFTHOOK: '0' },
+    });
+  const changeset = join(repo, 'node_modules/.bin/changeset');
+  run('git', ['init', '-b', 'main']);
+  write(
+    '.changeset/first-alpha.md',
+    '---\n"@domfx/core": minor\n"@domfx/browser": minor\n"@domfx/gsap": minor\n---\n\nFirst experimental alpha.\n',
+  );
+  run('git', ['add', '.']);
+  const commit = () =>
+    run('git', [
+      '-c',
+      'user.name=Release Test',
+      '-c',
+      'user.email=release@example.invalid',
+      '-c',
+      'commit.gpgsign=false',
+      'commit',
+      '-m',
+      'chore(release): prepare alpha',
+    ]);
+  commit();
+  run('git', ['update-ref', 'refs/remotes/origin/main', 'HEAD']);
+  run(changeset, ['pre', 'enter', 'alpha']);
+  run(changeset, ['version']);
+  for (const path of ['packages/core', 'packages/domfx', 'packages/gsap']) {
+    assert.equal(readJson(join(root, path, 'package.json')).version, '0.1.0-alpha.0');
+    assert.match(readFileSync(join(root, path, 'CHANGELOG.md'), 'utf8'), /0\.1\.0-alpha\.0/);
+  }
+  for (const path of ['packages/domfx', 'packages/gsap']) {
+    assert.equal(
+      readJson(join(root, path, 'package.json')).dependencies['@domfx/core'],
+      'workspace:*',
+    );
+  }
+  // Existing Changesets convention, no generated-PR exemption or custom validator.
+  write('.changeset/manual-release-metadata.md', '---\n---\n');
+  run('git', ['add', '.']);
+  commit();
+  run(changeset, ['status', '--since', 'origin/main', '--output', join(root, 'plan.json')]);
+  assert.deepEqual(
+    readJson(join(root, 'plan.json')).releases.filter(({ type }) => type !== 'none'),
+    [],
+  );
+  assert.equal(readJson(join(root, 'package.json')).private, true);
+  assert.equal(readJson(join(root, 'apps/lab/package.json')).private, true);
+  assert.equal(run('git', ['tag']).trim(), '');
 });
 
 test('artifact inspection skips lifecycle scripts and creates no tarballs', (t) => {
@@ -158,11 +218,12 @@ for (const path of [
   'packages/domfx/package.json',
   'packages/gsap/package.json',
   'apps/lab/package.json',
+  'apps/web/package.json',
 ]) {
   test(`artifact check blocks publication enablement in ${path}`, (t) => {
     const { root, write } = workspace(t);
     const manifest = readJson(join(root, path));
-    write(path, JSON.stringify({ ...manifest, private: false }));
+    write(path, JSON.stringify({ ...manifest, private: false, publishConfig: undefined }));
     assert.throws(() => checkReleaseArtifacts(root), /publishing is locked/);
   });
 }

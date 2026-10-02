@@ -1,7 +1,3 @@
-// Public documentation is pinned. Flame height is still an unpublished local API change.
-const sourceRevision = 'c2b12318f410375ddf995eeda944670d823319f2';
-const source = `https://github.com/G0m1namm/domfx/tree/${sourceRevision}`;
-
 export function createAgentPrompt(settings: {
   target: string;
   effect: 'none' | 'fire';
@@ -26,18 +22,13 @@ Settings: intensity ${settings.intensity.toFixed(2)}, flameHeight ${settings.fla
 
 Inspect this project's framework, package manager, component lifecycle and layout first. Keep the element as real HTML with native text selection, links and keyboard focus.
 
-Installation source and limits:
-${source}
-https://github.com/G0m1namm/domfx/blob/${sourceRevision}/QUICKSTART.md
-The library is experimental and unpublished. This pinned public revision documents the local tarball workflow but DOES NOT support flameHeight yet. The homepage uses a newer unpublished local change. Ask for matching core/browser tarballs or a matching source checkout supporting flameHeight. Do not silently substitute the pinned revision, omit the requested setting, invent an API, or claim an npm installation works. If matching artifacts/source are unavailable, stop and report this blocker before editing the integration.
+Setup: read /docs/installation and /docs/standalone on the domfx site. Packages are experimental and unpublished; ask for matching @domfx/core and @domfx/browser tarballs or a source checkout supporting flameHeight. Follow that guide's local core override. If unavailable, stop before editing; do not invent an npm install or silently omit settings. Record artifact hashes/source revision. No GSAP or consumer TypeGPU plugin is needed.
 
-With compatible source: record its exact revision and changes, install locked dependencies using its documented Node/pnpm versions, run pnpm build, then pack packages/core and packages/domfx with pnpm --config.ignore-scripts=true pack --pack-destination <absolute-artifacts-directory>. Read the actual package manifests and emitted filenames. With compatible tarballs: record filenames and hashes. Install @domfx/core and @domfx/browser from those local tarballs. Merge the required @domfx/core file override into existing package-manager configuration; preserve unrelated settings. Check the packed public declarations support all requested settings. No private source imports, consumer TypeGPU plugin, or GSAP dependency is needed.
-
-Integrate only after browser mount. Await document.fonts.ready and relevant image.decode() calls. Choose a connected, positioned HTML host that contains the target as a strict descendant; leave room for output and preserve original styles/layout. Avoid unsupported rotation, skew, perspective, filters, opacity or clipping on the target/intermediate ancestors.
+After browser mount, await fonts and relevant image decoding. Guard async work against unmount. Choose a connected, positioned host containing the target; preserve styles/layout and leave output space. Avoid unsupported rotation, skew, perspective, filters, target opacity and ancestor clipping.
 
 Use public attachFire(target, { host, clock: '${manual ? 'manual' : 'ambient'}', motion: 'respect', intensity: ${settings.intensity.toFixed(2)}, flameHeight: ${settings.flameHeight}, seed: 314, time: ${settings.time.toFixed(2)} }). ${clockInstructions} Keep intensity constant unless I explicitly request viewport-driven intensity.
 
 Own cleanup immediately: call fire.dispose() on component unmount/page teardown, including initialization that finishes after unmount. Guard asynchronous font/image/import work against teardown before creating an attachment. Await fire.ready and inspect fire.lifecycle before claiming rendering success. Preserve original content on capture/WebGPU failure. Respect reduced motion; after reduction ends, restart only through explicit user action using the supported retry/reattachment path.
 
-Run the project's build/type checks. Verify native selection and activation, reduced-motion and unavailable fallbacks, teardown/remount, and requested playback. Verify actual output in a WebGPU-capable browser when available; otherwise explicitly report rendering unverified. Summarize changed files, artifact/source identity, checks and unsupported settings.`;
+Run build/type checks; verify selection, native activation, playback, reduced-motion/unavailable fallbacks and teardown/remount. Check real output in a WebGPU browser; report rendering unverified if unavailable. Summarize edits, artifact identity and checks.`;
 }

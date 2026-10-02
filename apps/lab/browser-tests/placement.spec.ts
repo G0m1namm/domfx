@@ -27,6 +27,7 @@ for (const css of [
       const live = {
         lifecycle: fixture.effect.lifecycle,
         reason: fixture.effect.reason,
+        detail: fixture.effect.reasonDetail,
         canvases: host.querySelectorAll('canvas').length,
       };
       // Initial attachment must also reject the same combination and release its claim.
@@ -35,6 +36,7 @@ for (const css of [
       const initialState = {
         lifecycle: initial.lifecycle,
         reason: initial.reason,
+        detail: initial.reasonDetail,
         canvases: host.querySelectorAll('canvas').length,
       };
       const connected = target.isConnected;
@@ -42,13 +44,39 @@ for (const css of [
       fixture.dispose();
       return { live, initial: initialState, connected };
     }, css);
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       live: { lifecycle: 'unavailable', reason: 'unsupported-placement', canvases: 0 },
       initial: { lifecycle: 'unavailable', reason: 'unsupported-placement', canvases: 0 },
       connected: true,
     });
+    for (const state of [result.live, result.initial]) {
+      expect(state.detail).toContain('#placement-scroll');
+      expect(state.detail).toContain(
+        css.startsWith('border-radius')
+          ? 'border-top-left-radius: 12px'
+          : css.startsWith('overflow')
+            ? 'overflow-x: clip'
+            : `${css.split(':')[0]}:`,
+      );
+      expect(state.detail).toMatch(/Use |Remove /);
+    }
   });
 }
+
+test('a host becoming static reports the host and a positioning correction', async ({ page }) => {
+  await page.goto('/manual.html');
+  await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
+  await page.locator('#manual-host').evaluate((host) => {
+    host.style.position = 'static';
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.manual.effect.reason))
+    .toBe('unsupported-placement');
+  const detail = await page.evaluate(() => window.manual.effect.reasonDetail);
+  expect(detail).toContain('#manual-host: position: static');
+  expect(detail).toContain('position: relative');
+  await expect(page.locator('#manual-host > canvas')).toHaveCount(0);
+});
 
 for (const dpr of [1, 2]) {
   test.describe(`fractional placement at DPR ${dpr}`, () => {

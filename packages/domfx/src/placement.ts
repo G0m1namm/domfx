@@ -1,6 +1,6 @@
 import type { CaptureFrame } from '@domfx/core';
 
-import { EffectError } from './effect-error.js';
+import { cssEffectError } from './effect-error.js';
 import { calculateEffectPlacement, type PlacementGeometry } from './placement-geometry.js';
 
 /** Only the selected root's outer transform is excluded from captured paint. */
@@ -40,20 +40,28 @@ export function scaleToViewport(element: Element): { x: number; y: number } {
     );
     const scale = style.scale === 'none' ? [1] : style.scale.split(/\s+/).map(Number);
 
-    if (
-      !matrix.is2D ||
-      matrix.b !== 0 ||
-      matrix.c !== 0 ||
-      matrix.a <= 0 ||
-      matrix.d <= 0 ||
-      style.perspective !== 'none' ||
-      (style.rotate !== 'none' && style.rotate !== '0deg') ||
-      scale.length > 2 ||
-      scale.some((value) => !Number.isFinite(value) || value <= 0) ||
-      (style.translate !== 'none' && style.translate.split(/\s+/).length > 2) ||
-      (style.zoom !== '1' && style.zoom !== 'normal')
-    ) {
-      throw new EffectError('unsupported-placement');
+    let property: string | undefined;
+    if (!matrix.is2D || matrix.b !== 0 || matrix.c !== 0 || matrix.a <= 0 || matrix.d <= 0) {
+      property = 'transform';
+    } else if (style.perspective !== 'none') {
+      property = 'perspective';
+    } else if (style.rotate !== 'none' && style.rotate !== '0deg') {
+      property = 'rotate';
+    } else if (scale.length > 2 || scale.some((value) => !Number.isFinite(value) || value <= 0)) {
+      property = 'scale';
+    } else if (style.translate !== 'none' && style.translate.split(/\s+/).length > 2) {
+      property = 'translate';
+    } else if (style.zoom !== '1' && style.zoom !== 'normal') {
+      property = 'zoom';
+    }
+    if (property) {
+      throw cssEffectError(
+        'unsupported-placement',
+        node,
+        property,
+        style.getPropertyValue(property),
+        'Use translation and positive axis-aligned 2D scale; remove rotation, skew, perspective and CSS zoom.',
+      );
     }
 
     x *= matrix.a * scale[0];
@@ -84,7 +92,13 @@ function measureClip(target: Element, host: HTMLElement) {
   for (let node: Element | null = target; node && node !== host; node = node.parentElement) {
     const style = view.getComputedStyle(node);
     if (style.position === 'fixed') {
-      throw new EffectError('unsupported-placement');
+      throw cssEffectError(
+        'unsupported-placement',
+        node,
+        'position',
+        style.position,
+        'Use a positioned, non-fixed target or ancestor.',
+      );
     }
     // The layer bypasses this group. Captured alpha cannot reproduce group
     // opacity, filters or blending of the original target together with its fire.
@@ -94,7 +108,21 @@ function measureClip(target: Element, host: HTMLElement) {
       style.backdropFilter !== 'none' ||
       style.mixBlendMode !== 'normal'
     ) {
-      throw new EffectError('unsupported-composition');
+      const property =
+        style.opacity !== '1'
+          ? 'opacity'
+          : style.filter !== 'none'
+            ? 'filter'
+            : style.backdropFilter !== 'none'
+              ? 'backdrop-filter'
+              : 'mix-blend-mode';
+      throw cssEffectError(
+        'unsupported-composition',
+        node,
+        property,
+        style.getPropertyValue(property),
+        'Remove this group effect from the target/intermediate ancestor or apply it to the shared effect host.',
+      );
     }
     // The selected target's own clipping is captured paint, not an ancestor clip.
     if (node === target) {
@@ -107,26 +135,52 @@ function measureClip(target: Element, host: HTMLElement) {
       /\b(paint|strict|content)\b/.test(style.contain) ||
       style.contentVisibility !== 'visible'
     ) {
-      throw new EffectError('unsupported-placement');
+      const property =
+        style.clipPath !== 'none'
+          ? 'clip-path'
+          : style.maskImage !== 'none'
+            ? 'mask-image'
+            : style.clip !== 'auto'
+              ? 'clip'
+              : /\b(paint|strict|content)\b/.test(style.contain)
+                ? 'contain'
+                : 'content-visibility';
+      throw cssEffectError(
+        'unsupported-placement',
+        node,
+        property,
+        style.getPropertyValue(property),
+        'Remove this ancestor clip or move it to the shared effect host so native clipping includes the effect.',
+      );
     }
     const clipX = style.overflowX !== 'visible';
     const clipY = style.overflowY !== 'visible';
     if (!clipX && !clipY) {
       continue;
     }
-    if (
-      !(node instanceof view.HTMLElement) ||
-      style.position === 'static' ||
-      style.overflowX === 'clip' ||
-      style.overflowY === 'clip' ||
-      [
-        style.borderTopLeftRadius,
-        style.borderTopRightRadius,
-        style.borderBottomLeftRadius,
-        style.borderBottomRightRadius,
-      ].some((radius) => Number.parseFloat(radius) !== 0)
-    ) {
-      throw new EffectError('unsupported-placement');
+    const roundedCorner = [
+      'border-top-left-radius',
+      'border-top-right-radius',
+      'border-bottom-left-radius',
+      'border-bottom-right-radius',
+    ].find((property) => Number.parseFloat(style.getPropertyValue(property)) !== 0);
+    const property = !(node instanceof view.HTMLElement)
+      ? 'overflow'
+      : style.position === 'static'
+        ? 'position'
+        : style.overflowX === 'clip'
+          ? 'overflow-x'
+          : style.overflowY === 'clip'
+            ? 'overflow-y'
+            : roundedCorner;
+    if (!(node instanceof view.HTMLElement) || property) {
+      throw cssEffectError(
+        'unsupported-placement',
+        node,
+        property ?? 'overflow',
+        style.getPropertyValue(property ?? 'overflow'),
+        'Use a positioned HTML ancestor with rectangular overflow, or move clipping to the shared effect host.',
+      );
     }
     const scale = scaleToViewport(node);
     const rect = node.getBoundingClientRect();

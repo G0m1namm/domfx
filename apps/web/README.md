@@ -2,7 +2,7 @@
 
 A separately built, static Astro site. It consumes the built `@domfx/browser`
 export and never imports the lab or library sources. Astro renders the content,
-links, code samples and original SVG artwork at build time; a small browser script
+documentation pages, links, code samples and original SVG artwork at build time; a small browser script
 loads the effect package only when motion and WebGPU permit it. No UI framework,
 server adapter, remote font requests or analytics are required. Cabinet Grotesk,
 General Sans and JetBrains Mono are self-hosted with their licenses in `public/fonts`.
@@ -24,6 +24,28 @@ The browser suite saves screenshots, its JSON report, and failure traces in
 checks; fallback tests alone are not rendering evidence. It uses separate ports
 4322 and 4323, with foreground Astro servers owned by Playwright.
 
+`browser-tests/documentation.spec.ts` reads the exact rendered standalone/GSAP
+disclosures, bundles them with public built package exports using Vite, and runs
+them on the website origin in both projects. Only caller-provided target/host DOM
+and test exports surround the unchanged code text. The suite checks real GPU pixel
+changes, ambient time, GSAP forward/backward seeking, native button interaction,
+unavailable/reduced-motion behavior, and pagehide cleanup before and after readiness.
+The GSAP entrance fades the host so native content and Fire share opacity;
+fading the target independently violates the current composition contract.
+The Vite and GSAP adapter development dependencies belong to this verification.
+
+To run just this acceptance check against the production site:
+
+```sh
+pnpm build:web
+pnpm --filter @domfx/web exec playwright test browser-tests/documentation.spec.ts --project=production
+```
+
+Link checks crawl the homepage and documentation pages, resolve native routes
+and fragments, and assert the repository destinations for source evidence, lab and license. External availability
+requires a separate live GitHub check; the deterministic suite makes no network
+availability claim. Private repository destinations require authenticated access.
+
 ## Draft contract
 
 This is the local implementation draft for [#38](https://github.com/G0m1namm/domfx/issues/38).
@@ -31,13 +53,32 @@ The approved shared showcase plan refines that draft; [DESIGN.md](../../DESIGN.m
 defines its graphite/silver shell and attached toolbar panels. Publication and
 performance claims remain separate gates; this change does not authorize deployment.
 
-The header has native Examples/Quickstart and View source links. The hero offers
+The header has native Examples/Docs and View source links. The hero offers
 Try the live elements and Read the quickstart, with quiet unpublished status and
 native text-selection instructions. A cropped ring arrangement leads into a pinned PNG → SVG → live text story, then the approved GSAP integration panels and setup handoff. The title description highlights
 `@domfx/gsap`; a timeline schematic and binding sample sit beside creation settings,
 followed by timeline controls. “Bring your own edge.” provides the primary quickstart
 link and native disclosures for complete GSAP and standalone examples. Lab/support
-are secondary links. Full-length static gradient borders retain the material identity. `/examples` redirects to `/#examples`.
+are secondary links. Quickstart and support navigation open the native documentation
+pages, which remain readable without JavaScript or GitHub authentication. Full-length static gradient borders retain the material identity. `/examples` redirects to `/#examples`.
+
+## User documentation
+
+`/docs` redirects to `/docs/introduction`. Seven static pages cover introduction,
+local installation, standalone and GSAP usage, API essentials, the versioned browser
+support record and troubleshooting. Markdown and Astro share one reading layout,
+with grouped sticky navigation on desktop, a native collapsible menu on mobile,
+current-page semantics, breadcrumbs and previous/next links. The approved reference
+structure uses the existing design tokens and self-hosted fonts. No effect package
+or homepage animation script loads on these reading pages.
+
+The guides derive their contracts from `QUICKSTART.md` and
+`engineering/browser-support.md`; changes to those contracts must update the site
+summaries too. `src/content/examples.ts` supplies the same complete standalone/GSAP
+source to the homepage and guide pages. The disclosure execution suite runs both
+rendered locations against public packages. Keep unpublished status, artifact
+compatibility and bounded support evidence explicit; do not replace local artifacts
+with an invented registry command.
 
 ## Shared showcase and effect ownership
 
@@ -82,10 +123,10 @@ A target failure leaves its original content usable and successful previews runn
 Prompt snapshots settings/time on opening and explicit edits, never on autoplay frames.
 It accepts a project element description/selector, copies exactly the visible draft and
 handles denied clipboard writes with manual-copy instructions. None requests cleanup
-without installation. Fire explains the unpublished tarball workflow, core override,
-browser lifecycle, ambient clock, motion and verification. Public documentation is pinned
-to c2b12318f410375ddf995eeda944670d823319f2, which lacks flameHeight: agents must obtain
-compatible local artifacts/source or report the blocker, never invent an install/API.
+without installation. Fire links to the site's installation/standalone guides, identifies
+its unpublished status and requires matching artifacts/source with flameHeight support.
+It preserves selected settings, lifecycle, clock, fallback and verification instructions.
+After registry proof, update setup with exact verified release versions and public docs.
 No GPU package loads until rendering is permitted; Prompt works without it.
 
 `browser-tests/` covers grouped rendering, settings and time, paused scroll intensity,

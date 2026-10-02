@@ -8,6 +8,8 @@ demo/
 /PROJECT_CONTEXT.md
 /lefthook-local.yml
 docs/
+!apps/web/src/pages/docs/
+!apps/web/src/pages/docs/**
 .env
 .env.local
 .pnpm-store/

@@ -163,7 +163,7 @@ preserve meaningful labels. No page-wide horizontal overflow at 360px.
 
 ### Home
 
-1. **Header:** wordmark, native Examples and Quickstart links, and View source with a GitHub icon. Keep all destinations available on mobile.
+1. **Header:** wordmark, native Examples and Docs links, and View source with a GitHub icon. Keep all destinations available on mobile.
 2. **Hero:** “Effects that follow your HTML.” Supporting copy: “Add GPU effects to real elements. Your text stays selectable. Your links keep working.” Fold “Keep the HTML” into a native selection instruction. Useful actions are Try the live elements and Read the quickstart; experimental/unpublished status stays quiet.
 3. **Hero proportions:** centered heading at 20% of viewport height (14% with smaller type at heights up to 800px); the central ring starts at 72%. Preserve the approved 4:3 asset canvas. The center is 500–650px wide; adjacent pieces are 82% and 64% of that size, offset horizontally by 360px/660px and vertically by 85px/155px. Desktop reveals five pieces; narrower viewports crop the outer pieces.
 4. **Scroll story:** one GSAP-owned scene pins for 5.4 viewport heights, preserving the opening’s original 0.72-viewport travel. The center PNG moves to the viewport center and shrinks to at most 480px, leaving 32px horizontal clearance on phones and reserving vertical room for copy and the dock on shorter screens. A genuine SVG with the same traced silhouette replaces it at exactly the same bounds. A live “Keep the HTML.” heading follows, scaled from 40px on phones to 112px on desktop on a single line. An 18–24px two-line explanation sits below it, followed by one quieter 14px instruction to select the text or adjust the controls. No redundant onward-scroll link is needed. Image/SVG headings reveal by line at top-left; two short paragraphs enter slightly later at bottom-right. Copy settles for a reading interval, then exits upward independently of the centered artwork. Entrances use power2.out, exits power1.in, and shape crossfades sine.inOut, with 0.25s scrub catch-up. The final live heading stays visible as the scene unpins and joins document scroll. Direct stage links land instantly in the reading interval and support keyboard navigation and reverse scrolling.
@@ -171,6 +171,18 @@ preserve meaningful labels. No page-wide horizontal overflow at 360px.
 6. **Effect ownership:** five hero images, one SVG, one native text heading and the quickstart link have independent lifetimes under the existing shared Fire controller. Artwork uses bounded 256px local capture surfaces and positive proportional scaling to stay within capture budgets at DPR 1/2. The SVG uses solid silver vector paint because URL-based SVG gradients are outside the current capture contract.
 7. **Scroll-card intensity:** `maximum × clamp(1 − abs(cardCenter − H/2) / ((H + cardHeight)/2), 0, 1)`. It peaks at center and decreases symmetrically; scroll updates while paused without recapture.
 8. **Fallback:** without JavaScript, with reduced motion, or below 800px viewport height (680px on desktops at least 1100px wide), the story is an ordinary document with all three stages in reading order. No pinning or hidden content. Toolbar instructions appear only after initialization; original content and guide links remain complete. No invented registry command or performance claims.
+
+### Documentation
+
+The user approved in-site documentation on 2026-09-30, using ultrastorage.dev and
+Fancy Components' introduction as layout references. Keep the graphite palette,
+Cabinet Grotesk headings, General Sans reading text and JetBrains Mono code. Group
+a sticky desktop sidebar into Getting started, Guides and Reference; pair it with
+a clear reading column, quiet breadcrumbs, ruled section headings and readable
+code. On mobile, use native collapsible navigation and internally scrollable code.
+Documentation stays complete without JavaScript or GPU output. Introduction,
+installation, standalone, GSAP, API, support and troubleshooting are local routes;
+repository links remain secondary source evidence.
 
 ### Examples and toolbar
 
@@ -206,9 +218,9 @@ System reduced motion remains authoritative and is described accessibly, with a 
 
 Prompt has an editable element target, settings summary, a 144px internally scrollable prompt
 at 14px, Copy prompt and quickstart. Copy confirms only after success and offers manual selection
-on failure. None requests removal without installation. Fire uses the documented local tarball
-workflow and identifies the pinned public source's missing flameHeight support; compatible
-unpublished artifacts/source are required. Prompt never loads the GPU package.
+on failure. None requests removal without installation. Fire concisely links to installation and standalone docs and requires matching unpublished
+artifacts/source supporting all selected settings. Verified release versions will replace
+this setup only after registry consumer proof. Prompt never loads the GPU package.
 
 Reserve clearance for the approximately 54px collapsed toolbar and safe area. Expanded panels
 overlay without moving page content and scroll internally on short viewports. Panels enter with
@@ -413,5 +425,6 @@ Implementation contracts live in the [browser package](packages/domfx/README.md)
 | 2026-09-29 | Shared curated showcase and attached toolbar panels approved | Four authored targets share settings; native navigation, scroll-driven card intensity, and motion preferences remain visitor-controlled.                                                                |
 | 2026-09-29 | Annular scroll story approved                                | Cropped five-ring hero, proportional PNG → SVG → live text progression, unpinned information cards and a matching footer reprise.                                                                       |
 | 2026-09-30 | Post-example integration layout A approved                   | GSAP sequencing, initial settings, timeline controls and “Bring your own edge.” replace repeated example benefits; full-length gradient borders and highlighted `@domfx/gsap` identify the integration. |
+| 2026-09-30 | In-site user documentation approved                          | Grouped navigation and reading layout use ultrastorage and Fancy Components as references while retaining domfx typography, palette and verified contracts.                                             |
 
 The 2026-09-29 text-motion refinement follows user-provided recordings of Hungry Tiger, Telkom-OT and Iertqa: anchored artwork, independently moving copy, staggered reveals and a visible handoff to ordinary document scroll. Reference easing names are inferred, not recovered from their implementations.

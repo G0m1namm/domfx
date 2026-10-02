@@ -107,14 +107,13 @@ Before proposing a change:
 3. Describe the reason, observable result, and remaining limitations. Include
    browser/GPU details for rendering bugs. Never infer GPU success from CI alone.
 
-CI runs repository checks, website tests, and the production browser smoke suite in
-independent jobs. Pull requests changing libraries, the lab, dependencies, or verification
-infrastructure also run the complete browser suite across four separate runners, with
-one GPU worker per runner. Weekly runs and `Check` dispatches with `full=true` retain
-complete development/production coverage; release approval still requires the full harness.
-Browser reports and failure traces are retained for three days. SwiftShader exercises
-real shaders but does not establish hardware performance or broad browser support.
-Local hooks provide feedback; required CI cannot rely on contributors running them.
+CI runs formatting, lint, dependency boundaries, type checks, production builds and
+release metadata validation in the `workspace` job. Automated test suites, Chromium
+installation and scheduled browser runs are temporarily omitted to conserve Actions
+minutes while [#88](https://github.com/G0m1namm/domfx/issues/88) evaluates browser tooling
+and peak memory. Unit, packed-consumer, website and browser/GPU tests remain available
+locally. A successful CI check does not establish tested runtime behavior; releases still
+require the full local harness and applicable manual verification.
 
 ## Maintainer notes
 

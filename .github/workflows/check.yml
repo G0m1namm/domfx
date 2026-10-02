@@ -4,15 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
-    inputs:
-      full:
-        description: Run the complete browser suite
-        type: boolean
-        default: true
-  schedule:
-    - cron: '0 8 * * 0'
 
 concurrency:
   group: check-${{ github.event.pull_request.number || github.ref }}
@@ -23,27 +16,9 @@ permissions:
 
 env:
   LEFTHOOK: '0'
-  DOMFX_GPU_BACKEND: swiftshader
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      full: ${{ steps.scope.outputs.full }}
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - id: scope
-        env:
-          EVENT: ${{ github.event_name }}
-          FULL: ${{ inputs.full }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node scripts/browser-ci-scope.mjs >> "$GITHUB_OUTPUT"
-
-  checks:
+  workspace:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -51,7 +26,12 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: ./.github/actions/setup
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Check pull request title
         if: github.event_name == 'pull_request'
         env:
@@ -66,98 +46,13 @@ jobs:
       - name: Check latest pushed commit
         if: github.event_name == 'push'
         run: git log -1 --format=%B | pnpm exec commitlint
-      - run: pnpm check
+      # Test suites stay local pending browser-tooling and memory work in #88.
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm lint:boundaries
+      - run: pnpm -r typecheck
+      - run: pnpm build:demo:built
+      - run: pnpm --filter @domfx/web build
       - run: pnpm release:status --since origin/main
       - run: pnpm release:artifacts
-
-  website:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-        with:
-          browser: 'true'
-      - run: pnpm test:web
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: always()
-        with:
-          name: website-evidence
-          path: .scratch/web/
-          include-hidden-files: true
-          retention-days: 3
-
-  smoke:
-    needs: changes
-    if: needs.changes.outputs.full != 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-        with:
-          browser: 'true'
-      - run: pnpm test:browser:smoke
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: always()
-        with:
-          name: smoke-evidence
-          path: .scratch/browser/
-          include-hidden-files: true
-          retention-days: 3
-
-  browser:
-    needs: changes
-    if: needs.changes.outputs.full == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-        with:
-          browser: 'true'
-      - run: pnpm build:demo
-      - name: Verify development and production browser contracts
-        env:
-          SHARD: ${{ matrix.shard }}
-        run: pnpm --filter @domfx/lab exec playwright test --shard="$SHARD/4"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: always()
-        with:
-          name: browser-evidence-${{ matrix.shard }}
-          path: .scratch/browser/
-          include-hidden-files: true
-          retention-days: 3
-
-  workspace:
-    needs: [changes, checks, website, smoke, browser]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require all applicable checks
-        env:
-          CHANGES: ${{ needs.changes.result }}
-          CHECKS: ${{ needs.checks.result }}
-          WEBSITE: ${{ needs.website.result }}
-          FULL: ${{ needs.changes.outputs.full }}
-          BROWSER: ${{ needs.browser.result }}
-          SMOKE: ${{ needs.smoke.result }}
-        run: |
-          test "$CHANGES" = success
-          test "$CHECKS" = success
-          test "$WEBSITE" = success
-          if [ "$FULL" = true ]; then
-            test "$BROWSER" = success
-          else
-            test "$SMOKE" = success
-          fi

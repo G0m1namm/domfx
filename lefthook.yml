@@ -16,7 +16,7 @@ pre-push:
     check:
       run: |
         if [ "${DOMFX_FULL_VERIFY:-0}" = 1 ]; then
-          pnpm agent:verify
+          pnpm agent:verify && pnpm test:gpu:full
         else
-          pnpm check && pnpm build:demo:built
+          pnpm check && pnpm build:web:built
         fi

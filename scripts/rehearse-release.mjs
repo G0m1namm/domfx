@@ -197,7 +197,7 @@ Object.assign(window, { recipe: { fire${kind === 'gsap' ? ', timeline, binding, 
         recursive: true,
       });
     } else {
-      installedDependencies.gsap = version('apps/lab/node_modules/gsap');
+      installedDependencies.gsap = version('tests/gpu/node_modules/gsap');
     }
     writeJson(join(cwd, 'package.json'), {
       name: `domfx-release-${kind}`,
@@ -206,7 +206,7 @@ Object.assign(window, { recipe: { fire${kind === 'gsap' ? ', timeline, binding, 
       dependencies: installedDependencies,
       devDependencies: {
         typescript: version('node_modules/typescript'),
-        vite: version('apps/lab/node_modules/vite'),
+        vite: version('tests/gpu/node_modules/vite'),
       },
     });
     // Published workspace ranges resolve to these exact tarballs until registry publication exists.

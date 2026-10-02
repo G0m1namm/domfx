@@ -32,7 +32,7 @@ with the implementation. Describe observable behavior and migration steps, not
 commit bookkeeping. A core/browser change may require both packages in the plan.
 Commitlint validates commits; Changesets records release intent. Neither replaces the other.
 
-Tooling, lab-only and contributor-doc changes need no package bump. Keep changesets
+Tooling, fixture-only and contributor-doc changes need no package bump. Keep changesets
 out of private notes: they are public release documentation.
 If `release:status` reports changed packages without a changeset, record a deliberate
 no-release change with `pnpm changeset --empty`.
@@ -58,7 +58,7 @@ The [consumer quickstart](QUICKSTART.md) documents the local installation path a
 the standalone/GSAP setup modules in `examples/quickstart/`. The rehearsal copies
 those exact modules into its fresh consumers and exercises them through public APIs.
 
-Install Chromium once with `pnpm --filter @domfx/lab exec playwright install chromium`,
+Install Chromium once with `pnpm --filter @domfx/gpu-tests exec playwright install chromium`,
 then run `pnpm release:rehearse`. It builds and packs the current core, browser and
 GSAP libraries without changing versions or publishing. A desktop session and a
 WebGPU-capable Chromium are required. `DOMFX_BROWSER_EXECUTABLE` optionally selects
@@ -79,7 +79,7 @@ silhouette refresh, controlled unsupported-composition failure and explicit retr
 retained controls/binding, repeated disposal, original-target interaction and reattachment.
 Binding cleanup must preserve a caller-owned timeline sibling. Cleanup checks observe
 removed/zero-sized canvases and released target ownership; they do not measure total
-VRAM or replace the lab's resource-accounting and lifecycle stress checks.
+VRAM or replace the fixtures' resource-accounting and lifecycle stress checks.
 
 The printed temporary directory retains `report.json`, tarballs, command logs, installed
 consumers, production builds and per-stage PNGs. The report records artifact SHA-256s,
@@ -124,7 +124,7 @@ prerelease mode until deliberately graduating; never publish this alpha as `late
 
 In that release PR, remove `private` only from the three approved libraries,
 retain `publishConfig.access: public`, and change Changesets access to `public`.
-Root, lab, website and any other package stay private. This preparation does not
+Root, fixtures, website and any other package stay private. This preparation does not
 publish; publication remains a separate approval of tested bytes.
 
 ## Alpha readiness and the deferred feedback round
@@ -216,3 +216,9 @@ unpublished and links to matching local artifacts, never an invented npm command
 
 References: [Changesets configuration](https://changesets.dev/guide/config),
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
+
+GPU checks remain local for routine development. Before a release run
+`pnpm test:gpu:full`, `pnpm test:web`, `pnpm test:visual` and `pnpm release:rehearse`.
+The existing publication workflow is still disabled and still contains GPU-dependent
+preparation. It must be adapted to a verified artifact handoff before enabling it
+on hosted runners; routine website smoke is not publication GPU evidence.

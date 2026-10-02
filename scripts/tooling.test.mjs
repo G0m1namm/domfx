@@ -20,7 +20,7 @@ function fixture(t) {
   const manifests = {
     'packages/core': { name: '@domfx/core' },
     'packages/domfx': { name: '@domfx/browser', dependencies: { '@domfx/core': 'workspace:*' } },
-    'apps/lab': { name: '@domfx/lab', dependencies: { '@domfx/browser': 'workspace:*' } },
+    'tests/gpu': { name: '@domfx/gpu-tests', dependencies: { '@domfx/browser': 'workspace:*' } },
     'apps/web': { name: '@domfx/web', dependencies: { '@domfx/browser': 'workspace:*' } },
   };
   const manifest = (path, change = {}) =>
@@ -52,7 +52,7 @@ function fixture(t) {
   const cruise = () => {
     const result = spawnSync(
       binary('depcruise'),
-      ['--config', 'dependency-cruiser.config.mjs', 'packages', 'apps'],
+      ['--config', 'dependency-cruiser.config.mjs', 'packages', 'apps', 'tests'],
       {
         cwd: directory,
         encoding: 'utf8',
@@ -85,7 +85,7 @@ test('Conventional Commits accept valid scopes and reject invalid messages/scope
 
 test('declared package exports are allowed', (t) => {
   const f = fixture(t);
-  f.put('apps/lab/src/index.ts', "export { value } from '@domfx/browser';\n");
+  f.put('tests/gpu/src/index.ts', "export { value } from '@domfx/browser';\n");
   f.put('packages/domfx/src/index.ts', "export { value } from '@domfx/core';\n");
   assert.deepEqual(checkWorkspaces(f.directory), []);
   const result = f.cruise();
@@ -94,21 +94,26 @@ test('declared package exports are allowed', (t) => {
 
 for (const [name, path, source, expected] of [
   [
-    'library-to-app',
+    'library-to-fixture',
     'packages/domfx/src/index.ts',
-    "import '../../../apps/lab/src/index.js';",
+    "import '../../../tests/gpu/src/index.js';",
     'boundary:packages/domfx',
   ],
-  ['app-to-app', 'apps/web/src/index.ts', "import '../../lab/src/index.js';", 'boundary:apps/web'],
+  [
+    'app-to-fixture',
+    'apps/web/src/index.ts',
+    "import '../../../tests/gpu/src/index.js';",
+    'boundary:apps/web',
+  ],
   [
     'cross-workspace source import',
-    'apps/lab/src/index.ts',
+    'tests/gpu/src/index.ts',
     "import '../../../packages/domfx/src/index.js';",
     'use-workspace-exports',
   ],
   [
     'cross-workspace dist import',
-    'apps/lab/src/index.ts',
+    'tests/gpu/src/index.ts',
     "import '../../../packages/domfx/dist/index.js';",
     'use-workspace-exports',
   ],
@@ -121,13 +126,13 @@ for (const [name, path, source, expected] of [
   [
     'type-only boundary bypass',
     'apps/web/src/index.ts',
-    "import type { value } from '../../lab/src/index.js';",
+    "import type { value } from '../../../tests/gpu/src/index.js';",
     'boundary:apps/web',
   ],
   [
     'dynamic boundary bypass',
     'packages/domfx/src/index.ts',
-    "void import('../../../apps/lab/src/index.js');",
+    "void import('../../../tests/gpu/src/index.js');",
     'boundary:packages/domfx',
   ],
 ]) {
@@ -142,7 +147,7 @@ for (const [name, path, source, expected] of [
 
 test('rejects forbidden manifest edges, non-workspace versions and undeclared imports', (t) => {
   const f = fixture(t);
-  f.manifest('packages/core', { dependencies: { '@domfx/lab': 'workspace:*' } });
+  f.manifest('packages/core', { dependencies: { '@domfx/gpu-tests': 'workspace:*' } });
   assert.ok(checkWorkspaces(f.directory).some((error) => error.includes('boundary map')));
   f.manifest('packages/core');
   f.manifest('packages/domfx', { dependencies: { '@domfx/core': '*' } });
@@ -158,14 +163,14 @@ for (const declared of [false, true]) {
   test(`rejects ${declared ? 'dev-only' : 'undeclared'} external runtime imports`, (t) => {
     const f = fixture(t);
     if (declared) {
-      f.manifest('apps/lab', { devDependencies: { 'tool-only': '1.0.0' } });
+      f.manifest('tests/gpu', { devDependencies: { 'tool-only': '1.0.0' } });
     }
     f.put(
-      'apps/lab/node_modules/tool-only/package.json',
+      'tests/gpu/node_modules/tool-only/package.json',
       JSON.stringify({ name: 'tool-only', main: 'index.js' }),
     );
-    f.put('apps/lab/node_modules/tool-only/index.js', 'module.exports = 1;');
-    f.put('apps/lab/src/index.ts', "import 'tool-only';\n");
+    f.put('tests/gpu/node_modules/tool-only/index.js', 'module.exports = 1;');
+    f.put('tests/gpu/src/index.ts', "import 'tool-only';\n");
     const result = f.cruise();
     assert.notEqual(result.status, 0, result.output);
     assert.ok(

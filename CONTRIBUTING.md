@@ -37,8 +37,8 @@ setup and workspace map in [README.md](README.md).
 
 `pnpm install` installs Lefthook hooks. `pre-commit` checks formatting and lint
 across the working tree (including unstaged edits); `commit-msg` checks the message;
-`pre-push` runs `pnpm check` and builds the production lab without rebuilding the libraries.
-Use `DOMFX_FULL_VERIFY=1 git push` to opt into the full browser/GPU harness in the hook. Reinstall with
+`pre-push` runs `pnpm check` and builds the production website without rebuilding the libraries.
+Use `DOMFX_FULL_VERIFY=1 git push` to opt into website smoke and the full local GPU suite in the hook. Reinstall with
 `pnpm hooks:install` if needed. Hooks validate but never format, stage or commit
 files automatically. CI repeats checks and validates PR commit ranges; push CI
 checks the latest commit without retroactively enforcing all existing history.
@@ -53,7 +53,7 @@ Follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report vulnerabilities through
 [SECURITY.md](SECURITY.md), never public issues.
 
 Consumer-facing library changes include a changeset (`pnpm changeset`); tooling,
-lab-only and contributor-doc changes need no package bump. See
+fixture-only and contributor-doc changes need no package bump. See
 [RELEASING.md](RELEASING.md). Publishing remains disabled.
 
 ## Dependency boundaries
@@ -63,7 +63,7 @@ lab-only and contributor-doc changes need no package bump. See
 | `packages/core`  | None; no DOM, framework, GPU or Node imports |
 | `packages/domfx` | Core                                         |
 | `packages/gsap`  | Core and browser package                     |
-| `apps/lab`       | Library packages, never other apps           |
+| `tests/gpu`      | Library packages, never other apps           |
 | `apps/web`       | Library packages, never other apps           |
 
 `workspace-boundaries.mjs` defines the direction. `pnpm lint:boundaries` checks
@@ -72,11 +72,10 @@ use `workspace:*` and exported package names, not relative paths into source or
 dist. Dependencies belong to their consumers; runtime code cannot rely on
 dev-only packages. Boundary regressions are tested in `pnpm test:tooling`.
 
-The lab is a diagnostic testbed, not the marketing website. The separate
-`apps/web` owns the Astro landing draft, curated examples and user documentation
-derived from the verified repository quickstart and support record.
-Neither app imports the other; reusable example logic belongs in a package only
-when actual reuse warrants it. See [website development](apps/web/README.md) for its commands and draft approval status.
+The website is the development/demo surface. Private `tests/gpu` pages exist only
+for regression checks and optional measurements. Neither consumer imports the other.
+Use the website's existing examples for public demonstrations; add a small private
+fixture when a failure/lifecycle case cannot be exercised there.
 
 ## Verification
 
@@ -85,8 +84,8 @@ one verification command (`pnpm agent:verify`) that runs the checks below and re
 their outcomes locally. It supports coding agents and human contributors alike.
 
 Keep changes small and include a reproducible check. Packages must not import
-apps; diagnostic distance oracles belong only to the lab. GSAP belongs in the optional
-adapter and its lab consumers. For library edits, rebuild with `pnpm build`; the lab imports compiled packages,
+apps; diagnostic distance oracles belong only to test fixtures. GSAP belongs in the optional
+adapter and its example and fixture consumers. For library edits, rebuild with `pnpm build`; the website and fixtures import compiled packages,
 not source aliases. Restart `pnpm demo` after rebuilding to refresh dependencies.
 
 `pnpm check` includes the display-free packed consumer checks. The compile-only
@@ -98,22 +97,20 @@ establish type acceptance/rejection, not browser/GPU behavior or browser-package
 
 Before proposing a change:
 
-1. Run `pnpm agent:verify`: it runs `pnpm check`, `pnpm build:demo`, then the
-   development and production browser/GPU suite. Install Chromium as described in
-   [browser verification](engineering/browser-verification.md) first.
-2. For capture/GPU changes, add a scenario for the changed behavior. Exercise any
-   relevant case outside the automated coverage in both `pnpm demo` and
-   `pnpm preview:demo`, and record the actual environment and outcome.
-3. Describe the reason, observable result, and remaining limitations. Include
-   browser/GPU details for rendering bugs. Never infer GPU success from CI alone.
+1. Run `pnpm agent:verify`: repository checks, website build, and a small website
+   smoke suite with WebGPU unavailable. This verifies page usability, not rendering.
+2. For capture/rendering/lifecycle changes, run `pnpm test:gpu` and relevant focused
+   fixture tests. Inspect affected website examples in development and production.
+   Use `pnpm test:visual` for local screenshot comparisons; review baseline changes.
+3. Before a release, run `pnpm test:gpu:full`, `pnpm test:web`, and
+   `pnpm release:rehearse` on a WebGPU-capable machine. Record environment and results.
+4. Describe observable changes and remaining limitations. Never infer GPU success
+   from website smoke or static checks.
 
-CI runs formatting, lint, dependency boundaries, type checks, production builds and
-release metadata validation in the `workspace` job. Automated test suites, Chromium
-installation and scheduled browser runs are temporarily omitted to conserve Actions
-minutes while [#88](https://github.com/G0m1namm/domfx/issues/88) evaluates browser tooling
-and peak memory. Unit, packed-consumer, website and browser/GPU tests remain available
-locally. A successful CI check does not establish tested runtime behavior; releases still
-require the full local harness and applicable manual verification.
+CI runs `pnpm check`, the production website build, a GPU-independent website smoke
+suite and release metadata validation. Expensive GPU, soak and performance runs are
+local opt-in checks. The publication workflow remains disabled; its existing GPU
+preparation must be revised before enabling publication on hosted runners.
 
 ## Maintainer notes
 

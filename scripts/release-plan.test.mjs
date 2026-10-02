@@ -38,7 +38,7 @@ function workspace(t) {
     'packages/core/package.json',
     'packages/domfx/package.json',
     'packages/gsap/package.json',
-    'apps/lab/package.json',
+    'tests/gpu/package.json',
     'apps/web/package.json',
     '.changeset/config.json',
   ]) {
@@ -47,7 +47,7 @@ function workspace(t) {
   // Fixtures reuse installed tools; never let pnpm install into the shared node_modules link.
   write(
     'pnpm-workspace.yaml',
-    'packages:\n  - packages/*\n  - apps/*\nverifyDepsBeforeRun: false\n',
+    'packages:\n  - packages/*\n  - apps/*\n  - tests/*\nverifyDepsBeforeRun: false\n',
   );
   write('.gitignore', 'node_modules\n');
   symlinkSync(join(repo, 'node_modules'), join(root, 'node_modules'), 'dir');
@@ -110,7 +110,7 @@ test('Changesets checks detached PRs and rehearses private library versions with
       ['@domfx/gsap', '0.0.1'],
     ],
   );
-  for (const app of ['@domfx/lab', '@domfx/web']) {
+  for (const app of ['@domfx/gpu-tests', '@domfx/web']) {
     assert.ok(!plan.releases.some(({ name, type }) => name === app && type !== 'none'));
   }
   try {
@@ -124,7 +124,7 @@ test('Changesets checks detached PRs and rehearses private library versions with
     assert.equal(manifest.private, true);
     assert.match(readFileSync(join(root, path, 'CHANGELOG.md'), 'utf8'), /0\.0\.1/);
   }
-  assert.equal(readJson(join(root, 'apps/lab/package.json')).version, '0.0.0');
+  assert.equal(readJson(join(root, 'tests/gpu/package.json')).version, '0.0.0');
   assert.equal(readJson(join(root, 'apps/web/package.json')).version, '0.0.0');
   assert.equal(readJson(join(root, 'package.json')).version, '0.0.0');
   assert.equal(run('git', ['tag']).trim(), '');
@@ -183,7 +183,7 @@ test('manual alpha release metadata passes ordinary changeset CI without another
     [],
   );
   assert.equal(readJson(join(root, 'package.json')).private, true);
-  assert.equal(readJson(join(root, 'apps/lab/package.json')).private, true);
+  assert.equal(readJson(join(root, 'tests/gpu/package.json')).private, true);
   assert.equal(run('git', ['tag']).trim(), '');
 });
 
@@ -217,7 +217,7 @@ for (const path of [
   'packages/core/package.json',
   'packages/domfx/package.json',
   'packages/gsap/package.json',
-  'apps/lab/package.json',
+  'tests/gpu/package.json',
   'apps/web/package.json',
 ]) {
   test(`artifact check blocks publication enablement in ${path}`, (t) => {

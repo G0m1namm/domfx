@@ -70,10 +70,10 @@ function browserEvidence() {
 }
 
 function pass(command, environment) {
-  if (command === 'test:browser:built') {
-    mkdirSync(environment.DOMFX_BROWSER_OUTPUT_DIR, { recursive: true });
+  if (command === 'test:web:smoke:built') {
+    mkdirSync(environment.DOMFX_WEB_OUTPUT_DIR, { recursive: true });
     writeFileSync(
-      join(environment.DOMFX_BROWSER_OUTPUT_DIR, 'report.json'),
+      join(environment.DOMFX_WEB_OUTPUT_DIR, 'report.json'),
       JSON.stringify(browserEvidence()),
     );
   }
@@ -87,7 +87,9 @@ test('verification records sequential checks for the unchanged source tree', (t)
     calls.push(command);
     return pass(command, environment);
   });
-  assert.deepEqual(calls, ['check', 'build:demo:built', 'test:browser:built']);
+  assert.deepEqual(calls, ['check', 'build:web:built', 'test:web:smoke:built']);
+  assert.equal(report.verificationScope, 'website-smoke');
+  assert.equal(report.gpuVerification, 'not-run');
   assert.equal(report.status, 'passed');
   assert.equal(report.sourceBefore.digest, report.sourceAfter.digest);
   assert.equal(report.browserVerification, 'passed');
@@ -117,7 +119,7 @@ for (const [label, result] of [
   });
 }
 
-test('a failed demo build cannot produce a passing report', (t) => {
+test('a failed website build cannot produce a passing report', (t) => {
   const { root } = fixture(t);
   const { report } = runVerification(root, (command) => ({ status: command === 'check' ? 0 : 1 }));
   assert.equal(report.status, 'failed');
@@ -223,7 +225,7 @@ test('the harness can be imported from Node stdin without running the CLI', () =
   assert.equal(result.stdout.trim(), 'function');
 });
 
-for (const failure of ['', 'check', 'build:demo:built', 'test:browser:built', 'signal']) {
+for (const failure of ['', 'check', 'build:web:built', 'test:web:smoke:built', 'signal']) {
   test(`CLI verification persists real process outcomes: ${failure || 'success'}`, (t) => {
     const { root } = fixture(t);
     mkdirSync(join(root, 'scripts'));
@@ -248,9 +250,9 @@ appendFileSync('.scratch/calls.jsonl', JSON.stringify({
   checkStatus: report.checks.find((check) => check.command === command).status,
 }) + '\\n');
 if (process.env.DOMFX_TEST_FAIL_COMMAND === 'signal') process.kill(process.pid, 'SIGTERM');
-if (command === 'test:browser:built') {
-  mkdirSync(process.env.DOMFX_BROWSER_OUTPUT_DIR, { recursive: true });
-  writeFileSync(process.env.DOMFX_BROWSER_OUTPUT_DIR + '/report.json', ${JSON.stringify(JSON.stringify(browserEvidence()))});
+if (command === 'test:web:smoke:built') {
+  mkdirSync(process.env.DOMFX_WEB_OUTPUT_DIR, { recursive: true });
+  writeFileSync(process.env.DOMFX_WEB_OUTPUT_DIR + '/report.json', ${JSON.stringify(JSON.stringify(browserEvidence()))});
 }
 process.exitCode = command === process.env.DOMFX_TEST_FAIL_COMMAND ? 2 : 0;
 `,
@@ -275,9 +277,9 @@ process.exitCode = command === process.env.DOMFX_TEST_FAIL_COMMAND ? 2 : 0;
       calls.map((call) => call.command),
       ['check', 'signal'].includes(failure)
         ? ['check']
-        : failure === 'build:demo:built'
-          ? ['check', 'build:demo:built']
-          : ['check', 'build:demo:built', 'test:browser:built'],
+        : failure === 'build:web:built'
+          ? ['check', 'build:web:built']
+          : ['check', 'build:web:built', 'test:web:smoke:built'],
     );
     for (const call of calls) {
       assert.equal(call.cwd, root);
@@ -291,12 +293,12 @@ process.exitCode = command === process.env.DOMFX_TEST_FAIL_COMMAND ? 2 : 0;
     assert.equal(report.status, failure ? 'failed' : 'passed');
     assert.equal(
       report.browserVerification,
-      failure === 'test:browser:built' ? 'failed' : failure ? 'not-run' : 'passed',
+      failure === 'test:web:smoke:built' ? 'failed' : failure ? 'not-run' : 'passed',
     );
     if (failure === 'signal') {
       assert.equal(report.checks[0].signal, 'SIGTERM');
     }
-    if (['check', 'build:demo:built', 'test:browser:built'].includes(failure)) {
+    if (['check', 'build:web:built', 'test:web:smoke:built'].includes(failure)) {
       assert.equal(report.checks.find((check) => check.command === failure).exitCode, 2);
     }
   });
@@ -313,7 +315,7 @@ for (const scenario of [
   test(`a successful browser command cannot pass with ${scenario} evidence`, (t) => {
     const { root } = fixture(t);
     const { report } = runVerification(root, (command, environment) => {
-      if (command === 'test:browser:built' && scenario !== 'missing') {
+      if (command === 'test:web:smoke:built' && scenario !== 'missing') {
         pass(command, environment);
         const evidence = browserEvidence();
         if (scenario === 'skipped') {
@@ -334,7 +336,7 @@ for (const scenario of [
           evidence.stats.expected = 1;
         }
         writeFileSync(
-          join(environment.DOMFX_BROWSER_OUTPUT_DIR, 'report.json'),
+          join(environment.DOMFX_WEB_OUTPUT_DIR, 'report.json'),
           JSON.stringify(evidence),
         );
       }

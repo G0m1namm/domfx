@@ -287,6 +287,7 @@ test('every website link resolves to a native route, anchor or documented reposi
       }
     }
   }
+  expect(local.has('/docs/standalone')).toBe(true);
   const repo = 'https://github.com/G0m1namm/domfx';
   expect(external.sort()).toEqual(
     [
@@ -294,7 +295,6 @@ test('every website link resolves to a native route, anchor or documented reposi
       `${repo}/blob/main/LICENSE`,
       `${repo}/blob/main/QUICKSTART.md`,
       `${repo}/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md`,
-      `${repo}/tree/main/apps/lab`,
     ].sort(),
   );
 });

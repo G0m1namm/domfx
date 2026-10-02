@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { candidateGate, summarizeCondition } from '../apps/lab/scripts/performance-gates.mjs';
+import { candidateGate, summarizeCondition } from '../tests/gpu/scripts/performance-gates.mjs';
 
 test('cold gate requires all five samples at the unchanged 2000 ms limit', () => {
   assert.equal(candidateGate([100, 200, 300, 400, 2000], 5, 2000, 'max').status, 'pass');

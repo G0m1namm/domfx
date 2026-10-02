@@ -85,12 +85,11 @@ with metal concentrated in controls, narrow lines and background accents.
 
 **Product context:** domfx is an experimental GPU edge-effect library for frontend
 developers. `apps/web` is its Astro marketing site and examples playground;
-`apps/lab` is the separate diagnostic testbed. This document defines the approved
+`tests/gpu` contains private regression fixtures; the website is the sole demo surface. This document defines the approved
 visual target, not a claim that implementation or GPU verification is complete.
 
 **Mode per surface:** Home persuades through a working demonstration and is also the examples canvas.
-Example links navigate to authored elements on that page. Code and setup support reading. The lab
-supports inspection and diagnosis.
+Example links navigate to authored elements on that page. Code and setup support reading. Private fixtures support inspection and diagnosis.
 
 **Reference sites:** [Squark](https://squark.cloud/) is the primary composition
 reference, approved by the user after reviewing home and examples mockups.
@@ -110,7 +109,7 @@ The approved 2026-09-29 annular scroll story supersedes the earlier framed, spli
 warm Fire effect legible during inspection; silver is a material accent rather
 than the page's dominant field. Avoid broad silver hero sheets and chrome lettering.
 
-Use the front-matter tokens for the marketing shell. The lab's diagnostic legends
+Use the front-matter tokens for the marketing shell. The private fixtures' diagnostic legends
 and captured fixtures retain their existing colors unless separately verified.
 Map tokens to the existing CSS variable names during implementation; no shared
 component package is required by this document.

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { compareSteady, summarizeSteady } from '../apps/lab/scripts/steady-gates.mjs';
+import { compareSteady, summarizeSteady } from '../tests/gpu/scripts/steady-gates.mjs';
 
 function fixture(timestampQuery = true, targets = 2) {
   return [

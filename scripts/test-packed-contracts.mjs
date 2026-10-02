@@ -64,7 +64,7 @@ run(consumer, 'pnpm', [
   'add',
   '--ignore-scripts',
   gsapPackage,
-  `gsap@${readJson(join(root, 'apps/lab/node_modules/gsap/package.json')).version}`,
+  `gsap@${readJson(join(root, 'tests/gpu/node_modules/gsap/package.json')).version}`,
 ]);
 for (const module of ['NodeNext', 'ESNext']) {
   run(consumer, 'pnpm', [

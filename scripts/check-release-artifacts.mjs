@@ -65,7 +65,7 @@ export function checkReleaseArtifacts(root = '.') {
       .filter((entry) => entry.isDirectory())
       .map((entry) => `${parent}/${entry.name}`);
   const libraries = directories('packages');
-  for (const path of ['.', ...libraries, ...directories('apps')]) {
+  for (const path of ['.', ...libraries, ...directories('apps'), ...directories('tests')]) {
     assertReleaseVisibility(path, manifestAt(path));
   }
   for (const path of libraries) {

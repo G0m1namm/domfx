@@ -88,7 +88,7 @@ for (const [path, name] of [
     );
   });
 }
-for (const path of ['.', 'apps/lab', 'apps/web', 'packages/other']) {
+for (const path of ['.', 'tests/gpu', 'apps/web', 'packages/other']) {
   test(`keeps ${path} private even with public publishConfig`, () => {
     assert.throws(
       () =>

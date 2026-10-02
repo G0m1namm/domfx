@@ -10,7 +10,7 @@ import { preview } from 'vite';
 import { distribution, metricDelta, traceActivity } from './layout-summary.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
-const lab = resolve(root, 'apps/lab');
+const lab = resolve(root, 'tests/gpu');
 const directory = resolve(
   root,
   '.scratch/layout-performance',
@@ -70,7 +70,7 @@ try {
   result.dependencies = JSON.parse(
     execFileSync('pnpm', ['list', '-r', '--depth', '0', '--json'], { cwd: root, encoding: 'utf8' }),
   );
-  const build = spawnSync('pnpm', ['build:demo'], { cwd: root, encoding: 'utf8' });
+  const build = spawnSync('pnpm', ['build:gpu'], { cwd: root, encoding: 'utf8' });
   await writeFile(resolve(directory, 'build.log'), `${build.stdout ?? ''}${build.stderr ?? ''}`);
   if (build.status !== 0) {
     throw new Error(`production build failed: ${build.error ?? build.status}`);

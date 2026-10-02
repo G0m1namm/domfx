@@ -79,9 +79,11 @@ export function runVerification(directory, run) {
     startedAt: new Date().toISOString(),
     runtime: { node: process.version, platform: process.platform, arch: process.arch },
     browserVerification: 'not-run',
+    verificationScope: 'website-smoke',
+    gpuVerification: 'not-run',
     browserReport: join(dirname(reportPath), 'browser', 'report.json'),
     designReview: 'not-run',
-    checks: ['check', 'build:demo:built', 'test:browser:built'].map((command) => ({
+    checks: ['check', 'build:web:built', 'test:web:smoke:built'].map((command) => ({
       command,
       status: 'skipped',
     })),
@@ -92,13 +94,13 @@ export function runVerification(directory, run) {
     report.sourceBefore = snapshotWorktree(directory);
     for (const check of report.checks) {
       check.status = 'running';
-      if (check.command === 'test:browser:built') {
+      if (check.command === 'test:web:smoke:built') {
         report.browserVerification = 'running';
       }
       save();
       const start = Date.now();
       const result = run(check.command, {
-        DOMFX_BROWSER_OUTPUT_DIR: dirname(report.browserReport),
+        DOMFX_WEB_OUTPUT_DIR: dirname(report.browserReport),
       });
       check.durationMs = Date.now() - start;
       check.exitCode = result.status ?? null;
@@ -107,7 +109,7 @@ export function runVerification(directory, run) {
         check.error = result.error.message;
       }
       if (
-        check.command === 'test:browser:built' &&
+        check.command === 'test:web:smoke:built' &&
         result.status === 0 &&
         !result.error &&
         !result.signal
@@ -115,7 +117,7 @@ export function runVerification(directory, run) {
         validateBrowserReport(report.browserReport);
       }
       check.status = result.status === 0 && !result.error && !result.signal ? 'passed' : 'failed';
-      if (check.command === 'test:browser:built') {
+      if (check.command === 'test:web:smoke:built') {
         report.browserVerification = check.status;
       }
       report.sourceAfter = snapshotWorktree(directory);
@@ -185,7 +187,7 @@ if (
     });
     console.log(`\nAutomated verification: ${report.status}. Report: ${reportPath}`);
     console.log(
-      `Browser/GPU verification: ${report.browserVerification}. Evidence: ${report.browserReport}`,
+      `Website smoke verification: ${report.browserVerification}. Evidence: ${report.browserReport}`,
     );
     console.log('Design review and broader browser/device coverage remain separate.');
     if (report.error) {

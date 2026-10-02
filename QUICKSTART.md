@@ -12,7 +12,7 @@ Use Node 22.22.3 and pnpm 11.5.0. From a checkout of this repository:
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm --filter @domfx/lab exec playwright install chromium
+pnpm --filter @domfx/gpu-tests exec playwright install chromium
 pnpm release:rehearse
 ```
 
@@ -247,7 +247,7 @@ intensity and refresh still work. There is no animated override for reduced moti
 
 Imports are SSR-safe, but attachment/capture calls require browser DOM elements.
 Lower-level capture and its owned `CaptureFrame.release()` are documented in the
-[browser reference](packages/domfx/README.md); `/experimental` is reserved for the lab.
+[browser reference](packages/domfx/README.md); `/experimental` is reserved for private regression fixtures.
 
 ## Support limits and troubleshooting
 

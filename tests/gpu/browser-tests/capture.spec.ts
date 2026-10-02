@@ -20,8 +20,11 @@ const test = base.extend<{ browserErrors: string[] }>({
       const report = await page
         .locator('#report')
         .textContent({ timeout: 2000 })
-        .catch(() => 'Lab report unavailable; inspect the trace and browser errors.');
-      await testInfo.attach('lab-report.txt', { body: report ?? '', contentType: 'text/plain' });
+        .catch(() => 'Fixture report unavailable; inspect the trace and browser errors.');
+      await testInfo.attach('fixture-report.txt', {
+        body: report ?? '',
+        contentType: 'text/plain',
+      });
       const images = await page.evaluate(() => window.domfxEvidence?.images ?? {});
       for (const [name, url] of Object.entries(images)) {
         await testInfo.attach(`${name}.png`, {
@@ -35,7 +38,7 @@ const test = base.extend<{ browserErrors: string[] }>({
 });
 
 async function terminalReport(page: Page): Promise<unknown> {
-  // Both PASS and FAIL are terminal: fail immediately on an explicit lab failure.
+  // Both PASS and FAIL are terminal: fail immediately on an explicit fixture failure.
   await expect(page.locator('#report')).toContainText('"outcome":', { timeout: 150_000 });
   // The raw report lives in a disclosure; read its JSON even while it is closed.
   return JSON.parse((await page.locator('#report').textContent()) ?? '');
@@ -46,193 +49,6 @@ async function clockTime(page: Page): Promise<number> {
   const match = /Manual clock · ([\d.]+)s/.exec(clock);
   expect(match, clock).not.toBeNull();
   return Number(match?.[1]);
-}
-
-async function gallerySnapshot(page: Page) {
-  return page.evaluate(async () => {
-    const gallery = window.domfxGallery;
-    if (!gallery) {
-      throw new Error('gallery unavailable');
-    }
-    await gallery.saveLiveEvidence();
-    const position = { left: scrollX, top: scrollY };
-    const samples = [];
-    for (const entry of gallery.entries.filter(({ effect }) => effect.lifecycle !== 'disposed')) {
-      const { id, effect, target, layer } = entry;
-      target.scrollIntoView({ block: 'center', behavior: 'instant' });
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      );
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      if (!layer) {
-        throw new Error(`missing layer: ${id}`);
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = layer.width;
-      canvas.height = layer.height;
-      const context = canvas.getContext('2d');
-      if (!context) {
-        throw new Error('readback unavailable');
-      }
-      const time = effect.time;
-      effect.time = time;
-      // Read transient WebGPU storage before this frame is presented.
-      const pixels = (
-        await new Promise<ImageData>((resolve) =>
-          requestAnimationFrame(() => {
-            context.drawImage(layer, 0, 0);
-            resolve(context.getImageData(0, 0, canvas.width, canvas.height));
-          }),
-        )
-      ).data;
-      const alphaPixels = pixels.filter((value, index) => index % 4 === 3 && value > 0).length;
-      let hash = 2166136261;
-      for (const byte of pixels) {
-        hash = Math.imul(hash ^ byte, 16777619);
-      }
-      const targetBounds = target.getBoundingClientRect();
-      const layerBounds = layer.getBoundingClientRect();
-      samples.push({
-        id,
-        time: effect.time,
-        intensity: effect.intensity,
-        alphaPixels,
-        lifecycle: effect.lifecycle,
-        raster: effect.raster,
-        paused: effect.paused,
-        fire: (hash >>> 0).toString(16),
-        target: {
-          left: targetBounds.left,
-          top: targetBounds.top,
-          width: targetBounds.width,
-          height: targetBounds.height,
-        },
-        layer: {
-          left: layerBounds.left,
-          top: layerBounds.top,
-          width: layerBounds.width,
-          height: layerBounds.height,
-        },
-      });
-    }
-    window.scrollTo({ ...position, behavior: 'instant' });
-    return samples;
-  });
-}
-
-async function verifyGallery(page: Page, dpr: number) {
-  const ids = ['target', 'rounded', 'vector', 'transparent', 'card'];
-  await expect(page.locator('canvas[data-gallery-target]')).toHaveCount(5);
-  await expect(page.locator('#shared-host > canvas')).toHaveCount(2);
-  const initial = await gallerySnapshot(page);
-  expect(initial.map(({ id }) => id)).toEqual(ids);
-  for (const entry of initial) {
-    expect(entry).toMatchObject({ lifecycle: 'active', raster: 'fresh', paused: true });
-    expect(entry.alphaPixels, `${entry.id} live fire`).toBeGreaterThan(0);
-    expect(Math.abs(entry.layer.left + 32 - entry.target.left)).toBeLessThan(1 / dpr);
-    expect(Math.abs(entry.layer.top + 32 - entry.target.top)).toBeLessThan(1 / dpr);
-    expect(Math.abs(entry.layer.width - 64 - entry.target.width)).toBeLessThan(1 / dpr);
-    const layer = page.locator(`canvas[data-gallery-target="${entry.id}"]`);
-    await expect(layer).toHaveAttribute('aria-hidden', 'true');
-    await expect(layer).toHaveCSS('pointer-events', 'none');
-  }
-  const evidence = await page.evaluate(() => Object.keys(window.domfxEvidence?.images ?? {}));
-  for (const id of ids) {
-    for (const stage of ['capture', 'mask', 'sdf', 'fire', 'live-fire']) {
-      expect(evidence).toContain(`${stage}-${id}-dpr${dpr}`);
-    }
-  }
-  // Same-host control writes must leave every other target's actual output unchanged.
-  const svg = page.locator('fieldset[data-target="vector"]');
-  await svg.getByText('Play / pause', { exact: true }).click();
-  await expect
-    .poll(() => page.evaluate(() => window.domfxGallery?.entries[2].effect.time ?? 0))
-    .toBeGreaterThan(1.5);
-  await svg.getByText('Play / pause', { exact: true }).click();
-  await svg.getByLabel('Time (seconds)').fill('3');
-  await svg.getByLabel('Time (seconds)').press('Tab');
-  const sought = await gallerySnapshot(page);
-  for (let i = 0; i < initial.length; i++) {
-    if (initial[i].id === 'vector') {
-      expect(sought[i].fire).not.toBe(initial[i].fire);
-    } else {
-      expect(sought[i].fire, sought[i].id).toBe(initial[i].fire);
-    }
-  }
-  await svg.getByLabel('Intensity').fill('0');
-  await svg.getByLabel('Intensity').press('Tab');
-  expect((await gallerySnapshot(page))[2].alphaPixels).toBe(0);
-  await svg.getByLabel('Time (seconds)').fill('1.5');
-  await svg.getByLabel('Time (seconds)').press('Tab');
-  await svg.getByLabel('Intensity').fill(String(initial[2].intensity));
-  await svg.getByLabel('Intensity').press('Tab');
-  expect((await gallerySnapshot(page)).map(({ fire }) => fire)).toEqual(
-    initial.map(({ fire }) => fire),
-  );
-
-  // Public manual and paused ambient attachments track positive scale and scrolling.
-  await page
-    .locator('fieldset[data-target="target"]')
-    .getByText('Move / scale', { exact: true })
-    .click();
-  await svg.getByText('Move / scale', { exact: true }).click();
-  await page.locator('#shared-host').evaluate((host) => {
-    host.scrollLeft = 35;
-    host.scrollTop = 20;
-  });
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      ),
-  );
-  const moved = await gallerySnapshot(page);
-  for (let i = 0; i < moved.length; i++) {
-    const entry = moved[i];
-    const sx = entry.target.width / initial[i].target.width;
-    const sy = entry.target.height / initial[i].target.height;
-    expect(Math.abs(entry.layer.left + 32 * sx - entry.target.left)).toBeLessThan(1 / dpr);
-    expect(Math.abs(entry.layer.top + 32 * sy - entry.target.top)).toBeLessThan(1 / dpr);
-    expect(entry.time).toBe(initial[i].time);
-    expect(entry.fire).toBe(initial[i].fire);
-  }
-  expect(moved[2].target.left).not.toBe(initial[2].target.left);
-  expect(moved[3].target.left).not.toBe(initial[3].target.left);
-  await page
-    .locator('fieldset[data-target="target"]')
-    .getByText('Move / scale', { exact: true })
-    .click();
-  await svg.getByText('Move / scale', { exact: true }).click();
-  await page.locator('#shared-host').evaluate((host) => {
-    host.scrollLeft = 0;
-    host.scrollTop = 0;
-  });
-
-  const button = page.locator('fieldset[data-target="rounded"]');
-  await button.getByText('Change content', { exact: true }).click();
-  await expect(button.locator('output')).toContainText('fresh');
-  const refreshed = await gallerySnapshot(page);
-  expect(refreshed[1].fire).not.toBe(initial[1].fire);
-  expect(refreshed[2].fire).toBe(initial[2].fire);
-  await button.getByText('Change content', { exact: true }).click();
-  await expect.poll(async () => (await gallerySnapshot(page))[1].fire).toBe(initial[1].fire);
-
-  // Cover either shared owner being removed; repeatability proves the survivor still renders.
-  const disposedId = dpr === 1 ? 'vector' : 'transparent';
-  await page
-    .locator(`fieldset[data-target="${disposedId}"]`)
-    .getByText('Dispose', { exact: true })
-    .click();
-  await expect(page.locator('#shared-host > canvas')).toHaveCount(1);
-  for (const entry of await gallerySnapshot(page)) {
-    expect(entry.fire).toBe(initial.find(({ id }) => id === entry.id)?.fire);
-    expect(entry.alphaPixels).toBeGreaterThan(0);
-  }
-  await page.locator('fieldset[data-target="card"]').getByText('Dispose', { exact: true }).click();
-  for (const entry of await gallerySnapshot(page)) {
-    expect(entry.fire).toBe(initial.find(({ id }) => id === entry.id)?.fire);
-  }
-  return { initial, moved, refreshed, disposedId, pass: true };
 }
 
 for (const dpr of [1, 2]) {
@@ -303,16 +119,11 @@ for (const dpr of [1, 2]) {
       await expect(overlay).toHaveAttribute('aria-hidden', 'true');
       await expect(overlay).toHaveCSS('pointer-events', 'none');
       await expect(page.getByRole('heading', { name: 'B8O 2026' })).toBeVisible();
-      await testInfo.attach('verified-lab.png', {
+      await testInfo.attach('verified-fixtures.png', {
         body: await page.screenshot(),
         contentType: 'image/png',
       });
 
-      const galleryChecks = await verifyGallery(page, dpr);
-      await testInfo.attach('gallery-checks.json', {
-        body: JSON.stringify(galleryChecks, null, 2),
-        contentType: 'application/json',
-      });
       await page.getByRole('button', { name: 'Play', exact: true }).click();
       await expect.poll(() => clockTime(page)).toBeGreaterThan(1.5);
       await page.getByRole('button', { name: 'Seek 1.5s' }).click();
@@ -328,16 +139,8 @@ for (const dpr of [1, 2]) {
       await rounded.click();
       await rounded.press('Enter');
       await expect(page.locator('#interaction')).toHaveText('Rounded button clicks: 2');
-      await page
-        .locator('fieldset[data-target="target"]')
-        .getByText('Dispose', { exact: true })
-        .click();
-      for (const name of ['Play', 'Seek 1.5s', 'Reverse']) {
-        await expect(page.getByRole('button', { name, exact: true })).toBeDisabled();
-      }
       await page.getByRole('button', { name: 'Dispose all effects' }).click();
       await expect(overlay).toHaveCount(0);
-      await expect(page.locator('canvas[data-gallery-target]')).toHaveCount(0);
       for (const name of ['Play', 'Seek 1.5s', 'Reverse', 'Dispose all effects']) {
         await expect(page.getByRole('button', { name, exact: true })).toBeDisabled();
       }
@@ -448,36 +251,4 @@ test('paint outside requested padding holds the capture gate', async ({ page, br
   });
   await expect(page.locator('#host canvas.effect')).toHaveCount(0);
   expect(browserErrors).toEqual([expect.stringContaining('capture exterior failed for guard')]);
-});
-
-test('a required live SVG failure holds the gate and retains its capture evidence', async ({
-  page,
-  browserErrors,
-}) => {
-  await page.addInitScript(() => {
-    const getContext = HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.getContext = function (...args) {
-      if (
-        args[0] === 'webgpu' &&
-        this.width === 164 * devicePixelRatio &&
-        this.height === 134 * devicePixelRatio
-      ) {
-        return null;
-      }
-      return Reflect.apply(getContext, this, args);
-    };
-  });
-  await page.goto('/?automation&functional');
-  expect(await terminalReport(page)).toMatchObject({
-    outcome: 'FAIL',
-    error: expect.stringContaining('required live fixture vector'),
-    captures: { vector: { numerical: { pass: true } } },
-  });
-  await expect(page.locator('canvas[data-gallery-target], #shared-host canvas')).toHaveCount(0);
-  await expect(page.locator('#vector')).toBeVisible();
-  const images = await page.evaluate(() => Object.keys(window.domfxEvidence?.images ?? {}));
-  for (const stage of ['capture', 'mask', 'sdf', 'fire']) {
-    expect(images).toContain(`${stage}-vector-dpr2`);
-  }
-  expect(browserErrors).toEqual([expect.stringContaining('required live fixture vector')]);
 });

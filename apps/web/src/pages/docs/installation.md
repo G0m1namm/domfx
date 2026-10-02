@@ -12,7 +12,7 @@ From the repository checkout:
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm --filter @domfx/lab exec playwright install chromium
+pnpm --filter @domfx/gpu-tests exec playwright install chromium
 pnpm release:rehearse
 ```
 

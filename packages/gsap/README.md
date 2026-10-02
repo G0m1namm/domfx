@@ -91,7 +91,7 @@ owned result. The helper adds no cancellation to the caller's underlying operati
 Use `context.revert()` for cleanup: GSAP's bare `context.kill()` does not run custom
 cleanup callbacks.
 
-Run `pnpm demo` and open `/gsap.html` for the built-export consumer and its Play,
+Run `pnpm --filter @domfx/gpu-tests exec vite --host 127.0.0.1` and open `/gsap.html` for the built-export consumer and its Play,
 Seek, Reverse and separate disposal controls. `pnpm agent:verify` exercises it in
 development and production, including real GPU output, scheduler batching, rejection
 and cleanup. This is local Vite/Chromium coverage, not a broad bundler/browser guarantee.

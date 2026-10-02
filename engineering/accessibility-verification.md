@@ -7,8 +7,8 @@ technology support.
 
 ## Reproduce
 
-Run `pnpm demo` and open `/accessibility.html`; use `pnpm build:demo` followed by
-`pnpm preview:demo` for production. The page starts with **no attachment**. A
+Run `pnpm --filter @domfx/gpu-tests exec vite --host 127.0.0.1` and open
+`/accessibility.html`; build with `pnpm build:gpu`, then use `vite preview` for production. The page starts with **no attachment**. A
 single composite target contains a button with both an `onclick` handler and an
 event listener, a described button, a native link, a labeled input and selectable
 text. Before/after buttons bracket its natural tab order. The effect uses the
@@ -32,12 +32,12 @@ public `attachFire` and `bindFire` exports, real capture and WebGPU.
 
 ## Automated evidence
 
-`pnpm agent:verify` includes
-[`accessibility.spec.ts`](../apps/lab/browser-tests/accessibility.spec.ts) in both
+`pnpm test:gpu:full` includes
+[`accessibility.spec.ts`](../tests/gpu/browser-tests/accessibility.spec.ts) in both
 development and production. A focused run against current builds is:
 
 ```sh
-pnpm --filter @domfx/lab exec playwright test accessibility.spec.ts
+pnpm --filter @domfx/gpu-tests exec playwright test accessibility.spec.ts
 ```
 
 Each of five lifecycle cases first records its own no-effect baseline, repeats
@@ -52,15 +52,14 @@ attributes/content are compared. Focus outline styles must match the baseline.
 
 Active canvases must be visible, outside the target subtree, `aria-hidden="true"`,
 pointer-transparent, empty and outside the tab order. Lifecycle assertions prevent
-an unavailable renderer from passing an active-overlay test. Existing gallery,
+an unavailable renderer from passing an active-overlay test. Existing website,
 manual and GSAP tests continue to verify their real GPU output and interactions;
 this fixture adds the baseline and lifecycle comparisons without replacing them.
 
 Each phase attaches `*-input.json`, `*-focus.png` and `*-selection.png` to the
 Playwright report. `accessibility-environment.json` records the browser version,
 project, viewport, DPR, visibility, motion preference, adapter information and final
-state. Harness evidence lives under `.scratch/agent/run-*/browser/`; focused runs
-use `.scratch/browser/`. Screenshots support visual inspection and are not image
+state. GPU fixture evidence lives under `.scratch/browser/`. Screenshots support visual inspection and are not image
 diff assertions. The accessible snapshot is browser-derived test evidence, not a
 screen reader's spoken output.
 

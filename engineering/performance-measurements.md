@@ -5,10 +5,10 @@ For public attachment CPU/layout/allocation scaling at 1/10/50 targets, see the
 
 Issue [#30](https://github.com/G0m1namm/domfx/issues/30) measures candidate gates on a
 specific environment. The gallery prerequisite [#27](https://github.com/G0m1namm/domfx/issues/27)
-completed in PR #66; its live-gallery correctness checks remain in `pnpm agent:verify`.
+completed in PR #66; its capture and public-attachment correctness checks remain in `pnpm test:gpu:full`.
 
 Run `pnpm measure:performance` after installing Chromium as described in
-[browser verification](browser-verification.md). This builds the production lab,
+[browser verification](browser-verification.md). This builds the production fixtures,
 serves it on an ephemeral loopback port and opens visible Chromium. Keep the page
 visible and avoid competing GPU work during collection. Each condition runs serially
 in five freshly launched Chromium processes with temporary profiles. No profile,
@@ -103,7 +103,7 @@ rAF clock reset to zero per trial. Browser/adapter/capability/environment mismat
 hold the overall result. Display refresh and power mode remain operator-provided or
 `unknown`; neither is inferred from rAF.
 
-The lab uses the experimental renderer with canvas presentation and fixed placement.
+The fixture uses the experimental renderer with canvas presentation and fixed placement.
 Capture and SDF preparation happen once before a one-second animation warmup, followed
 by five two-second trials per condition. The same prepared frames remain allocated
 throughout. There are no rebuilds, diagnostic pixel readbacks, or awaited GPU completion

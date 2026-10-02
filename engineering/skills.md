@@ -12,7 +12,7 @@ TypeScript skill and `HARNESS.md` continue to govern scope and verification.
 | Animation API        | [gsap-core](../.agents/skills/gsap-core/SKILL.md)                                         | Official tween, easing, playback, and media-query guidance                                                  |
 | Animation sequencing | [gsap-timeline](../.agents/skills/gsap-timeline/SKILL.md)                                 | Official timeline composition, positioning, and playback guidance                                           |
 
-For cross-boundary changes, use both GPU and browser skills. GSAP stays in the lab
+For cross-boundary changes, use both GPU and browser skills. GSAP stays in the examples/fixtures
 or its future optional adapter, never the independent core or browser package.
 Upstream examples are API references: apply our TypeScript style, explicit ownership,
 and dependency rules. Do not introduce plugins, global defaults, broad style cleanup,

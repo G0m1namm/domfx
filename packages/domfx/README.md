@@ -32,7 +32,7 @@ and GSAP for semantic type acceptance/rejection cases. The printed directory ret
 consumer and tarballs for inspection.
 Installation uses the declared dependency ranges and requires registry access.
 
-Core, browser and the existing `/experimental` lab entry import in separate Node
+Core, browser and the existing `/experimental` fixture entry import in separate Node
 processes with `window`, `document` and `navigator` absent. A second pass guards
 browser globals and resource APIs against import-time DOM/GPU work or scheduling.
 Core cannot load external modules; browser imports cannot load GSAP. This verifies
@@ -44,8 +44,8 @@ Root declarations compile with TypeScript 5.9.3, strict checking and
 browser consumers add DOM/DOM.Iterable, without WebGPU or GSAP ambient types.
 Export allowlists reject accidental public renderer/oracle exports and extra package
 subpaths; private source/dist imports are rejected. `/experimental` retains its
-explicit lab-only renderer and adapter exports and is outside this root declaration
-contract. Its GPU types still require the lab's WebGPU type setup.
+explicit fixture-only renderer and adapter exports and is outside this root declaration
+contract. Its GPU types still require the fixtures' WebGPU type setup.
 
 The SDF executor from pinned `@typegpu/sdf` 0.12.0 is bundled with its MIT notice.
 The repository's pnpm patch adds `offsetUniform.buffer.destroy()` to executor cleanup;
@@ -72,7 +72,7 @@ libraries and installs their tarballs in fresh temporary consumers outside the
 workspace. A local pnpm override resolves the unpublished core dependency to its
 tarball; it does not alias source. The consumers use plain Vite without a config.
 
-The test copies the lab fixtures and test-only oracle, runs development and
+The test copies the private GPU fixtures and test-only oracle, runs development and
 production GPU distance/fire checks, exercises controls and disposal, and requires
 an intentionally untransformed package to fail with TypeGPU's missing-metadata
 error in both modes. A missing GPU is a failure, never a CPU fallback or skipped
@@ -161,7 +161,7 @@ The verified asset fixtures cover a delayed PNG image, PNG background and static
 TrueType font, broken image/background/font bytes, denied and permitted cross-origin
 PNG embedding, unembeddable programmatic fonts, and snapshot decode/readback cleanup.
 Development and production tests save live-target/frame PNGs and JSON checks. See the
-[fixture definitions](../../apps/lab/public/asset-fixtures/README.md).
+[fixture definitions](../../tests/gpu/public/asset-fixtures/README.md).
 
 Explicitly unsupported asset cases include SVG image documents (which may themselves
 omit external resources), SVG `image`/`use`/`feImage`, image inputs, iframe/object/embed/video elements, open
@@ -545,6 +545,6 @@ animation frames. Ancestor/stylesheet/pseudo-state paint changes still need expl
 when no observed paint signal is emitted. A successful handle reports only the bounded
 checks and capture behavior, not universal CSS compatibility.
 
-Run the lab and open `/manual.html` to exercise the root-export consumer with Seek,
+Run `pnpm --filter @domfx/gpu-tests exec vite --host 127.0.0.1` and open `/manual.html` to exercise the root-export consumer with Seek,
 Zero intensity and Dispose controls. The browser suite covers it in development
 and production alongside the existing numerical capture/fire fixtures.

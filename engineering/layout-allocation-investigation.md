@@ -7,7 +7,7 @@ scheduling, clocks, admission budgets, or the separate #30/#31 release candidate
 ## Reproduce
 
 Install the repository's Chromium, then run `pnpm measure:layout`. The runner builds
-the production lab, serves an ephemeral loopback port and opens six fresh visible
+the production fixtures, serves an ephemeral loopback port and opens six fresh visible
 Chromium processes serially: no-effect and ambient-effect conditions at each of
 1, 10 and 50 targets. Keep the window visible and avoid competing GPU work.
 `DOMFX_BROWSER_EXECUTABLE` selects an alternative Chromium;
@@ -84,7 +84,7 @@ repeat the command to check between-run variability. Serial condition order, dri
 caches, background load, unknown thermal/power state and display refresh limit causal
 inference. No prototype benefit can be claimed without a controlled comparison.
 
-`pnpm agent:verify` covers the retained fixture in development and production,
+`pnpm test:gpu:full` covers the retained fixture in development and production,
 including 50-target activity, raster dimensions, refresh, disposal, a matching baseline,
 unavailable GPU and visibility invalidation. Tooling tests protect percentile ranks,
 signed metric deltas and trace thread/GC selection. Correctness tests do not assert

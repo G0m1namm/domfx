@@ -12,9 +12,9 @@ Owner: `G0m1namm/domfx`. Source visibility and npm publication are separate deci
 - Actions default to read-only permissions and cannot approve PRs. Private-fork
   workflows are disabled and cannot receive write tokens, secrets or variables.
 - CI uses pinned actions, an explicit read-only token, no persisted checkout
-  credentials and frozen installs. The static-check/build job has a fifteen-minute
-  limit. Automated test suites are temporarily local pending #88; no scheduled GPU
-  jobs or Chromium downloads consume Actions minutes. Superseded runs are cancelled.
+  credentials and frozen installs. The workspace job has a fifteen-minute limit.
+  CI installs Chromium for a small website smoke suite with WebGPU unavailable;
+  full GPU, visual and performance suites remain local. Superseded runs are cancelled.
 
 ## Before public launch
 

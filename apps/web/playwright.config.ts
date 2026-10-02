@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { defineConfig } from '@playwright/test';
 
 const gpuBackend = process.env.DOMFX_GPU_BACKEND ?? 'native';
@@ -5,10 +7,14 @@ if (!['native', 'swiftshader'].includes(gpuBackend)) {
   throw new Error('DOMFX_GPU_BACKEND must be native or swiftshader');
 }
 
+const artifacts =
+  process.env.DOMFX_WEB_OUTPUT_DIR ?? resolve(import.meta.dirname, '../../.scratch/web');
+
 export default defineConfig({
+  testIgnore: '**/visual.spec.ts',
   testDir: './browser-tests',
-  outputDir: '../../.scratch/web/test-results',
-  reporter: [['list'], ['json', { outputFile: '../../.scratch/web/report.json' }]],
+  outputDir: resolve(artifacts, 'test-results'),
+  reporter: [['list'], ['json', { outputFile: resolve(artifacts, 'report.json') }]],
   workers: 1,
   retries: 0,
   forbidOnly: true,

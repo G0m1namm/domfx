@@ -26,16 +26,16 @@ export default {
       severity: 'error',
       from: { path: `^${workspace}/` },
       to: {
-        path: '^(packages|apps)/',
+        path: '^(packages|apps|tests)/',
         pathNot: `^(${[workspace, ...declaredTargets(workspace, dependencies)].join('|')})/`,
       },
     })),
     {
       name: 'use-workspace-exports',
       severity: 'error',
-      from: { path: '^((?:packages|apps)/[^/]+)/' },
+      from: { path: '^((?:packages|apps|tests)/[^/]+)/' },
       to: {
-        path: '^(packages|apps)/',
+        path: '^(packages|apps|tests)/',
         pathNot: '^$1/',
         dependencyTypes: ['local', 'localmodule'],
       },
@@ -54,13 +54,13 @@ export default {
       // validate their resolved destinations against each consumer's manifest.
       to: {
         dependencyTypes: ['npm-no-pkg', 'npm-unknown', 'unknown', 'undetermined'],
-        pathNot: '^(packages|apps)/[^/]+/(?!node_modules/)',
+        pathNot: '^(packages|apps|tests)/[^/]+/(?!node_modules/)',
       },
     },
     {
       name: 'no-runtime-dev-dependencies',
       severity: 'error',
-      from: { path: '^(packages|apps)/[^/]+/src/' },
+      from: { path: '^(packages|apps|tests)/[^/]+/src/' },
       to: { dependencyTypes: ['npm-dev'], preCompilationOnly: false },
     },
     { name: 'no-unresolved-imports', severity: 'error', from: {}, to: { couldNotResolve: true } },

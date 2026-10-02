@@ -1,22 +1,20 @@
 {
-  "name": "@domfx/lab",
+  "name": "@domfx/gpu-tests",
   "version": "0.0.0",
   "private": true,
-  "description": "Self-checking browser/GPU experiment consuming built domfx packages.",
+  "description": "Private browser/GPU regression fixtures; not a demo or published app.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/G0m1namm/domfx.git",
-    "directory": "apps/lab"
+    "directory": "tests/gpu"
   },
   "files": [
     "dist"
   ],
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc -p tsconfig.json",
     "test:browser": "playwright test",
     "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js"

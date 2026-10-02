@@ -134,7 +134,7 @@ test('both tools exclude local docs, vendored skills and generated output withou
     '.agents/skills/example',
     'dist-demo',
     'packages/core/dist',
-    'apps/lab/.test-dist',
+    'tests/gpu/.test-dist',
   ]) {
     f.put(`${path}/bad.ts`, 'var unused={bad:"format"}');
   }

@@ -27,14 +27,15 @@ function pack(cwd) {
 }
 const core = pack(join(root, 'packages/core'));
 const browserPackage = pack(join(root, 'packages/domfx'));
-const viteVersion = readJson(join(root, 'apps/lab/node_modules/vite/package.json')).version;
-const gsapVersion = readJson(join(root, 'apps/lab/node_modules/gsap/package.json')).version;
+const viteVersion = readJson(join(root, 'tests/gpu/node_modules/vite/package.json')).version;
+const gsapVersion = readJson(join(root, 'tests/gpu/node_modules/gsap/package.json')).version;
 
 function consumer(name, artifact) {
   const cwd = join(directory, name);
   mkdirSync(cwd);
-  cpSync(join(root, 'apps/lab/src'), join(cwd, 'src'), { recursive: true });
-  cpSync(join(root, 'apps/lab/index.html'), join(cwd, 'index.html'));
+  cpSync(join(root, 'tests/gpu/src'), join(cwd, 'src'), { recursive: true });
+  cpSync(join(root, 'tests/gpu/index.html'), join(cwd, 'index.html'));
+  cpSync(join(root, 'tests/gpu/public'), join(cwd, 'public'), { recursive: true });
   // Deliberately no workspace packages, source aliases, or consumer Vite/TypeGPU config.
   writeJson(join(cwd, 'package.json'), {
     name: `domfx-packed-${name}`,
@@ -135,7 +136,11 @@ async function verify(browser, cwd, production, missingTransform) {
         await page.locator(`#${control}`).click();
       }
       report = JSON.parse(await page.locator('#report').innerText());
-      assert.deepEqual(report.disposal, { managedBytes: 0, overlayRemoved: true });
+      assert.deepEqual(report.disposal, {
+        managedBytes: 0,
+        attachmentReservedBytes: 0,
+        overlayRemoved: true,
+      });
       writeJson(join(directory, `${label}.json`), report);
       await page.screenshot({ path: join(directory, `${label}.png`), fullPage: true });
     }
@@ -159,7 +164,20 @@ const plain = ts.transpileModule(readFileSync(join(root, 'packages/domfx/src/gpu
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
 }).outputText;
 assert.ok(!plain.includes('__TYPEGPU_META__'));
-writeFileSync(join(broken, 'dist/experimental.js'), plain);
+// Preserve the experimental surface used by fixtures; only the GPU module loses
+// shader metadata. Missing exports/imports would test a broken bundle instead.
+cpSync(join(broken, 'dist/experimental.js'), join(broken, 'dist/transformed-experimental.js'));
+writeFileSync(join(broken, 'dist/gpu.js'), plain);
+writeFileSync(
+  join(broken, 'dist/effect-error.js'),
+  ts.transpileModule(readFileSync(join(root, 'packages/domfx/src/effect-error.ts'), 'utf8'), {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
+  }).outputText,
+);
+writeFileSync(
+  join(broken, 'dist/experimental.js'),
+  "export * from './transformed-experimental.js';\nexport { GpuExperiment, decodeFloat16 } from './gpu.js';\n",
+);
 const brokenManifest = readJson(join(broken, 'package.json'));
 brokenManifest.version = '0.0.0-missing-transform';
 writeJson(join(broken, 'package.json'), brokenManifest);

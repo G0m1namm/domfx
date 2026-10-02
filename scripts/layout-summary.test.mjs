@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { distribution, metricDelta, traceActivity } from '../apps/lab/scripts/layout-summary.mjs';
+import { distribution, metricDelta, traceActivity } from '../tests/gpu/scripts/layout-summary.mjs';
 
 test('frame distributions retain outliers and absent measurements', () => {
   assert.deepEqual(distribution([]), { count: 0, p50: null, p95: null, p99: null, max: null });

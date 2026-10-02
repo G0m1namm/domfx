@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { boundaries } from '../workspace-boundaries.mjs';
 
 export function checkWorkspaces(root = '.') {
-  const workspaces = ['packages', 'apps'].flatMap((parent) =>
+  const workspaces = ['packages', 'apps', 'tests'].flatMap((parent) =>
     readdirSync(join(root, parent), { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => {

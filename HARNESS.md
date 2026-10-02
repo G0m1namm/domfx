@@ -29,7 +29,7 @@ or animation work. Load both sides when a change crosses capture/render boundari
 3. **Implement:** make one vertical change at a time. Reproduce bugs before fixing them;
    test behavior through public boundaries. Keep unrelated cleanup out of the diff.
 4. **Verify:** run focused tests during implementation, then `pnpm agent:verify` after
-   edits settle. This includes the development and production browser suite. For
+   edits settle. This includes a small development/production website smoke suite. For
    capture/GPU changes, add relevant coverage and perform any additional manual scenarios
    in [CONTRIBUTING.md](CONTRIBUTING.md). Record environment and actual results.
 5. **Review:** inspect the final diff against both the contract and the design questions
@@ -41,23 +41,26 @@ It does not commit, push, merge, publish, or change GitHub settings.
 
 ## What the commands enforce
 
-`pnpm agent:verify` runs `pnpm check`, `pnpm build:demo:built`, and `pnpm test:browser:built`
-in order, stopping on failure. The check builds the libraries once; the next step builds
-only the lab, and browser tests reuse that output.
-Existing checks remain available individually. CI currently runs static checks and builds;
-test suites remain local pending [#88](https://github.com/G0m1namm/domfx/issues/88). Install
-the test browser using the [browser verification guide](engineering/browser-verification.md).
+`pnpm agent:verify` runs `pnpm check`, `pnpm build:web:built`, and
+`pnpm test:web:smoke:built` in order, stopping on failure. Libraries build once;
+the website consumes those outputs. Smoke tests inject unavailable WebGPU and
+verify navigation, layout, examples and documentation. GPU correctness is explicitly
+`not-run` in this report. Rendering changes and releases need the local GPU checks
+listed in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-| Gate                                                    | Enforcement                                                                                            |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Formatting and import style                             | Oxfmt                                                                                                  |
-| Correctness and unused bindings                         | Oxlint                                                                                                 |
-| Type safety escape routes                               | Reject explicit `any`, `@ts-ignore`, and `@ts-nocheck`; require an explanation for `@ts-expect-error`  |
-| Type compatibility and core platform independence       | Workspace TypeScript configurations                                                                    |
-| Dependency direction, cycles, and exported entry points | Workspace checker and dependency-cruiser                                                               |
-| Behavior and tooling regressions                        | Numerical tests and tooling tests                                                                      |
-| Built consumer integration                              | Production lab build using package exports                                                             |
-| Browser/GPU behavior in existing fixtures               | Chromium development/production suite; real capture, shader readbacks, controls, disposal and fallback |
+CI runs the same routine gates plus release metadata validation. Install Chromium
+using the [browser verification guide](engineering/browser-verification.md).
+
+| Gate                                                    | Enforcement                                                                                           |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Formatting and import style                             | Oxfmt                                                                                                 |
+| Correctness and unused bindings                         | Oxlint                                                                                                |
+| Type safety escape routes                               | Reject explicit `any`, `@ts-ignore`, and `@ts-nocheck`; require an explanation for `@ts-expect-error` |
+| Type compatibility and core platform independence       | Workspace TypeScript configurations                                                                   |
+| Dependency direction, cycles, and exported entry points | Workspace checker and dependency-cruiser                                                              |
+| Behavior and tooling regressions                        | Numerical tests and tooling tests                                                                     |
+| Built consumer integration                              | Production website build using package exports                                                        |
+| Website usability without WebGPU                        | Small Chromium development/production smoke suite; local GPU verification remains separate            |
 
 Keep exceptions narrow and documented. Negative type tests may use explained
 `@ts-expect-error`; do not weaken rules or suppress errors merely to get a green build.
@@ -75,7 +78,7 @@ made and restored within one command are not detected. Keep the worktree idle wh
 verifying. A report marked `running` is incomplete, never a pass.
 Keep terminal output with the report when diagnosing a failure. The summary does not
 contain source contents or environment-variable dumps. Its `browserReport` points to
-per-run test evidence, including lab diagnostics and browser errors; failures retain traces.
+per-run test evidence, including website screenshots and browser errors; failures retain traces.
 `browserVerification` stays `not-run` if an earlier gate fails. A successful browser
 command must also produce complete passing evidence for both projects without skips.
 

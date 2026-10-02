@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Capture regression fixtures</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <main>
+      <p id="status" role="status">Preparing fixtures…</p>
+      <div class="host" id="host"><h2 id="target">B8O 2026</h2></div>
+      <button id="play" disabled>Play</button><button id="seek" disabled>Seek 1.5s</button
+      ><button id="reverse" disabled>Reverse</button
+      ><button id="dispose" disabled>Dispose all effects</button>
+      <p id="clock"></p>
+      <div class="fixture-host button-host">
+        <button id="rounded">Rounded <span>button</span></button>
+      </div>
+      <p id="interaction">Rounded button clicks: 0</p>
+      <div class="fixture-host card-host">
+        <article id="card">
+          <strong>A composite card</strong>
+          <p>Paint and semantics</p>
+          <a href="#results">Inspect results →</a>
+        </article>
+      </div>
+      <div id="shared-host" class="fixture-host shared-host">
+        <div class="shared-content">
+          <svg
+            id="vector"
+            width="100"
+            height="70"
+            viewBox="0 0 100 70"
+            role="img"
+            aria-label="Silver ring and strokes"
+          >
+            <path fill="#c2c5db" fill-rule="evenodd" d="M10 5h55v55H10z M22 17v31h31V17z" />
+            <path stroke="#c2c5db" stroke-width="5" d="M73 12l20 44" />
+            <path fill="#6153b7" d="M10 5h55v1H10z" />
+            <path fill="#f047fe" d="M10 6h55v1H10z" />
+            <path fill="#e6dc6a" d="M10 7h55v1H10z" /></svg
+          ><img
+            id="transparent"
+            src="/examples/silver-ring.png"
+            width="96"
+            height="64"
+            alt="Silver ring and separate bar on a transparent background"
+          />
+        </div>
+      </div>
+      <div class="fixtures">
+        <div class="fixture-host guard-host">
+          <div id="guard">
+            <span class="overflow-mark"></span><span class="overflow-mark top-mark"></span
+            ><span class="overflow-mark right-mark"></span
+            ><span class="overflow-mark bottom-mark"></span><span class="origin-mark"></span>
+          </div>
+        </div>
+        <div class="fixture-host transform-host">
+          <div class="transform-ancestor">
+            <div id="transformed">
+              <span class="origin-mark"></span><span class="corner-mark"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="diagnostics">
+        <canvas id="capture"></canvas><canvas id="mask"></canvas><canvas id="sdf"></canvas
+        ><canvas id="fire"></canvas>
+      </div>
+      <p id="result-summary"></p>
+      <p id="result-error" hidden></p>
+      <span id="check-capture"></span><span id="check-fire"></span><span id="check-gsap"></span
+      ><span id="check-resources"></span>
+      <pre id="report">Running…</pre>
+    </main>
+  </body>
+</html>

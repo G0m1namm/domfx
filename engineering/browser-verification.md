@@ -1,378 +1,100 @@
-# Browser and GPU verification
+# Browser verification
 
-The lab owns the Playwright suite and its pinned Chromium dependency. Tests consume
-built package exports and exercise both Vite development and the production preview.
-They run real capture and WebGPU code; no renderer mock supplies the successful result.
-The [browser/device support record](browser-support.md) maps these fixtures to actual
-tested environments and keeps missing coverage separate from observed passes.
+The website is the development and examples surface. Private `tests/gpu` pages
+retain rendering/lifecycle regressions and optional measurements without a public
+lab app. Both consumers use built package exports.
 
-Placement arithmetic also has independent numeric tests in `packages/domfx/tests`.
-Run `pnpm --filter @domfx/browser test` without a browser, display or GPU; the test
-compilation excludes DOM types. These tests run in `pnpm test` and `pnpm check`.
-The browser fixtures below retain coverage of actual measurement and clipping behavior.
+See the [tooling evaluation](browser-tooling-evaluation.md) for historical issue
+#88 timings. Those measurements preceded this change in verification scope.
 
-## Setup and commands
-
-After `pnpm install --frozen-lockfile`, install the browser once, and again after a
-Playwright version upgrade:
+## Routine checks
 
 ```sh
-pnpm --filter @domfx/lab exec playwright install chromium
+pnpm --filter @domfx/web exec playwright install chromium
 pnpm agent:verify
 ```
 
-On Linux, use `playwright install --with-deps chromium` for browser prerequisites.
-Software GPU execution also needs `libvulkan1` and `mesa-vulkan-drivers`.
+The harness runs repository checks, builds the production website, then verifies
+five website smoke cases in both development and production. These inject missing
+WebGPU: responsive layout, native navigation, loaded example assets and readable
+documentation must still work. This is not successful GPU rendering evidence.
+CI runs these gates and release metadata checks; full GPU tests stay local.
+Each harness report identifies `verificationScope: website-smoke` and
+`gpuVerification: not-run`. Failures retain screenshots and traces.
 
-| Command                                           | Result                                                                                                     |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `pnpm agent:verify`                               | Repository checks, production build, and both browser projects; isolated evidence for this source snapshot |
-| `pnpm test:browser`                               | Rebuild packages/production lab and run both browser projects                                              |
-| `pnpm test:browser:built`                         | Run both projects against existing builds; intended for the harness after its build gate                   |
-| `DOMFX_GPU_BACKEND=swiftshader pnpm agent:verify` | Run the full harness with an explicitly selected software GPU                                              |
+## Local rendering checks
 
-The default backend is `native`. Unsupported WebGPU or a missing adapter fails the
-GPU scenario; it is not silently skipped. `swiftshader` runs real shaders on the CPU
-and can be selected for local software GPU verification. The report identifies the requested backend and
-the lab records the actual adapter. Neither mode establishes broad device support.
+| Command                                      | Coverage                                                                                                                                          |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm test:gpu`                              | Ten existing production smoke cases: real output, GSAP seeking/binding disposal, late disposal, refresh, motion, input and zero-size behavior     |
+| `pnpm test:gpu:full`                         | All retained development/production capture, numerical, placement, assets, motion, clock, sharing, lifecycle, retry, stress and measurement cases |
+| `pnpm test:web`                              | Complete development/production website tests, including public API examples and GPU pixels                                                       |
+| `pnpm test:visual`                           | Production website screenshot comparisons, including paused Fire                                                                                  |
+| `pnpm test:browser:evidence`                 | Production capture/numerical checks with raw JSON, images and environment identity                                                                |
+| `pnpm test:packed` / `pnpm release:rehearse` | Fresh tarball consumers, real rendering and cleanup                                                                                               |
 
-## Fast feedback and full coverage
-
-`pnpm test:browser:smoke` runs ten existing production contract tests marked `@smoke`:
-manual rendering, seeking/reversing, binding disposal, late attachment cleanup, actual
-DOM refresh, reduced motion, missing WebGPU, pointer/keyboard preservation, and initial
-zero-size behavior. It is a subset, not a replacement for complete GPU verification.
-
-CI temporarily omits all automated test suites and Chromium installation to conserve
-Actions minutes while [#88](https://github.com/G0m1namm/domfx/issues/88) evaluates browser
-tooling and peak memory. There are no scheduled GPU runs or browser shards. CI's
-`workspace` check covers static validation and builds, not runtime/GPU verification.
-Native local verification keeps its ten-minute suite limit; software GPU runs allow up
-to one hour. Missing capabilities and failing assertions remain failures; there are no
-retries or silent skips in local verification.
-
-`DOMFX_FULL_VERIFY=1 git push` opts into the full native harness in Lefthook. Regular
-pushes keep fast repository checks and a production lab build; hooks are not server-side
-merge enforcement. Before releases and rendering changes, use `pnpm agent:verify` and
-record the applicable manual checks. CPU timing on SwiftShader is not a native GPU benchmark.
-
-The runner owns loopback servers on ports 4173 and 4174 and shuts them down when
-finished. Occupied ports fail explicitly; it never reuses an unrelated or stale lab.
-Use the normal `pnpm demo` command for interactive development outside these runs.
-Browser launch flags are restricted to the local test browser.
-
-The DPR 1 capture and injected failure cases use `?automation&functional`: they still
-execute real capture, numerical readbacks, fire and the relevant failure assertions,
-but do not repeat the DPR-independent resource soak or informational warm timings.
-Reports identify `diagnostics: "functional"`, omit those results and leave the resource
-check uncompleted. DPR 2 in both builds requires the full resource result and 30 warm
-samples. Interactive lab visits and the standalone evidence runner retain full diagnostics.
-
-Full captured rasters in shared-service checks use the existing exact separable Float64
-oracle. The exhaustive pixel-pair oracle is reserved for the small diagnostic masks;
-numerical unit tests cross-check the separable algorithm against it. GPU readbacks still
-compare every pixel with the same sign and distance tolerances.
-
-## Required scenarios
-
-Each project runs the following scenarios at a 1280 × 900 viewport and device pixel ratio 2,
-with the normal capture/GPU scenario additionally running at actual DPR 1:
-
-- **Normal rendering:** existing capture fixtures and GPU distance fields agree with
-  the independent numerical oracle over every raster pixel. All seven capture fixtures
-  run at both DPRs, comparing 48 CSS-pixel padding with an 80 CSS-pixel reference,
-  requiring transparent exterior bands and independent paint/coordinate sentinels.
-  See [the exact paint extent and limits](../packages/domfx/README.md#padded-capture-fidelity).
-  Capture/reference/SDF PNGs accompany the JSON report. Injected loss of required cyan
-  overflow in both rasters must fail even when reference overlap and transparency agree;
-  fire reproduces at fixed time and changes with
-  time; zero intensity is transparent; GSAP cleanup preserves its caller-owned sibling.
-  Exercise Play, Seek, Reverse, pointer/keyboard interaction, overlay attributes, and
-  Dispose. Disposal must remove the overlay and release accounted GPU allocations.
-  The DPR 2 run in each build also runs 1,000 real small-mask prepare/readback/destroy
-  cycles, alternating 7 × 5 and 9 × 5 masks with alpha values around the threshold.
-  Every readback is compared to the Float64 oracle (0.002 raster-pixel tolerance).
-  `preparationResources` records allocation samples at cycles 1, 10, 100 and 1,000;
-  both the managed ledger and observed live GPUBuffer bytes must return to zero.
-  It also checks failure after GPU submission, independently live frames, and repeated
-  frame/service cleanup. Device-call observations count explicit buffer destruction;
-  they do not measure garbage collection, driver allocation or total VRAM.
-- **Reduced motion at startup:** complete without accessing the GPU, keep effect
-  controls disabled, and preserve original DOM interaction.
-- **Missing WebGPU:** inject the missing capability and require the lab's explicit
-  unavailable report while preserving original DOM interaction. This negative test does
-  not replace the successful real-GPU scenario.
-- **Injected assertion failure:** finish the GPU fixtures, then require an explicit FAIL
-  with the injected assertion message and verify that cleanup removes the overlay.
-
-The `/manual.html` root-export consumer also checks deterministic control writes,
-intensity bounds, ownership and numeric rejection, stale-paint hiding, scaled-host
-placement, disposal before a late adapter result or during GPU preparation, repeated
-disposal/reattachment, missing GPU, and startup/runtime reduced motion. Initial failure
-checks inject missing adapters, capture decode failures, sub-threshold alpha and renderer
-construction failures; an oversized target exercises the real capture budget. They require
-canvas/device cleanup, preserved pointer/keyboard interaction, and successful reattachment
-without disposing the failed handle. Invalid runtime options/hosts and both directions of
-nested ownership also reject without leaving claims.
-
-Failure-classification fixtures vary a real budget error's message and inject external
-errors (including lookalike codes, strings, and `CaptureError`) at renderer setup,
-capture, preparation and paint boundaries. Initialization readiness and explicit refresh
-checks require stable reasons, original rejection identity and capture causes,
-exactly-once frame/service cleanup, empty reservations and successful replacement
-attachments. Successful preparation and presentation use real WebGPU with a small
-controlled mask; existing capture fixtures cover actual DOM pixels. Both projects save
-`failure-classification.json`.
-
-Refresh checks use controlled capture/preparation delays and failures with the real GPU
-renderer. They verify revision coalescing, promise settlement, atomic replacement order,
-exactly-once frame release, and invalidation/disposal during both stages. A changed DOM
-silhouette is refreshed on the same canvas and compared with a fresh attachment at the
-same time/seed; runtime reduced motion and simulated document hiding invalidate pending
-capture. Reduced-motion checks reject canvas creation and GPU access at startup,
-verify retained and late allocation release during initialization/capture/preparation,
-and require suspension to survive preference reversal and control writes. Static opt-in
-checks use real capture/GPU output to verify time-zero pixels, no ambient rendering,
-preference changes during capture/preparation, and disposal before late completion.
-These checks run in both development and production.
-
-Fake animation-frame tests use the real attachment, capture and GPU renderer to verify
-one shared frame request, one commit per dirty target, manual time ownership, ambient
-pause/seek/resume, immutable seed, no per-frame capture, and cancellation on disposal.
-Visible manual and paused attachments retain geometry frame participation without extra GPU
-commits. Fake-clock visibility tests cover manual, paused and running effects leaving
-the viewport: no scheduled work, placement reads or GPU renders during suspension,
-no ambient catch-up, retained control writes, and geometry synchronization before
-showing output on offscreen/document re-entry. Disposal while hidden prevents observer
-wakeups. A real viewport-edge fixture verifies re-entry from zero-area adjacency.
-Delayed capture/preparation fixtures verify immediate visibility invalidation,
-late resource release, stale re-entry and explicit refresh recovery. Fractional placement fixtures run at DPR 1 and 2 in both projects. Three colored
-SVG alpha islands are captured through the real adapter; their coverage-weighted raster
-pixel centers map through the actual effect layer into viewport coordinates and are
-compared with independently measured live landmark centers (one physical pixel maximum
-per axis). Cases include target/ancestor/host nonuniform scales, transform origins,
-individual transform properties, sibling layout shifts and a sampled Web Animation.
-Each stage saves geometry JSON and a screenshot, with browser/GPU, viewport, DPR,
-visibility and reduced-motion details. Time, capture count, render count and output
-pixels must remain unchanged. Mixed paint changes, descendant transforms and unsupported
-rotation verify that the placement exception cannot bypass stale/unavailable behavior.
-The landmarks use SVG to avoid Chromium's local HTML background edge snapping during
-foreignObject capture; these checks do not establish arbitrary CSS subpixel paint fidelity.
-
-Bordered scrolling fixtures use the same landmarks at DPR 1 and 2 with window, host
-and inner scroll offsets under nonuniform scales. Two nested positioned rectangular
-overflow clips are compared to native clipping of an independently placed child through
-browser hit testing. The fixture verifies suspension for fully clipped targets and scrolling back into
-view, unchanged time, capture/render counts and canvas pixels, and saves geometry JSON
-and screenshots at every stage. Rounded overflow, clip paths, masks, paint containment,
-overflow clip margins, static clipping ancestors and fixed-position ancestors must
-become unavailable both during live tracking and initial attachment, removing the canvas
-while preserving the target. This bounded fixture does not establish arbitrary clipping
-or stacking support.
-
-Composition fixtures additionally reject representative matrix and individual rotation,
-skew/perspective, zero/negative scale, three-component translation and zoom on the target,
-intermediate ancestor, host and an outer ancestor. Target/intermediate opacity, filter,
-backdrop-filter and blending reject with `unsupported-composition`; intermediate clip,
-mask and containment cases retain `unsupported-placement`. The initial/live matrix saves
-JSON states and requires no canvas, unchanged target styles, focus and click handlers.
-Real pointer and keyboard input also reaches the original button after rejection.
-Controlled delays after real renderer creation, capture and GPU preparation verify that
-an ancestor becoming unsupported invalidates initial work before it settles. Restoring CSS
-before releasing each delay must not revive the handle; all late allocations are released
-exactly once, and a new attachment succeeds. These delays simulate ordering, not GPU failure.
-An explicit refresh also rejects immediately during blocked preparation, releases old and
-late output, and preserves its unavailable reason after CSS is restored. A shared-host
-opacity/filter and target-clip fixture verifies that the bypass checks keep their documented scope.
-The [composition contract](../packages/domfx/README.md#composition-detection-and-caller-obligations)
-enumerates the detected computed styles and remaining caller obligations.
-
-Shared-service checks concurrently attach a ring and disconnected islands in separate
-hosts and one shared host. Both captured SDFs are compared with the numerical oracle;
-canvas readbacks verify independent time/intensity and reproducible surviving output
-after disposing either target. Service/fire-pipeline creation counts, managed bytes and
-observed live GPUBuffer bytes verify sharing and the surviving-target allocation baseline.
-Controlled initialization/preparation delays cover disposal, reattachment, late cleanup,
-shared initialization failure and isolated preparation failure. A same-origin iframe
-checks Document/device isolation and owning-Document capability detection. A simulated
-device-loss notification checks cleanup of both owners. Controlled loss also covers
-pending service initialization, initial and refresh capture, asynchronous pipeline
-creation, submitted preparation, final validation, and late prepared results. Checks
-require immediate refresh rejection with loss details, removal/zero sizing of canvases,
-no further GPU allocation/submission, pending reservation cleanup, and continued page
-animation and DOM interaction. Explicit new attachments use a fresh service while old
-work drains; late cleanup must preserve that replacement entry. Both `unknown` and
-`destroyed` loss notifications invalidate live owners. Successful rendering always uses
-real GPU work; these are simulated notifications, not physical hardware-loss evidence.
-
-Memory admission checks hold three one-million-pixel captures pending and require a
-fourth to reject before capture. Concurrent replacements verify retained-frame and
-pending-output accounting, rejected refresh promises, stale-output hiding and zero
-reservations after cleanup. Disposal and simulated device loss during capture keep
-bytes reserved until late completion. Existing refresh/supersession and shared-loss
-scenarios also check reservation cleanup. Pure ledger tests cover exact decimal target
-and Document boundaries, atomic failed reconciliation, dimension changes and idempotent
-release. These are bounded accounting checks, not process-memory or total-VRAM measurements.
-
-The `/gsap.html` optional-package consumer verifies starting control snapshots,
-callback-suppressed host seeking, reverse and fixed-time GPU output, one scheduled
-commit for multiple writes, and no per-frame capture. It checks ambient rejection,
-numeric options, insertion positions, zero duration, context revert, sibling preservation,
-idempotent binding disposal and attachment disposal, plus the interactive controls.
-
-Unexpected page/console errors fail the tests. There are no automatic retries.
-Each test has a three-minute deadline; the browser suite has a ten-minute deadline.
-The harness also requires report evidence from both projects, with no skipped tests,
-expected failures, retries, or reporter errors. A command exit code alone is insufficient.
-
-The `/assets.html` consumer verifies delayed font/image/background readiness by
-comparing the visible target with the returned frame and saving both PNGs. It checks
-broken assets, an unembeddable programmatic font, explicit SVG-image rejection, actual
-cross-origin PNGs with CORS denied/permitted, and injected snapshot decode/readback
-failures with zero-sized temporary canvases. Failure cases preserve the target and
-pointer/keyboard interaction. An attachment waits through initial asset loading;
-subsequent font/load/error signals hide stale output and automatically refresh.
-Cross-origin fetches must send no cookies. Controlled network delays and injected
-readback errors are identified as such; they do not claim physical network/GPU failure.
-
-## Evidence and interpretation
-
-The `/accessibility.html` fixture compares pointer/keyboard activation, forward and
-reverse focus order, text selection and accessible content with a no-effect baseline.
-It repeats those checks under active layers, after borrowed/owned GSAP context
-cleanup, initial unavailability, runtime reduced motion and disposal in both projects.
-See [the accessibility verification record](accessibility-verification.md) for saved
-input assertions, manual observations and explicitly untested assistive technology.
-
-The harness writes browser evidence alongside its summary in
-`.scratch/agent/run-*/browser/`. Standalone browser runs use `.scratch/browser/` and
-replace that standalone result on the next run. `DOMFX_BROWSER_OUTPUT_DIR` selects
-another directory; the harness always supplies its own unique run directory.
-
-The Playwright JSON report contains per-case results, durations, browser version,
-and attached lab reports/console errors. The normal-rendering case attaches a viewport
-screenshot; failed cases retain screenshots and traces. Inspect a failed trace with
-`pnpm --filter @domfx/lab exec playwright show-trace /absolute/path/to/trace.zip`.
-Browser reports and traces remain local while automated CI test suites are deferred in #88.
-
-Pixel readbacks establish shader output; screenshot attachments help diagnosis but
-are not visual-diff assertions. Accounted bytes are not a driver-memory leak detector.
-Performance observations, especially SwiftShader timings, are not release thresholds.
-Other browsers, fractional DPR, expanded geometry, physical device loss, and
-additional runtime motion-preference changes need their own scenarios when relevant to a change.
-
-The implementation follows Playwright's [web-server lifecycle](https://playwright.dev/docs/test-webserver)
-and [Chromium channel guidance](https://playwright.dev/docs/browsers), with the Linux
-software backend based on [Vercel's verified WebGPU preset](https://github.com/vercel-labs/agent-browser/blob/main/skill-data/core/references/webgpu.md).
-See also Chromium's [SwiftShader documentation](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/gpu/swiftshader.md).
-
-Automatic invalidation fixtures verify one capture per paint burst, replacement pixels
-matching a fresh attachment, stylesheet-driven target resizing, placement reuse,
-descendant paint refresh, explicit-refresh coalescing and disposal of queued work.
-Real snapshot readback hashes record changed text, image, background and delayed-font
-paint; no capture or renderer mock supplies those pixels. Stylesheet hide/show verifies
-size-triggered recovery without a hidden-target retry loop. Injected decode failure verifies stale/unavailable diagnostics
-without unhandled rejections or retries. Source-mutating SnapDOM styles reject before
-creating capture feedback loops. These run in both browser projects.
-
-Lifecycle fixtures cover initial zero size and repeated zero-width/zero-height recovery,
-requiring no capture/preparation while zero-sized and one fresh capture on visible recovery.
-Real capture and GPU preparation are delayed across zero/nonzero transitions and removal;
-late results must release exactly once without presentation. Target/host removal while
-active, zero-sized, document-hidden or reduced-motion-suspended permanently disposes the
-handle. Same-task reinsertion cannot revive it; a new attachment succeeds. Repeated disposal
-must notify once and return managed allocations and reservations to baseline. These checks
-run in development and production; timing gates simulate ordering, not resource failure.
-
-## Five-class live gallery
-
-The main lab attaches fire through `attachFire` to the headline with counters, rounded
-button with children, stroked/holed SVG, transparent raster and composite card. SVG and
-raster share a bordered rectangular scrolling host; the other three have separate hosts.
-Each target has independent time, intensity, refresh, move/scale and disposal controls.
-The headline uses the manual clock with GSAP controls; the others start paused with
-ambient Play / pause controls. Change content updates the button and calls public refresh.
-
-The normal-rendering checks require all five live layers at DPR 1 and 2 in development
-and production. Canvas pixel readbacks verify nonempty fire, independent controls,
-zero intensity, deterministic restoration, changed-content refresh and surviving output
-after shared/separate-host disposal. Manual and paused targets retain their time and
-reproduce their pixels through translation, positive axis-aligned scale and host scrolling.
-`gallery-checks.json` saves numerical viewport bounds, pixel hashes and control snapshots;
-final disposal requires zero attachment reservations and no live layers. Existing
-placement/shared-service fixtures additionally gate raster reuse and GPU resource cleanup.
-
-For each class, `capture-`, `mask-`, `sdf-` and `fire-<target>-dpr<N>.png` record the
-initial diagnostic capture with **48 CSS-pixel padding**, a threshold of 128, the full-raster
-SDF oracle check, and fire at time 1.5/seed 314/intensity 0.85. Separate
-`live-fire-<target>-dpr<N>.png` files record actual public attachment canvases with their
-**32 CSS-pixel padding** and the controls in `report.gallery`. The diagnostics describe
-the initial paint; live files describe the last saved active output, with disposed targets'
-last images retained. They are not interchangeable pixel baselines. The development
-Save experiment evidence button and automated browser runner save both sets.
-
-An injected SVG canvas-context failure must report FAIL even though its diagnostic capture
-and numerical checks passed. Required targets and completed diagnostic images remain;
-partial attachments are disposed. This prevents capture-only coverage from passing the
-live gallery gate. Existing overflow/paint failure fixtures remain required, and supported
-geometry stays within the documented capture and rectangular clipping limits.
-
-Gallery initialization and saved live evidence visit each target in the viewport, then
-restore the window scroll position. Pixel/placement assertions sample each target while
-visible; offscreen layers no longer render solely for diagnostic readback. Lifecycle
-fixtures that exercise capture and GPU work are positioned inside the viewport.
-
-Explicit retry fixtures run real capture and WebGPU in both projects. Controlled renderer,
-capture and preparation delays verify coalescing, teardown ordering, device destruction,
-motion changes, disposal and removal. Admission checks cover composition, host placement,
-assets, capture/aggregate budgets, visibility and replacement ownership, with exactly-once
-resource release and retained controls. Device destruction is intentional test input, not
-physical hardware-loss coverage.
-
-## Lifecycle stress and soak
-
-The `/stress.html` fixture runs seeds `29` and `24301` in both projects. Each seed
-executes 660 recorded operations over 28 two-target cycles. A fixed integer PRNG
-selects control values, failure injection, target operation order and reverse completion
-order; balanced capture/preparation and transition coverage keeps every seed useful.
-Gates hold real capture frames or prepared GPU frames across visibility, zero size,
-device destruction, retry, GSAP context revert and disposal. Current-generation failures
-must become unavailable; obsolete failures cannot change the newer lifecycle state.
-This controls completion ordering, not every native browser task or GPU timing.
-
-Refresh promises must reject on invalidation before late work completes. Explicit
-deadlines detect unresolved readiness, gate, refresh and retry promises. Obsolete frame
-tokens detect attempted stale rendering even if the attachment catches the render error.
-Every cycle checks exactly-once frame cleanup, empty attachment reservations, managed
-allocations, native buffer/texture lifetimes, observer registrations, scheduled frames,
-GSAP binding children and canvases. Caller-owned GSAP siblings survive context cleanup;
-the GSAP ticker is identified before attachments start and excluded from scheduler counts.
-Fresh visibility re-entry preserves time and capture count; stale re-entry requires
-explicit refresh. Existing fake-clock cases separately verify ambient no-catch-up time.
-
-A separate public `attachFire` soak runs 24 two-target cycles with real shared-service
-ownership, native offscreen/scroll re-entry, refresh and alternating disposal order.
-Each cycle holds live output for 250 ms, checks nonempty and reproducible fixed-time
-pixels, verifies the survivor still renders, and requires all observed resources to return
-to baseline. Concurrent canvases are associated by placement rather than append order.
-The JSON records actual duration, iteration count, browser/adapter, viewport, DPR,
-visibility, motion preference, resource samples and memory-method limits.
-
-Run only these checks after building with:
+For a focused fixture run, build first and select its spec:
 
 ```sh
-pnpm build:demo
-pnpm --filter @domfx/lab exec playwright test stress.spec.ts
+pnpm build:gpu
+pnpm --filter @domfx/gpu-tests exec playwright test failures.spec.ts --project production
 ```
 
-They also run in `pnpm agent:verify`. Passing cases attach `seeded-lifecycle.json`
-and `lifecycle-soak.json`; failures retain the seed/operation trace in the error and
-the usual Playwright trace/screenshot. Replay a seed with `--grep 'races: 29'` or
-`--grep 'races: 24301'`. Keep newly discovered failing seeds in the fixed seed list
-in `apps/lab/browser-tests/stress.spec.ts` before fixing their cause.
+`pnpm test:browser` remains an alias for `pnpm test:gpu:full`. Tests never treat
+missing GPU as a passing rendering check. The full fixture suite has one worker,
+zero retries, and a ten-minute native limit. Long observations remain in the full
+suite and the explicit `measure:*` commands, outside routine CI/harness verification.
 
-Resource counters measure explicit ownership and destruction, not garbage collection,
-process heap, driver/pipeline caches, canvas backing-store bytes or total VRAM.
-Seeded document visibility and intentional device destruction are injected conditions;
-the public soak exercises native scrolling and successful GPU output, not physical
-device loss. These bounded runs do not establish long-session or cross-device stability.
+Set `DOMFX_GPU_BACKEND=native` (default) for hardware rendering, or `swiftshader`
+for software WebGPU. Linux software flags are retained for local investigation;
+the earlier Linux rendering failures remain unresolved. Software rendering cannot
+establish native performance or broad browser support. See the
+[support record](browser-support.md).
+
+## Visual comparisons
+
+The local visual suite uses production website examples with fixed viewport and
+pinned Chromium. Motion-free screenshots check the page shell; the Fire example
+starts paused at time zero with its existing fixed seed. No effect renderer is mocked.
+The test requires a real decorative layer; unavailable output fails.
+
+Baselines live in `apps/web/browser-tests/visual-baselines/<platform>/<backend>/`.
+The checked-in native macOS samples are specific to the recorded machine; a changed
+GPU/driver may require inspection even on the same OS. They are not universal pixel
+truth. Generate candidates with:
+
+```sh
+pnpm test:visual --update-snapshots
+```
+
+Review every image diff before retaining an update. Do not update baselines merely
+to make failures disappear. Screenshots detect appearance changes; separate fixture
+assertions verify cleanup, late completion, refresh and native input preservation.
+Native hardware screenshots do not gate hosted CI.
+
+## Fixture evidence and manual checks
+
+Standalone fixtures write `.scratch/browser/report.json` and failure traces;
+website tests write `.scratch/web/report.json`. Harness smoke evidence has its own
+`.scratch/agent/run-*/browser/` directory. Show a trace with:
+
+```sh
+pnpm --filter @domfx/web exec playwright show-trace /absolute/path/to/trace.zip
+```
+
+`pnpm test:browser:evidence` records revision/dirty state, lockfile/bundle hashes,
+dependencies, browser/adapter, DPR and viewport, numerical checks and fixture images.
+Exit 0 means PASS; exit 1 means failed assertions/build/runner; exit 2 means unavailable
+GPU/effect; exit 3 means unavailable browser/transport. On a working GPU,
+`--inject-failure` must exit 1 after saving completed evidence.
+
+Use `pnpm demo` and `pnpm preview:demo` for manual website inspection. Private
+fixture pages can be inspected with `pnpm --filter @domfx/gpu-tests exec vite
+--host 127.0.0.1` (or `vite preview` after `pnpm build:gpu`). Record browser/GPU,
+viewport, DPR, motion preference, actual outcome and untested cases. Before releases,
+run the full local GPU and website suites plus the tarball rehearsal.
+
+The public lab gallery/control tests were retired. Their relevant capture shapes
+remain in `capture.spec.ts`; public gallery integration is covered by the website.
+Existing independent numerical oracles, failure injection, resource accounting,
+asset, lifecycle and shared-service fixtures remain test-only infrastructure.

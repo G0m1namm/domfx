@@ -1,7 +1,7 @@
 # domfx website
 
 A separately built, static Astro site. It consumes the built `@domfx/browser`
-export and never imports the lab or library sources. Astro renders the content,
+export and never imports the GPU fixtures or library sources. Astro renders the content,
 documentation pages, links, code samples and original SVG artwork at build time; a small browser script
 loads the effect package only when motion and WebGPU permit it. No UI framework,
 server adapter, remote font requests or analytics are required. Cabinet Grotesk,
@@ -42,7 +42,7 @@ pnpm --filter @domfx/web exec playwright test browser-tests/documentation.spec.t
 ```
 
 Link checks crawl the homepage and documentation pages, resolve native routes
-and fragments, and assert the repository destinations for source evidence, lab and license. External availability
+and fragments, and assert the repository destinations for source evidence, standalone example and license. External availability
 requires a separate live GitHub check; the deterministic suite makes no network
 availability claim. Private repository destinations require authenticated access.
 
@@ -154,3 +154,11 @@ colored glints, inspired by Vivid Motion's reference with original domfx shapes.
 The footer repeats the cropped ring composition, then groups Explore and Resources beside the brand, with MIT/Back to top links
 below and a 4px material gradient across the content width. Mobile stacks the brand
 above the link groups; the existing dock clearance keeps bottom links reachable.
+
+## Routine and visual verification
+
+`pnpm demo` opens this app. `pnpm agent:verify` and `pnpm test:web:smoke` run small
+GPU-independent usability checks. `pnpm test:web` retains the complete local GPU
+integration suite. `pnpm test:visual` compares production screenshots, including
+paused Fire; baselines are platform/backend-specific and must be reviewed. See
+[browser verification](../../engineering/browser-verification.md).

@@ -46,13 +46,17 @@ jobs:
       - name: Check latest pushed commit
         if: github.event_name == 'push'
         run: git log -1 --format=%B | pnpm exec commitlint
-      # Test suites stay local pending browser-tooling and memory work in #88.
-      - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm build
-      - run: pnpm lint:boundaries
-      - run: pnpm -r typecheck
-      - run: pnpm build:demo:built
-      - run: pnpm --filter @domfx/web build
+      - run: pnpm check
+      - run: pnpm build:web:built
+      - run: pnpm --filter @domfx/web exec playwright install --with-deps chromium
+      - name: Website smoke (no GPU required)
+        run: pnpm test:web:smoke:built
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: website-smoke
+          path: .scratch/web/
+          include-hidden-files: true
+          retention-days: 7
       - run: pnpm release:status --since origin/main
       - run: pnpm release:artifacts

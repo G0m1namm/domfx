@@ -31,9 +31,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: |
-          pnpm --filter @domfx/lab exec playwright install --with-deps chromium
+          pnpm --filter @domfx/gpu-tests exec playwright install --with-deps chromium
           sudo apt-get install -y libvulkan1 mesa-vulkan-drivers xvfb
       - run: pnpm agent:verify
+      # Disabled publication preparation retains GPU gates pending a local artifact handoff.
+      - run: pnpm test:gpu:full
       - run: pnpm test:web
       - name: Pack once and test both fresh consumers
         run: xvfb-run -a pnpm release:rehearse

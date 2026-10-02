@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 import { preview } from 'vite';
 
 const root = resolve(import.meta.dirname, '../../..');
-const lab = resolve(root, 'apps/lab');
+const lab = resolve(root, 'tests/gpu');
 const directory = resolve(
   root,
   '.scratch/browser-regression',
@@ -56,7 +56,7 @@ try {
     execFileSync('pnpm', ['list', '-r', '--depth', '0', '--json'], { cwd: root, encoding: 'utf8' }),
   );
   result.runtime = { node: process.version, platform: process.platform, arch: process.arch };
-  for (const command of ['test', 'build:demo']) {
+  for (const command of ['test', 'build:gpu']) {
     const run = spawnSync('pnpm', [command], { cwd: root, encoding: 'utf8' });
     await writeFile(
       resolve(directory, `${command.replace(':', '-')}.log`),
@@ -146,11 +146,11 @@ try {
   if (page && !page.isClosed()) {
     try {
       await page.screenshot({
-        path: resolve(directory, 'lab.png'),
+        path: resolve(directory, 'fixtures.png'),
         fullPage: true,
         timeout: 10_000,
       });
-      result.artifacts.push('lab.png');
+      result.artifacts.push('fixtures.png');
     } catch (error) {
       result.errors.push(`screenshot: ${error}`);
       if (exitCode === 0) {

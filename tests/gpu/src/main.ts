@@ -1,13 +1,12 @@
 import { gsap } from 'gsap';
 
-import { captureElement, type EffectHandle } from '@domfx/browser';
+import { attachFire, captureElement, type EffectHandle } from '@domfx/browser';
 import { GpuExperiment, memoryFor, type PreparedGpuFrame } from '@domfx/browser/experimental';
 import { classifyAlpha, type CaptureFrame } from '@domfx/core';
 
 import { exactDistanceField } from './diagnostics/distance-oracle.js';
 import { verifyFireShape } from './diagnostics/fire-shape.js';
 import { verifyPreparationResources } from './diagnostics/preparation-resources.js';
-import { createGallery } from './gallery.js';
 
 const element = <T extends Element = HTMLElement>(id: string) =>
   document.getElementById(id)! as unknown as T;
@@ -16,7 +15,6 @@ const images: Record<string, string> = {};
 const report: Record<string, unknown> = {};
 declare global {
   interface Window {
-    domfxGallery?: ReturnType<typeof createGallery>;
     domfxEvidence?: { report: Record<string, unknown>; images: Record<string, string> };
   }
 }
@@ -34,7 +32,7 @@ element<HTMLButtonElement>('rounded').onclick = () => {
 let service: GpuExperiment | undefined;
 let live: PreparedGpuFrame | undefined;
 let stop = () => {};
-let gallery: ReturnType<typeof createGallery> | undefined;
+let attachment: EffectHandle | undefined;
 const sleepFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 function showReport() {
@@ -51,8 +49,8 @@ function showReport() {
   summary.dataset.tone = tone;
   summary.textContent = outcome || 'Checks are running. No final render result yet.';
   const error = element('result-error');
-  error.hidden = !report.error && !report.galleryError;
-  error.textContent = String(report.galleryError ?? report.error ?? '');
+  error.hidden = !report.error;
+  error.textContent = String(report.error ?? '');
   const checks = [
     ['check-capture', report.captures, 7],
     ['check-fire', report.fire],
@@ -651,13 +649,16 @@ async function main() {
     hero.frame.release();
     hero.prepared.destroy();
     live = undefined;
-    gallery = createGallery(images, report, showReport);
-    if (automation) {
-      window.domfxGallery = gallery;
-    }
-    await gallery.ready;
-    attachDemo(gallery.headline);
-    await gallery.saveLiveEvidence();
+    attachment = attachFire(element('target'), {
+      host: element('host'),
+      time: 1.5,
+      intensity: 0.85,
+      seed: 314,
+    });
+    await attachment.ready;
+    check(attachment.lifecycle === 'active', 'fixture attachment unavailable');
+    element('host').querySelector('canvas')?.classList.add('effect');
+    attachDemo(attachment);
     check(
       !automation || !new URLSearchParams(location.search).has('inject-failure'),
       'injected assertion failure',
@@ -665,10 +666,9 @@ async function main() {
     report.outcome = 'PASS: capture, GPU signed distances and deterministic GPU fire';
     showReport();
     status.textContent = 'PASS · Capture, GPU distance fields, and deterministic fire verified.';
-    element<HTMLButtonElement>('save').disabled = !import.meta.env.DEV;
   } catch (error) {
     stop();
-    gallery?.dispose();
+    attachment?.dispose();
     live?.destroy();
     service?.destroy();
     report.outcome =
@@ -678,7 +678,6 @@ async function main() {
     report.error = error instanceof Error ? error.stack : String(error);
     status.textContent = `${report.outcome === 'UNAVAILABLE: no GPU' ? 'Effect unavailable' : 'Experiment failed'}: ${error instanceof Error ? error.message : String(error)}`;
     showReport();
-    element<HTMLButtonElement>('save').disabled = !import.meta.env.DEV;
     console.error(error);
   }
 }
@@ -697,7 +696,7 @@ function attachDemo(effect: EffectHandle) {
   });
   stop = () => {
     timeline.kill();
-    gallery?.dispose();
+    attachment?.dispose();
     for (const id of ['play', 'seek', 'reverse', 'dispose']) {
       element<HTMLButtonElement>(id).disabled = true;
     }
@@ -718,42 +717,25 @@ function attachDemo(effect: EffectHandle) {
     report.disposal = {
       managedBytes: service?.managedBytes,
       attachmentReservedBytes: memoryFor(document).bytes,
-      overlayRemoved: document.querySelectorAll('canvas[data-gallery-target]').length === 0,
+      overlayRemoved: element('host').querySelectorAll('canvas').length === 0,
     };
     showReport();
     status.textContent = 'Effects disposed. Original DOM remains usable.';
   };
   updateClock();
 }
-element<HTMLButtonElement>('save').onclick = async () => {
-  try {
-    await gallery?.saveLiveEvidence();
-    const response = await fetch('/__evidence', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ report, images }),
-    });
-    if (!response.ok) {
-      throw new Error(await response.text());
-    }
-    const result = await response.json();
-    status.textContent = `Evidence saved: ${result.directory}`;
-  } catch (error) {
-    status.textContent = `Evidence save failed: ${error}`;
-  }
-};
 window.addEventListener(
   'pagehide',
   () => {
     stop();
-    gallery?.dispose();
+    attachment?.dispose();
     service?.destroy();
   },
   { once: true },
 );
 import.meta.hot?.dispose(() => {
   stop();
-  gallery?.dispose();
+  attachment?.dispose();
   service?.destroy();
 });
 void main();

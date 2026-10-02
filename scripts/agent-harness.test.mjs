@@ -87,7 +87,7 @@ test('verification records sequential checks for the unchanged source tree', (t)
     calls.push(command);
     return pass(command, environment);
   });
-  assert.deepEqual(calls, ['check', 'build:demo', 'test:browser:built']);
+  assert.deepEqual(calls, ['check', 'build:demo:built', 'test:browser:built']);
   assert.equal(report.status, 'passed');
   assert.equal(report.sourceBefore.digest, report.sourceAfter.digest);
   assert.equal(report.browserVerification, 'passed');
@@ -223,7 +223,7 @@ test('the harness can be imported from Node stdin without running the CLI', () =
   assert.equal(result.stdout.trim(), 'function');
 });
 
-for (const failure of ['', 'check', 'build:demo', 'test:browser:built', 'signal']) {
+for (const failure of ['', 'check', 'build:demo:built', 'test:browser:built', 'signal']) {
   test(`CLI verification persists real process outcomes: ${failure || 'success'}`, (t) => {
     const { root } = fixture(t);
     mkdirSync(join(root, 'scripts'));
@@ -275,9 +275,9 @@ process.exitCode = command === process.env.DOMFX_TEST_FAIL_COMMAND ? 2 : 0;
       calls.map((call) => call.command),
       ['check', 'signal'].includes(failure)
         ? ['check']
-        : failure === 'build:demo'
-          ? ['check', 'build:demo']
-          : ['check', 'build:demo', 'test:browser:built'],
+        : failure === 'build:demo:built'
+          ? ['check', 'build:demo:built']
+          : ['check', 'build:demo:built', 'test:browser:built'],
     );
     for (const call of calls) {
       assert.equal(call.cwd, root);
@@ -296,7 +296,7 @@ process.exitCode = command === process.env.DOMFX_TEST_FAIL_COMMAND ? 2 : 0;
     if (failure === 'signal') {
       assert.equal(report.checks[0].signal, 'SIGTERM');
     }
-    if (['check', 'build:demo', 'test:browser:built'].includes(failure)) {
+    if (['check', 'build:demo:built', 'test:browser:built'].includes(failure)) {
       assert.equal(report.checks.find((check) => check.command === failure).exitCode, 2);
     }
   });

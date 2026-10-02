@@ -207,10 +207,14 @@ export function createGallery(
       // WebGPU canvas storage is transient. Repaint and read in the same frame.
       const time = effect.time;
       effect.time = time;
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      if (effect.lifecycle === 'active' && layer) {
-        images[`live-fire-${id}-dpr${devicePixelRatio}`] = layer.toDataURL();
-      }
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => {
+          if (effect.lifecycle === 'active' && layer) {
+            images[`live-fire-${id}-dpr${devicePixelRatio}`] = layer.toDataURL();
+          }
+          resolve();
+        }),
+      );
     }
     window.scrollTo({ ...position, behavior: 'instant' });
     update();

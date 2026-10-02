@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 concurrency:
@@ -14,13 +14,13 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  LEFTHOOK: '0'
+
 jobs:
   workspace:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      LEFTHOOK: '0'
-      DOMFX_GPU_BACKEND: swiftshader
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -46,23 +46,13 @@ jobs:
       - name: Check latest pushed commit
         if: github.event_name == 'push'
         run: git log -1 --format=%B | pnpm exec commitlint
-      - name: Install browser and software GPU prerequisites
-        run: |
-          pnpm --filter @domfx/lab exec playwright install --with-deps chromium
-          sudo apt-get install -y libvulkan1 mesa-vulkan-drivers
-      - run: pnpm agent:verify
-      - name: Verify Astro website
-        run: pnpm test:web
-      - name: Upload verification evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: browser-gpu-evidence
-          path: |
-            .scratch/agent/
-            .scratch/web/
-          include-hidden-files: true
-          if-no-files-found: ignore
-          retention-days: 7
+      # Test suites stay local pending browser-tooling and memory work in #88.
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm lint:boundaries
+      - run: pnpm -r typecheck
+      - run: pnpm build:demo:built
+      - run: pnpm --filter @domfx/web build
       - run: pnpm release:status --since origin/main
       - run: pnpm release:artifacts

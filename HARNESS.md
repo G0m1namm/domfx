@@ -41,9 +41,11 @@ It does not commit, push, merge, publish, or change GitHub settings.
 
 ## What the commands enforce
 
-`pnpm agent:verify` runs `pnpm check`, `pnpm build:demo`, and `pnpm test:browser:built`
-in order, stopping on failure. It reuses the production build for browser tests.
-Existing checks remain available individually; CI runs the complete harness. Install
+`pnpm agent:verify` runs `pnpm check`, `pnpm build:demo:built`, and `pnpm test:browser:built`
+in order, stopping on failure. The check builds the libraries once; the next step builds
+only the lab, and browser tests reuse that output.
+Existing checks remain available individually. CI currently runs static checks and builds;
+test suites remain local pending [#88](https://github.com/G0m1namm/domfx/issues/88). Install
 the test browser using the [browser verification guide](engineering/browser-verification.md).
 
 | Gate                                                    | Enforcement                                                                                            |

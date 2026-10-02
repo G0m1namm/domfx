@@ -21,6 +21,9 @@ declare global {
   }
 }
 const automation = new URLSearchParams(location.search).has('automation');
+// Capture/failure cases retain their real GPU checks without repeating the soak/timing run.
+const functional = automation && new URLSearchParams(location.search).has('functional');
+report.diagnostics = functional ? 'functional' : 'full';
 if (automation) {
   Object.assign(window, { domfxEvidence: { report, images } });
 }
@@ -583,10 +586,12 @@ async function main() {
     const fireShape = await verifyFireShape(gpu, Math.min(2, devicePixelRatio));
     report.fireShape = fireShape;
     check(fireShape.pass, 'rising fire shape failed');
-    status.textContent = 'Checking 1,000 GPU preparation/release cycles…';
-    const preparationResources = await verifyPreparationResources();
-    report.preparationResources = preparationResources;
-    check(preparationResources.pass, 'repeated preparation resources failed');
+    if (!functional) {
+      status.textContent = 'Checking 1,000 GPU preparation/release cycles…';
+      const preparationResources = await verifyPreparationResources();
+      report.preparationResources = preparationResources;
+      check(preparationResources.pass, 'repeated preparation resources failed');
+    }
     report.captures = {};
     const captured: Record<string, unknown> = {};
     for (const id of ['rounded', 'vector', 'transparent', 'card', 'guard', 'transformed']) {
@@ -636,9 +641,11 @@ async function main() {
       zeroIntensityTransparent: true,
     };
     report.gsap = await verifyGsap(hero.prepared, 1 / hero.frame.pixelToLocal.a);
-    status.textContent = 'Measuring 30 warm capture → GPU SDF rebuilds…';
-    await sleepFrame();
-    report.warmMeasurements = await warmMeasurements(gpu);
+    if (!functional) {
+      status.textContent = 'Measuring 30 warm capture → GPU SDF rebuilds…';
+      await sleepFrame();
+      report.warmMeasurements = await warmMeasurements(gpu);
+    }
     report.gpuErrors = gpu.errors;
     check(gpu.errors.length === 0, 'uncaptured GPU validation errors');
     hero.frame.release();

@@ -86,6 +86,8 @@ consumers, production builds and per-stage PNGs. The report records artifact SHA
 actual tar file inventories/manifests, resolved install paths, source revision/dirty
 state, lockfile and production asset hashes, Node/browser/GPU environment and checks.
 Archive that directory when retaining release evidence; the OS may remove temporary files.
+On a consumer browser failure, retain its `failure.png` and the report's native-selection
+focus, pointer-target and layout observations when the heading check was reached.
 Artifact inspection checks required exports, transformed shader metadata, the existing
 file allowlist, fixture/test paths and common private-key/token signatures. This is a
 bounded accidental-content check, not a comprehensive secret or Git-history audit.

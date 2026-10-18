@@ -23,6 +23,7 @@ import {
   testedReleaseArtifacts,
   validateArtifact,
 } from './check-release-artifacts.mjs';
+import { captureFailureEvidence } from './release-failure-evidence.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const registry = process.argv[2] === '--registry';
@@ -415,16 +416,47 @@ Object.assign(window, { recipe: { fire${kind === 'gsap' ? ', timeline, binding, 
       );
       // Native mouse selection on the real heading; a synthetic Selection is no proof.
       const rect = await page.locator('#recipe-target').evaluate((element) => {
+        window.releaseSelectionEvents = [];
+        for (const type of ['pointerdown', 'pointerup', 'selectionchange']) {
+          document.addEventListener(
+            type,
+            (event) => {
+              window.releaseSelectionEvents.push({
+                type,
+                target: event.target?.id ?? event.target?.nodeName,
+              });
+            },
+            { capture: true },
+          );
+        }
         const range = document.createRange();
         range.selectNodeContents(element);
         const rect = range.getClientRects()[0];
         return { left: rect.left, right: rect.right, y: rect.top + rect.height / 2 };
       });
+      const start = { x: rect.left + 1, y: rect.y };
+      const end = { x: rect.right - 1, y: rect.y };
+      const beforeSelection = await page.evaluate(
+        ({ start, end }) => ({
+          startHit: document.elementFromPoint(start.x, start.y)?.id,
+          endHit: document.elementFromPoint(end.x, end.y)?.id,
+          targetBounds: document.querySelector('#recipe-target').getBoundingClientRect().toJSON(),
+          activeElement: document.activeElement?.id,
+        }),
+        { start, end },
+      );
       await page.mouse.move(rect.left + 1, rect.y);
       await page.mouse.down();
       await page.mouse.move(rect.right - 1, rect.y, { steps: 10 });
       await page.mouse.up();
-      assert.ok(await page.evaluate(() => getSelection().toString().length > 0));
+      const afterSelection = await page.evaluate(() => ({
+        selectedText: getSelection()?.toString() ?? '',
+        targetBounds: document.querySelector('#recipe-target').getBoundingClientRect().toJSON(),
+        activeElement: document.activeElement?.id,
+        events: window.releaseSelectionEvents,
+      }));
+      consumer.nativeSelection = { before: beforeSelection, after: afterSelection };
+      assert.ok(afterSelection.selectedText.length > 0, 'native mouse selection');
       await recipeCanvas.screenshot({ path: join(cwd, 'heading-recipe.png') });
       await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
       assert.equal(await recipeCanvas.count(), 0);
@@ -450,12 +482,7 @@ Object.assign(window, { recipe: { fire${kind === 'gsap' ? ', timeline, binding, 
       consumer.outcome = 'FAIL';
       consumer.error = String(error);
       if (page && !page.isClosed()) {
-        try {
-          consumer.pageReport = await page.locator('#report').textContent();
-          await page.screenshot({ path: join(cwd, 'failure.png') });
-        } catch (evidenceError) {
-          consumer.errors.push(`Failure evidence unavailable: ${evidenceError}`);
-        }
+        await captureFailureEvidence(page, consumer, join(cwd, 'failure.png'));
       }
       throw error;
     } finally {

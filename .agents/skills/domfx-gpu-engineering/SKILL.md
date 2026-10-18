@@ -5,7 +5,7 @@ description: Implement, debug, and review domfx GPU rendering and compute code, 
 
 # domfx GPU engineering
 
-Follow the root `AGENTS.md`, `CONTRIBUTING.md`, `CONTEXT.md`, and `HARNESS.md`.
+Follow the root `AGENTS.md`, `CONTRIBUTING.md`, `GLOSSARY.md`, and `HARNESS.md`.
 Use the TypeScript engineering skill for general code rules; this skill adds GPU checks.
 
 ## Establish the GPU contract

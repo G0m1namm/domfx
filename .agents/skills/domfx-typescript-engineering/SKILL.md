@@ -7,7 +7,7 @@ description: Write, refactor, or review TypeScript in domfx with clear module ow
 
 ## 1. Establish the contract
 
-- Read `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `CONTEXT.md`, and
+- Read `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `GLOSSARY.md`, and
   `workspace-boundaries.mjs` at the repository root. They override this skill.
 - Read the affected package exports, TypeScript configuration, nearby implementation,
   and tests. Work with the installed TypeScript version and existing tools.

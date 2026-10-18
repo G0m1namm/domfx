@@ -1,8 +1,8 @@
-# Development agent harness
+# Verification harness
 
-This repository pairs an agent workflow with executable engineering checks. The
-agent supplies design judgment and implementation; repository tools provide repeatable
-feedback. Use the same workflow with any coding agent or a human contributor.
+The [AI Hero workflow](engineering/agent-workflow.md) governs planning, implementation,
+and review. This harness supplies repeatable verification and evidence for that
+workflow, for coding agents and human contributors alike.
 
 ## Start a task
 
@@ -19,25 +19,17 @@ that every design choice should be copied.
 Select [specialist skills](engineering/skills.md) for GPU/shaders, browser capture,
 or animation work. Load both sides when a change crosses capture/render boundaries.
 
-## Development loop
+## Use with the skills
 
-1. **Define:** identify caller-visible behavior, owning module, invariants, and acceptance
-   checks. Clarify unresolved behavior before changing boundary contracts.
-2. **Design:** choose the smallest design that satisfies those checks. For a new
-   abstraction, dependency, or public export, explain its current caller need and cost.
-   Record material decisions in the issue or tracked guidance contributors can read.
-3. **Implement:** make one vertical change at a time. Reproduce bugs before fixing them;
-   test behavior through public boundaries. Keep unrelated cleanup out of the diff.
-4. **Verify:** run focused tests during implementation, then `pnpm agent:verify` after
-   edits settle. This includes a small development/production website smoke suite. For
-   capture/GPU changes, add relevant coverage and perform any additional manual scenarios
-   in [CONTRIBUTING.md](CONTRIBUTING.md). Record environment and actual results.
-5. **Review:** inspect the final diff against both the contract and the design questions
-   below. Fix actionable findings, repeat affected checks, and report remaining limits.
+An issue or approved spec supplies the contract and acceptance checks. `implement`
+and `implement-spec` use focused checks during development, then this harness once
+edits settle. Their code review is a distinct pass against Standards and Spec.
+Repeat affected checks after review fixes and record unverified work explicitly.
 
-Review is a distinct pass, even when the same agent performs it. An additional reviewer
-can help for complex changes, but this harness does not automatically spawn agents.
-It does not commit, push, merge, publish, or change GitHub settings.
+The runner does not call a model, spawn agents, commit, push, merge, publish, or
+change GitHub settings. Those actions belong to the invoked skill and task scope.
+For parallel implementation, verify the integrated source with that worktree idle;
+individual worker results do not substitute for integration evidence.
 
 ## What the commands enforce
 

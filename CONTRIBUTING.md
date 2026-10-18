@@ -79,16 +79,17 @@ use `workspace:*` and exported package names, not relative paths into source or
 dist. Dependencies belong to their consumers; runtime code cannot rely on
 dev-only packages. Boundary regressions are tested in `pnpm test:tooling`.
 
-The website is the development/demo surface. Private `tests/gpu` pages exist only
+The website is the development/demo surface. Package-private `tests/gpu` pages exist only
 for regression checks and optional measurements. Neither consumer imports the other.
-Use the website's existing examples for public demonstrations; add a small private
+Use the website's existing examples for public demonstrations; add a small package-private
 fixture when a failure/lifecycle case cannot be exercised there.
 
 ## Verification
 
 The [development harness](HARNESS.md) provides a task brief (`pnpm agent:brief`) and
-one verification command (`pnpm agent:verify`) that runs the checks below and records
-their outcomes locally. It supports coding agents and human contributors alike.
+one verification command (`pnpm agent:verify`) that runs repository checks and records
+outcomes locally. Human contributors can run the same checks directly (`pnpm check` and
+`pnpm test:web:smoke`) without an agent client.
 
 Keep changes small and include a reproducible check. Packages must not import
 apps; diagnostic distance oracles belong only to test fixtures. GSAP belongs in the optional
@@ -119,12 +120,30 @@ suite and release metadata validation. Expensive GPU, soak and performance runs 
 local opt-in checks. The publication workflow remains disabled; its existing GPU
 preparation must be revised before enabling publication on hosted runners.
 
-## Maintainer notes
+## Publication and working artifacts
 
-Public contributions must be understandable from tracked files and the linked
-issue. `PROJECT_CONTEXT.md`, `docs/` and `.scratch/` are local-only notes, not
-contributor prerequisites. Never commit them.
+domfx separates durable contributor knowledge from local operational state:
 
-See [.github/REPOSITORY_SETTINGS.md](.github/REPOSITORY_SETTINGS.md) for launch
-settings. Packages stay private until release gates pass; public source does not
-imply npm publication. Retain the project and third-party license notices.
+- **Tracked knowledge:** Durable setup, commands, architecture contracts, domain terminology
+  ([GLOSSARY.md](GLOSSARY.md)), design direction ([DESIGN.md](DESIGN.md)), licenses, and
+  necessary workflow configuration are tracked in Git. Task scope and decisions belong in
+  linked GitHub issues.
+- **Local working state:** Personal working notes, transient experiment runs, local settings,
+  and environment variables stay in ignored locations (`.scratch/`, `PROJECT_CONTEXT.md`,
+  local `docs/`, `.env*.local`). Never commit or require them.
+- **Pushed branches reach the repository audience:** Any pushed branch is available to that
+  audience even if never merged into `main`, and can become public if visibility changes.
+  Do not push credentials, raw memory traces, or sensitive personal data.
+- **Publication boundaries:** GitHub source visibility and npm distribution are distinct.
+  Library manifests select `dist` (`files: ["dist"]`); npm tarballs also include package
+  metadata, README, license, and an optional changelog, as verified by
+  `pnpm release:artifacts`.
+- **Test fixtures:** `tests/gpu` is a package-private workspace for internal regression testing.
+  While its tracked source is visible in the public repository, it is not an exported npm
+  package or public demo gallery. Never store secrets or private data in test fixtures.
+
+See [artifact and documentation policy](engineering/artifact-policy.md) for the complete
+audience, location, and format map. Shared repository settings and maintenance routines live
+in [.github/REPOSITORY_SETTINGS.md](.github/REPOSITORY_SETTINGS.md); link to it instead of
+duplicating routines here. Packages stay private until release gates pass; public source does
+not imply npm publication.

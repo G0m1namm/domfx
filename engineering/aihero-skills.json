@@ -1,0 +1,114 @@
+{
+  "repository": "https://github.com/mattpocock/skills",
+  "revision": "49dd158d1076134a641b33efb035946536778336",
+  "skills": [
+    {
+      "name": "ask-matt",
+      "source": "skills/engineering/ask-matt"
+    },
+    {
+      "name": "code-review",
+      "source": "skills/engineering/code-review"
+    },
+    {
+      "name": "codebase-design",
+      "source": "skills/engineering/codebase-design"
+    },
+    {
+      "name": "diagnosing-bugs",
+      "source": "skills/engineering/diagnosing-bugs"
+    },
+    {
+      "name": "domain-modeling",
+      "source": "skills/engineering/domain-modeling"
+    },
+    {
+      "name": "grill-me",
+      "source": "skills/productivity/grill-me"
+    },
+    {
+      "name": "grill-with-docs",
+      "source": "skills/engineering/grill-with-docs"
+    },
+    {
+      "name": "grilling",
+      "source": "skills/productivity/grilling"
+    },
+    {
+      "name": "handoff",
+      "source": "skills/productivity/handoff"
+    },
+    {
+      "name": "implement",
+      "source": "skills/engineering/implement"
+    },
+    {
+      "name": "implement-spec",
+      "source": "skills/engineering/implement-spec"
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "source": "skills/engineering/improve-codebase-architecture"
+    },
+    {
+      "name": "pr",
+      "source": "skills/engineering/pr"
+    },
+    {
+      "name": "prototype",
+      "source": "skills/engineering/prototype"
+    },
+    {
+      "name": "aihero-research",
+      "source": "skills/engineering/research"
+    },
+    {
+      "name": "aihero-retro",
+      "source": "skills/engineering/retro"
+    },
+    {
+      "name": "setup-matt-pocock-skills",
+      "source": "skills/engineering/setup-matt-pocock-skills"
+    },
+    {
+      "name": "tdd",
+      "source": "skills/engineering/tdd"
+    },
+    {
+      "name": "teach",
+      "source": "skills/productivity/teach"
+    },
+    {
+      "name": "to-questionnaire",
+      "source": "skills/productivity/to-questionnaire"
+    },
+    {
+      "name": "to-spec",
+      "source": "skills/engineering/to-spec"
+    },
+    {
+      "name": "to-tickets",
+      "source": "skills/engineering/to-tickets"
+    },
+    {
+      "name": "triage",
+      "source": "skills/engineering/triage"
+    },
+    {
+      "name": "wait-what",
+      "source": "skills/productivity/wait-what"
+    },
+    {
+      "name": "wayfinder",
+      "source": "skills/engineering/wayfinder"
+    },
+    {
+      "name": "wizard",
+      "source": "skills/engineering/wizard"
+    },
+    {
+      "name": "writing-for-agents",
+      "source": "skills/productivity/writing-for-agents"
+    }
+  ]
+}

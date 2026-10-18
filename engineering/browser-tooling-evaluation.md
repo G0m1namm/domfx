@@ -7,7 +7,8 @@
 Retain Playwright Test and pnpm for complete verification. No candidate established
 a faster complete workflow with the existing checks. This is a bounded no-go for
 migration on the measured macOS environment, not proof that Playwright is universally
-fastest. GitHub Actions' temporary static-check/build policy remains unchanged.
+fastest. Current CI and contributor checks are defined in `CONTRIBUTING.md` and
+`HARNESS.md`; this 2026-10-02 record does not describe their present timings.
 
 | Candidate                            | Decision                                                 | Evidence and cost                                                                                                                                                                                                                                     |
 | ------------------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

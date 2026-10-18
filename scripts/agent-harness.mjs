@@ -164,7 +164,7 @@ if (
     console.log(
       `# Repository context\n\nRuntime: Node ${readFileSync(join(root, '.nvmrc'), 'utf8').trim()}; ${manifest.packageManager}.`,
     );
-    console.log('\nRead AGENTS.md, CONTRIBUTING.md, CONTEXT.md, and HARNESS.md.\n');
+    console.log('\nRead AGENTS.md, CONTRIBUTING.md, GLOSSARY.md, and HARNESS.md.\n');
     for (const [workspace, dependencies] of Object.entries(boundaries)) {
       console.log(`- ${workspace} may depend on: ${dependencies.join(', ') || 'no workspace'}.`);
     }

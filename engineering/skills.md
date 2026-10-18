@@ -1,7 +1,8 @@
 # Specialist engineering skills
 
-Load the skills needed by a change rather than the full catalog. The general
-TypeScript skill and `HARNESS.md` continue to govern scope and verification.
+Use the [AI Hero workflow](agent-workflow.md) to select the flow, then load only the
+specialist skills needed by the change. The TypeScript skill supplies engineering
+contracts; `HARNESS.md` supplies executable verification.
 
 | Area                 | Skill                                                                                     | Responsibility                                                                                              |
 | -------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -21,15 +22,13 @@ References to other GSAP skills are optional; they are not installed by this set
 
 ## Provenance
 
-Added 2026-09-28. `improve-codebase-architecture` and its required `codebase-design`
-helper are unmodified skill bundles from
-[Matt Pocock's skills repository at c55ee46073ed923f86ce59a5eb3b6d895095d1b7](https://github.com/mattpocock/skills/tree/c55ee46073ed923f86ce59a5eb3b6d895095d1b7/skills/engineering).
-Each folder includes the upstream MIT `LICENSE` and Codex UI metadata. The review
-also uses the existing `grilling` and `domain-modeling` skills. Repository scope,
-dependency boundaries, design guidance, and verification contracts take precedence.
-Optional ignored ADRs may inform a review, but required decisions belong in the
-issue or tracked contributor guidance. Retain the license and review upstream
-changes when updating these pinned skills.
+The complete published AI Hero engineering/productivity set (27 skills) is adapted
+from [Matt Pocock’s repository at 49dd158d1076134a641b33efb035946536778336](https://github.com/mattpocock/skills/tree/49dd158d1076134a641b33efb035946536778336).
+See [the workflow and adaptation record](agent-workflow.md) for routing and local
+changes, and [the source manifest](aihero-skills.json) for every installed name and
+upstream path. Each folder retains the upstream MIT license and Codex metadata.
+`aihero-research` and `aihero-retro` avoid collisions with other installed skills.
+Review upstream changes before updating; keep local adaptations and attribution.
 
 Reviewed 2026-09-08. `domfx-gpu-engineering` and `domfx-browser-engineering` are
 original project guidance with primary references, covered by the project license.

@@ -1,0 +1,137 @@
+---
+import { Image } from 'astro:assets';
+import annulus from '../assets/illustrations/annulus.png';
+import AnnulusVector from './AnnulusVector.astro';
+const setup = '/docs/installation';
+---
+      <section class="home-hero" aria-labelledby="hero-title">
+        <aside class="identity" aria-label="Install domfx">
+          <div class="install">
+            <p class="install-note">Use domfx on its own or with GSAP.</p>
+            <div class="install-command">
+              <code id="install-command">npm install @domfx/browser</code>
+              <button
+                class="copy-install"
+                type="button"
+                aria-label="Copy install command"
+                title="Copy install command"
+                hidden
+              >
+                <svg
+                  class="clipboard-icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  aria-hidden="true"
+                >
+                  <rect x="8" y="4" width="8" height="4" rx="1" />
+                  <path d="M8 6H5v15h14V6h-3" />
+                </svg>
+                <svg
+                  class="copied-icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  aria-hidden="true"
+                >
+                  <path d="m5 12 4 4L19 6" />
+                </svg>
+              </button>
+            </div>
+            <p class="copy-status" role="status"></p>
+          </div>
+        </aside>
+        <div class="statement">
+          <span class="intro-arrow" aria-hidden="true">↳</span>
+          <h1 id="hero-title">
+            Give your HTML an expressive edge. Add GPU effects to text, SVGs and images. Your text
+            stays selectable. Your links keep working.
+          </h1>
+          <div class="statement-meta">
+            <a class="primary" href="#integration"
+              >See how to use it <span aria-hidden="true">↓</span></a
+            >
+          </div>
+        </div>
+        <section class="hero-examples" id="examples" tabindex="-1" aria-label="Interactive HTML demonstration">
+          <div class="stage">
+            <figure class="sample sample-image">
+              <figcaption><span><a href="#example-image">Image</a></span><span>Transparent silhouette</span></figcaption>
+              <div class="image-sample sample-frame sample-display">
+                <div class="capture-host" data-effect-host><Image id="example-image" data-effect-target src={annulus} width={768} format="png" loading="eager" fetchpriority="high" alt="Silver annular disc with violet reflections and a transparent open center" /></div>
+              </div>
+            </figure>
+            <figure class="sample sample-vector">
+              <figcaption><span><a href="#example-svg">SVG</a></span><span>Outer + inner contour</span></figcaption>
+              <div class="vector-sample sample-frame sample-display">
+                <div class="capture-host" data-effect-host><AnnulusVector /></div>
+              </div>
+            </figure>
+            <figure class="sample sample-text">
+              <figcaption><span><a href="#effect-heading">Text</a></span></figcaption>
+              <div class="text-sample sample-frame">
+                <div class="target-wrap" data-effect-host>
+                  <h2 id="effect-heading" data-effect-target class="target">Keep<br />the HTML.</h2>
+                  <a class="native-link" href="#integration">Select the text. Try this link ↗</a>
+                </div>
+              </div>
+            </figure>
+          </div>
+        </section>
+        <div class="project-meta">
+          <div class="demo-settings">
+    <aside class="effect-dock" id="playground" aria-label="Showcase controls" hidden>
+      <section class="dock-panel" id="effect-panel" role="region" aria-labelledby="effect-title" hidden inert>
+        <h2 class="dock-sr-only" id="effect-title">Effect</h2>
+        <div class="control-row"><span id="effect-choice-label">Effect</span><fieldset id="effect-presets" aria-labelledby="effect-choice-label"><legend class="dock-sr-only">Available effects</legend><label><input type="radio" name="effect" value="none" /><span>None</span></label><label><input type="radio" name="effect" value="fire" checked /><span>Fire</span></label></fieldset></div>
+        <div class="settings-fields">
+          <div class="control-row"><label for="intensity-number">Intensity</label><label class="numeric-value"><input id="intensity-number" aria-label="Maximum intensity percent" type="number" min="0" max="100" step="5" value="70" /><span>%</span></label><p class="dock-sr-only">The scroll card peaks at this value. Other targets use it directly.</p></div>
+          <div class="slider-row"><div class="value-row"><label for="flame-height">Flame height</label><label class="numeric-value"><input id="height-number" aria-label="Flame height pixels" type="number" min="8" max="64" step="1" value="32" /><span>px</span></label></div><input id="flame-height" type="range" min="8" max="64" step="1" value="32" /></div>
+        </div>
+      </section>
+      <section class="dock-panel" id="motion-panel" role="region" aria-labelledby="motion-title" hidden inert>
+        <h2 class="dock-sr-only" id="motion-title">Motion</h2>
+        <div class="settings-fields">
+          <div class="slider-row"><div class="value-row"><label for="motion-speed">Speed</label><label class="numeric-value"><input id="speed-number" aria-label="Motion speed multiplier" type="number" min="0.1" max="2" step="0.1" value="1" /><span>×</span></label></div><input id="motion-speed" type="range" min="0.1" max="2" step="0.1" value="1" /></div>
+          <div class="control-row"><span title="On repeats the selected range. Off runs continuously.">Range <span class="control-hint" aria-hidden="true">ⓘ</span></span><label class="segmented-switch"><span class="dock-sr-only">Repeat a range</span><input id="motion-loop" type="checkbox" role="switch" /><span class="switch-on" aria-hidden="true">On</span><span class="switch-off" aria-hidden="true">Off</span></label></div>
+          <div class="control-row"><span title="Set the beginning and end of the repeated Fire time range, in seconds.">Start / end <span class="control-hint" aria-hidden="true">ⓘ</span></span><div class="motion-range"><input id="range-start" aria-label="Range start seconds" type="number" min="0" max="119.95" step="0.05" value="0" disabled /><div class="range-track"><input id="range-start-slider" aria-label="Range start slider" type="range" min="0" max="10" step="0.05" value="0" disabled /><input id="range-end-slider" aria-label="Range end slider" type="range" min="0" max="10" step="0.05" value="10" disabled /></div><input id="range-end" aria-label="Range end seconds" type="number" min="0.05" max="120" step="0.05" value="10" disabled /></div></div>
+          <div class="control-row"><span title="System reduced motion always takes priority over this page setting.">Reduce motion <span class="control-hint" aria-hidden="true">ⓘ</span></span><label class="segmented-switch"><span class="dock-sr-only">Reduce motion on this page</span><input id="reduce-motion" type="checkbox" /><span class="switch-on" aria-hidden="true">On</span><span class="switch-off" aria-hidden="true">Off</span></label></div>
+          <p class="dock-sr-only" id="system-motion">System motion preference is being checked.</p>
+        </div>
+      </section>
+      <section class="dock-panel prompt-panel" id="prompt-panel" role="region" aria-labelledby="prompt-title" hidden inert>
+        <h2 class="dock-sr-only" id="prompt-title">Use it in your app</h2>
+        <p id="prompt-summary"></p>
+        <div class="prompt-target"><label for="prompt-target">Element</label><input id="prompt-target" type="text" maxlength="300" value="the main hero heading" /></div>
+        <pre tabindex="0" aria-label="Agent prompt"><code id="prompt-content"></code></pre>
+        <div class="prompt-actions"><button class="primary-link" id="copy-prompt">Copy prompt</button><a class="text-link" href={setup}>Installation ↗</a></div>
+        <p id="prompt-feedback" role="status" aria-live="polite"></p>
+      </section>
+      <div class="collapsed-bar">
+        <div class="hero-demo-controls" role="group" aria-label="Demo controls">
+          <label class="hero-effect-choice" for="hero-effect">Effect
+            <select id="hero-effect"><option value="fire">Fire</option><option value="none">None</option></select>
+          </label>
+          <div class="hero-intensity">
+            <label for="effect-intensity">Intensity</label><output id="hero-intensity-value" for="effect-intensity">70%</output>
+            <input id="effect-intensity" aria-label="Maximum intensity" type="range" min="0" max="100" step="5" value="70" />
+          </div>
+          <button class="quiet-button playback-button" id="effect-play" aria-pressed="false" aria-label="Pause" title="Pause"><span id="playback-label">Pause</span></button>
+        </div>
+        <div class="dock-controls">
+          <button class="quiet-button" id="effect-settings" aria-expanded="false" aria-controls="effect-panel" aria-label="Effect settings: Fire">Effect settings</button>
+          <button class="quiet-button" id="motion-settings" aria-expanded="false" aria-controls="motion-panel">Motion</button>
+          <button class="quiet-button" id="view-prompt" aria-expanded="false" aria-controls="prompt-panel">Prompt</button>
+        </div>
+      </div>
+    </aside>
+<p id="toolbar-instruction" class="visually-hidden" hidden>Use Effect and Motion to adjust Fire on the three live elements.</p>
+          </div>
+        </div>
+      </section>

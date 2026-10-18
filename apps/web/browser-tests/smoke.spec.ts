@@ -14,10 +14,13 @@ for (const width of [360, 1440]) {
     await page.goto('/');
     await expect(page.locator('#hero-title')).toBeVisible();
     await expect(page.locator('#effect-status')).toContainText('WebGPU is unavailable');
-    await expect(page.locator('.hero canvas')).toHaveCount(0);
+    await expect(page.locator('.home-hero canvas')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     await testInfo.attach('home.png', { body: await page.screenshot(), contentType: 'image/png' });
-    await page.getByRole('link', { name: 'Try the live elements' }).click();
+    await page
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('link', { name: 'Examples', exact: true })
+      .click();
     await expect(page.locator('#example-image')).toBeInViewport();
     expect(
       await page

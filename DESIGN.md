@@ -1,5 +1,6 @@
 ---
 # gstack: design-md-format=spec
+version: alpha
 name: domfx
 description: A precise graphite interface with restrained metallic accents and expressive effects on real HTML.
 colors:
@@ -25,7 +26,7 @@ typography:
   display:
     fontFamily: Cabinet Grotesk
     fontWeight: 500
-    fontSize: clamp(2.5rem, 5.3vw, 4.75rem)
+    fontSize: 4.75rem
     lineHeight: 1.08
     letterSpacing: -0.035em
   body:
@@ -95,7 +96,7 @@ Example links navigate to authored elements on that page. Code and setup support
 reference, approved by the user after reviewing home and examples mockups.
 [ShaderGradient](https://shadergradient.co/customize) informs attached panels, clear control groups, and label/value/slider rows. [Magic UI](https://magicui.design/) informs clarity; [React Spring](https://www.react-spring.dev/)
 informs the emphasis on interaction. Use original domfx content, assets and brand.
-The approved 2026-09-29 annular scroll story supersedes the earlier framed, split and broad silver-plate compositions. The user supplied Letters as the hero proportion reference.
+The 2026-10-03 editorial homepage supersedes these earlier composition references; its approved layout is specified under Home. The annular story remains historical context.
 
 - A centered, moderate-weight headline leads into one large working demonstration.
 - An open graphite hero, partially cropped silver rings and generous space establish structure.
@@ -136,6 +137,11 @@ body copy and controls readable. JetBrains Mono is reserved for source code and
 measurements. Section titles use the display family at 2–3rem, without oversized
 heavy poster lettering. Keep prose near 60–68 characters per line.
 
+The display font-size token records the desktop upper bound. Preserve its responsive
+application as `clamp(2.5rem, 5.3vw, 4.75rem)` in CSS; the Google Labs token schema
+accepts a single dimension, not a CSS math expression. This format migration does
+not change the approved type scale or homepage composition.
+
 Sources: [Cabinet Grotesk](https://www.fontshare.com/fonts/cabinet-grotesk),
 [General Sans](https://www.fontshare.com/fonts/general-sans), and
 [JetBrains Mono](https://www.jetbrains.com/lp/mono/). Self-host the needed WOFF2
@@ -162,14 +168,51 @@ preserve meaningful labels. No page-wide horizontal overflow at 360px.
 
 ### Home
 
-1. **Header:** wordmark, native Examples and Docs links, and View source with a GitHub icon. Keep all destinations available on mobile.
-2. **Hero:** “Effects that follow your HTML.” Supporting copy: “Add GPU effects to real elements. Your text stays selectable. Your links keep working.” Fold “Keep the HTML” into a native selection instruction. Useful actions are Try the live elements and Read the quickstart; experimental/unpublished status stays quiet.
-3. **Hero proportions:** centered heading at 20% of viewport height (14% with smaller type at heights up to 800px); the central ring starts at 72%. Preserve the approved 4:3 asset canvas. The center is 500–650px wide; adjacent pieces are 82% and 64% of that size, offset horizontally by 360px/660px and vertically by 85px/155px. Desktop reveals five pieces; narrower viewports crop the outer pieces.
-4. **Scroll story:** one GSAP-owned scene pins for 5.4 viewport heights, preserving the opening’s original 0.72-viewport travel. The center PNG moves to the viewport center and shrinks to at most 480px, leaving 32px horizontal clearance on phones and reserving vertical room for copy and the dock on shorter screens. A genuine SVG with the same traced silhouette replaces it at exactly the same bounds. A live “Keep the HTML.” heading follows, scaled from 40px on phones to 112px on desktop on a single line. An 18–24px two-line explanation sits below it, followed by one quieter 14px instruction to select the text or adjust the controls. No redundant onward-scroll link is needed. Image/SVG headings reveal by line at top-left; two short paragraphs enter slightly later at bottom-right. Copy settles for a reading interval, then exits upward independently of the centered artwork. Entrances use power2.out, exits power1.in, and shape crossfades sine.inOut, with 0.25s scrub catch-up. The final live heading stays visible as the scene unpins and joins document scroll. Direct stage links land instantly in the reading interval and support keyboard navigation and reverse scrolling.
-5. **After the pin:** the approved A layout introduces “Put Fire on your timeline.” with `@domfx/gsap` highlighted in the description. An unequal two-panel row pairs the timeline and focused binding code with initial configuration; a full-width panel explains timeline controls. “Bring your own edge.” closes with Quickstart and native disclosures for complete GSAP and standalone setup. Thin, static gradient borders span the full length of the card edges and adoption divider. The footer reprise remains decorative and static.
-6. **Effect ownership:** five hero images, one SVG, one native text heading and the quickstart link have independent lifetimes under the existing shared Fire controller. Artwork uses bounded 256px local capture surfaces and positive proportional scaling to stay within capture budgets at DPR 1/2. The SVG uses solid silver vector paint because URL-based SVG gradients are outside the current capture contract.
-7. **Scroll-card intensity:** `maximum × clamp(1 − abs(cardCenter − H/2) / ((H + cardHeight)/2), 0, 1)`. It peaks at center and decreases symmetrically; scroll updates while paused without recapture.
-8. **Fallback:** without JavaScript, with reduced motion, or below 800px viewport height (680px on desktops at least 1100px wide), the story is an ordinary document with all three stages in reading order. No pinning or hidden content. Toolbar instructions appear only after initialization; original content and guide links remain complete. No invented registry command or performance claims.
+The approved 2026-10-03 editorial homepage supersedes the annular pinned story.
+Keep the existing graphite palette, self-hosted fonts and original annulus artwork.
+
+1. **Header and first viewport:** one 44px header and a hero that together occupy
+   100dvh on desktop/tablet. Use ordinary document flow below 600px width or in
+   windows shorter than 760px. Native Examples, Docs and View source remain available.
+2. **Editorial hero:** a 26% install column and 74% statement column above a 74%
+   examples panel and 26% silver controls panel. Preserve the approved display copy
+   and text sizes. The install panel says “Use domfx on its own or with GSAP.” above
+   a selectable `npm install @domfx/browser` command and clipboard button. Copy
+   confirms success or provides manual-copy instructions.
+3. **Three live examples:** image, genuine inline SVG and native selectable text
+   appear together in descending large/medium/small proportions. Labels sit above
+   the examples. All three use actual Fire output through the existing shared
+   controller, with independent visible-target lifetimes. PNG/SVG capture surfaces
+   remain 256px wide and scale positively and proportionally within their panels.
+4. **Controls:** bottom-align the shared Effect, Intensity, Pause/Resume and settings
+   controls in the silver panel. Stack the primary controls on desktop and wrap them
+   on mobile. Use solid ink labels and a graphite playback button for contrast.
+   The examples use the height previously occupied by the inline controls.
+5. **Audience introduction:** centered “For creative developers.” with the portfolio,
+   launch page and interactive story use cases, standalone/GSAP copy and an
+   “Explore the docs” CTA. Keep MIT wording in the footer. Original Prism folds preset 10 is a
+   decorative WebGL background, distinct from domfx effects. A still thumbnail is
+   always available. Load below the fold, cap rendering to one million pixels,
+   DPR 1.5 and 30fps; animation requires explicit opt-in, pauses offscreen/hidden,
+   and respects system and local reduced motion. Context loss returns to the still.
+6. **Integration features:** three generous alternating rows informed by
+   save.design's features layout: text remains graphite, while the timeline diagram
+   sits on silver, binding code on violet and interactive player on pale yellow.
+   Desktop uses approximately 35% copy and 65% visual space. Mobile stacks copy
+   before the visual. Keep gradient lines only where they clarify the cue/code.
+7. **Player:** a real, initially paused GSAP sequence with Play, Pause, Reverse,
+   seek, speed, Repeat and Yoyo. Scrubbing pauses. Offscreen/hidden pages pause;
+   reduced motion disables continuous playback and preserves still-frame seeking.
+   This is a GSAP controls demonstration, not another library effect.
+8. **Setup and footer:** “Start with one element.”, installation/support links and
+   complete native GSAP/standalone disclosures. The editorial footer has grouped
+   navigation, a large static domfx signature, MIT and Back to top.
+
+Homepage marketing describes the selected npm packages as available, as explicitly
+requested by the user. Library release metadata and publication gates remain owned
+by the release workflow. Fire is the first effect; do not invent additional available
+library effects. The new homepage preserves the public attachment contracts and
+normal scrolling; it does not pin or intercept scroll input.
 
 ### Documentation
 
@@ -184,6 +227,14 @@ installation, standalone, GSAP, API, support and troubleshooting are local route
 repository links remain secondary source evidence.
 
 ### Examples and toolbar
+
+The editorial homepage places the shared controls in its silver side panel:
+a labeled native Effect selector, a visible Intensity slider and percentage,
+and a graphite Pause/Resume button with its text retained on mobile.
+A narrow brand gradient marks only the top edge. Quieter Effect settings, Motion
+and Prompt controls sit underneath; their panels open above the bar, right-aligned
+and bounded to 560px and the viewport gutters. This supersedes the inline and historical floating toolbar geometry
+below while preserving its settings, lifecycle and accessibility behavior.
 
 Native anchors address showcase elements. `/examples` still redirects to `/#examples`.
 Only implemented effects appear; Fire is currently the sole effect. The shared
@@ -217,9 +268,9 @@ System reduced motion remains authoritative and is described accessibly, with a 
 
 Prompt has an editable element target, settings summary, a 144px internally scrollable prompt
 at 14px, Copy prompt and quickstart. Copy confirms only after success and offers manual selection
-on failure. None requests removal without installation. Fire concisely links to installation and standalone docs and requires matching unpublished
-artifacts/source supporting all selected settings. Verified release versions will replace
-this setup only after registry consumer proof. Prompt never loads the GPU package.
+on failure. None requests removal without installation. Fire concisely links to installation
+and standalone docs and uses the approved npm installation wording while preserving all
+selected settings. Prompt never loads the GPU package.
 
 Reserve clearance for the approximately 54px collapsed toolbar and safe area. Expanded panels
 overlay without moving page content and scroll internally on short viewports. Panels enter with
@@ -351,7 +402,7 @@ even if marketing shows one example at a time.
 
 ### Motion and ownership
 
-- Marketing uses eight authored targets with one shared clock and Pause/Resume.
+- Marketing uses four authored targets with one shared clock and Pause/Resume.
   Attach only visible targets; respect pause and off choices on return. Verify grouped
   rendering on the actual GPU; individual-preview evidence does not establish its cost.
 - Keep CSS responsible for ordinary UI transitions: roughly 120–180ms for hover/focus
@@ -361,7 +412,7 @@ even if marketing shows one example at a time.
   controls; direct input and scroll playback must not compete.
 - Preserve native scrolling. For the scrolling card, map viewport position to public intensity;
   scrolling backward must reproduce the earlier intensity. Provide an equivalent seek control for keyboard and touch users.
-  The approved homepage story is a bounded 5.4-viewport pin with direct stage links; never intercept wheel/touch scrolling. Reduced motion and short viewports remove pinning entirely.
+  The approved homepage uses ordinary scrolling and native example anchors; never intercept wheel/touch scrolling.
 - Leave source content visible before initialization and after failure. Use the
   library's default reduced-motion policy; ordinary CSS motion must respect it too.
   Static decoration is an explicit `motion: 'static'` choice, not an animated override.
@@ -401,7 +452,7 @@ Implementation contracts live in the [browser package](packages/domfx/README.md)
 - Home effects autoplay only while visible and respect explicit Pause/Off choices,
   including scrolling away/back and navigation restoration. Reduced motion must not
   silently restart when the preference changes back.
-- Homepage examples use one effect controller and independent attachment lifetimes; a separate GSAP context owns only scroll choreography.
+- Homepage examples use one effect controller and independent attachment lifetimes; a separate GSAP context owns only the interactive timeline player.
   None/Fire, intensity, seek, flame height, Pause/Resume, local/system reduced motion,
   Prompt and cleanup work on real content. None and Pause persist through scrolling
   and navigation restoration; native anchors do not select targets.
@@ -415,6 +466,18 @@ Implementation contracts live in the [browser package](packages/domfx/README.md)
   checks. Record the tested environment and distinguish unavailable GPU from success.
 
 ## Decisions Log
+
+On 2026-10-02, the user selected **editorial direction B** for
+[homepage #89](https://github.com/G0m1namm/domfx/issues/89): a creative ruled layout
+with image, SVG and text examples together in the hero, carried through the sections
+below the fold. The approved production contract is recorded above; exploration
+prototypes and screenshots remain local and are not repository deliverables.
+The user authorized Astro implementation of this direction and the later feature refinements.
+The selected integration background is **10 — Prism folds**. On 2026-10-03,
+the user approved production integration of the editorial hero, the later alternating
+save.design-inspired features, and the real GSAP player. These replace the earlier
+State of AI Design slide proposal and the annular production story. Taste skills guide
+implementation polish; explicit approved layout and brand choices take precedence.
 
 | Date       | Decision                                                     | Rationale                                                                                                                                                                                               |
 | ---------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

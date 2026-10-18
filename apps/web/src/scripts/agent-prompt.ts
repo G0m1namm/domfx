@@ -22,7 +22,7 @@ Settings: intensity ${settings.intensity.toFixed(2)}, flameHeight ${settings.fla
 
 Inspect this project's framework, package manager, component lifecycle and layout first. Keep the element as real HTML with native text selection, links and keyboard focus.
 
-Setup: read /docs/installation and /docs/standalone on the domfx site. Packages are experimental and unpublished; ask for matching @domfx/core and @domfx/browser tarballs or a source checkout supporting flameHeight. Follow that guide's local core override. If unavailable, stop before editing; do not invent an npm install or silently omit settings. Record artifact hashes/source revision. No GSAP or consumer TypeGPU plugin is needed.
+Setup: read /docs/installation and /docs/standalone on the domfx site. Install @domfx/browser with this project's package manager and use its public exports. Keep the selected flameHeight and other settings. No GSAP or consumer TypeGPU plugin is needed.
 
 After browser mount, await fonts and relevant image decoding. Guard async work against unmount. Choose a connected, positioned host containing the target; preserve styles/layout and leave output space. Avoid unsupported rotation, skew, perspective, filters, target opacity and ancestor clipping.
 
@@ -30,5 +30,5 @@ Use public attachFire(target, { host, clock: '${manual ? 'manual' : 'ambient'}',
 
 Own cleanup immediately: call fire.dispose() on component unmount/page teardown, including initialization that finishes after unmount. Guard asynchronous font/image/import work against teardown before creating an attachment. Await fire.ready and inspect fire.lifecycle before claiming rendering success. Preserve original content on capture/WebGPU failure. Respect reduced motion; after reduction ends, restart only through explicit user action using the supported retry/reattachment path.
 
-Run build/type checks; verify selection, native activation, playback, reduced-motion/unavailable fallbacks and teardown/remount. Check real output in a WebGPU browser; report rendering unverified if unavailable. Summarize edits, artifact identity and checks.`;
+Run build/type checks; verify selection, native activation, playback, reduced-motion/unavailable fallbacks and teardown/remount. Check real output in a WebGPU browser; report rendering unverified if unavailable. Summarize edits and checks.`;
 }

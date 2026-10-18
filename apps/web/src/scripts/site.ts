@@ -1,7 +1,6 @@
 import type { EffectHandle } from '@domfx/browser';
 
 import { createAgentPrompt } from './agent-prompt';
-import { createScrollStory } from './scroll-story';
 
 function required<T extends Element>(selector: string) {
   const element = document.querySelector<T>(selector);
@@ -60,6 +59,8 @@ function initializePage() {
   const bar = required<HTMLElement>('.collapsed-bar');
   const play = required<HTMLButtonElement>('#effect-play');
   const status = required<HTMLElement>('#effect-status');
+  const effectChoice = required<HTMLSelectElement>('#hero-effect');
+  const intensityValue = required<HTMLOutputElement>('#hero-intensity-value');
   const intensity = required<HTMLInputElement>('#effect-intensity');
   const intensityNumber = required<HTMLInputElement>('#intensity-number');
   const height = required<HTMLInputElement>('#flame-height');
@@ -105,13 +106,6 @@ function initializePage() {
   let frame = 0;
   let layoutDirty = true;
   let lastTick = 0;
-  const story = createScrollStory(invalidateLayout, () => {
-    // Pin refreshes reparent the scene. Removal is terminal for a public handle.
-    for (const target of targets) {
-      release(target);
-      target.failure = '';
-    }
-  });
 
   function reduced() {
     return preferences.reduced || motion.matches;
@@ -205,7 +199,12 @@ function initializePage() {
     play.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
     play.title = paused ? 'Resume' : 'Pause';
     const effectLabel = preferences.effect === 'fire' ? 'Fire' : 'None';
-    panelTriggers[0].setAttribute('aria-label', `Effect: ${effectLabel}`);
+    panelTriggers[0].setAttribute('aria-label', `Effect settings: ${effectLabel}`);
+    effectChoice.value = preferences.effect;
+    const percent = `${Math.round(maximumIntensity * 100)}%`;
+    if (intensityValue.value !== percent) {
+      intensityValue.value = percent;
+    }
     for (const input of [
       intensity,
       intensityNumber,
@@ -222,7 +221,6 @@ function initializePage() {
     }
     reduction.checked = preferences.reduced;
     document.documentElement.toggleAttribute('data-reduced-motion', reduced());
-    story.setReduced(reduced() || preferences.needsResume);
     required<HTMLElement>('#system-motion').textContent = motion.matches
       ? 'System reduced motion is on. Effects stay off.'
       : 'System reduced motion is off.';
@@ -550,25 +548,27 @@ function initializePage() {
       { signal },
     );
   }
-  required<HTMLFieldSetElement>('#effect-presets').addEventListener(
+  const effectPresets = required<HTMLFieldSetElement>('#effect-presets');
+  function changeEffect(value: string) {
+    preferences.effect = value === 'fire' ? 'fire' : 'none';
+    required<HTMLInputElement>(`input[name="effect"][value="${preferences.effect}"]`).checked =
+      true;
+    for (const target of targets) {
+      release(target);
+      target.failure = '';
+    }
+    lastTick = 0;
+    promptDirty = true;
+    remember();
+    schedule();
+    updateControls();
+  }
+  effectPresets.addEventListener(
     'change',
-    () => {
-      preferences.effect =
-        required<HTMLInputElement>('input[name="effect"]:checked').value === 'fire'
-          ? 'fire'
-          : 'none';
-      for (const target of targets) {
-        release(target);
-        target.failure = '';
-      }
-      lastTick = 0;
-      promptDirty = true;
-      remember();
-      schedule();
-      updateControls();
-    },
+    () => changeEffect(required<HTMLInputElement>('input[name="effect"]:checked').value),
     { signal },
   );
+  effectChoice.addEventListener('change', () => changeEffect(effectChoice.value), { signal });
   play.addEventListener(
     'click',
     () => {
@@ -641,7 +641,6 @@ function initializePage() {
   return () => {
     remember();
     events.abort();
-    story.dispose();
     cancelAnimationFrame(frame);
     visibilityObserver.disconnect();
     sizeObserver.disconnect();

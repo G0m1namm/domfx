@@ -1,5 +1,9 @@
 # Local visual baselines
 
+Platform/backend image directories are local and ignored. Do not commit these
+screenshots or upload them to PRs. A fresh checkout must generate and review its
+own samples before running comparisons.
+
 The initial `darwin/native` images were inspected on Apple M5 Pro / Metal 3 with
 Playwright 1.63.0 Chromium 153.0.8010.12, at DPR 1. Home images use reduced motion
 and widths 360/1440; the Fire example uses the existing seed 314, time zero,

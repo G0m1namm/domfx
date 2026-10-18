@@ -1,208 +1,60 @@
 ---
-import { Image } from 'astro:assets';
 import { Code } from 'astro:components';
-
-import annulus from '../assets/illustrations/annulus.png';
 import { codeTheme, gsapCode, standaloneCode } from '../content/examples';
-
-import AnnulusVector from '../components/AnnulusVector.astro';
-import RingFan from '../components/RingFan.astro';
+import HomeHero from '../components/HomeHero.astro';
+import IntegrationFeatures from '../components/IntegrationFeatures.astro';
 import SiteHeader from '../components/SiteHeader.astro';
-
 import '../styles/site.css';
-import '../styles/scroll-story.css';
-import '../styles/integration.css';
-
+import '../styles/homepage.css';
+import '../styles/timeline-player.css';
 const repo = 'https://github.com/G0m1namm/domfx';
-const setup = '/docs/installation';
-const bindingCode = `// fire is an existing manual-clock attachment.
-timeline.addLabel('ignite', 0.5);
-const binding = bindFire(fire, timeline, {
-  time: 4,
-  intensity: 0.4,
-  duration: 4,
-  position: 'ignite',
-});`;
-
 ---
-
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="description" content="GPU edge effects for real HTML. Explore domfx on titles, links, SVGs, images, and cards while the original content stays interactive." />
-    <meta name="theme-color" content="#14151B" />
-    <title>domfx — Effects that follow your HTML</title>
-    <link rel="preload" href="/fonts/CabinetGrotesk-Medium.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  </head>
-  <body id="top">
-    <a class="skip-link" href="#main">Skip to content</a>
-    <div class="page-shell">
-      <SiteHeader />
-
-      <main id="main">
-        <div class="scroll-story" id="scroll-story">
-          <div class="story-scene">
-            <section class="hero" aria-labelledby="hero-title">
-              <div class="hero-copy">
-                <h1 id="hero-title">Effects that follow<br />your HTML.</h1>
-                <p class="lede">Add GPU effects to real elements.<br class="desktop-break" /> Your text stays selectable. Your links keep working.</p>
-                <div class="actions">
-                  <a class="primary-link" href="#examples">Try the live elements <span aria-hidden="true">↓</span></a>
-                  <a class="text-link" href={setup}>Read the quickstart <span aria-hidden="true">↗</span></a>
-                </div>
-                <p class="hero-note">Experimental & open source.</p>
-                <p class="hero-instruction" id="toolbar-instruction" hidden>Scroll to explore. Use the controls to make it yours.</p>
-                <noscript><p class="hero-note">JavaScript is off. Content, examples and setup links remain available.</p></noscript>
-              </div>
-              <RingFan live />
-            </section>
-            <section class="story-step image-step" id="examples" aria-labelledby="image-title">
-              <h2 id="image-title" class="stage-title"><span class="reveal-line"><span>Every contour</span></span> <span class="reveal-line"><span>counts.</span></span></h2>
-              <Image class="static-image" src={annulus} width={640} format="png" alt="Silver annular disc with an empty center" />
-              <div class="stage-description"><p>The effect follows your image’s transparent silhouette, around the outside and through the opening in the middle.</p><p>Keep your original artwork. Adjust the fire without replacing the image.</p><a class="text-link" href="#example-svg">View the SVG ↗</a></div>
-            </section>
-            <section class="story-step vector-step" aria-labelledby="shape-title">
-              <h2 id="shape-title" class="stage-title"><span class="reveal-line"><span>From pixels</span></span> <span class="reveal-line"><span>to paths.</span></span></h2>
-              <div class="vector-host"><div class="vector-art" data-effect-host><AnnulusVector /></div></div>
-              <div class="stage-description"><p>The same contour, now drawn in SVG. The effect follows its visible paths and preserves the space between them.</p><p>Image or vector, the original element stays on your page.</p><a class="text-link" href="#effect-heading">Try it on text ↓</a></div>
-            </section>
-            <section class="story-step text-step" aria-labelledby="effect-heading">
-              <div class="text-host" data-effect-host><h2 id="effect-heading" data-effect-target>Keep the HTML.</h2></div>
-              <p class="text-lede">The effect follows every letter.<br />Your text stays selectable.</p>
-              <p class="selection-note">Select the heading, or use the controls to adjust the effect.</p>
-            </section>
-            <nav class="story-navigation" aria-label="Scroll story" hidden><a href="#example-image">Image</a><a href="#example-svg">SVG</a><a href="#effect-heading">Text</a></nav>
-          </div>
-        </div>
-
-        <div class="integration-content">
-          <section id="features" aria-labelledby="features-title">
-            <div class="intro">
-              <h2 id="features-title">Put Fire on<br />your timeline.</h2>
-              <p>Bring the effect into the sequence you're already building. The optional <code class="package-name">@domfx/gsap</code> binding connects Fire's time and intensity to your timeline.</p>
-            </div>
-            <div class="grid">
-              <article class="card timeline-card">
-                <div class="card-heading">
-                  <h3>Give it a cue.</h3>
-                  <p>Add an entrance, place a label, then bring in Fire. One timeline keeps the sequence under your control.</p>
-                </div>
-                <figure class="timeline" aria-label="Example timeline: entrance from 0 to 0.5 seconds, then Fire at ignite for 4 seconds to 4.5 seconds.">
-                  <div class="timeline-sheet">
-                    <div class="ruler"><span>0s</span><span>0.5s</span><span>2.5s</span><span>4.5s</span></div>
-                    <div class="lane"><span class="lane-label">Entrance</span><div class="lane-track"><div class="entrance"></div></div></div>
-                    <div class="lane"><span class="lane-label">Fire</span><div class="lane-track"><div class="fire-range"><span>ignite</span><span>4 seconds</span><span>0.8 → 0.4</span></div></div></div>
-                    <div class="timeline-key">ignite · inserted at 0.5s</div>
-                  </div>
-                  <figcaption>Example sequence: a 0.5-second entrance, followed by a 4-second Fire binding. Effect time moves to 4; intensity moves to 0.4.</figcaption>
-                </figure>
-                <div class="code-title"><strong>timeline.ts</strong><span>@domfx/gsap</span></div>
-                <div class="integration-code-scroll" tabindex="0" role="region" aria-label="Bind a manual Fire attachment to a GSAP timeline"><Code code={bindingCode} lang="ts" theme={codeTheme} /></div>
-                <p class="code-note">Time and intensity interpolate linearly from their values at binding. Use the optional GSAP binding to coordinate the sequence.</p>
-              </article>
-              <article class="card settings">
-                <div class="card-heading">
-                  <h3>Set the character.</h3>
-                  <p>Choose the initial settings when you attach Fire. Give the pattern, height and motion a deliberate starting point.</p>
-                </div>
-                <dl class="settings-list">
-                  <div class="setting"><dt>Intensity</dt><dd>0–1</dd><p>Set the effect's strength. This example starts at 0.8, then the timeline takes it to 0.4.</p><div class="measure" aria-hidden="true"></div></div>
-                  <div class="setting"><dt>Flame height</dt><dd>8–64px</dd><p>Choose the height at creation. The shown configuration uses 32px.</p></div>
-                  <div class="setting"><dt>Seed</dt><dd>314</dd><p>Fix the procedural pattern so you can work from a consistent starting point.</p></div>
-                  <div class="setting"><dt>Clock</dt><dd>manual / ambient</dd><p>Use manual for timeline control. Choose ambient for a standalone effect that advances its own time.</p></div>
-                  <div class="setting"><dt>Motion</dt><dd>respect</dd><p>The default respects reduced motion. Keep the original content available when the effect doesn't render.</p></div>
-                </dl>
-                <p class="source-note"><code>flameHeight</code> requires the current experimental source.</p>
-              </article>
-            </div>
-            <article class="card controls" aria-labelledby="controls-title">
-              <div><h3 id="controls-title">Your timeline.<br />Your controls.</h3><p>Use the GSAP methods you already know. The binding controls effect time and intensity; your timeline owns playback.</p></div>
-              <div class="methods">
-                <div class="method"><code>play() / pause()</code><p>Run or hold the sequence.</p></div>
-                <div class="method"><code>seek() / reverse()</code><p>Visit a moment or play backward.</p></div>
-                <div class="method"><code>timeScale()</code><p>Change the timeline's playback speed.</p></div>
-                <div class="method"><code>repeat / yoyo</code><p>Configure these on the timeline.</p></div>
-                <div class="method method-wide"><code>time · intensity · duration · position</code><p>Set the binding's destination, duration and insertion label. Use a label to place Fire alongside other animations.</p></div>
-              </div>
-            </article>
-          </section>
-          <section id="start" class="adoption" aria-labelledby="start-title">
-            <div>
-              <h2 id="start-title">Bring your own edge.</h2>
-              <p>Start with one element and the motion you have in mind. Use the browser package on its own, or add the GSAP binding to fit Fire into your sequence.</p>
-              <details class="details">
-                <summary>See the complete GSAP setup</summary>
-                <p class="disclosure-note">Run after mount, once fonts are ready. Provide your element as <code>target</code> and a positioned ancestor as <code>host</code>.</p>
-                <div class="integration-code-scroll" tabindex="0" role="region" aria-label="Full manual attachment and GSAP lifecycle example"><Code code={gsapCode} lang="ts" theme={codeTheme} /></div>
-              </details>
-              <details class="details">
-                <summary>Prefer a standalone attachment?</summary>
-                <p class="disclosure-note">The browser package doesn't need GSAP. With an ambient clock, Fire advances its own time.</p>
-                <div class="integration-code-scroll" tabindex="0" role="region" aria-label="Standalone ambient attachment example"><Code code={standaloneCode} lang="ts" theme={codeTheme} /></div>
-              </details>
-            </div>
-            <div class="integration-start-action">
-              <div data-effect-host><a id="scroll-target" data-effect-target class="primary" href={setup}>Read the quickstart <span aria-hidden="true">↗</span></a></div>
-              <p class="start-note">Experimental and unpublished. The guide covers local tarball setup, standalone use and the optional GSAP binding.</p>
-              <p class="start-note">WebGPU is required. Reduced motion or unavailable output leaves your original HTML in place.</p>
-              <div class="secondary">
-                <a href="/docs/support">Browser support ↗</a>
-                <a href="/docs/standalone">Read the example ↗</a>
-              </div>
-            </div>
-          </section>
-        </div>
-      </main>
-      <footer class="site-footer">
-        <div class="footer-return"><div class="footer-callout"><h2>Make your HTML come alive.</h2><a class="text-link" href={setup}>Open the quickstart ↗</a></div><RingFan /></div>
-        <div class="footer-grid">
-          <div class="footer-brand"><a class="wordmark" href="#top">domfx<span aria-hidden="true">.</span></a><p>GPU effects for real HTML.</p><p class="footer-note">Experimental. Fire available today.<br />Package not published yet.</p></div>
-          <nav aria-label="Explore"><h2>Explore</h2><a href="#examples">Examples</a><a href={setup}>Quickstart <span aria-hidden="true">↗</span></a><a href={repo}>Source <span aria-hidden="true">↗</span></a></nav>
-          <nav aria-label="Resources"><h2>Resources</h2><a href="/docs/support">Browser support <span aria-hidden="true">↗</span></a><a href="/docs/standalone">Standalone example <span aria-hidden="true">↗</span></a></nav>
-        </div>
-        <div class="footer-bottom"><a href={`${repo}/blob/main/LICENSE`}>MIT licensed <span aria-hidden="true">↗</span></a><a href="#top">Back to top <span aria-hidden="true">↑</span></a></div>
-      </footer>
-    </div>
-    <p class="effect-notice" id="effect-status" role="status" aria-live="polite" hidden></p>
-    <aside class="effect-dock" id="playground" aria-label="Showcase controls" hidden>
-      <section class="dock-panel" id="effect-panel" role="region" aria-labelledby="effect-title" hidden inert>
-        <h2 class="dock-sr-only" id="effect-title">Effect</h2>
-        <div class="control-row"><span id="effect-choice-label">Effect</span><fieldset id="effect-presets" aria-labelledby="effect-choice-label"><legend class="dock-sr-only">Available effects</legend><label><input type="radio" name="effect" value="none" /><span>None</span></label><label><input type="radio" name="effect" value="fire" checked /><span>Fire</span></label></fieldset></div>
-        <div class="settings-fields">
-          <div class="slider-row"><div class="value-row"><label for="effect-intensity" title="The scroll card peaks at this intensity. Other elements use it directly.">Intensity</label><label class="numeric-value"><input id="intensity-number" aria-label="Maximum intensity percent" type="number" min="0" max="100" step="5" value="70" /><span>%</span></label></div><input id="effect-intensity" aria-label="Maximum intensity" type="range" min="0" max="100" step="5" value="70" /><p class="dock-sr-only">The scroll card peaks at this value. Other targets use it directly.</p></div>
-          <div class="slider-row"><div class="value-row"><label for="flame-height">Flame height</label><label class="numeric-value"><input id="height-number" aria-label="Flame height pixels" type="number" min="8" max="64" step="1" value="32" /><span>px</span></label></div><input id="flame-height" type="range" min="8" max="64" step="1" value="32" /></div>
-        </div>
-      </section>
-      <section class="dock-panel" id="motion-panel" role="region" aria-labelledby="motion-title" hidden inert>
-        <h2 class="dock-sr-only" id="motion-title">Motion</h2>
-        <div class="settings-fields">
-          <div class="slider-row"><div class="value-row"><label for="motion-speed">Speed</label><label class="numeric-value"><input id="speed-number" aria-label="Motion speed multiplier" type="number" min="0.1" max="2" step="0.1" value="1" /><span>×</span></label></div><input id="motion-speed" type="range" min="0.1" max="2" step="0.1" value="1" /></div>
-          <div class="control-row"><span title="On repeats the selected range. Off runs continuously.">Range <span class="control-hint" aria-hidden="true">ⓘ</span></span><label class="segmented-switch"><span class="dock-sr-only">Repeat a range</span><input id="motion-loop" type="checkbox" role="switch" /><span class="switch-on" aria-hidden="true">On</span><span class="switch-off" aria-hidden="true">Off</span></label></div>
-          <div class="control-row"><span title="Set the beginning and end of the repeated Fire time range, in seconds.">Start / end <span class="control-hint" aria-hidden="true">ⓘ</span></span><div class="motion-range"><input id="range-start" aria-label="Range start seconds" type="number" min="0" max="119.95" step="0.05" value="0" disabled /><div class="range-track"><input id="range-start-slider" aria-label="Range start slider" type="range" min="0" max="10" step="0.05" value="0" disabled /><input id="range-end-slider" aria-label="Range end slider" type="range" min="0" max="10" step="0.05" value="10" disabled /></div><input id="range-end" aria-label="Range end seconds" type="number" min="0.05" max="120" step="0.05" value="10" disabled /></div></div>
-          <div class="control-row"><span title="System reduced motion always takes priority over this page setting.">Reduce motion <span class="control-hint" aria-hidden="true">ⓘ</span></span><label class="segmented-switch"><span class="dock-sr-only">Reduce motion on this page</span><input id="reduce-motion" type="checkbox" /><span class="switch-on" aria-hidden="true">On</span><span class="switch-off" aria-hidden="true">Off</span></label></div>
-          <p class="dock-sr-only" id="system-motion">System motion preference is being checked.</p>
-        </div>
-      </section>
-      <section class="dock-panel prompt-panel" id="prompt-panel" role="region" aria-labelledby="prompt-title" hidden inert>
-        <h2 class="dock-sr-only" id="prompt-title">Use it in your app</h2>
-        <p id="prompt-summary"></p>
-        <div class="prompt-target"><label for="prompt-target">Element</label><input id="prompt-target" type="text" maxlength="300" value="the main hero heading" /></div>
-        <pre tabindex="0" aria-label="Agent prompt"><code id="prompt-content"></code></pre>
-        <div class="prompt-actions"><button class="primary-link" id="copy-prompt">Copy prompt</button><a class="text-link" href={setup}>Quickstart ↗</a></div>
-        <p id="prompt-feedback" role="status" aria-live="polite"></p>
-      </section>
-      <div class="collapsed-bar">
-        <div class="dock-controls">
-          <button class="quiet-button" id="effect-settings" aria-expanded="false" aria-controls="effect-panel" aria-label="Effect: Fire">Effect</button>
-          <button class="quiet-button" id="motion-settings" aria-expanded="false" aria-controls="motion-panel">Motion</button>
-          <button class="quiet-button" id="view-prompt" aria-expanded="false" aria-controls="prompt-panel">Prompt</button>
-          <button class="quiet-button playback-button" id="effect-play" aria-pressed="false" aria-label="Pause" title="Pause"><span class="playback-icon" aria-hidden="true"></span><span id="playback-label">Pause</span></button>
-        </div>
-      </div>
-    </aside>
-    <script src="../scripts/site.ts"></script>
-  </body>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width" />
+<meta name="description" content="Give your HTML an expressive edge. Add GPU effects to text, SVGs and images, and sequence them with your GSAP timeline." />
+<meta name="theme-color" content="#14151B" />
+<meta property="og:title" content="domfx | Effects for real HTML" />
+<meta property="og:description" content="Give your HTML an expressive edge. GPU effects for creative developers, with native HTML and GSAP controls." />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="/silver-mark.png" />
+<title>domfx | Effects for real HTML</title>
+<link rel="preload" href="/fonts/CabinetGrotesk-Medium.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body id="top" class="editorial-home">
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="home-page">
+<SiteHeader />
+<main id="main">
+<HomeHero />
+<section class="shader-section" id="integration" tabindex="-1" aria-labelledby="features-title">
+<canvas aria-hidden="true" hidden></canvas>
+<div class="integration-lead">
+<h2 id="features-title">For creative developers.</h2>
+<p>For portfolios, launch pages and interactive stories. Start with one element. Use domfx on its own or bring Fire into your GSAP timeline.</p>
+<a class="primary-link" href="/docs/introduction">Explore the docs <span aria-hidden="true">↗</span></a>
+</div>
+<div class="shader-motion-row"><span class="shader-status" role="status">Still background</span><button class="shader-motion" type="button" aria-pressed="false" hidden>Animate background</button></div>
+</section>
+<IntegrationFeatures />
+<section class="home-setup" id="start" aria-labelledby="start-title">
+<div><h2 id="start-title">Start with one element.</h2><p>Install <code>@domfx/browser</code>, choose a target and attach Fire. Add <code>@domfx/gsap</code> when the effect belongs in a sequence.</p>
+<div class="setup-details">
+<details id="complete-gsap"><summary>See the complete GSAP setup</summary><p>Create a manual-clock attachment, bind it to your timeline, and dispose both when the element leaves your page.</p><div class="integration-code-scroll" tabindex="0" role="region" aria-label="Full manual attachment and GSAP lifecycle example"><Code code={gsapCode} lang="ts" theme={codeTheme} /></div></details>
+<details><summary>Use domfx without GSAP</summary><p>The browser package can advance effect time with its own ambient clock.</p><div class="integration-code-scroll" tabindex="0" role="region" aria-label="Standalone ambient attachment example"><Code code={standaloneCode} lang="ts" theme={codeTheme} /></div></details>
+</div></div>
+<div class="setup-action"><div data-effect-host><a id="scroll-target" data-effect-target class="primary-link" href="/docs/installation">Install domfx <span aria-hidden="true">↗</span></a></div><p>WebGPU is required for effects. Reduced motion or unavailable output leaves your original HTML in place.</p><a class="text-link" href="/docs/support">Browser support ↗</a><a class="text-link" href="/docs/standalone">Standalone example ↗</a></div>
+</section>
+</main>
+<footer class="editorial-footer">
+<div class="footer-meta"><p>GPU effects<br />for real HTML.</p><p>Fire is the first effect.</p></div>
+<div class="footer-content"><div class="footer-links"><nav aria-label="Explore"><h2>Explore</h2><a href="#examples">Examples</a><a href="/docs/introduction">Documentation</a><a href={repo}>Source ↗</a></nav><nav aria-label="Resources"><h2>Resources</h2><a href="/docs/gsap">GSAP integration</a><a href="/docs/standalone">Standalone example</a><a href="/docs/support">Browser support</a></nav></div><div class="footer-signature" aria-hidden="true">domfx.</div><div class="footer-end"><a href={`${repo}/blob/main/LICENSE`}>MIT licensed ↗</a><a href="#top">Back to top ↑</a></div></div>
+</footer></div>
+<p class="effect-notice" id="effect-status" role="status" aria-live="polite" hidden></p>
+<script src="../scripts/site.ts"></script>
+<script src="../scripts/homepage.ts"></script>
+</body>
 </html>

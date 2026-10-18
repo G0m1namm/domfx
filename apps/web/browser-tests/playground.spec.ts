@@ -69,9 +69,9 @@ test('legacy and direct example routes use ordinary native navigation', async ({
   await expect(page).toHaveURL(/\/#examples$/);
   await expect(page.locator('#playground')).toBeVisible();
   await page.goto('/#example-image');
-  await expect(page.locator('#effect-settings')).toHaveText('Effect');
+  await expect(page.locator('#effect-settings')).toHaveText('Effect settings');
   await expect(page.locator('#example-image')).toBeInViewport();
-  await page.getByRole('link', { name: 'View the SVG' }).click();
+  await page.getByRole('link', { name: 'SVG', exact: true }).click();
   await expect(page).toHaveURL(/#example-svg$/);
   await expect(page.locator('#effect-target')).toHaveCount(0);
 });
@@ -81,6 +81,13 @@ test('shared controls and paused scroll intensity reach the public attachment pr
 }) => {
   await recordAttachments(page);
   await page.goto('/');
+  // Provide room beyond the shorter editorial footer for fully offscreen checkpoints.
+  await page.evaluate(() => {
+    const space = document.createElement('div');
+    space.style.height = '1000px';
+    space.setAttribute('aria-hidden', 'true');
+    document.body.append(space);
+  });
   await expect.poll(() => latest(page, 'example-image')).toBeTruthy();
   await page.locator('#effect-play').click();
   await page.locator('#motion-settings').click();
@@ -127,6 +134,7 @@ test('shared controls and paused scroll intensity reach the public attachment pr
   await page.locator('#effect-settings').click();
   await page.locator('#intensity-number').fill('40');
   await page.keyboard.press('Escape');
+  await positionCard(page, (H - 3 * h) / 4);
   await expect
     .poll(async () => Math.abs(((await latest(page, 'scroll-target'))?.intensity ?? -1) - 0.2))
     .toBeLessThan(0.002);
@@ -149,6 +157,37 @@ test('shared controls and paused scroll intensity reach the public attachment pr
       () => window.showcaseRecords.filter((record) => record.id === 'scroll-target').length,
     ),
   ).toBe(captures);
+});
+
+test('inline hero controls share effect and intensity with advanced settings', async ({ page }) => {
+  await recordAttachments(page);
+  await page.goto('/');
+  await expect.poll(() => latest(page, 'example-image')).toBeTruthy();
+  await page.locator('#effect-play').click();
+  await page.locator('#effect-intensity').fill('55');
+  await page.locator('#effect-intensity').press('ArrowRight');
+  await expect(page.locator('#hero-intensity-value')).toHaveText('60%');
+  await expect(page.locator('#intensity-number')).toHaveValue('60');
+  await expect.poll(async () => (await latest(page, 'example-image'))?.intensity).toBe(0.6);
+  await page.locator('#hero-effect').selectOption('none');
+  await expect(page.locator('[data-test-layer]')).toHaveCount(0);
+  await expect(page.locator('#effect-intensity')).toBeDisabled();
+  await expect(page.locator('#effect-play')).toBeDisabled();
+  await page.locator('#hero-effect').selectOption('fire');
+  await expect.poll(() => latest(page, 'example-image')).toBeTruthy();
+  await expect(page.locator('#effect-play')).toHaveText('Resume');
+  await page.locator('#effect-settings').click();
+  await page.locator('#intensity-number').fill('40');
+  await expect(page.locator('#effect-intensity')).toHaveValue('40');
+  await expect(page.locator('#hero-intensity-value')).toHaveText('40%');
+  await page.getByRole('radio', { name: 'None', exact: true }).check();
+  await expect(page.locator('#hero-effect')).toHaveValue('none');
+  await page.getByRole('radio', { name: 'Fire', exact: true }).check();
+  await expect(page.locator('#hero-effect')).toHaveValue('fire');
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await expect(page.locator('#hero-effect')).toHaveValue('fire');
+  await expect(page.locator('#effect-play')).toHaveText('Resume');
 });
 
 test('delayed fonts, pending attachment replacement and teardown cannot revive layers', async ({

@@ -52,6 +52,13 @@ and open a PR against `main`. There is no permanent `develop` or `master` branch
 Follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report vulnerabilities through
 [SECURITY.md](SECURITY.md), never public issues.
 
+Keep design explorations local and ignored: prototype HTML/CSS/JS, alternative
+designs, comparison boards, screenshots, thumbnails and planning notes do not
+belong in commits or PR uploads. Commit production application code, its supporting
+tests/documentation, and image assets actually used by the application or marketing
+site. Visual-test screenshots and baselines stay local. Record approved design
+decisions in `DESIGN.md` without requiring exploration artifacts.
+
 Consumer-facing library changes include a changeset (`pnpm changeset`); tooling,
 fixture-only and contributor-doc changes need no package bump. See
 [RELEASING.md](RELEASING.md). Publishing remains disabled.

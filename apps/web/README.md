@@ -1,164 +1,102 @@
 # domfx website
 
-A separately built, static Astro site. It consumes the built `@domfx/browser`
-export and never imports the GPU fixtures or library sources. Astro renders the content,
-documentation pages, links, code samples and original SVG artwork at build time; a small browser script
-loads the effect package only when motion and WebGPU permit it. No UI framework,
-server adapter, remote font requests or analytics are required. Cabinet Grotesk,
-General Sans and JetBrains Mono are self-hosted with their licenses in `public/fonts`.
-The homepage is also the examples canvas; `DESIGN.md` defines the approved
-annular scroll story and restrained metallic accents.
+A static Astro marketing site and public examples canvas consuming built
+`@domfx/browser` exports. It never imports library source or GPU fixtures.
+Cabinet Grotesk, General Sans and JetBrains Mono are self-hosted with licenses.
+No UI framework, remote font service or analytics is required.
+
+The approved editorial homepage from #89 replaces the annular pinned story.
+`DESIGN.md` records the layout, palette, responsive and motion contracts.
+
+## Development and verification
 
 From the repository root:
 
 ```sh
-pnpm web          # Build the library, then start Astro
-pnpm build:web    # Build the library and apps/web/dist
-pnpm preview:web  # Serve the existing static build locally
-pnpm test:web     # Build and test development and production in Chromium
-```
-
-Install the test browser with `pnpm --filter @domfx/web exec playwright install chromium`.
-The browser suite saves screenshots, its JSON report, and failure traces in
-`.scratch/web/`. It requires a working WebGPU Chromium backend for the rendering
-checks; fallback tests alone are not rendering evidence. It uses separate ports
-4322 and 4323, with foreground Astro servers owned by Playwright.
-
-`browser-tests/documentation.spec.ts` reads the exact rendered standalone/GSAP
-disclosures, bundles them with public built package exports using Vite, and runs
-them on the website origin in both projects. Only caller-provided target/host DOM
-and test exports surround the unchanged code text. The suite checks real GPU pixel
-changes, ambient time, GSAP forward/backward seeking, native button interaction,
-unavailable/reduced-motion behavior, and pagehide cleanup before and after readiness.
-The GSAP entrance fades the host so native content and Fire share opacity;
-fading the target independently violates the current composition contract.
-The Vite and GSAP adapter development dependencies belong to this verification.
-
-To run just this acceptance check against the production site:
-
-```sh
+pnpm web
 pnpm build:web
-pnpm --filter @domfx/web exec playwright test browser-tests/documentation.spec.ts --project=production
+pnpm preview:web
+pnpm agent:verify
+pnpm test:web
 ```
 
-Link checks crawl the homepage and documentation pages, resolve native routes
-and fragments, and assert the repository destinations for source evidence, standalone example and license. External availability
-requires a separate live GitHub check; the deterministic suite makes no network
-availability claim. Private repository destinations require authenticated access.
+Install Chromium with `pnpm --filter @domfx/web exec playwright install chromium`.
+The browser suite owns ports 4322/4323 and saves reports/screenshots/traces in
+`.scratch/web/`. Actual effect checks require a WebGPU Chromium backend. Routine
+smoke checks explicitly disable WebGPU and prove usability, not rendering.
+See [browser verification](../../engineering/browser-verification.md).
 
-## Draft contract
+## Homepage composition
 
-This is the local implementation draft for [#38](https://github.com/G0m1namm/domfx/issues/38).
-The approved shared showcase plan refines that draft; [DESIGN.md](../../DESIGN.md)
-defines its graphite/silver shell and attached toolbar panels. Publication and
-performance claims remain separate gates; this change does not authorize deployment.
+`HomeHero.astro` renders the 26/74 editorial opening: install command and statement
+above three proportionate examples and a silver controls panel. Desktop/tablet
+header plus hero occupy 100dvh. Phones and short windows use ordinary document flow.
+Image, real inline SVG and selectable text share actual Fire controls. Example labels
+sit above their panels, and native anchors address each original element.
+`/examples` continues to redirect to `/#examples`.
 
-The header has native Examples/Docs and View source links. The hero offers
-Try the live elements and Read the quickstart, with quiet unpublished status and
-native text-selection instructions. A cropped ring arrangement leads into a pinned PNG → SVG → live text story, then the approved GSAP integration panels and setup handoff. The title description highlights
-`@domfx/gsap`; a timeline schematic and binding sample sit beside creation settings,
-followed by timeline controls. “Bring your own edge.” provides the primary quickstart
-link and native disclosures for complete GSAP and standalone examples. Lab/support
-are secondary links. Quickstart and support navigation open the native documentation
-pages, which remain readable without JavaScript or GitHub authentication. Full-length static gradient borders retain the material identity. `/examples` redirects to `/#examples`.
+The centered GSAP introduction uses original Prism folds preset 10 with a still-image
+fallback. `prism-background.ts` owns one decorative WebGL surface, independently of
+domfx, at up to one million pixels, DPR 1.5 and 30fps. Motion requires explicit
+activation. Offscreen/hidden/reduced-motion states pause and context loss restores the
+still. Optional rendering code loads on first visibility, and cleanup releases
+programs, shaders, frames and observers.
 
-## User documentation
+`IntegrationFeatures.astro` renders three spacious alternating rows with graphite
+copy panels and silver/violet/yellow illustration backgrounds. On mobile, text precedes
+each visual. The last visual is a real, initially paused GSAP player. Its controls
+include play/pause/reverse, keyboard-native seeking, speed, Repeat and Yoyo. Seeking
+pauses. Reduced motion preserves frame exploration and disables continuous playback.
+Offscreen/hidden pages pause without automatic resumption. The player demonstrates
+GSAP timeline controls; it does not claim to be a new library effect.
 
-`/docs` redirects to `/docs/introduction`. Seven static pages cover introduction,
-local installation, standalone and GSAP usage, API essentials, the versioned browser
-support record and troubleshooting. Markdown and Astro share one reading layout,
-with grouped sticky navigation on desktop, a native collapsible menu on mobile,
-current-page semantics, breadcrumbs and previous/next links. The approved reference
-structure uses the existing design tokens and self-hosted fonts. No effect package
-or homepage animation script loads on these reading pages.
+Setup retains complete native GSAP and standalone disclosures from
+`src/content/examples.ts`. An editorial footer provides native resource navigation,
+MIT and Back to top. Fire is the first implemented effect. Homepage marketing uses
+the selected published-package wording requested by the user; release metadata,
+publication and deployment remain separate workflows.
 
-The guides derive their contracts from `QUICKSTART.md` and
-`engineering/browser-support.md`; changes to those contracts must update the site
-summaries too. `src/content/examples.ts` supplies the same complete standalone/GSAP
-source to the homepage and guide pages. The disclosure execution suite runs both
-rendered locations against public packages. Keep unpublished status, artifact
-compatibility and bounded support evidence explicit; do not replace local artifacts
-with an invented registry command.
+## Shared effect ownership
 
-## Shared showcase and effect ownership
+`src/scripts/site.ts` retains one manual clock and four independent attachments:
+image, SVG, text and installation action. PNG/SVG use bounded 256px local capture
+surfaces with positive proportional scaling. Fonts and relevant image decoding finish
+before attachment. Fire defaults to 70% intensity, 32px flame height, seed 314 and
+0 seconds. Only visible targets attach. None and offscreen/hidden/teardown conditions
+dispose owned resources. Pause retains time; selecting Fire retains playback choices.
 
-`src/scripts/site.ts` owns shared settings and eight independent public manual
-attachments: five hero rings, the matching SVG, the live section heading, and the quickstart link. Defaults are Fire, 70% maximum intensity, 32px flame
-height, seed 314, and time 1.5 seconds. Only visible targets attach, with one manual
-animation clock. Pause freezes time; seeking pauses and sets all visible attachments.
-None disposes every attachment. Selecting Fire preserves playback/motion choices.
+The silver hero panel exposes Effect, Intensity and Pause/Resume directly. Quieter
+Effect settings, Motion and Prompt controls sit underneath. Their nonmodal panels
+open upward without moving content; Escape restores focus and outside clicks
+dismiss without stealing focus. Controls preserve numeric/range synchronization,
+repeat range, local and authoritative system reduced motion. Preferences survive
+navigation with session storage and an in-memory fallback. Ending reduced motion
+requires explicit Resume. Per-target revision guards prevent late async work from
+reviving obsolete effects. One failed target leaves other targets and native content
+usable. Prompt copies the displayed settings snapshot and supplies manual-copy
+instructions when clipboard writes fail.
 
-The fixed toolbar has Fire/None, Motion, Pause/Resume and Prompt. One outer frame
-contains plain 44px buttons; no persistent playback/target count or nested outlines.
-Conditional notices appear above the dock. Effect and Motion
-pair sliders with numeric fields and units. One nonmodal panel attaches above the
-collapsed bar; categories toggle or replace it. Escape restores trigger focus; outside
-clicks dismiss without stealing focus. Panels scroll internally, fit safe areas, and
-overlay without moving content. Only the collapsed bar reserves page clearance.
-Match theme and visitor target selection are removed. Toolbar instructions stay hidden
-until initialization, and the page remains complete without JavaScript.
+The installation action retains symmetric viewport intensity mapping:
+`maximum × clamp(1 - abs(cardCenter - H/2) / ((H + cardHeight)/2), 0, 1)`.
+Updates coalesce into animation frames and change public properties without recapture.
 
-The quickstart link uses the selected intensity as its maximum. In CSS viewport pixels,
-`factor = clamp(1 - abs(cardCenter - H/2) / ((H + cardHeight)/2), 0, 1)`.
-Intensity is maximum times factor: zero fully offscreen, maximum centered, symmetric
-on entry/exit. Scroll/resize updates coalesce into animation frames and write the
-public intensity property without recapturing. Scrolling works while paused.
+## Documentation and artwork
 
-Local and system reduced motion hide output and stop UI transitions.
-`src/scripts/scroll-story.ts` owns one GSAP context/ScrollTrigger, not effect time.
-It pins the scene for 5.4 viewport heights, preserving the original opening distance.
-Headings reveal by line; expanded paragraphs follow, hold for reading, and exit upward
-while the artwork stays centered. The final text leaves with ordinary document scroll.
-The timeline uses 0.25s scrub catch-up; stage anchors finish that catch-up immediately
-and land in the reading intervals. Reduced motion, viewports under 800px tall
-(680px on desktops at least 1100px wide), and no JavaScript expose the
-full document in reading order. Cleanup reverts only this page’s context. The system
-preference stays authoritative; ending reduction requires explicit Resume. Playback
-and local motion preferences use session storage with an in-memory fallback. Fonts
-and relevant image decoding precede capture. Per-target revision guards and cleanup
-prevent late imports/captures from reviving obsolete layers. Offscreen, hidden-page,
-navigation and hot-reload cleanup release resources; returning restores settings.
-A target failure leaves its original content usable and successful previews running.
+`/docs` redirects to `/docs/introduction`. Static guides cover installation,
+standalone/GSAP use, API, support and troubleshooting. They retain grouped native
+navigation, keyboard-scrollable code and source evidence, and do not load homepage
+animation/GPU code. Public library contracts derive from `QUICKSTART.md` and the
+versioned browser support record. `documentation.spec.ts` executes the exact rendered
+standalone/GSAP examples against public built exports in development and production,
+including GPU output, seeking, unavailable/reduced-motion behavior and cleanup.
+Link checks crawl native routes, fragments and repository destinations.
 
-Prompt snapshots settings/time on opening and explicit edits, never on autoplay frames.
-It accepts a project element description/selector, copies exactly the visible draft and
-handles denied clipboard writes with manual-copy instructions. None requests cleanup
-without installation. Fire links to the site's installation/standalone guides, identifies
-its unpublished status and requires matching artifacts/source with flameHeight support.
-It preserves selected settings, lifecycle, clock, fallback and verification instructions.
-After registry proof, update setup with exact verified release versions and public docs.
-No GPU package loads until rendering is permitted; Prompt works without it.
+Original approved PNGs remain in `src/assets/illustrations/`; the annulus is the image
+example and its traced contour is genuine inline SVG. Astro generates a 768px image
+derivative. [artwork/README.md](artwork/README.md) preserves prompts, provenance and
+source hashes. Do not overwrite original artwork during future iteration.
 
-`browser-tests/` covers grouped rendering, settings and time, paused scroll intensity,
-native links/text selection, panels/focus, asynchronous replacement, partial failures,
-visibility/navigation cleanup, reduced motion, storage fallback, and static layouts.
-Rendering checks record actual Chromium/GPU output at DPR 1/2; responsive checks use
-360/768/1440px widths. Grouped performance and native 200% zoom require explicit
-manual evidence; individual preview checks alone do not establish those results.
-
-## Approved illustration family
-
-`src/assets/illustrations/` contains the original approved transparent PNGs: split shell,
-layer relay and open junction. The sphere-free annulus is the live PNG target, repeated in the hero and footer. Supporting illustration originals remain available for future cards. Astro generates 960px ring PNG derivatives;
-explicit dimensions and contained rendering preserve aspect ratio and layout space.
-The SVG target uses genuine smooth paths traced from the annulus alpha, with the same 4:3 viewBox and focus bounds. Solid silver paint stays inside the current capture contract.
-Ring and SVG artwork use 256px local surfaces scaled proportionally, retaining the
-visual design while keeping simultaneous captures within DPR 1/2 budgets.
-
-[artwork/README.md](artwork/README.md) preserves the shared material brief, exact
-per-image generation prompts, provenance and source hashes. Use an approved original
-as a visual reference for future variants; preserve originals when producing edits.
-The material is thin smoky reflective sheet with silver highlights and restrained
-colored glints, inspired by Vivid Motion's reference with original domfx shapes.
-
-The footer repeats the cropped ring composition, then groups Explore and Resources beside the brand, with MIT/Back to top links
-below and a 4px material gradient across the content width. Mobile stacks the brand
-above the link groups; the existing dock clearance keeps bottom links reachable.
-
-## Routine and visual verification
-
-`pnpm demo` opens this app. `pnpm agent:verify` and `pnpm test:web:smoke` run small
-GPU-independent usability checks. `pnpm test:web` retains the complete local GPU
-integration suite. `pnpm test:visual` compares production screenshots, including
-paused Fire; baselines are platform/backend-specific and must be reviewed. See
-[browser verification](../../engineering/browser-verification.md).
+Browser tests cover responsive/static content, keyboard controls, clipboard fallback,
+lazy player loading, shared effect lifecycle and actual grouped Fire output at DPR 1/2.
+Visual baselines are platform/backend-specific and require deliberate review after
+layout changes. Website checks do not establish broad device or browser support.

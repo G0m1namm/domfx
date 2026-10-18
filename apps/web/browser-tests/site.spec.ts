@@ -49,27 +49,35 @@ test('static homepage is complete without JavaScript', async ({ browser, baseURL
   });
   const page = await context.newPage();
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Effects that followyour HTML.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'Give your HTML an expressive edge. Add GPU effects to text, SVGs and images. Your text stays selectable. Your links keep working.',
+  );
   await expect(page.locator('#playground')).toBeHidden();
   await expect(page.locator('#toolbar-instruction')).toBeHidden();
-  await expect(page.getByRole('link', { name: 'Try the live elements' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Copy installation command' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'See how to use it', exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy install command' })).toBeHidden();
   await expect(
     page.getByRole('navigation').getByRole('link', { name: 'View source' }),
   ).toBeVisible();
   await expect(
-    page.locator('.hero').getByRole('link', { name: 'Read the quickstart', exact: false }),
-  ).toHaveAttribute('href', /\/docs\/installation\/?$/);
-  await page.getByRole('link', { name: 'View the SVG' }).click();
+    page.locator('.home-hero').getByRole('link', { name: 'See how to use it', exact: false }),
+  ).toHaveAttribute('href', /#integration$/);
+  await page.getByRole('link', { name: 'SVG', exact: true }).click();
   await expect(page).toHaveURL(/#example-svg$/);
   await expect(page.locator('#scroll-target')).toHaveAttribute('href', /\/docs\/installation\/?$/);
-  await expect(page.locator('#features-title')).toHaveText('Put Fire onyour timeline.');
-  await expect(page.locator('.package-name')).toHaveText('@domfx/gsap');
+  await expect(page.locator('#features-title')).toHaveText('For creative developers.');
+  await expect(page.locator('.integration-lead')).toContainText(
+    'For portfolios, launch pages and interactive stories.',
+  );
+  await expect(page.getByRole('link', { name: 'Explore the docs', exact: false })).toHaveAttribute(
+    'href',
+    '/docs/introduction',
+  );
   await page.getByText('See the complete GSAP setup', { exact: true }).click();
   await expect(
     page.getByRole('region', { name: 'Full manual attachment and GSAP lifecycle example' }),
   ).toContainText('bindFire');
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await context.close();
 });
@@ -80,16 +88,16 @@ for (const width of [360, 439, 440, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await expect(page.locator('#toolbar-instruction')).toBeVisible();
-    await expect(page.locator('#effect-settings')).toHaveText('Effect');
+    await expect(page.locator('#effect-settings')).toHaveText('Effect settings');
     await expect(page.locator('#effect-play')).toHaveAccessibleName('Resume');
-    if (width >= 440) {
-      await expect(page.locator('#playback-label')).toBeVisible();
-    } else {
-      await expect(page.locator('#playback-label')).toBeHidden();
-    }
+    await expect(page.locator('#playback-label')).toBeVisible();
     const dock = await page.locator('.collapsed-bar').boundingBox();
-    expect(dock?.width).toBeLessThanOrEqual(560);
-    const heading = await page.locator('#hero-title').boundingBox();
+    const examples = await page.locator('.demo-settings').boundingBox();
+    expect(dock?.width).toBe(examples?.width);
+    const heading = await page.locator('#hero-title').evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return { x: rect.x, y: rect.y + scrollY, width: rect.width, height: rect.height };
+    });
     const padding = await page
       .locator('body')
       .evaluate((body) => getComputedStyle(body).paddingBottom);
@@ -117,7 +125,12 @@ for (const width of [360, 439, 440, 768, 1440]) {
           path: `../../.scratch/web/${test.info().project.name}-reference-motion-${width}.png`,
         });
       }
-      expect(await page.locator('#hero-title').boundingBox()).toEqual(heading);
+      expect(
+        await page.locator('#hero-title').evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          return { x: rect.x, y: rect.y + scrollY, width: rect.width, height: rect.height };
+        }),
+      ).toEqual(heading);
       expect(
         await page.locator('body').evaluate((body) => getComputedStyle(body).paddingBottom),
       ).toBe(padding);
@@ -153,7 +166,7 @@ test('panels toggle, replace, focus controls and dismiss without trapping page i
   await openEffect(page);
   await expect(page.getByRole('radio', { name: 'None', exact: true })).toBeFocused();
   await expect(page.locator('#effect-settings')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await expect(page.locator('#effect-settings')).toHaveCSS('color', 'rgb(232, 234, 243)');
+  await expect(page.locator('#effect-settings')).toHaveCSS('color', 'rgb(25, 25, 32)');
   await page.locator('#effect-settings').click();
   await expect(page.locator('.dock-panel:visible')).toHaveCount(0);
   await page.locator('#motion-settings').click();
@@ -165,10 +178,10 @@ test('panels toggle, replace, focus controls and dismiss without trapping page i
   await expect(page.locator('#prompt-content')).toContainText('attachFire');
   await expect(page.locator('#prompt-content')).toContainText('fire.dispose()');
   await page
-    .locator('.hero')
-    .getByRole('link', { name: 'Read the quickstart', exact: false })
+    .locator('.home-hero')
+    .getByRole('link', { name: 'See how to use it', exact: false })
     .focus();
-  await page.locator('.hero').click({ position: { x: 8, y: 120 } });
+  await page.locator('.home-hero').click({ position: { x: 8, y: 120 } });
   await expect(page.locator('#prompt-panel')).toBeHidden();
   await expect(page.locator('#view-prompt')).not.toBeFocused();
 });
@@ -214,17 +227,17 @@ test('None and no GPU preserve native anchors and avoid the GPU package', async 
   const requests: string[] = [];
   page.on('request', (request) => requests.push(request.url()));
   await page.goto('/');
-  await expect(page.locator('#effect-settings')).toHaveText('Effect');
-  await expect(page.locator('#effect-settings')).toHaveAccessibleName('Effect: None');
+  await expect(page.locator('#effect-settings')).toHaveText('Effect settings');
+  await expect(page.locator('#effect-settings')).toHaveAccessibleName('Effect settings: None');
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('link', { name: 'Examples', exact: true })
     .click();
   await expect(page).toHaveURL(/#examples$/);
   await page.reload();
-  await expect(page.locator('#effect-settings')).toHaveText('Effect');
-  await expect(page.locator('#effect-settings')).toHaveAccessibleName('Effect: None');
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('#effect-settings')).toHaveText('Effect settings');
+  await expect(page.locator('#effect-settings')).toHaveAccessibleName('Effect settings: None');
+  await expect(page.locator('.home-hero canvas')).toHaveCount(0);
   expect(
     requests.filter((url) =>
       /snapdom|typegpu|attachment-|browser\/dist|\/_astro\/dist\./.test(url),
@@ -237,8 +250,8 @@ test('None and no GPU preserve native anchors and avoid the GPU package', async 
   await expect(page.locator('#effect-status')).toContainText('WebGPU is unavailable');
   await expect(page.locator('#effect-play')).toBeDisabled();
   await page.keyboard.press('Escape');
-  await page.getByRole('link', { name: 'Try the live elements' }).click();
-  await page.getByRole('link', { name: 'View the SVG' }).click();
+  await page.getByRole('link', { name: 'See how to use it', exact: false }).click();
+  await page.getByRole('link', { name: 'SVG', exact: true }).click();
   await expect(page).toHaveURL(/#example-svg$/);
 });
 
@@ -262,11 +275,11 @@ test('system and local reduced motion suppress output and require explicit Resum
   await expect(page.locator('html')).toHaveAttribute('data-reduced-motion', '');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(page.locator('#effect-play')).toHaveText('Resume');
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(0);
   await page.locator('#effect-play').click();
-  await expect(page.locator('.hero canvas')).toHaveCount(5);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(3);
   await page.locator('#reduce-motion').check();
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(0);
   expect(
     await page
       .locator('#effect-play')
@@ -276,12 +289,12 @@ test('system and local reduced motion suppress output and require explicit Resum
   await page.locator('#motion-settings').click();
   await expect(page.locator('#reduce-motion')).toBeChecked();
   await page.locator('#reduce-motion').uncheck();
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(0);
   await expect(page.locator('#effect-status')).toContainText('Resume');
   await openEffect(page);
   await page.getByRole('radio', { name: 'None', exact: true }).check();
   await page.getByRole('radio', { name: 'Fire', exact: true }).check();
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(0);
 });
 
 for (const dpr of [1, 2]) {
@@ -298,11 +311,11 @@ for (const dpr of [1, 2]) {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto('/');
-    await expect(page.locator('.hero canvas')).toHaveCount(5);
+    await expect(page.locator('.home-hero canvas')).toHaveCount(3);
     await openEffect(page);
     await page.locator('#flame-height').fill('64');
     await page.keyboard.press('Escape');
-    await expect(page.locator('.hero canvas')).toHaveCount(5);
+    await expect(page.locator('.home-hero canvas')).toHaveCount(3);
     await expect(page.locator('#effect-status')).toBeHidden();
 
     await page.locator('#effect-play').click();
@@ -314,11 +327,11 @@ for (const dpr of [1, 2]) {
     await page.mouse.down();
     await page.mouse.move(bounds.x + bounds.width - 5, bounds.y + 30, { steps: 12 });
     await page.mouse.up();
-    expect(await page.evaluate(() => getSelection()?.toString())).toContain('Effects');
-    // Capture the complete centered ring. Screenshotting a cropped hero canvas
-    // scrolls it into view and would itself change the scroll choreography.
+    expect(await page.evaluate(() => getSelection()?.toString())).toContain('HTML');
+    // Capture the complete ring within its authored panel. Compare presented pixels
+    // after the paused shared clock has settled.
     await center(page, 'example-image');
-    const ring = page.locator('.ring-slot--center canvas');
+    const ring = page.locator('.sample-image canvas');
     await expect(ring).toHaveCount(1);
     await expect(page.locator('#effect-status')).toBeHidden();
     // Wait for the first presentation, then compare rendered pixels rather than
@@ -330,9 +343,9 @@ for (const dpr of [1, 2]) {
       })
       .toBeLessThanOrEqual(2);
     await center(page, 'example-svg', 100);
-    await expect(page.locator('.vector-host canvas')).toHaveCount(1);
-    await expect(page.locator('.hero canvas')).toHaveCount(0);
-    const pair = page.locator('.vector-host canvas');
+    await expect(page.locator('.sample-vector canvas')).toHaveCount(1);
+    await expect(page.locator('.home-hero canvas')).toHaveCount(3);
+    const pair = page.locator('.sample-vector canvas');
     for (const canvas of await pair.all()) {
       await expect(canvas).toHaveAttribute('aria-hidden', 'true');
       await expect(canvas).toHaveCSS('pointer-events', 'none');
@@ -363,17 +376,21 @@ for (const dpr of [1, 2]) {
       path: `../../.scratch/web/${test.info().project.name}-grouped-dpr${dpr}.png`,
     });
     await center(page, 'effect-heading');
-    await expect(page.locator('.text-host canvas')).toHaveCount(1);
+    await expect(page.locator('.target-wrap canvas')).toHaveCount(1);
     const textBounds = await page.locator('#effect-heading').boundingBox();
     expect(textBounds).not.toBeNull();
     await page.mouse.move(textBounds!.x + 2, textBounds!.y + 35);
     await page.mouse.down();
-    await page.mouse.move(textBounds!.x + textBounds!.width - 2, textBounds!.y + 35, { steps: 12 });
+    await page.mouse.move(
+      textBounds!.x + textBounds!.width - 2,
+      textBounds!.y + textBounds!.height - 12,
+      { steps: 12 },
+    );
     await page.mouse.up();
-    expect(await page.evaluate(() => getSelection()?.toString())).toContain('Keep the HTML');
+    expect(await page.evaluate(() => getSelection()?.toString())).toMatch(/Keep\s+the HTML/);
     await page.locator('#effect-play').click();
     await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(page.locator('.hero canvas')).toHaveCount(5);
+    await expect(page.locator('.home-hero canvas')).toHaveCount(3);
     // Actual grouped responsiveness evidence, separate from correctness gates.
     const evidence = await page.evaluate(async () => {
       const gpu = (
@@ -425,7 +442,7 @@ for (const dpr of [1, 2]) {
     await center(page, 'example-svg');
     await expect(pair).toHaveCount(1);
     await setNone(page);
-    await expect(page.locator('canvas')).toHaveCount(0);
+    await expect(page.locator('.home-hero canvas')).toHaveCount(0);
     await openEffect(page);
     await page.getByRole('radio', { name: 'Fire', exact: true }).check();
     await page.keyboard.press('Escape');
@@ -458,48 +475,48 @@ test('rapid replacement, partial image failure and teardown retain working previ
     };
   });
   await page.goto('/');
-  await expect(page.locator('.hero canvas')).toHaveCount(4);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(2);
   await expect(page.locator('#effect-status')).toContainText('Some effects are unavailable');
   await expect(page.locator('#example-image')).toBeVisible();
   await center(page, 'example-svg', 100);
-  await expect(page.locator('.vector-host canvas')).toHaveCount(1);
-  await expect(page.locator('#effect-status')).toBeHidden();
+  await expect(page.locator('.sample-vector canvas')).toHaveCount(1);
+  await expect(page.locator('#effect-status')).toContainText('Some effects are unavailable');
   await page.locator('#effect-play').click();
   await openEffect(page);
   for (const value of [20, 48, 32]) {
     await page.locator('#flame-height').fill(String(value));
   }
   await page.keyboard.press('Escape');
-  await expect(page.locator('.vector-host canvas')).toHaveCount(1);
+  await expect(page.locator('.sample-vector canvas')).toHaveCount(1);
   await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(0);
   await page.evaluate(() =>
     window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })),
   );
-  await expect(page.locator('.vector-host canvas')).toHaveCount(1);
+  await expect(page.locator('.sample-vector canvas')).toHaveCount(1);
   await expect(page.locator('#effect-play')).toHaveText('Resume');
   await setNone(page);
   await page.evaluate(() => {
     window.dispatchEvent(new PageTransitionEvent('pagehide'));
     window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
   });
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(0);
 });
 
 test('hidden page, offscreen return and navigation preserve Pause', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.hero canvas')).toHaveCount(5);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(3);
   await page.locator('#effect-play').click();
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: true });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(0);
   await page.evaluate(() => {
     Reflect.deleteProperty(document, 'hidden');
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await expect(page.locator('.hero canvas')).toHaveCount(5);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(3);
   await expect(page.locator('#effect-play')).toHaveText('Resume');
   await page.goto('/examples');
   await expect(page).toHaveURL(/\/#examples$/);
@@ -520,10 +537,10 @@ test('high DPR capture budgets retain a usable static hero and controls', async 
   const page = await context.newPage();
   await page.goto('/');
   await expect(page.locator('#effect-status')).toContainText('Some effects are unavailable');
-  await expect(page.locator('.hero canvas')).toHaveCount(0);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(0);
   await expect(page.locator('#hero-title')).toBeVisible();
   await expect(
-    page.locator('.hero').getByRole('link', { name: 'Read the quickstart', exact: false }),
+    page.locator('.home-hero').getByRole('link', { name: 'See how to use it', exact: false }),
   ).toBeVisible();
   await page.locator('#effect-settings').click();
   await page.getByRole('radio', { name: 'None', exact: true }).check();
@@ -552,8 +569,8 @@ test('Prompt copies the displayed snapshot, handles failure and stays independen
   await page.locator('#prompt-target').fill('#project-title');
   const draft = await page.locator('#prompt-content').textContent();
   expect(draft).toContain('#project-title');
-  expect(draft).toContain('experimental and unpublished');
-  expect(draft).toContain('supporting flameHeight');
+  expect(draft).toContain('Install @domfx/browser');
+  expect(draft).toContain('selected flameHeight');
   expect(draft).toContain('/docs/installation');
   expect(draft).not.toContain('c2b12318');
   expect(draft?.length).toBeLessThan(3500);
@@ -590,7 +607,7 @@ test('Prompt retains authored motion settings while the shared clock advances', 
   page,
 }) => {
   await page.goto('/');
-  await expect(page.locator('.hero canvas')).toHaveCount(5);
+  await expect(page.locator('.home-hero canvas')).toHaveCount(3);
   await page.locator('#view-prompt').click();
   const draft = await page.locator('#prompt-content').textContent();
   await page.locator('#motion-settings').click();

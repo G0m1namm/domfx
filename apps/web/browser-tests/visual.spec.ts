@@ -8,7 +8,7 @@ for (const width of [360, 1440]) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
-    await expect(page.locator('.hero canvas')).toHaveCount(0);
+    await expect(page.locator('.home-hero canvas')).toHaveCount(0);
     await expect(page).toHaveScreenshot(`home-${width}.png`, { animations: 'disabled' });
   });
 }
@@ -20,12 +20,12 @@ test('paused fire renders on the website', async ({ page, browser }, testInfo) =
     sessionStorage.setItem('domfx-showcase', JSON.stringify({ effect: 'fire', paused: true }));
   });
   await page.goto('/');
-  await page.getByRole('link', { name: 'Try the live elements' }).click();
-  const layer = page.locator('.ring-slot--center canvas');
+  await page.getByRole('link', { name: 'Image', exact: true }).click();
+  const layer = page.locator('.sample-image canvas');
   await expect(layer).toHaveCount(1);
   await expect(layer).toHaveAttribute('aria-hidden', 'true');
   await expect(page.locator('#effect-play')).toHaveText('Resume');
-  await expect(page.locator('.image-step')).toHaveScreenshot('fire-image.png', {
+  await expect(page.locator('.sample-image')).toHaveScreenshot('fire-image.png', {
     animations: 'disabled',
     maxDiffPixelRatio: 0.005,
   });

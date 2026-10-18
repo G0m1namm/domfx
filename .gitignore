@@ -13,3 +13,6 @@ docs/
 .env
 .env.local
 .pnpm-store/
+/engineering/design-explorations/
+/.agents/product-marketing.md
+/apps/web/browser-tests/visual-baselines/*/

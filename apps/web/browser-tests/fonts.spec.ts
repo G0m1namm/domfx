@@ -17,9 +17,9 @@ for (const route of ['/', '/examples']) {
       await expect(page.locator('#effect-status')).toContainText('Preparing');
       await expect.poll(() => fontRequests).toBeGreaterThan(0);
       expect(await page.evaluate(() => document.fonts.status)).toBe('loading');
-      await expect(page.locator('canvas')).toHaveCount(0);
+      await expect(page.locator('.home-hero canvas')).toHaveCount(0);
       releaseFonts();
-      await expect(page.locator('.hero canvas')).toHaveCount(route === '/' ? 5 : 1);
+      await expect(page.locator('.home-hero canvas')).toHaveCount(3);
       expect(await page.evaluate(() => document.fonts.check('500 48px "Cabinet Grotesk"'))).toBe(
         true,
       );

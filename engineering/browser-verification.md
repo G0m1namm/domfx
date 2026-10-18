@@ -58,10 +58,11 @@ pinned Chromium. Motion-free screenshots check the page shell; the Fire example
 starts paused at time zero with its existing fixed seed. No effect renderer is mocked.
 The test requires a real decorative layer; unavailable output fails.
 
-Baselines live in `apps/web/browser-tests/visual-baselines/<platform>/<backend>/`.
-The checked-in native macOS samples are specific to the recorded machine; a changed
-GPU/driver may require inspection even on the same OS. They are not universal pixel
-truth. Generate candidates with:
+Baselines stay local and ignored in
+`apps/web/browser-tests/visual-baselines/<platform>/<backend>/`; do not commit or
+upload these screenshots to PRs. Each checkout needs reviewed local samples before
+running comparisons. A changed GPU/driver may require inspection even on the same
+OS. They are not universal pixel truth. Generate candidates with:
 
 ```sh
 pnpm test:visual --update-snapshots

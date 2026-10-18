@@ -39,6 +39,7 @@
     "prepare": "lefthook install",
     "measure:steady": "node tests/gpu/scripts/measure-performance.mjs --steady",
     "measure:layout": "node tests/gpu/scripts/measure-layout.mjs",
+    "measure:homepage": "node scripts/measure-homepage.mjs",
     "measure:performance": "node tests/gpu/scripts/measure-performance.mjs",
     "test:browser:evidence": "node tests/gpu/scripts/browser-regression.mjs",
     "web": "pnpm build && pnpm --filter @domfx/web dev",

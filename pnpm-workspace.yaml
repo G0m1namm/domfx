@@ -51,3 +51,9 @@ minimumReleaseAgeExclude:
 
 patchedDependencies:
   '@typegpu/sdf@0.12.0': patches/@typegpu__sdf@0.12.0.patch
+
+overrides:
+  'astro@7.3.3>http-cache-semantics': 4.3.0
+  smol-toml: 1.9.0
+  source-map-js: 1.2.2
+  'launch-editor>shell-quote': 1.11.0

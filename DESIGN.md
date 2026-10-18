@@ -442,7 +442,7 @@ custom fire colors, glow, distortion or particles need separate library work and
 verification. Keep those prospective effects distinct from working demonstrations.
 
 Implementation contracts live in the [browser package](packages/domfx/README.md),
-[GSAP adapter](packages/gsap/README.md) and [domain glossary](CONTEXT.md).
+[GSAP adapter](packages/gsap/README.md) and [domain glossary](GLOSSARY.md).
 
 ## Acceptance for a UI implementation
 

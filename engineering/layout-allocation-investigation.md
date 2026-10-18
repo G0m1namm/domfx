@@ -75,7 +75,9 @@ build/asset hashes, installed dependency versions, OS/CPU, browser, adapter, vie
 DPR, dimensions, motion/clock/activity data, raw samples and nearest-rank
 P50/P95/P99/max distributions. Import traces and CPU/heap profiles into Chromium
 DevTools; use the retained production code for URL/line/column attribution.
-Local evidence is ignored and must be attached separately when sharing results.
+Local evidence is ignored. Share a curated, sanitized result with its source revision
+and method when it is needed for a public decision; keep raw profiles and screenshots
+local under the [artifact policy](artifact-policy.md).
 
 Exit 0 means all six requested conditions completed with valid samples and cleanup;
 it is not a performance gate or optimization approval. Failed, unavailable or partial

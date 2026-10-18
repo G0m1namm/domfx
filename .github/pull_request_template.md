@@ -8,13 +8,14 @@ Owning module, contract/API impact, and reason for any new abstraction or depend
 
 ## Verification
 
-- [ ] PR title follows Conventional Commits.
-- [ ] `pnpm agent:verify` passes, including development/production browser checks.
-- [ ] Behavior changes include an observable regression check.
-- [ ] Capture/GPU changes include development and production browser results.
-- [ ] No generated files, local docs, credentials or unrelated changes are included.
+- [ ] PR title follows Conventional Commits (`type(scope): description`).
+- [ ] Routine verification passes (`pnpm agent:verify`, or `pnpm check` and `pnpm test:web:smoke` for contributors without an agent harness; proves repository/build/no-GPU website usability).
+- [ ] Behavior changes include an observable regression test.
+- [ ] Capture, rendering, or lifecycle changes include applicable real-GPU fixture evidence (using package-private `tests/gpu` or website examples on a WebGPU device).
+- [ ] No generated files, local notes (`.scratch/`, `PROJECT_CONTEXT.md`, local `docs/`), credentials, or unrelated changes are included (package-private test fixtures are public in Git; never commit secrets).
+
+## Evidence and notes
+
+Automated results (`pnpm agent:verify` report or CI check output), real-GPU evidence when applicable (or explicit statement why not applicable), and design review findings/resolution:
 
 Limitations or follow-up work:
-
-Automated results (`pnpm agent:verify` report or CI), manual browser evidence when
-applicable, and design review findings/resolution:

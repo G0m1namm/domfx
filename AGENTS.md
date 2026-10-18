@@ -1,13 +1,15 @@
 # domfx agent guide
 
 Read `README.md` and `CONTRIBUTING.md` before planning or implementation.
-Use `CONTEXT.md` for shared domain terminology.
+Use `GLOSSARY.md` for shared domain terminology.
 
 ## Engineering workflow
 
-Use [HARNESS.md](HARNESS.md) for the define → design → implement → verify → review loop.
-Start with `pnpm agent:brief`; finish implementation with `pnpm agent:verify` and the
-applicable manual checks. Keep the task brief proportional to the change.
+Use the [AI Hero workflow](engineering/agent-workflow.md) for planning, implementation,
+and review. Its full skill set is installed in `.agents/skills`; use `ask-matt` when
+the next flow is unclear. [HARNESS.md](HARNESS.md) supplies executable verification.
+Start implementation with `pnpm agent:brief`; finish with `pnpm agent:verify` and
+applicable manual checks. The linked issue/spec can serve as the task brief.
 
 Follow `CONTRIBUTING.md` for commit/code conventions and `workspace-boundaries.mjs`
 for permitted dependency directions. Run `pnpm check` before handing off code changes.
@@ -20,6 +22,14 @@ contract before changing capture, rendering, compositing or animation boundaries
 `PROJECT_CONTEXT.md`, `docs/` and `.scratch/` are optional, ignored maintainer notes.
 Read them when available, but do not require them in public clones or publish them.
 Put any context contributors need in the issue or tracked contributor guidance.
+See [artifact and documentation policy](engineering/artifact-policy.md) for publication boundaries.
+
+## Agent skills
+
+- **Issue tracker:** GitHub Issues; see [operations and completion](engineering/agents/issue-tracker.md).
+- **Triage:** use the [configured labels](engineering/agents/triage-labels.md), including separate specs and decision maps.
+- **Domain:** one `GLOSSARY.md`; see [domain documentation](engineering/agents/domain.md).
+- **Integration:** read [workflow adaptations](engineering/agent-workflow.md#repository-integration) when invoking a skill, especially for parallel work, testing, or artifact handoff.
 
 ## Code health
 

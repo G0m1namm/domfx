@@ -20,6 +20,10 @@ test('every catalog entry opens the matching preview and generates its named pub
       `import { ${effect.exportName} } from '@domfx/browser'`,
     );
     await expect(page.locator('[data-code]')).not.toContainText('undefined');
+    await expect(page.getByRole('link', { name: 'Read the effect reference' })).toHaveAttribute(
+      'href',
+      `/docs/api/effects/${effect.id}`,
+    );
     await page.getByRole('button', { name: 'Close preview' }).click();
   }
   expect(browserImports).toEqual([]);
@@ -82,6 +86,9 @@ test('global search opens an unfeatured effect, zooms and restores keyboard focu
   const trigger = page.getByRole('button', { name: 'Search effects and documentation' });
   await trigger.click();
   await page.getByRole('searchbox').fill('circuits');
+  await expect(
+    page.locator('[data-search-group="documentation"] a[href="/docs/api/effects/circuits"]'),
+  ).toBeVisible();
   await page.getByRole('searchbox').press('Enter');
   await expect(page.locator('#dialog-title')).toHaveText('Circuits');
   await expect(page.locator('#site-search')).not.toBeVisible();

@@ -1,6 +1,5 @@
 export const gsapCode = `import { gsap } from 'gsap';
 import { attachFire } from '@domfx/browser';
-import { bindFire } from '@domfx/gsap';
 
 await document.fonts.ready;
 const fire = attachFire(target, {
@@ -14,14 +13,15 @@ timeline.from(host, {
   opacity: 0, duration: 0.5, immediateRender: false,
 });
 timeline.addLabel('ignite', 0.5);
-const binding = bindFire(fire, timeline, {
+timeline.to(fire, {
   time: 4, intensity: 0.4,
-  duration: 4, position: 'ignite',
-});
+  duration: 4, ease: 'none',
+}, 'ignite');
+const unsubscribe = fire.onDispose(() => timeline.kill());
 
 // Register teardown before ready settles.
 const cleanup = () => {
-  binding.dispose();
+  unsubscribe();
   timeline.kill();
   fire.dispose();
 };
@@ -33,7 +33,7 @@ export const standaloneCode = `import { attachFire } from '@domfx/browser';
 
 await document.fonts.ready;
 const fire = attachFire(target, {
-  host, clock: 'ambient', motion: 'respect',
+  host, clock: 'auto', motion: 'respect',
   intensity: 0.8, flameHeight: 32, seed: 314,
 });
 window.addEventListener('pagehide',

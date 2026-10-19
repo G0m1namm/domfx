@@ -195,7 +195,7 @@ try {
 const target = document.querySelector('#recipe-target');
 if (!(host instanceof HTMLElement) || !target) throw new Error('fixture DOM');
 ${kind === 'gsap' ? gsapCode : standaloneCode}
-Object.assign(window, { recipe: { fire${kind === 'gsap' ? ', timeline, binding, cleanup' : ''} } });`,
+Object.assign(window, { recipe: { fire${kind === 'gsap' ? ', timeline, cleanup' : ''} } });`,
     );
     writeFileSync(
       join(cwd, 'vite.config.mjs'),

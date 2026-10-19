@@ -1,28 +1,13 @@
 ---
 import { Code } from 'astro:components';
+import DocsEffectIndex from '../../components/docs-effect-index.astro';
 import DocsApiTable from '../../components/DocsApiTable.astro';
 import { effects } from '../../content/effects';
 import { codeTheme } from '../../content/examples';
 import Documentation from '../../layouts/Documentation.astro';
-
-const sections = [
-  ['create-an-attachment', 'Usage'],
-  ['attachment-options', 'Options'],
-  ['control-playback', 'Controls'],
-  ['read-state', 'State'],
-  ['refresh-retry-and-dispose', 'Methods'],
-  ['available-effects', 'Available effects'],
-  ['bind-gsap', 'GSAP binding'],
-  ['package-boundaries', 'Packages'],
-];
 ---
 <Documentation>
-  <p>All {effects.length} effects share the same creation options and <code>EffectHandle</code>. Choose an attachment function to change the appearance; use the same controls and lifecycle methods for each effect.</p>
-  <nav class="docs-page-links" aria-label="On this page">
-    <p>On this page</p>
-    <ul>{sections.map(([id, label]) => <li><a href={`#${id}`}>{label}</a></li>)}</ul>
-  </nav>
-
+  <p>All {effects.length} effects accept shared creation options and return an effect instance (<code>EffectHandle</code>). Start with an effect's reference for its import, appearance and supported options.</p>
   <h2 id="create-an-attachment">Usage</h2>
   <p>Import an attachment function from <code>@domfx/browser</code>. Call it after the target and its positioned host are mounted. Imports are SSR-safe; attachment and capture require browser DOM elements.</p>
   <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Shared attachment options example"><Code code={`import { attachFrost } from '@domfx/browser';
@@ -43,97 +28,21 @@ if (effect.lifecycle === 'active') {
 }`} lang="ts" theme={codeTheme} /></div>
   <p>Each attachment takes <code>(target: Element, options)</code> and immediately returns an <code>EffectHandle</code>. See the <a href="/docs/standalone">Standalone guide</a> for a complete setup and the interactive Fire playground.</p>
 
-  <h2 id="attachment-options">Options</h2>
-  <p>These options implement the exported <code>AttachmentOptions</code> type. Only <code>host</code> is required.</p>
-  <DocsApiTable label="Shared creation options">
-    <thead><tr><th scope="col">Property</th><th scope="col">Type</th><th scope="col">Default</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>host</code><p>Connected, positioned HTML container. The target must be a strict descendant in the same document.</p></th><td><code>HTMLElement</code></td><td>Required</td></tr>
-      <tr><th scope="row"><code>clock</code><p>Use manual time for direct seeking or GSAP; ambient time advances automatically.</p></th><td><code>'manual' | 'ambient'</code></td><td><code>'manual'</code></td></tr>
-      <tr><th scope="row"><code>motion</code><p>Respect reduced motion by suppressing output, or choose a still decoration at time zero.</p></th><td><code>'respect' | 'static'</code></td><td><code>'respect'</code></td></tr>
-      <tr><th scope="row"><code>seed</code><p>Fixed seed for reproducible output at a given time on the same captured target.</p></th><td><code>number</code></td><td><code>0</code></td></tr>
-      <tr><th scope="row"><code>time</code><p>Initial absolute time in seconds. Negative values are accepted.</p></th><td><code>number</code></td><td><code>0</code></td></tr>
-      <tr><th scope="row"><code>intensity</code><p>Initial effect strength. Accepted values clamp to 0–1; the visual response depends on the effect.</p></th><td><code>number</code></td><td><code>1</code></td></tr>
-    </tbody>
-  </DocsApiTable>
-  <p>Numeric attachment options must be finite and representable as float32. Invalid values throw before clamping. To change a creation option other than <code>time</code> or <code>intensity</code>, dispose the attachment and create a replacement.</p>
-  <p class="docs-api-note">One attachment owns its target. Invalid host relationships and overlapping targets throw synchronously. Dispose the current owner before attaching to the same target, its ancestor or a descendant.</p>
 
-  <h3 id="fire-only-options">Fire-only option</h3>
-  <p><code>FireOptions</code> extends <code>AttachmentOptions</code> with one additional property. Other effects use only the shared options.</p>
-  <DocsApiTable label="Fire-specific creation options">
-    <thead><tr><th scope="col">Property</th><th scope="col">Type</th><th scope="col">Default</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>flameHeight</code><p>Flame scale in target-local CSS pixels, from 8 to 64. Set at creation; changing it requires a new attachment.</p></th><td><code>number</code></td><td><code>24</code></td></tr>
-    </tbody>
-  </DocsApiTable>
-  <p>To substitute another effect for Fire, change the attachment function and omit <code>flameHeight</code>.</p>
-
-  <h2 id="control-playback">Controls</h2>
-  <p>Read and write these properties on the returned handle. Writes are immediately readable and render on the next frame without recapturing the target.</p>
-  <DocsApiTable label="Writable effect controls">
-    <thead><tr><th scope="col">Property</th><th scope="col">Type</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>time</code><p>Absolute seconds. Supports forward and backward seeking, including negative time.</p></th><td><code>number</code></td></tr>
-      <tr><th scope="row"><code>intensity</code><p>Effect strength, clamped to 0–1 after validation. It is not a universal height or opacity setting.</p></th><td><code>number</code></td></tr>
-    </tbody>
-  </DocsApiTable>
-  <p>Both values must be finite and representable as float32. Give direct writes, a timeline or another animation driver sole ownership of these controls.</p>
-
-  <h2 id="read-state">State</h2>
-  <p>These handle properties are read-only. Playback, lifecycle and capture freshness are independent: a paused attachment can still have fresh, visible output.</p>
-  <DocsApiTable label="Read-only effect state">
-    <thead><tr><th scope="col">Property</th><th scope="col">Type</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>ready</code><p>Settles after initial setup or cancelled-initialization cleanup. Environmental unavailability does not reject it.</p></th><td><code>Promise&lt;void&gt;</code></td></tr>
-      <tr><th scope="row"><code>lifecycle</code><p>Current attachment state. Check it after readiness or retry.</p></th><td><code>'active' | 'suspended' | 'unavailable' | 'disposed'</code></td></tr>
-      <tr><th scope="row"><code>raster</code><p>Whether captured paint matches the current target.</p></th><td><code>'fresh' | 'refreshing' | 'stale'</code></td></tr>
-      <tr><th scope="row"><code>reason</code><p>Typed code for unavailability or suspension. Use this for program logic.</p></th><td><code>EffectReason | undefined</code></td></tr>
-      <tr><th scope="row"><code>reasonDetail</code><p>Diagnostic text. Wording can change; do not use it for program logic.</p></th><td><code>string | undefined</code></td></tr>
-      <tr><th scope="row"><code>clock</code><p>Clock mode selected at creation.</p></th><td><code>'manual' | 'ambient'</code></td></tr>
-      <tr><th scope="row"><code>seed</code><p>Seed selected at creation.</p></th><td><code>number</code></td></tr>
-      <tr><th scope="row"><code>paused</code><p>Whether ambient playback is paused. Always true for a manual clock or static decoration.</p></th><td><code>boolean</code></td></tr>
-    </tbody>
-  </DocsApiTable>
-  <p class="docs-api-note">Readiness does not guarantee visible output or completed GPU execution. Inspect <code>lifecycle</code> and <code>reason</code>; keep the original content usable when decoration is unavailable.</p>
-
+  <h2 id="attachment-options">Creation options</h2>
+  <p>Choose the target's container, animation control, reduced-motion behavior and initial values in the <a href="/docs/api/shared#attachment-options">shared options reference</a>.</p>
+  <h3 id="fire-only-options">Effect-specific options</h3>
+  <p><a href="/docs/api/effects/fire#effect-options">Fire's flameHeight</a> is currently the only additional creation option. Each effect has its own reference so additional controls can be documented where they belong when supported.</p>
+  <h2 id="control-playback">Writable controls</h2>
+  <p>Set <a href="/docs/api/shared#control-playback">time and intensity</a> directly or through GSAP. Time is in seconds; intensity is an effect-specific strength from 0 to 1.</p>
+  <h2 id="read-state">Read-only state</h2>
+  <p>Inspect <a href="/docs/api/effect-handle#read-state">readiness, effect state and capture status</a>. A completed setup attempt does not guarantee visible output.</p>
   <h2 id="refresh-retry-and-dispose">Methods</h2>
-  <DocsApiTable label="Effect methods">
-    <thead><tr><th scope="col">Method</th><th scope="col">Returns</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>pause()</code><p>Freeze ambient time while retaining the attachment and pending control writes.</p></th><td><code>void</code></td></tr>
-      <tr><th scope="row"><code>resume()</code><p>Continue ambient time without catching up time spent paused or hidden. Does not advance a manual clock or static decoration.</p></th><td><code>void</code></td></tr>
-      <tr><th scope="row"><code>refresh()</code><p>Hide stale output and capture again. Resolves when this or a newer revision commits; rejects on failure, invalidation, disposal or an unavailable handle.</p></th><td><code>Promise&lt;void&gt;</code></td></tr>
-      <tr><th scope="row"><code>retry()</code><p>Reinitialize with retained controls. Concurrent retries share one attempt. Rejects if disposed; otherwise inspect lifecycle after it settles.</p></th><td><code>Promise&lt;void&gt;</code></td></tr>
-      <tr><th scope="row"><code>dispose()</code><p>Release resources. Idempotent and safe before readiness.</p></th><td><code>void</code></td></tr>
-      <tr><th scope="row"><code>onDispose(callback)</code><p>Register a <code>() =&gt; void</code> callback that runs once, immediately if already disposed. Returns an unsubscribe function.</p></th><td><code>() =&gt; void</code></td></tr>
-    </tbody>
-  </DocsApiTable>
-  <p>Refresh and control writes cannot recover an unavailable handle. Correct the condition before calling <code>retry()</code>. Call <code>dispose()</code> on component unmount and handle rejected refresh/retry promises within the component's lifetime.</p>
-
+  <p><a href="/docs/api/effect-handle#refresh-retry-and-dispose">Pause, resume, refresh, retry and dispose</a> have the same contract for every effect.</p>
   <h2 id="available-effects">Available effects</h2>
-  <p>Import any function below from <code>@domfx/browser</code>. Each takes the same target and shared options and returns an <code>EffectHandle</code>. Preview their appearance in the <a href="/effects/">effects gallery</a>.</p>
-  <DocsApiTable label="Attachment functions">
-    <thead><tr><th scope="col">Effect</th><th scope="col">Function</th><th scope="col">Category</th></tr></thead>
-    <tbody>{effects.map((effect) => <tr><th scope="row">{effect.name}</th><td><code>{effect.exportName}</code></td><td>{effect.category}</td></tr>)}</tbody>
-  </DocsApiTable>
-
-  <h2 id="bind-gsap">GSAP binding</h2>
-  <p>Import <code>bindFire</code> from <code>@domfx/gsap</code>. Despite its name, it accepts any live manual <code>EffectHandle</code>. Supply the attachment, a caller-owned GSAP timeline and these options:</p>
-  <DocsApiTable label="GSAP binding options">
-    <thead><tr><th scope="col">Property</th><th scope="col">Type</th><th scope="col">Default</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>time</code><p>Absolute destination time in seconds. Must be finite and representable as float32.</p></th><td><code>number</code></td><td>Required</td></tr>
-      <tr><th scope="row"><code>intensity</code><p>Finite destination strength. Clamped to 0–1 before interpolation.</p></th><td><code>number</code></td><td>Required</td></tr>
-      <tr><th scope="row"><code>duration</code><p>Finite, nonnegative interpolation duration in seconds. Zero is accepted.</p></th><td><code>number</code></td><td>Required</td></tr>
-      <tr><th scope="row"><code>position</code><p>GSAP insertion position. Omitting it appends to the timeline.</p></th><td><code>gsap.Position</code></td><td><code>undefined</code></td></tr>
-      <tr><th scope="row"><code>disposeEffect</code><p>Transfer attachment cleanup to the binding, including context revert.</p></th><td><code>boolean</code></td><td><code>false</code></td></tr>
-    </tbody>
-  </DocsApiTable>
-  <p><code>bindFire(effect, timeline, options)</code> returns a <code>FireBinding</code>. It snapshots starting controls and interpolates linearly. <code>binding.dispose()</code> removes its tween and an explicitly owned attachment; the caller still owns the timeline.</p>
-  <p><code>bindFireAsync(promise, timeline, options)</code> accepts a promise of any effect handle and requires <code>disposeEffect: true</code>. It returns an <code>AsyncFireBinding</code> with <code>dispose()</code> and <code>ready: Promise&lt;void&gt;</code>, releasing late results after cancellation. Use <code>context.revert()</code> for GSAP context cleanup.</p>
-  <p>See the <a href="/docs/gsap">GSAP guide</a> for a complete sequence and teardown.</p>
-
+  <DocsEffectIndex />
+  <h2 id="bind-gsap">GSAP</h2>
+  <p>Use ordinary <code>gsap.to()</code> and timeline calls on an effect instance. The <a href="/docs/api/gsap">GSAP reference</a> also documents the optional snapshot bindings and their compatibility names.</p>
   <h2 id="package-boundaries">Packages</h2>
   <DocsApiTable label="Package responsibilities">
     <thead><tr><th scope="col">Package</th><th scope="col">Responsibility</th></tr></thead>

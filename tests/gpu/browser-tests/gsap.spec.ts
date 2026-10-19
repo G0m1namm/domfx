@@ -453,3 +453,151 @@ test('standalone browser/core consumer loads no GSAP runtime or binding', async 
     expect(source).not.toMatch(/gsapVersions|GreenSock|GSAP binding requires/);
   }
 });
+
+test('native effect tweens preserve sequencing, suppressed seeks, easing and property ownership @smoke', async ({
+  page,
+}) => {
+  await openConsumer(page);
+  const result = await page.evaluate(() => {
+    const { effect, timeline, binding, gsap } = window.bindingConsumer;
+    binding.dispose();
+    timeline.clear();
+    effect.time = 1;
+    effect.intensity = 0.8;
+    let callbacks = 0;
+    timeline.to(effect, {
+      time: 5,
+      intensity: 0.4,
+      duration: 4,
+      ease: 'none',
+      onUpdate: () => {
+        callbacks += 1;
+      },
+    });
+    timeline.to(effect, { time: 9, intensity: 0, duration: 4, ease: 'none' });
+    timeline.seek(4);
+    const boundary = effect.time;
+    timeline.seek(6);
+    const chained = effect.time;
+    timeline.seek(2);
+    const backward = { time: effect.time, intensity: effect.intensity, callbacks };
+    const targetTweens = gsap.getTweensOf(effect).length;
+    gsap.killTweensOf(effect, 'intensity');
+    timeline.seek(3);
+    const partial = { time: effect.time, intensity: effect.intensity };
+    timeline.kill();
+    effect.time = 0;
+    const eased = gsap.to(effect, { time: 4, duration: 4, ease: 'power1.in', paused: true });
+    eased.seek(2);
+    const ease = effect.time;
+    eased.kill();
+    const repeating = gsap.to(effect, {
+      time: 5,
+      duration: 2,
+      repeat: 1,
+      yoyo: true,
+      ease: 'none',
+      paused: true,
+    });
+    repeating.totalTime(3);
+    const yoyo = effect.time;
+    repeating.kill();
+    effect.time = 1;
+    effect.intensity = 0.8;
+    const older = gsap.to(effect, {
+      time: 5,
+      intensity: 0.4,
+      duration: 4,
+      ease: 'none',
+    });
+    older.seek(2);
+    const replacement = gsap.to(effect, {
+      intensity: 0,
+      duration: 2,
+      ease: 'none',
+      overwrite: 'auto',
+      lazy: false,
+    });
+    replacement.seek(1);
+    older.seek(3);
+    const overwrite = { time: effect.time, intensity: effect.intensity };
+    older.kill();
+    replacement.kill();
+    effect.dispose();
+    return { boundary, chained, backward, targetTweens, partial, ease, yoyo, overwrite };
+  });
+  expect(result).toEqual({
+    boundary: 5,
+    chained: 7,
+    backward: { time: 3, intensity: 0.6, callbacks: 0 },
+    targetTweens: 2,
+    partial: { time: 4, intensity: 0.6 },
+    ease: 1,
+    yoyo: 3,
+    overwrite: { time: 4, intensity: 0.3 },
+  });
+});
+
+test('native from/fromTo and context revert restore controls without disposing borrowed effects', async ({
+  page,
+}) => {
+  await openConsumer(page);
+  const result = await page.evaluate(() => {
+    const { effect, binding, gsap } = window.bindingConsumer;
+    binding.dispose();
+    effect.time = 5;
+    effect.intensity = 0.4;
+    const from = gsap.from(effect, {
+      time: 1,
+      intensity: 0.8,
+      duration: 4,
+      ease: 'none',
+      paused: true,
+    });
+    const immediate = effect.time;
+    from.seek(2);
+    const midpoint = { time: effect.time, intensity: effect.intensity };
+    from.revert();
+    const restored = { time: effect.time, intensity: effect.intensity };
+    effect.time = 9;
+    effect.intensity = 0.2;
+    const tween = gsap.fromTo(
+      effect,
+      { time: 1, intensity: 0.8 },
+      {
+        time: 5,
+        intensity: 0.4,
+        duration: 4,
+        ease: 'none',
+        paused: true,
+        immediateRender: false,
+      },
+    );
+    const untouched = effect.time;
+    tween.seek(2);
+    if (untouched !== 9 || effect.time !== 3) {
+      throw new Error('fromTo initial values');
+    }
+    tween.revert();
+    const fromToRestored = { time: effect.time, intensity: effect.intensity };
+    const context = gsap.context(() => {
+      gsap.to(effect, { time: 5, intensity: 0.4, duration: 4, paused: true }).seek(2);
+    });
+    context.revert();
+    const contextRestored = {
+      time: effect.time,
+      intensity: effect.intensity,
+      lifecycle: effect.lifecycle,
+      tweens: gsap.getTweensOf(effect).length,
+    };
+    effect.dispose();
+    return { immediate, midpoint, restored, fromToRestored, contextRestored };
+  });
+  expect(result).toEqual({
+    immediate: 1,
+    midpoint: { time: 3, intensity: 0.6 },
+    restored: { time: 5, intensity: 0.4 },
+    fromToRestored: { time: 9, intensity: 0.2 },
+    contextRestored: { time: 9, intensity: 0.2, lifecycle: 'active', tweens: 0 },
+  });
+});

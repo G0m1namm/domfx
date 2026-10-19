@@ -768,6 +768,8 @@ function initializeMarketing() {
         ? '<span class="dialog-target" data-dialog-target>edge.</span>'
         : '<span class="dialog-target" data-dialog-target><svg width="170" height="170" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg></span>';
     required('#dialog-title', dialog).textContent = selectedEffect.name;
+    required<HTMLAnchorElement>('[data-effect-reference]', dialog).href =
+      `/docs/api/effects/${selectedEffect.id}`;
     required('[data-dialog-category]', dialog).textContent = selectedEffect.category;
     required('[data-code]', dialog).textContent = attachmentCode();
     required('[data-preview-status]', dialog).textContent = 'Preparing the live preview…';

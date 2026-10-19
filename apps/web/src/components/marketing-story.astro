@@ -5,25 +5,26 @@ const standalone = `import { attachFire } from '@domfx/browser';
 
 const fire = attachFire(target, {
   host,
-  clock: 'ambient',
+  clock: 'auto',
   intensity: 0.8,
 });
 
 // On unmount: fire.dispose();`;
-const sequence = `import { bindFire } from '@domfx/gsap';
-
-// fire is a manual-clock attachment.
-const binding = bindFire(fire, timeline, {
+const sequence = `// effect was created with clock: 'manual'.
+// Use the GSAP timeline you already own.
+timeline.to(effect, {
   time: 4,
   intensity: 0.4,
   duration: 4,
-  position: 'ignite',
-});`;
+  ease: 'none',
+}, 'ignite');
+
+// On unmount: kill your tweens and dispose the effect.`;
 const questions = [
-  ['Do I need GSAP?', 'No. An ambient clock animates the effect on its own. Add the optional GSAP binding when you want to sequence time and intensity.', '/docs/standalone', 'Standalone guide'],
+  ['Do I need GSAP?', 'No. Automatic animation runs on its own. Use native GSAP tweens to sequence time and intensity.', '/docs/standalone', 'Standalone guide'],
   ['Do I need a particular framework?', 'The browser API takes a DOM element. Attach after mount and dispose on unmount in the framework you use.', '/docs/api', 'Explore the API'],
   ['What happens without WebGPU?', 'The original HTML stays available. Effects require WebGPU and supported capture conditions; reduced motion suppresses animated output by default.', '/docs/support', 'Check browser support'],
-  ['How do I install it?', 'Install @domfx/browser from npm. For timeline control, add @domfx/gsap and gsap to your project too.', 'https://www.npmjs.com/package/@domfx/browser', 'View the package on npm'],
+  ['How do I install it?', 'Install @domfx/browser from npm. For timeline control, add gsap. The @domfx/gsap lifecycle helpers are optional.', 'https://www.npmjs.com/package/@domfx/browser', 'View the package on npm'],
 ];
 ---
 <div class="marketing-story setup-story wrap">
@@ -47,7 +48,7 @@ const questions = [
         <div class="score-row"><span>Fire</span><div><i class="score-effect">ignite <span>4 seconds <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></span></i></div></div>
         <div class="score-caption"><span>One timeline. Both layers.</span><code>timeline.addLabel('ignite', 0.5)</code></div>
       </div>
-      <div class="story-code"><div class="code-heading"><span>Sequence excerpt</span><span>@domfx/gsap</span></div><Code code={sequence} lang="ts" theme={codeTheme}/></div>
+      <div class="story-code"><div class="code-heading"><span>Sequence excerpt</span><span>GSAP</span></div><Code code={sequence} lang="ts" theme={codeTheme}/></div>
     </div>
     <dl class="motion-methods"><div><dt><code>play() / pause()</code></dt><dd>Run the sequence or hold a moment.</dd></div><div><dt><code>seek() / reverse()</code></dt><dd>Move through the effect in either direction.</dd></div><div><dt><code>timeScale()</code></dt><dd>Set the pace with the controls you know.</dd></div></dl>
   </section>

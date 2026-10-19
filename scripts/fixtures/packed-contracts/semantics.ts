@@ -24,7 +24,15 @@ import {
   attachBrushFringe,
   type AttachmentOptions,
 } from '@domfx/browser';
-import { bindFire, bindFireAsync } from '@domfx/gsap';
+import {
+  bindEffect,
+  bindEffectAsync,
+  bindFire,
+  bindFireAsync,
+  type EffectBindingOptions,
+  type EffectBinding,
+  type AsyncEffectBinding,
+} from '@domfx/gsap';
 
 // Compile only: these examples are never executed or exported by a package.
 declare const target: Element;
@@ -39,6 +47,10 @@ const effect = attachFire(target, {
   intensity: 0.8,
   flameHeight: 48,
 });
+const automatic = attachFrost(target, { host, clock: 'auto' });
+automatic.pause();
+automatic.resume();
+automatic.dispose();
 const ambient = attachFire(target, { host, clock: 'ambient' });
 effect.time = -1;
 effect.intensity = 0.5;
@@ -55,6 +67,15 @@ const pending = bindFireAsync(Promise.resolve(effect), timeline, {
   ...options,
   disposeEffect: true,
 });
+const genericOptions: EffectBindingOptions = options;
+const generic: EffectBinding = bindEffect(effect, timeline, genericOptions);
+const genericPending: AsyncEffectBinding = bindEffectAsync(Promise.resolve(effect), timeline, {
+  ...options,
+  disposeEffect: true,
+});
+generic.dispose();
+genericPending.dispose();
+timeline.to(effect, { time: 4, intensity: 0.4, duration: 4, ease: 'none' });
 const refreshed = effect.refresh();
 
 // Exact equality also catches widened promise payloads and permissive escape types.
@@ -71,7 +92,7 @@ export type PromiseContracts = [
 effect.seed = 42;
 // @ts-expect-error Flame height is a numeric attachment option in CSS pixels.
 attachFire(target, { host, flameHeight: 'large' });
-// @ts-expect-error Clock options accept only manual or ambient modes.
+// @ts-expect-error Clock options accept manual, auto or the legacy ambient spelling.
 attachFire(target, { host, clock: 'automatic' });
 // @ts-expect-error An SVG element cannot serve as the required HTML effect host.
 attachFire(target, { host: svgHost });

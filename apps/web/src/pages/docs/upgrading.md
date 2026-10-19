@@ -29,5 +29,20 @@ Remove obsolete attachments and bindings before creating replacements. Correct a
 unavailable condition before explicit retry; do not add a second binding to recover.
 
 Keep the previous lockfile for rollback. If an update fails, report the package
-versions, environment, typed reason and reasonDetail with a small reproduction.
+versions, environment, reason code and diagnostic message with a small reproduction.
 See [troubleshooting](/docs/troubleshooting).
+
+## Animation and binding names
+
+Prefer `clock: 'auto'` for automatic animation. Existing `clock: 'ambient'`
+continues to work with identical timing; the read-only `clock` reports the spelling
+supplied. The default remains `'manual'` for external control.
+
+`bindEffect` and `bindEffectAsync` plus their generic types are compatible aliases
+of the Fire-named bindings. Existing calls need no migration. Both names preserve
+creation-time starts, linear interpolation and private proxy targets.
+
+For normal GSAP sequencing, use native `.to(effect, ...)` calls instead. This is a
+behavioral choice: chained `.to()` calls inherit preceding values, and overwrite
+or `killTweensOf(effect)` addresses the actual instance. Register explicit effect
+cleanup before setup finishes. See the [GSAP guide](/docs/gsap).

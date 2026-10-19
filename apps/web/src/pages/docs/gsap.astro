@@ -4,8 +4,8 @@ import { codeTheme, gsapCode } from '../../content/examples';
 import Documentation from '../../layouts/Documentation.astro';
 ---
 <Documentation>
-  <p>Install the browser package, optional <code>@domfx/gsap</code> artifact and GSAP peer using the <a href="/docs/installation#add-the-optional-gsap-binding">local setup</a>. The binding drives a manual attachment; the app owns its timeline.</p>
-  <p>The exported binding is named <code>bindFire</code>, but accepts the shared <code>EffectHandle</code> returned by every attachment function. This example uses Fire. To use Frost, Dither or another effect, change the attachment import and remove <code>flameHeight</code>; keep the same binding.</p>
+  <p>Animate any effect with ordinary GSAP property tweens. The effect instance exposes numeric <code>time</code> and <code>intensity</code> setters. No domfx plugin registration or <code>@domfx/gsap</code> import is needed.</p>
+  <p>Follow the <a href="/docs/installation#add-the-optional-gsap-binding">installation guide</a> and add GSAP to your app. This example uses Fire; replace its import and omit <code>flameHeight</code> to use another effect.</p>
   <h2 id="provide-your-elements">Provide your elements</h2>
   <p>Run after mount. In <code>main.ts</code>, find the elements from the preview HTML:</p>
   <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Find the target and host"><Code code={`const host = document.querySelector('#host');
@@ -13,19 +13,37 @@ const target = document.querySelector('#target');
 if (!(host instanceof HTMLElement) || !target) {
   throw new Error('Missing host or target');
 }`} lang="ts" theme={codeTheme} /></div>
-  <p>To use your own heading, replace the preview button with <code>&lt;h1 id="target"&gt;Your heading&lt;/h1&gt;</code> inside the positioned host. Keep the heading's text selectable; the effect uses a separate decorative canvas.</p>
+  <p>For a heading, replace the preview button with <code>&lt;h1 id="target"&gt;Your heading&lt;/h1&gt;</code> inside the container. The text remains selectable.</p>
   <h2 id="build-your-sequence">Build your sequence</h2>
-  <p>Add this to the same module. The host fades in over half a second; Fire then moves from time 0 to 4 and intensity 0.8 to 0.4 over four seconds. Fade the host so the original target and its effect share opacity. Fading the target alone is unsupported composition.</p>
-  <p>Use the <a href="/docs/standalone#attach-fire">Standalone playground</a> to inspect intensity and Fire's flame height. The sequence below uses a manual clock controlled by GSAP.</p>
+  <p>Create the effect with <code>clock: 'manual'</code> so GSAP controls its time. The container fades in over half a second; the effect then moves from time 0 to 4 and intensity 0.8 to 0.4 over four seconds. Fade the container so the original target and effect share opacity. Target-only opacity changes are unsupported.</p>
   <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Full manual attachment and GSAP lifecycle example"><Code code={gsapCode} lang="ts" theme={codeTheme} /></div>
   <h2 id="seek-and-play">Seek and play</h2>
-  <p>Use <code>timeline.play()</code>, <code>pause()</code>, <code>seek()</code> or <code>reverse()</code>. At <code>timeline.seek(2.5)</code>, Fire has time 2 and intensity 0.6. Seeking backward to 1.5 gives time 1 and intensity 0.7. Default callback-suppressed seeking still updates the controls.</p>
-  <p><code>timeScale()</code> changes playback speed; timeline <code>repeat</code> and <code>yoyo</code> control repetition. Use one owner for Fire's controls: later direct writes do not redefine the binding's captured starting values.</p>
+  <p>Use <code>timeline.play()</code>, <code>pause()</code>, <code>seek()</code> and <code>reverse()</code>. At <code>timeline.seek(2.5)</code>, effect time is 2 and intensity is 0.6. Seeking backward to 1.5 gives time 1 and intensity 0.7. Callback-suppressed seeks still update the setters; an <code>onUpdate</code> copy is unnecessary.</p>
+  <p>Chain <code>.to()</code> calls to animate from preceding destinations. Use <code>.from()</code> or <code>.fromTo()</code> for explicit starting values, remembering their default immediate rendering. Later <code>.fromTo()</code> segments commonly need <code>immediateRender: false</code>. Easing, <code>repeat</code>, <code>yoyo</code>, <code>overwrite</code> and <code>timeScale()</code> follow normal GSAP conventions.</p>
+  <p><code>gsap.killTweensOf(fire, 'intensity')</code> stops only that property; it does not dispose the effect or stop a time tween. Keep one driver per property and keep values within the <a href="/docs/api/shared#control-playback">control ranges</a>.</p>
   <h2 id="own-the-lifetime">Own the lifetime</h2>
-  <p>Call <code>cleanup()</code> on component unmount. It disposes this binding, this example's owned timeline and the attachment. Registration before <code>ready</code> settles also covers navigation during initialization.</p>
-  <p><code>binding.dispose()</code> alone removes its child tween, preserving caller-owned siblings and the last controls. When borrowing a timeline, leave timeline cleanup with its owner.</p>
-  <p>For <code>gsap.context()</code> cleanup, use <code>context.revert()</code>. An asynchronous attachment can use <code>bindFireAsync()</code> with explicit <code>disposeEffect: true</code> ownership to dispose a result arriving after teardown.</p>
-  <h2 id="unavailable-and-retry">Unavailable and retry</h2>
-  <p>The timeline starts only when Fire is active. Missing GPU support or reduced motion leaves it paused and preserves the original target. Correct the condition, then await <code>fire.retry()</code> and inspect its lifecycle. Retry retains the existing binding and controls; do not add another binding.</p>
-  <p>See the <a href="/docs/api">API reference</a> and <a href="/docs/troubleshooting">troubleshooting</a> for the shared attachment contract.</p>
+  <p>Call <code>cleanup()</code> on unmount. It removes the disposal listener, kills the timeline this example created and disposes the effect. Registration before <code>ready</code> settles covers navigation during setup. The disposal listener also stops this timeline if removing the target disposes the effect.</p>
+  <p>When borrowing a timeline, retain and kill only your child tweens; its owner cleans up the timeline and siblings. Finishing, killing or overwriting a tween does not release its target's resources.</p>
+  <h3 id="context-cleanup">GSAP context cleanup</h3>
+  <p>Create tweens inside <code>gsap.context()</code> and return explicit resource cleanup. Register synchronously; a context does not automatically collect work created later by arbitrary promise continuations.</p>
+  <div class="docs-code-scroll" tabindex="0" role="region" aria-label="GSAP context resource cleanup"><Code code={`const context = gsap.context(() => {
+  const effect = attachFire(target, { host, clock: 'manual' });
+  const tween = gsap.to(effect, {
+    time: 4, intensity: 0.4, duration: 4, ease: 'none',
+  });
+  const unsubscribe = effect.onDispose(() => tween.kill());
+  return () => {
+    unsubscribe();
+    tween.kill();
+    effect.dispose();
+  };
+});
+// On unmount, even before setup finishes:
+context.revert();`} lang="ts" theme={codeTheme} /></div>
+  <h2 id="optional-bindings">Optional lifecycle helpers</h2>
+  <p><code>@domfx/gsap</code> provides <code>bindEffect</code> and <code>bindEffectAsync</code> for snapshot bindings with explicit cleanup responsibility. The asynchronous helper safely disposes results arriving after cancellation. The compatible <code>bindFire</code> names remain available for all effects.</p>
+  <p>These helpers capture starting controls when created and animate private proxy targets. They differ from native chained <code>.to()</code> calls, target-based kill and overwrite. Use the <a href="/docs/api/gsap#snapshot-bindings">binding reference</a> when you need that contract; prefer native tweens for ordinary sequencing.</p>
+  <h2 id="unavailable-and-retry">Unavailable output and retry</h2>
+  <p>The main example starts playback only when the effect is active. Missing GPU support or reduced motion preserves the original target. Correct the condition, then await <code>fire.retry()</code>, inspect its state and play the existing timeline. Retry retains controls; it does not require another tween.</p>
+  <p>The <a href="/docs/standalone#attach-fire">single Fire playground</a> demonstrates the shared controls. See <a href="/docs/api/gsap">GSAP API</a> and <a href="/docs/troubleshooting">troubleshooting</a> for reference details.</p>
 </Documentation>

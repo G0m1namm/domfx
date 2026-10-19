@@ -4,7 +4,7 @@ import SiteHeader from '../components/SiteHeader.astro';
 import { documentation } from '../content/documentation';
 import '../styles/documentation.css';
 
-const slug = Astro.url.pathname.replace(/\/$/, '').split('/').at(-1);
+const slug = Astro.url.pathname.replace(/\/$/, '').replace(/^\/docs\//, '');
 const index = documentation.findIndex((page) => page.slug === slug);
 const page = documentation[index];
 if (!page) {
@@ -30,7 +30,7 @@ const next = documentation[index + 1];
       <SiteHeader />
       <details class="docs-mobile-menu"><summary>Browse documentation <span aria-hidden="true">+</span></summary><DocsNavigation /></details>
       <div class="docs-layout">
-        <aside class="docs-sidebar"><DocsNavigation /><p>Available on npm.</p><a class="text-link" href="https://www.npmjs.com/package/@domfx/browser">View the package ↗</a><a class="text-link" href="/effects/">Try the live examples ↗</a></aside>
+        <aside class="docs-sidebar"><DocsNavigation /><p>Experimental API.</p><a class="text-link" href="/docs/installation">Installation options ↗</a><a class="text-link" href="/effects/">Try the live examples ↗</a></aside>
         <main id="main" tabindex="-1">
           <div class="docs-breadcrumb"><a href="/docs/introduction">Docs</a><span aria-hidden="true">/</span><span>{page.group}</span></div>
           <h1>{page.title}</h1>

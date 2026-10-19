@@ -94,7 +94,7 @@ function initializeFireLabs() {
         }
         const nextHandle = attachFire(target, {
           host,
-          clock: 'ambient',
+          clock: 'auto',
           motion: 'respect',
           intensity: Number(intensityInput.value) / 100,
           flameHeight: Number(heightInput.value),

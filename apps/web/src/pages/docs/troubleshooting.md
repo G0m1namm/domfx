@@ -2,9 +2,9 @@
 layout: ../../layouts/Documentation.astro
 ---
 
-Wait for `effect.ready`, then inspect `lifecycle`, `raster` and the typed `reason`.
+Wait for `effect.ready`, then inspect `lifecycle`, `raster` and the `reason` code.
 Use `reasonDetail` for diagnostics, not program logic. Environmental unavailability
-does not reject readiness; invalid options and ownership can throw synchronously.
+does not reject readiness; invalid options and target conflicts can throw synchronously.
 
 ## Missing or suppressed output
 
@@ -32,7 +32,7 @@ element (tag and ID when present), computed CSS property/value and a suggested c
 For example, a rotated `h1#title` reports its computed `transform` and requests
 translation/positive axis-aligned scale. A filter reports the offending element
 and suggests removing it or applying it to the shared host. Wording is diagnostic;
-branch on the typed `reason` instead.
+branch on the `reason` code instead.
 
 For `unsupported-composition`, check target/intermediate opacity, filters (even
 `blur(0px)`), backdrop filters and blending. Animate the host's opacity when native
@@ -47,7 +47,7 @@ ancestor/stylesheet paint, hover/focus and canvas drawing need explicit refresh.
 This is snapshot capture, not continuous video capture.
 
 `target-not-visible` and `stale-raster` can describe suspension rather than failure.
-Fresh output can resume on visibility; stale paint needs refresh or retry when visible.
+Up-to-date output can resume on visibility; out-of-date captured appearance needs refresh or retry when visible.
 A borderless outlined target or `content-visibility: auto` subtree can reject to
 prevent capture from mutating source content.
 
@@ -127,5 +127,5 @@ try {
 
 Concurrent retries share one attempt and retain controls and GSAP bindings. Refresh
 or control writes cannot recover an unavailable handle. Retry on a disposed handle
-rejects; create a new attachment after remounting. `effect-target-owned` means a live
-attachment owns this target or an overlapping subtree; release that owner first.
+rejects; create a new attachment after remounting. `effect-target-owned` means another live
+effect uses this target, an ancestor or a descendant. Dispose that effect first; arbitrary visual overlap is a different condition.

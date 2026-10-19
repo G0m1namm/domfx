@@ -1,6 +1,6 @@
 # domfx
 
-GPU edge effects for live DOM elements. The first vertical slice is a fire effect that follows an element's visible silhouette and is controlled by GSAP.
+GPU edge effects for live DOM elements. Choose from 21 effects, including Electricity, Frost, Fire, Slime, Burned paper, Kinetic bloom and geometric patterns. Animate automatically or control time and intensity with your code or GSAP.
 
 This repository contains a working browser feasibility experiment in a pnpm monorepo. Packages are private and experimental; the manual attachment API is experimental and there is no published npm package yet.
 
@@ -12,11 +12,11 @@ Package-specific contracts and API references live in their respective package g
 
 - [`@domfx/core`](packages/core/README.md) — DOM/framework/GPU-independent contracts and computation
 - [`@domfx/domfx`](packages/domfx/README.md) — browser capture and internal TypeGPU renderer
-- [`@domfx/gsap`](packages/gsap/README.md) — optional GSAP timeline binding
+- [`@domfx/gsap`](packages/gsap/README.md) — optional GSAP lifecycle helpers
 
 ## Support limits
 
-The first effect is Fire. Local Chromium checks cover capture, GPU distances, rendering, lifecycle, and GSAP controls. They do not establish broad browser support or performance guarantees.
+All effects share capture, placement, animation controls and cleanup. Local Chromium checks cover capture, GPU distances, rendering, lifecycle and GSAP controls. They do not establish broad browser support or performance guarantees.
 
 - See the [browser support record](engineering/browser-support.md) for measured environments and untested coverage.
 - See [GLOSSARY.md](GLOSSARY.md) for shared domain terminology.
@@ -41,14 +41,14 @@ Key development commands:
 - `pnpm agent:verify` — repository checks, production website build, and smoke verification
 - `pnpm format` / `pnpm lint` — Oxfmt and Oxlint
 
-Install Chromium for testing with `pnpm --filter @domfx/web exec playwright install chromium`. Detailed verification commands, GPU backends, and measurement suites are documented in [CONTRIBUTING.md](CONTRIBUTING.md) and [HARNESS.md](HARNESS.md).
+Install Chromium for testing with `pnpm --filter @domfx/web exec playwright install chromium`. Effect API conventions and future control design checks are documented in [engineering/effect-api.md](engineering/effect-api.md). Detailed verification commands, GPU backends, and measurement suites are documented in [CONTRIBUTING.md](CONTRIBUTING.md) and [HARNESS.md](HARNESS.md).
 
 ## Workspace structure
 
 ```text
 packages/core   → DOM/framework/GPU-independent contracts and computation
 packages/domfx  → browser capture and internal TypeGPU renderer; consumes core
-packages/gsap   → optional GSAP timeline binding
+packages/gsap   → optional GSAP lifecycle helpers
 apps/web        → Astro website, public examples and user documentation
 tests/gpu       → package-private regression fixtures and numerical tests; no demo app
 ```

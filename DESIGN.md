@@ -235,6 +235,12 @@ wide tables scroll inside keyboard-focusable regions on mobile. Fire remains the
 single interactive documentation example, with all effects covered by the shared
 API reference.
 
+The effect references have individual addressable pages under a native collapsible
+Effects navigation group. Reuse the canonical options and controls tables on each
+page; keep effect-specific settings separate. Link references from gallery previews
+and include them in documentation search. Preserve the existing API section anchors
+as links to the expanded references. This adds no further interactive playgrounds.
+
 ### Examples and toolbar
 
 The editorial homepage places the shared controls in its silver side panel:

@@ -8,6 +8,8 @@ import type { EffectHandle } from '@domfx/browser';
 import * as browserEffects from '@domfx/browser';
 import type { FireBinding } from '@domfx/gsap';
 
+import { effects } from '../src/content/effects';
+
 type TestGpu = {
   requestAdapter(options?: unknown): Promise<{
     info: {
@@ -35,7 +37,7 @@ declare global {
 }
 
 const disclosures = {
-  standalone: 'Standalone ambient attachment example',
+  standalone: 'Standalone automatic animation example',
   gsap: 'Full manual attachment and GSAP lifecycle example',
 };
 
@@ -108,6 +110,47 @@ test('documentation is readable and navigable without JavaScript at mobile and d
   }
 });
 
+test('all effect references work without JavaScript, with canonical controls and exact exports', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(90_000);
+  for (const width of [360, 768, 1440]) {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      baseURL,
+      viewport: { width, height: 900 },
+    });
+    const page = await context.newPage();
+    for (const effect of effects) {
+      await page.goto(`/docs/api/effects/${effect.id}`);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(effect.name);
+      await expect(
+        page.getByRole('region', { name: `${effect.name} usage`, exact: true }),
+      ).toContainText(`import { ${effect.exportName} } from '@domfx/browser'`);
+      await expect(
+        page.getByRole('table', { name: 'Shared creation options', exact: true }),
+      ).toContainText("'manual' | 'auto' | 'ambient'");
+      await expect(
+        page.getByRole('table', { name: 'Writable effect controls', exact: true }),
+      ).toContainText('intensity');
+      await expect(page.locator('canvas, [data-docs-fire-lab]')).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      if (width <= 900) {
+        await page.getByText('Browse documentation', { exact: false }).click();
+      }
+      await expect(
+        page
+          .getByRole('navigation', { name: 'Documentation', exact: true })
+          .getByRole('link', { name: effect.name, exact: true }),
+      ).toHaveAttribute('aria-current', 'page');
+    }
+    await context.close();
+  }
+});
+
 test('documentation keyboard navigation reaches guides and scrolls code', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto('/docs/introduction');
@@ -125,7 +168,7 @@ test('documentation keyboard navigation reaches guides and scrolls code', async 
   await expect.poll(() => code.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
   await expect(page.locator('canvas')).toHaveCount(0);
 
-  await page.goto('/docs/api');
+  await page.goto('/docs/api/shared');
   const options = page.getByRole('region', { name: 'Shared creation options', exact: true });
   await options.focus();
   await page.keyboard.press('ArrowRight');
@@ -208,7 +251,7 @@ async function loadDisclosure(page: Page, kind: keyof typeof disclosures, path: 
           return `const host = document.getElementById('disclosure-host');
 const target = document.getElementById('disclosure-target');
 ${source}
-export { fire${kind === 'gsap' ? ', timeline, binding, cleanup' : ''} };`;
+export { fire${kind === 'gsap' ? ', timeline, cleanup' : ''} };`;
         },
       },
     ],
@@ -313,6 +356,7 @@ test('every website link resolves to a native route, anchor or documented reposi
   page,
   request,
 }) => {
+  test.setTimeout(90_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const links = new Set<string>();
   const resources = new Set<string>();
@@ -326,6 +370,11 @@ test('every website link resolves to a native route, anchor or documented reposi
     '/docs/gsap',
     '/docs/upgrading',
     '/docs/api',
+    '/docs/api/shared',
+    '/docs/api/effect-handle',
+    '/docs/api/effects',
+    '/docs/api/gsap',
+    ...effects.map((effect) => `/docs/api/effects/${effect.id}`),
     '/docs/support',
     '/docs/troubleshooting',
   ]) {

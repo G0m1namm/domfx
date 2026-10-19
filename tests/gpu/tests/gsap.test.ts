@@ -4,7 +4,7 @@ import test from 'node:test';
 import { gsap } from 'gsap';
 
 import type { EffectHandle } from '@domfx/core';
-import { bindFire, bindFireAsync } from '@domfx/gsap';
+import { bindEffect, bindEffectAsync, bindFire, bindFireAsync } from '@domfx/gsap';
 
 const options = { time: 4, intensity: 0.5, duration: 4, position: 0 };
 
@@ -211,4 +211,9 @@ test('rejected attachment and invalid binding setup retain siblings and release 
   assert.equal(timeline.getChildren().length, 1);
   timeline.seek(8);
   assert.equal(sibling.value, 8);
+});
+
+test('generic binding names preserve the compatible snapshot and cancellation functions', () => {
+  assert.equal(bindEffect, bindFire);
+  assert.equal(bindEffectAsync, bindFireAsync);
 });

@@ -16,7 +16,7 @@ The supported experimental build path is Node 22+ with pnpm, a package-side Vite
 library build targeting ES2022, and an ESM Vite consumer. Import only
 `@domfx/browser` or `@domfx/browser/experimental` through package exports.
 The browser package runs `unplugin-typegpu` when building: its emitted JavaScript
-includes TypeGPU callback metadata and inline fire WGSL. No separate shader files,
+includes TypeGPU callback metadata and inline effect WGSL. No separate shader files,
 runtime asset copy, source aliases or consumer TypeGPU plugin are required.
 Runtime dependencies (`@domfx/core`, TypeGPU and SnapDOM) remain external and
 must be installed with the package. CommonJS and other bundlers are not verified
@@ -36,7 +36,7 @@ Core, browser and the existing `/experimental` fixture entry import in separate 
 processes with `window`, `document` and `navigator` absent. A second pass guards
 browser globals and resource APIs against import-time DOM/GPU work or scheduling.
 Core cannot load external modules; browser imports cannot load GSAP. This verifies
-import safety for SSR, not server-side capture or rendering: call `attachFire` and
+import safety for SSR, not server-side capture or rendering: call effect functions and
 `captureElement` only with real browser elements.
 
 Root declarations compile with TypeScript 5.9.3, strict checking and
@@ -177,12 +177,15 @@ while a capture establishes readiness are allowed; later signals invalidate pend
 work or hide fresh output and schedule a fresh capture. Stylesheet edits that emit
 no observed size/mutation/font event still require explicit `refresh()`.
 
-## Manual fire attachment
+## Effect instances
 
-For caller-owned timelines, use the optional [`@domfx/gsap` binding](../gsap/README.md).
+For caller-owned timelines, use native GSAP property tweens. The optional
+[`@domfx/gsap` helpers](../gsap/README.md) add scoped snapshot binding and async cleanup.
 The browser package itself does not depend on GSAP.
 
-The root export provides an experimental, one-target attachment API:
+All 21 root effect functions share `AttachmentOptions` and return `EffectHandle`.
+Fire is the worked example below; switch the function and omit `flameHeight` to
+use another effect. The root export provides an experimental, one-target API:
 
 ```ts
 import { attachFire } from '@domfx/browser';
@@ -206,7 +209,8 @@ Seed defaults to `0`,
 time to `0`, and intensity to `1`. Seed is read-only; finite intensity clamps to
 `[0, 1]`. Control writes update readable values immediately and coalesce into one
 render commit per dirty target on the next animation frame, using one domfx scheduler
-per document. The initial paint completes before `ready` resolves. Frames reuse the
+per document. Successful setup submits initial output before `ready` resolves; this does not
+wait for completed GPU execution or screen presentation. Frames reuse the
 prepared raster without capture. Writes after disposal update readable controls but
 cannot render or recreate resources.
 
@@ -218,7 +222,7 @@ The default keeps 32 CSS pixels of padding. Larger sizes increase capture dimens
 and count toward the existing capture and aggregate memory budgets.
 
 ```ts
-const effect = attachFire(title, { host, clock: 'ambient', flameHeight: 48 });
+const effect = attachFire(title, { host, clock: 'auto', flameHeight: 48 });
 ```
 
 Intensity controls flame reach and opacity together. Use manual time or a GSAP binding
@@ -226,11 +230,12 @@ to change playback speed; seed varies the pattern. Identical time, seed, intensi
 flame height reproduce the same frame, including embers. The palette remains warm.
 
 `clock` defaults to `'manual'`; the handle exposes its immutable mode. Manual time
-never advances automatically, including after `resume()`. Choose `'ambient'` to advance
-time in seconds with the document's animation frames after initialization:
+never advances automatically, including after `resume()`. Choose `'auto'` to advance
+time in seconds with the document's animation frames after initialization. The older
+spelling `'ambient'` remains supported; `effect.clock` preserves the spelling supplied:
 
 ```ts
-const effect = attachFire(target, { host, clock: 'ambient', seed: 314 });
+const effect = attachFire(target, { host, clock: 'auto', seed: 314 });
 await effect.ready;
 effect.pause(); // Freeze at the last committed time; seed is unchanged.
 effect.time = 2; // Paint this time on the next frame while remaining paused.
@@ -239,12 +244,12 @@ effect.resume(); // Continue from 2, excluding the paused interval.
 
 The returned `EffectHandle` extends the existing `ManualEffectHandle` control shape
 with `clock`, `paused`, `pause()` and `resume()`. Pause/resume are idempotent, can be
-called before `ready`, and do not recapture. Manual mode is always paused. An explicit
-time write while ambient is running resets the time origin to that value; subsequent
-frames add elapsed time from the write. Ambient time is the last committed time when
-read. Clock pause is independent of lifecycle suspension: pausing keeps fresh output
+called before `ready`, and do not recapture. Externally controlled instances always report `paused: true`, including while GSAP changes time. An explicit
+time write during automatic animation resets the time origin to that value; subsequent
+frames add elapsed time from the write. Automatic effect time is the last committed time when
+read. Automatic-animation pause is independent of lifecycle suspension: pausing keeps fresh output
 visible, and seeking while paused does not resume the clock. Document hiding and a target leaving the viewport (including rectangular ancestor
-overflow clips) suspend rendering and placement frame scheduling. Ambient time freezes
+overflow clips) suspend rendering and placement frame scheduling. Automatic effect time freezes
 at its last committed value; resumption excludes the suspended interval. An intersection
 observer wakes offscreen targets, and re-entry synchronizes geometry before showing
 fresh output, including manual and paused attachments. Control writes made while
@@ -377,7 +382,7 @@ const effect = attachFire(target, { host, motion: 'static', seed: 314 });
 await effect.ready;
 ```
 
-Static attachments remain paused, and `resume()` is a no-op even with `clock: 'ambient'`.
+Static attachments remain paused, and `resume()` is a no-op even with `clock: 'auto'`.
 Time writes remain readable configuration, but rendering always uses zero; intensity
 writes and explicit refresh still work. Preference changes never start animation or
 invalidate a static capture. This opt-in permits static output under reduced motion;
@@ -548,3 +553,32 @@ checks and capture behavior, not universal CSS compatibility.
 Run `pnpm --filter @domfx/gpu-tests exec vite --host 127.0.0.1` and open `/manual.html` to exercise the root-export consumer with Seek,
 Zero intensity and Dispose controls. The browser suite covers it in development
 and production alongside the existing numerical capture/fire fixtures.
+
+## Available effect functions
+
+Import any of these from `@domfx/browser`. All accept the shared options; only
+`attachFire` adds the creation-only `flameHeight` option. Time and intensity remain
+the shared writable controls. No color, gradient or particle-count controls are
+currently exported.
+
+- `attachElectricity`
+- `attachFrost`
+- `attachFire`
+- `attachDither`
+- `attachSlime`
+- `attachKinetic`
+- `attachBurnedPaper`
+- `attachHalftone`
+- `attachStipple`
+- `attachScanlines`
+- `attachCrosshatch`
+- `attachDiamonds`
+- `attachContourEchoes`
+- `attachEngraving`
+- `attachWovenMesh`
+- `attachHexagons`
+- `attachInterference`
+- `attachShards`
+- `attachCircuits`
+- `attachStarShimmer`
+- `attachBrushFringe`

@@ -1,0 +1,13 @@
+---
+import DocsGsapBindings from '../../../components/docs-gsap-bindings.astro';
+import Documentation from '../../../layouts/Documentation.astro';
+---
+<Documentation>
+  <h2 id="native-tweens">Native property tweens</h2>
+  <p>Use <code>{'gsap.to(effect, { time, intensity, duration, ease })'}</code> or add the same target to a timeline. Use <code>clock: 'manual'</code> when creating the effect. No domfx plugin registration or <code>@domfx/gsap</code> import is needed for these numeric properties.</p>
+  <p>GSAP writes the effect's public setters, including during callback-suppressed seeks. Chained <code>.to()</code> calls resolve starting values as normal GSAP tweens. <code>.from()</code>, <code>.fromTo()</code>, easing, repeat/yoyo, property overwrite and <code>gsap.killTweensOf(effect)</code> use standard GSAP behavior.</p>
+  <p>Keep values within the <a href="/docs/api/shared#control-playback">effect control ranges</a>. The instance validates writes; GSAP's general vars type does not statically enforce these ranges. <code>intensity</code> clamps per write, so overshooting eases may clip its animation.</p>
+  <p>Kill your tweens and dispose your effect during teardown. Killing or completing a tween does not dispose its target. Register cleanup immediately, including when setup is still pending. See the <a href="/docs/gsap">complete GSAP guide</a> for the lifecycle pattern.</p>
+  <h2 id="snapshot-bindings">Optional snapshot bindings</h2>
+  <DocsGsapBindings />
+</Documentation>

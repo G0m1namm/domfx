@@ -1,3 +1,6 @@
+import { effectReference } from './effect-reference';
+import { effects } from './effects';
+
 export const documentation = [
   {
     slug: 'introduction',
@@ -15,7 +18,7 @@ export const documentation = [
     slug: 'standalone',
     title: 'Standalone',
     group: 'Guides',
-    description: 'Attach an effect, choose a clock and tune a live Fire example.',
+    description: 'Attach an effect, control its animation and tune a live Fire example.',
   },
   {
     slug: 'gsap',
@@ -35,6 +38,36 @@ export const documentation = [
     group: 'Reference',
     description: 'Options, properties and methods shared by every effect.',
   },
+  {
+    slug: 'api/shared',
+    title: 'Shared options and controls',
+    group: 'Reference',
+    description: 'Creation options and writable controls available on every effect.',
+  },
+  {
+    slug: 'api/effect-handle',
+    title: 'Effect instance',
+    group: 'Reference',
+    description: 'Read effect state, update the captured image and release resources.',
+  },
+  {
+    slug: 'api/effects',
+    title: 'Effect index',
+    group: 'Reference',
+    description: 'Import names and individual API references for every effect.',
+  },
+  {
+    slug: 'api/gsap',
+    title: 'GSAP API',
+    group: 'Reference',
+    description: 'Native property tweens and optional lifecycle-aware snapshot bindings.',
+  },
+  ...effects.map((effect) => ({
+    slug: `api/effects/${effect.id}`,
+    title: effect.name,
+    group: 'Effects',
+    description: effectReference[effect.id].description,
+  })),
   {
     slug: 'support',
     title: 'Browser support',

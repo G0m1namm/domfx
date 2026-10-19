@@ -1,7 +1,7 @@
 ---
 import { documentation } from '../content/documentation';
 
-const groups = [...new Set(documentation.map((page) => page.group))];
+const groups = [...new Set(documentation.filter((page) => page.group !== 'Effects').map((page) => page.group))];
 const currentPath = Astro.url.pathname.replace(/\/$/, '');
 ---
 <nav aria-label="Documentation">
@@ -11,4 +11,10 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '');
       <a href={`/docs/${page.slug}`} aria-current={currentPath === `/docs/${page.slug}` ? 'page' : undefined}>{page.title}</a>
     )}
   </div>)}
+  <details class="docs-nav-group docs-effects-nav" open={currentPath.startsWith('/docs/api/effects')}>
+    <summary>Effects</summary>
+    {documentation.filter((page) => page.group === 'Effects').map((page) =>
+      <a href={`/docs/${page.slug}`} aria-current={currentPath === `/docs/${page.slug}` ? 'page' : undefined}>{page.title}</a>
+    )}
+  </details>
 </nav>

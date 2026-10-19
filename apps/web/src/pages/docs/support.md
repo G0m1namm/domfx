@@ -63,7 +63,7 @@ fidelity from the measured fixtures.
 ## When an effect is unavailable
 
 The original DOM remains the content and interaction surface. Reduced motion
-suppresses animated output by default. Check the typed reason and use
+suppresses animated output by default. Check the reason code and use
 [explicit recovery](/docs/troubleshooting) after correcting the condition.
 
 The [versioned browser/device record](https://github.com/G0m1namm/domfx/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md)

@@ -64,7 +64,7 @@ function attachWithAdapters(
     throw new Error(`invalid-${effect}-options`);
   }
   const clock = options.clock === undefined ? 'manual' : options.clock;
-  if (clock !== 'manual' && clock !== 'ambient') {
+  if (clock !== 'manual' && clock !== 'auto' && clock !== 'ambient') {
     throw new Error('invalid-clock-mode');
   }
 
@@ -311,7 +311,7 @@ function attachWithAdapters(
   }
 
   function running() {
-    return clock === 'ambient' && !paused && lifecycle === 'active';
+    return clock !== 'manual' && !paused && lifecycle === 'active';
   }
 
   function suspend(reasonCode: EffectReason) {

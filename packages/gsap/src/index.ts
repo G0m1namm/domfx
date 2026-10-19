@@ -9,16 +9,21 @@ export interface FireBindingOptions {
   readonly intensity: number;
   /** Linear interpolation duration in seconds, including zero. */
   readonly duration: number;
-  /** GSAP insertion position; omitted appends to the host timeline. */
+  /** GSAP insertion position; omitted appends to the caller's timeline. */
   readonly position?: gsap.Position;
   /** Transfer attachment cleanup to this binding, including context revert. Defaults to false. */
   readonly disposeEffect?: boolean;
 }
 
+/** All effects share the same snapshot-binding options. */
+export type EffectBindingOptions = FireBindingOptions;
+
 export interface FireBinding {
   /** Remove the owned child and dispose an explicitly owned attachment. Idempotent. */
   dispose(): void;
 }
+
+export type EffectBinding = FireBinding;
 
 /** Bind a manual attachment's current controls to a caller-owned GSAP timeline. */
 export function bindFire(
@@ -113,6 +118,8 @@ export interface AsyncFireBinding extends FireBinding {
   readonly ready: Promise<void>;
 }
 
+export type AsyncEffectBinding = AsyncFireBinding;
+
 /** Own a pending attachment; register context cleanup before its promise settles. */
 export function bindFireAsync(
   attachment: Promise<EffectHandle>,
@@ -152,3 +159,9 @@ export function bindFireAsync(
 
   return { ready, dispose };
 }
+
+/** Generic name for the compatible, creation-time snapshot binding. */
+export const bindEffect = bindFire;
+
+/** Generic name for the owned, cancellable asynchronous snapshot binding. */
+export const bindEffectAsync = bindFireAsync;

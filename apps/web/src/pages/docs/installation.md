@@ -88,11 +88,20 @@ Open the printed loopback URL in a measured WebGPU-capable browser.
 
 ## Add the optional GSAP binding
 
-For the GSAP walkthrough, also add these dependencies to `package.json`:
+For native property tweens, add only `gsap` to your app. The `@domfx/gsap`
+artifact is needed only for the optional lifecycle-aware snapshot helpers.
+
+For the GSAP walkthrough, add this dependency to `package.json`:
 
 ```json
-"@domfx/gsap": "file:./artifacts/domfx-gsap-0.0.0.tgz",
 "gsap": "3.15.0"
+```
+
+If you choose the [optional snapshot helpers](/docs/api/gsap#snapshot-bindings),
+also add their artifact:
+
+```json
+"@domfx/gsap": "file:./artifacts/domfx-gsap-0.0.0.tgz"
 ```
 
 Run `pnpm install --ignore-scripts` again. GSAP is an explicit peer supplied by

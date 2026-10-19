@@ -60,7 +60,7 @@ test('documentation is readable and navigable without JavaScript at mobile and d
       ['standalone', 'Standalone'],
       ['gsap', 'GSAP'],
       ['upgrading', 'Upgrading'],
-      ['api', 'API essentials'],
+      ['api', 'API reference'],
       ['support', 'Browser support'],
       ['troubleshooting', 'Troubleshooting'],
     ]) {
@@ -68,7 +68,7 @@ test('documentation is readable and navigable without JavaScript at mobile and d
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
       if (slug === 'api') {
         const documented = await page
-          .getByRole('list', { name: 'Attachment functions' })
+          .getByRole('table', { name: 'Attachment functions', exact: true })
           .locator('code')
           .allTextContents();
         expect(documented.sort()).toEqual(
@@ -124,6 +124,13 @@ test('documentation keyboard navigation reaches guides and scrolls code', async 
   await page.keyboard.press('ArrowRight');
   await expect.poll(() => code.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
   await expect(page.locator('canvas')).toHaveCount(0);
+
+  await page.goto('/docs/api');
+  const options = page.getByRole('region', { name: 'Shared creation options', exact: true });
+  await options.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => options.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('the Fire lab preserves its source content when WebGPU is unavailable', async ({ page }) => {

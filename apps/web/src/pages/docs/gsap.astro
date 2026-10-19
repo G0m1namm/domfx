@@ -27,5 +27,5 @@ if (!(host instanceof HTMLElement) || !target) {
   <p>For <code>gsap.context()</code> cleanup, use <code>context.revert()</code>. An asynchronous attachment can use <code>bindFireAsync()</code> with explicit <code>disposeEffect: true</code> ownership to dispose a result arriving after teardown.</p>
   <h2 id="unavailable-and-retry">Unavailable and retry</h2>
   <p>The timeline starts only when Fire is active. Missing GPU support or reduced motion leaves it paused and preserves the original target. Correct the condition, then await <code>fire.retry()</code> and inspect its lifecycle. Retry retains the existing binding and controls; do not add another binding.</p>
-  <p>See <a href="/docs/api">API essentials</a> and <a href="/docs/troubleshooting">troubleshooting</a> for the shared attachment contract.</p>
+  <p>See the <a href="/docs/api">API reference</a> and <a href="/docs/troubleshooting">troubleshooting</a> for the shared attachment contract.</p>
 </Documentation>

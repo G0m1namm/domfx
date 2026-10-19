@@ -226,6 +226,15 @@ Documentation stays complete without JavaScript or GPU output. Introduction,
 installation, standalone, GSAP, API, support and troubleshooting are local routes;
 repository links remain secondary source evidence.
 
+On 2026-10-19, the maintainer requested API presentation informed by Canvas UI and
+shadcn/ui documentation. Lead with usage, then use consistent semantic tables for
+creation options, writable controls, read-only state, methods and GSAP options.
+Keep property explanations beside their types and defaults, mark required values,
+and provide native section links. Retain the existing fonts and graphite tokens;
+wide tables scroll inside keyboard-focusable regions on mobile. Fire remains the
+single interactive documentation example, with all effects covered by the shared
+API reference.
+
 ### Examples and toolbar
 
 The editorial homepage places the shared controls in its silver side panel:

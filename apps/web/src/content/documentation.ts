@@ -31,9 +31,9 @@ export const documentation = [
   },
   {
     slug: 'api',
-    title: 'API essentials',
+    title: 'API reference',
     group: 'Reference',
-    description: 'The public attachment, controls and lifecycle at a glance.',
+    description: 'Options, properties and methods shared by every effect.',
   },
   {
     slug: 'support',

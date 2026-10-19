@@ -50,5 +50,5 @@ The effect is optional decoration. Missing WebGPU, reduced motion or unsupported
 capture conditions leave the original DOM available. Inspect the attachment's
 lifecycle and reason, and release it when your page or component goes away.
 
-See [API essentials](/docs/api) for the public contract, [browser support](/docs/support)
+See the [API reference](/docs/api) for the public contract, [browser support](/docs/support)
 for measured limits, and [troubleshooting](/docs/troubleshooting) for unavailable output.

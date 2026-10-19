@@ -244,6 +244,8 @@ test('every website link resolves to a native route, anchor or documented reposi
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const links = new Set<string>();
+  const resources = new Set<string>();
+  const titles = new Set<string>();
   for (const path of [
     '/',
     '/docs/introduction',
@@ -256,10 +258,34 @@ test('every website link resolves to a native route, anchor or documented reposi
     '/docs/troubleshooting',
   ]) {
     await page.goto(path);
+    const title = await page.title();
+    const description = await page.locator('meta[name="description"]').getAttribute('content');
+    expect(title.trim(), `${path} title`).toBeTruthy();
+    expect(titles.has(title), `${path} title is unique`).toBe(false);
+    expect(description?.trim(), `${path} description`).toBeTruthy();
+    titles.add(title);
     for (const href of await page
       .locator('a[href]')
       .evaluateAll((anchors) => anchors.map((anchor) => (anchor as HTMLAnchorElement).href))) {
       links.add(href);
+    }
+    for (const resource of await page
+      .locator('[src], [srcset], link[href], meta[property="og:image"][content]')
+      .evaluateAll((elements) =>
+        elements.flatMap((element) => {
+          const urls = [
+            element.getAttribute('src'),
+            element.getAttribute('href'),
+            element.getAttribute('content'),
+            element
+              .getAttribute('srcset')
+              ?.split(',')
+              .map((candidate) => candidate.trim().split(/\s+/, 1)[0]),
+          ];
+          return urls.flat().filter((url): url is string => Boolean(url));
+        }),
+      )) {
+      resources.add(new URL(resource, page.url()).href);
     }
   }
   const origin = new URL(page.url()).origin;
@@ -284,6 +310,23 @@ test('every website link resolves to a native route, anchor or documented reposi
       await page.goto(path);
       for (const fragment of fragments) {
         expect(await page.locator(`[id="${fragment}"]`).count(), `${path}#${fragment}`).toBe(1);
+      }
+    }
+  }
+  for (const resource of resources) {
+    const url = new URL(resource);
+    if (url.origin !== origin) {
+      continue;
+    }
+    const response = await request.get(url.href);
+    expect(response.ok(), `built resource ${url.pathname}`).toBe(true);
+    if (url.pathname.endsWith('.css')) {
+      const css = await response.text();
+      for (const [, , reference] of css.matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)/gi)) {
+        const asset = new URL(reference.trim(), url);
+        if (asset.origin === origin) {
+          resources.add(asset.href);
+        }
       }
     }
   }

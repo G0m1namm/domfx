@@ -182,7 +182,11 @@ function initializePage() {
   function updateControls() {
     play.disabled = preferences.effect === 'none' || reduced() || !hasGpu;
     const paused = preferences.paused || preferences.needsResume;
-    required<HTMLElement>('#playback-label').textContent = paused ? 'Resume' : 'Pause';
+    const playbackLabel = required<HTMLElement>('#playback-label');
+    const playbackText = paused ? 'Resume' : 'Pause';
+    if (playbackLabel.textContent !== playbackText) {
+      playbackLabel.textContent = playbackText;
+    }
     play.setAttribute('aria-pressed', String(paused));
     play.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
     play.title = paused ? 'Resume' : 'Pause';
@@ -209,9 +213,13 @@ function initializePage() {
     }
     reduction.checked = preferences.reduced;
     document.documentElement.toggleAttribute('data-reduced-motion', reduced());
-    required<HTMLElement>('#system-motion').textContent = motion.matches
+    const systemMotion = required<HTMLElement>('#system-motion');
+    const systemMotionText = motion.matches
       ? 'System reduced motion is on. Effects stay off.'
       : 'System reduced motion is off.';
+    if (systemMotion.textContent !== systemMotionText) {
+      systemMotion.textContent = systemMotionText;
+    }
     const { failed, loading } = effects.status();
     const statusText =
       preferences.effect === 'none'

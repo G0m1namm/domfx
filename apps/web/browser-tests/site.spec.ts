@@ -297,6 +297,45 @@ test('system and local reduced motion suppress output and require explicit Resum
   await expect(page.locator('.home-hero canvas')).toHaveCount(0);
 });
 
+test('active Fire keeps unchanged control labels stable', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.home-hero canvas')).toHaveCount(3);
+  await expect(page.locator('#playback-label')).toHaveText('Pause');
+  await expect(page.locator('#system-motion')).toContainText('System reduced motion is off');
+
+  const redundantWrites = await page.evaluate(async () => {
+    const mutations: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => mutations.push(...records));
+    for (const id of ['playback-label', 'system-motion']) {
+      const label = document.getElementById(id);
+      if (!label) {
+        throw new Error(`Missing ${id}`);
+      }
+      observer.observe(label, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
+    }
+    for (let frame = 0; frame < 8; frame++) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+    mutations.push(...observer.takeRecords());
+    observer.disconnect();
+    return mutations.length;
+  });
+  expect(redundantWrites).toBe(0);
+
+  await page.locator('#effect-play').click();
+  await expect(page.locator('#playback-label')).toHaveText('Resume');
+  await page.locator('#effect-play').click();
+  await expect(page.locator('#playback-label')).toHaveText('Pause');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('#system-motion')).toContainText('System reduced motion is on');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect(page.locator('#system-motion')).toContainText('System reduced motion is off');
+});
+
 for (const dpr of [1, 2]) {
   test(`grouped GPU output shares playback and keeps native content at DPR ${dpr}`, async ({
     browser,

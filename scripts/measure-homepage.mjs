@@ -253,6 +253,38 @@ async function wait(page, ms = 1000) {
   await page.waitForTimeout(ms);
 }
 
+async function measureCaptureAdapter(page, bundlePath) {
+  return page.evaluate(
+    async ({ path, count }) => {
+      const { captureElement } = await import(`/${path}`);
+      const captures = [];
+      const flameHeight = Number(document.querySelector('#flame-height')?.value);
+      const paddingCss = Math.max(32, Math.ceil(flameHeight * 1.25 + 2));
+      for (const target of document.querySelectorAll('[data-effect-target]')) {
+        for (let trial = 0; trial < count; trial++) {
+          const start = performance.now();
+          try {
+            const frame = await captureElement(target, { paddingCss });
+            captures.push({
+              target: target.id,
+              trial,
+              paddingCss,
+              wallMs: performance.now() - start,
+              width: frame.width,
+              height: frame.height,
+            });
+            frame.release();
+          } catch (error) {
+            captures.push({ target: target.id, trial, error: String(error) });
+          }
+        }
+      }
+      return captures;
+    },
+    { path: bundlePath, count: trials },
+  );
+}
+
 async function diagnostic(page, cdp, name) {
   const traceEvents = [];
   cdp.on('Tracing.dataCollected', ({ value }) => traceEvents.push(...value));
@@ -306,17 +338,22 @@ async function runCondition(browser, base, assetPaths, profile, kind, index) {
     content: `if (location.protocol === 'http:') {
       sessionStorage.setItem('domfx-showcase', ${JSON.stringify(preferenceJson)});
       window.__domfxFirstCanvasAt = null;
+      window.__domfxCanvasEvents = [];
       const observer = new MutationObserver((entries) => {
         for (const entry of entries) {
           for (const node of entry.addedNodes) {
             if (node instanceof HTMLCanvasElement && node.closest('[data-effect-host]')) {
-              window.__domfxFirstCanvasAt ??= performance.now();
-              observer.disconnect();
-              return;
+              const at = performance.now();
+              window.__domfxFirstCanvasAt ??= at;
+              window.__domfxCanvasEvents.push({
+                at,
+                target: node.closest('[data-effect-host]')?.querySelector('[data-effect-target]')?.id,
+              });
             }
           }
         }
       });
+      window.__domfxCanvasObserver = observer;
       observer.observe(document, { childList: true, subtree: true });
     }`,
   });
@@ -440,6 +477,10 @@ async function runCondition(browser, base, assetPaths, profile, kind, index) {
     }
     await wait(page, 1500);
     condition.initial = await snapshot(page, cdp);
+    condition.initialCanvasInsertions = await page.evaluate(() => {
+      window.__domfxCanvasObserver.disconnect();
+      return window.__domfxCanvasEvents;
+    });
     if (kind === 'fire') {
       const missing = missingVisibleCanvas(condition.initial);
       if (missing.length) {
@@ -471,6 +512,7 @@ async function runCondition(browser, base, assetPaths, profile, kind, index) {
         architecture: adapter.info.architecture,
         device: adapter.info.device,
         description: adapter.info.description,
+        timestampQuerySupported: adapter.features.has('timestamp-query'),
       };
     });
     condition.initialProcessTree = await processTreeRss(browser);
@@ -555,6 +597,31 @@ async function runCondition(browser, base, assetPaths, profile, kind, index) {
       if (kind === 'fire' && missingVisibleCanvas(condition.hiddenReturn).length) {
         errors.push('A visible Fire target did not reattach after synthetic hidden return');
       }
+      const coveringTab = await context.newPage();
+      await coveringTab.bringToFront();
+      await wait(page, 500);
+      condition.hiddenNative = await snapshot(page, cdp);
+      condition.nativeTabVisibility = condition.hiddenNative.dom.hidden
+        ? 'observed'
+        : 'unavailable';
+      if (
+        condition.nativeTabVisibility === 'observed' &&
+        condition.hiddenNative.dom.effectCanvases.length !== 0
+      ) {
+        errors.push('Native hidden tab did not release effect canvases');
+      }
+      await coveringTab.close();
+      await page.bringToFront();
+      await wait(page);
+      condition.hiddenNativeReturn = await snapshot(page, cdp);
+      if (
+        condition.hiddenNativeReturn.dom.hidden ||
+        (condition.nativeTabVisibility === 'observed' &&
+          kind === 'fire' &&
+          missingVisibleCanvas(condition.hiddenNativeReturn).length)
+      ) {
+        errors.push('Native tab return did not restore the requested visible state');
+      }
       if (await page.locator('#effect-play').isEnabled()) {
         await page.locator('#effect-play').click();
       }
@@ -632,6 +699,17 @@ async function runCondition(browser, base, assetPaths, profile, kind, index) {
       }
       await page.locator('.timeline-player [data-action="pause"]').click();
       await measureWarmLoads();
+      if (kind === 'none') {
+        const bundlePath = assetPaths.find((path) => /^_astro\/dist\.[^/]+\.js$/.test(path));
+        if (!bundlePath) {
+          errors.push('Production browser bundle unavailable for capture diagnostic');
+        } else {
+          condition.captureAdapter = await measureCaptureAdapter(page, bundlePath);
+          if (condition.captureAdapter.some((capture) => capture.error)) {
+            errors.push('Production DOM capture adapter diagnostic failed');
+          }
+        }
+      }
       condition.beforeTeardown = {
         state: await snapshot(page, cdp),
         processTree: await processTreeRss(browser),

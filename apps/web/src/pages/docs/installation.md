@@ -79,7 +79,7 @@ Create `index.html`:
 ```
 
 The host must be connected, positioned, and contain the target as a strict
-descendant in the same document. Leave space for Fire and choose a stacking order
+descendant in the same document. Leave space for the effect and choose a stacking order
 that lets its appended canvas overlap the target.
 
 Continue with [GSAP](/docs/gsap) for your own timeline, or [Standalone](/docs/standalone) to create `main.ts`.
@@ -98,6 +98,7 @@ For the GSAP walkthrough, also add these dependencies to `package.json`:
 Run `pnpm install --ignore-scripts` again. GSAP is an explicit peer supplied by
 your app; the standalone browser package does not install it.
 
-The examples use `flameHeight`, which requires compatible current experimental
-artifacts. Older pinned quickstart sources can lack that option. Do not mix their
-declarations with a newer example; obtain matching artifacts first.
+The guides use Fire as a worked example. The API reference lists
+[all attachment functions](/docs/api#available-effects) and their shared options.
+`flameHeight` is a Fire-only creation option. Use matching current artifacts for
+the documented exports; do not mix older declarations with newer examples.

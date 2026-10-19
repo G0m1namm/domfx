@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import { build } from 'vite';
 
 import type { EffectHandle } from '@domfx/browser';
+import * as browserEffects from '@domfx/browser';
 import type { FireBinding } from '@domfx/gsap';
 
 type TestGpu = {
@@ -65,6 +66,22 @@ test('documentation is readable and navigable without JavaScript at mobile and d
     ]) {
       await page.goto(`/docs/${slug}`);
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
+      if (slug === 'api') {
+        const documented = await page
+          .getByRole('list', { name: 'Attachment functions' })
+          .locator('code')
+          .allTextContents();
+        expect(documented.sort()).toEqual(
+          Object.keys(browserEffects)
+            .filter((name) => name.startsWith('attach'))
+            .sort(),
+        );
+      }
+      if (slug === 'standalone' || slug === 'gsap') {
+        await expect(page.locator('[data-docs-fire-lab]')).toHaveCount(
+          slug === 'standalone' ? 1 : 0,
+        );
+      }
       if (width <= 900) {
         await page.getByText('Browse documentation', { exact: false }).click();
       }

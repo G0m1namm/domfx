@@ -2,7 +2,7 @@
 layout: ../../layouts/Documentation.astro
 ---
 
-domfx adds decorative Fire to the visible silhouette of a DOM element. Your text
+domfx adds GPU edge effects to the visible silhouette of a DOM element. Your text
 stays selectable, your buttons keep their handlers, and your links keep working.
 The effect lives in a separate canvas alongside the original content.
 
@@ -21,7 +21,7 @@ decorative output there, without wrapping, moving or replacing your content.
 
 ## Start with GSAP
 
-If you already use GSAP, follow the [complete GSAP recipe](/docs/gsap): attach Fire
+If you already use GSAP, follow the [complete GSAP recipe](/docs/gsap): attach an effect
 to your own heading, bind it to a timeline you own, seek/reverse and register cleanup.
 Your heading remains real, selectable HTML. [Install matching artifacts](/docs/installation)
 first; the public npm route will be added after verified alpha publication.
@@ -30,11 +30,19 @@ first; the public npm route will be added after verified alpha publication.
 
 - [Standalone](/docs/standalone): use an ambient clock for automatic time, or a
   manual clock for explicit seeking and control.
-- [GSAP](/docs/gsap): bind a manual attachment to your own timeline. Animate Fire's
+- [GSAP](/docs/gsap): bind a manual attachment to your own timeline. Animate effect
   time and intensity alongside the rest of your sequence.
 
-Explore the available effects on image, SVG and live text targets in [the effects gallery](/effects/)
-before attaching it to your own element.
+## Choose an effect
+
+Choose from Electricity, Frost, Fire, Slime, Burned paper, Kinetic bloom and the
+pattern effects in [the effects gallery](/effects/). Every attachment returns the
+same `EffectHandle` with time, intensity, refresh and disposal controls. See
+[available attachments](/docs/api#available-effects) for each import name.
+
+The [Standalone guide](/docs/standalone#attach-fire) uses Fire for its interactive
+example. Its intensity and playback controls apply to every effect. `flameHeight`
+is specific to Fire; omit it when using another attachment function.
 
 ## Keep the original usable
 

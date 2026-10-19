@@ -15,13 +15,13 @@ export const documentation = [
     slug: 'standalone',
     title: 'Standalone',
     group: 'Guides',
-    description: 'Attach Fire to one element and choose how its time advances.',
+    description: 'Attach an effect, choose a clock and tune a live Fire example.',
   },
   {
     slug: 'gsap',
     title: 'GSAP',
     group: 'Guides',
-    description: 'Bring Fire into a timeline you own.',
+    description: 'Control effect time and intensity with a timeline you own.',
   },
   {
     slug: 'upgrading',

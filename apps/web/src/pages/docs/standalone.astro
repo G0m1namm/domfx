@@ -5,7 +5,7 @@ import { codeTheme, standaloneCode } from '../../content/examples';
 import Documentation from '../../layouts/Documentation.astro';
 ---
 <Documentation>
-  <p>Start with the <a href="/docs/installation">preview app</a>. In <code>main.ts</code>, find your target and its positioned host after mount:</p>
+  <p>This guide uses Fire to demonstrate the shared attachment lifecycle. You can use any <a href="/docs/api#available-effects">available effect</a> with the same time, intensity and cleanup controls. Start with the <a href="/docs/installation">preview app</a>. In <code>main.ts</code>, find your target and its positioned host after mount:</p>
   <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Find the target and host"><Code code={`const host = document.querySelector('#host');
 const target = document.querySelector('#target');
 if (!(host instanceof HTMLElement) || !target) {
@@ -13,11 +13,14 @@ if (!(host instanceof HTMLElement) || !target) {
 }`} lang="ts" theme={codeTheme} /></div>
   <h2 id="attach-fire">Attach Fire</h2>
   <p>Add the following code to the same module. The ambient clock advances automatically. Fonts are ready before capture, and teardown is registered before initialization settles.</p>
-  <DocsFireLab title="Tune the attachment" description="Change the two Fire inputs before copying the full setup below. The native text stays available beneath its decorative canvas." />
+  <DocsFireLab title="Tune the attachment" description="Intensity is shared by all effects. Flame height is specific to Fire and recreates this example when changed. The original text remains selectable." />
   <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Standalone ambient attachment example"><Code code={standaloneCode} lang="ts" theme={codeTheme} /></div>
   <p>On component unmount, call <code>fire.dispose()</code> and remove your own listeners. The pagehide handler covers leaving the page; it does not replace framework teardown.</p>
+  <h2 id="use-another-effect">Use another effect</h2>
+  <p>Replace <code>attachFire</code> with an attachment such as <code>attachFrost</code> or <code>attachDither</code> and remove <code>flameHeight</code>. The remaining options and handle methods are shared. Intensity changes each effect's appearance; it is not a universal height or opacity setting.</p>
+  <p>Dispose the existing attachment before attaching another effect to the same target. The <a href="/effects/">gallery</a> previews every effect; this guide keeps one Fire playground.</p>
   <h2 id="control-time">Control time and intensity</h2>
-  <p><code>fire.pause()</code> freezes the ambient clock. <code>fire.resume()</code> continues without catching up time spent paused or hidden. Set <code>fire.intensity</code> to a finite value between 0 and 1; out-of-range finite values clamp.</p>
+  <p><code>fire.pause()</code> freezes the ambient clock. <code>fire.resume()</code> continues without catching up time spent paused or hidden. Set <code>fire.intensity</code> to a value between 0 and 1. It must be finite and representable as float32; accepted out-of-range values clamp.</p>
   <p>For explicit seeking, choose <code>clock: 'manual'</code> at creation and write <code>fire.time</code> in absolute seconds. Forward and backward seeks reuse the capture. A manual clock stays paused; <code>resume()</code> does not advance it.</p>
   <h2 id="refresh-and-cleanup">Refresh and cleanup</h2>
   <p>After changing captured paint, await <code>fire.refresh()</code>. It hides stale output and resolves once this or a newer revision commits. Observed target mutations and resize can refresh automatically; unobserved stylesheet, hover or ancestor paint changes still need explicit refresh.</p>

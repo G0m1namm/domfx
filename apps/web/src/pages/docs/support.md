@@ -6,6 +6,11 @@ This summary uses **support record v1, 2026-09-16 UTC**. A pass applies to its
 named environment, fixtures and source snapshot. It does not establish a minimum
 browser version, browser-family support or release approval.
 
+All [available effects](/docs/api#available-effects) share the browser capture,
+placement and composition limits below. The historical record includes Fire
+fixtures; it does not establish the same visual or performance coverage for every
+effect. The Standalone playground uses Fire as one example of the shared API.
+
 ## Measured environments
 
 - **Chromium 153.0.8010.12**, macOS 26.6.2 on the measured Apple M5 Pro, native

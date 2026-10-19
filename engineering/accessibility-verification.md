@@ -86,7 +86,71 @@ Saved focus/selection images provide phase-specific visual evidence for follow-u
 
 **Untested assistive technology:** VoiceOver speech/rotor, NVDA, JAWS, TalkBack,
 braille displays, switch control and voice control. Native accessibility-tree
-inspection does not establish any of these. Safari/Firefox, touch selection and
-additional host layouts also remain outside this run. Record browser/OS/AT versions,
+inspection does not establish any of these. Safari/Firefox interaction coverage,
+touch selection and additional host layouts remained outside the 2026-09-15 fixture
+run. Record browser/OS/AT versions,
 navigation commands, expected/actual announcements and lifecycle state when adding
 such coverage; do not mark them passed from these automated results.
+
+## Available-Mac continuation — 2026-10-18
+
+On source `8d7eeecbf4faa1ea4609de19147b23abd09770d4`, installed Chrome
+155.0.8059.80 was inspected at native 200% browser zoom on macOS 26.6.2.
+The visible page had an 836 × 473 CSS-pixel viewport, DPR 4 and no reduced-motion
+preference. Fire was unavailable in that state, and the original HTML remained
+visible. Keyboard Enter opened Effect settings, Motion and Prompt; focus reached
+the relevant controls. Motion's speed slider responded to Right and Left arrows
+and was restored to 1×. The GSAP seek control reached a 2.0/4.0 s still frame
+and was reset. The Docs navigation and browse menu were operable. The local
+Reduce motion control produced a still background and disabled animation and
+player playback; it was turned off again. Native zoom was restored to 100%.
+These are bounded keyboard/visible-state observations, not spoken output or a
+complete selected-browser result. Chrome's browser-reported GPU adapter was not
+measured, so its environment-level acceptance remains **UNTESTED**.
+
+For the selected native Chrome and Safari sessions, scrolling, lifecycle
+(refresh/replacement, teardown/reattachment), native text selection and visibility
+return remain **UNTESTED**. The Chrome observations above do not establish these
+cases, and the earlier Safari 200% interaction observations remain limited to that
+run. Safari's viewport, DPR, adapter and motion preference were not measured;
+its environment-level acceptance also remains **UNTESTED**. VoiceOver actual speech,
+physical mobile and a second OS/GPU remain **UNAVAILABLE**.
+
+**VoiceOver: UNAVAILABLE.** Installed Safari 26.6.2 exposed semantic headings,
+links, image descriptions, the Effect selector, intensity slider, Pause button
+and panels through its accessibility tree. A single VoiceOver shortcut attempt
+did not start an observable VoiceOver process or produce speech/captions in the
+available capture surfaces. No actual announcement or VoiceOver navigation was
+recorded, so none of the heading, link, panel, slider, status or decorative-canvas
+speech checks passes. The next step is a human VoiceOver session on this Mac with
+observable audio or captions, recording the commands and actual announcements
+through the page and state changes. Accessibility-tree output alone cannot close
+that gap. No macOS privacy, security or browser-automation setting was changed.
+
+### Bounded native follow-up — 2026-10-19 UTC
+
+On unchanged source `8d7eeecbf4faa1ea4609de19147b23abd09770d4`, Safari
+26.6.2 exposed the built homepage's original Effect selector, intensity slider
+and Pause button. Native accessibility actions changed Pause → Resume → Pause,
+then Effect Fire → None → Fire. Intensity and Pause became disabled under None
+and enabled again under Fire. Chrome 155's Effect selector likewise changed
+Fire → None with intensity and Pause disabled. These are control-state
+observations, not proof of rendered pixels or library `refresh()`/`dispose()`.
+
+Chrome's homepage and Safari's separate diagnostic page reported
+`document.visibilityState: hidden` during this session. Chrome's console
+reported a 1421 × 1003 CSS-pixel viewport, DPR 2, reduced motion
+false and a requested `apple` / `metal-3` adapter with empty device/description.
+A separate local-only Safari diagnostic tab reported viewport 1324 × 850, DPR 2,
+reduced motion false and requested adapter fields all `apple`; that page was
+explicitly separate from the authored homepage and remained hidden across a tab
+switch. Native scroll actions returned `noWindowsAvailable`, so placement,
+selection and visibility return remain **UNTESTED**. The two new Chrome capture
+files were byte-identical despite Fire/None control changes and support no new
+pixel claim. The earlier Safari native Fire/None captures remain the bounded
+visual observation described in the browser support record.
+
+No spoken or captioned VoiceOver output was captured in this follow-up; the
+previous **UNAVAILABLE** status is unchanged. AX control names and states do not
+establish what VoiceOver announces. Real mobile touch and another OS/GPU are also
+still **UNAVAILABLE**.

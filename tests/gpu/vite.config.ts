@@ -6,6 +6,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
+        effects: resolve(import.meta.dirname, 'effects.html'),
         main: resolve(import.meta.dirname, 'index.html'),
         manual: resolve(import.meta.dirname, 'manual.html'),
         gsap: resolve(import.meta.dirname, 'gsap.html'),

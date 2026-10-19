@@ -1,8 +1,8 @@
 import type * as BrowserEffects from '@domfx/browser';
 import type { EffectHandle } from '@domfx/browser';
 
-import type { effects } from '../content/effects';
-import { findEffect, patternEffects } from '../content/effects';
+import type { Effect } from '../content/effects';
+import { effects, findEffect, patternEffects } from '../content/effects';
 
 const savedPattern = { index: 0, elapsed: 0, time: 3.2, paused: false };
 
@@ -49,9 +49,7 @@ function initializeMarketing() {
     document.querySelector<HTMLElement>('[data-filter][aria-pressed="true"]')?.dataset.filter ??
     'All';
   let previewRevision = 0;
-  let selectedId = 'electricity';
-  let selectedName = 'Electricity';
-  let selectedCategory = 'Energy';
+  let selectedEffect: Effect = effects[0];
   let targetKind = 'text';
   let paused = false;
   let previewTime = 2.4;
@@ -62,7 +60,7 @@ function initializeMarketing() {
   const pending = new Map<Element, number>();
   let nextCardRequest = 0;
   let browserModule: Promise<typeof BrowserEffects> | undefined;
-  async function loadEffect(effect: (typeof effects)[number]) {
+  async function loadEffect(effect: Effect) {
     browserModule ??= import('@domfx/browser');
     const module = await browserModule;
     return module[effect.exportName];
@@ -657,8 +655,8 @@ function initializeMarketing() {
   }
 
   function attachmentCode() {
-    const effect = findEffect(selectedId);
-    return `import { ${effect?.exportName} } from '@domfx/browser';\n\nconst effect = ${effect?.exportName}(element, { host, clock: 'ambient', intensity: ${(Number(intensity.value) / 100).toFixed(2)} });\n\n// On unmount: effect.dispose();`;
+    const effect = selectedEffect;
+    return `import { ${effect.exportName} } from '@domfx/browser';\n\nconst effect = ${effect.exportName}(element, { host, clock: 'ambient', intensity: ${(Number(intensity.value) / 100).toFixed(2)} });\n\n// On unmount: effect.dispose();`;
   }
 
   // Scale the source and its attached canvas together; zoom never changes intensity.
@@ -769,15 +767,15 @@ function initializeMarketing() {
       targetKind === 'text'
         ? '<span class="dialog-target" data-dialog-target>edge.</span>'
         : '<span class="dialog-target" data-dialog-target><svg width="170" height="170" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg></span>';
-    required('#dialog-title', dialog).textContent = selectedName;
-    required('[data-dialog-category]', dialog).textContent = selectedCategory;
+    required('#dialog-title', dialog).textContent = selectedEffect.name;
+    required('[data-dialog-category]', dialog).textContent = selectedEffect.category;
     required('[data-code]', dialog).textContent = attachmentCode();
     required('[data-preview-status]', dialog).textContent = 'Preparing the live preview…';
     for (const button of dialog.querySelectorAll<HTMLElement>('[data-target]')) {
       button.setAttribute('aria-pressed', String(button.dataset.target === targetKind));
     }
-    const effect = findEffect(selectedId);
-    if (!effect || disposed || document.hidden) {
+    const effect = selectedEffect;
+    if (disposed || document.hidden) {
       return;
     }
     updatePreviewPlayback();
@@ -831,9 +829,11 @@ function initializeMarketing() {
   }
 
   function openPreview(trigger: HTMLElement) {
-    selectedId = trigger.dataset.id ?? 'electricity';
-    selectedName = trigger.dataset.name ?? 'Electricity';
-    selectedCategory = trigger.dataset.category ?? 'Energy';
+    const effect = findEffect(trigger.dataset.id);
+    if (!effect) {
+      throw new Error(`Unknown effect: ${trigger.dataset.id}`);
+    }
+    selectedEffect = effect;
     clearCards();
     paused = reducedMotion.matches;
     previewNeedsResume = reducedMotion.matches;

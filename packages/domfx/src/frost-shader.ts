@@ -1,45 +1,19 @@
+import {
+  rasterDistance,
+  effectBindings,
+  fullscreenVertex,
+  gradientDirections,
+  scalarHash,
+  gradientNoise,
+} from './shader-primitives.js';
+
 export const frostShader = `
-@group(0) @binding(0) var distances: texture_2d<f32>;
-// time, seed, intensity, raster pixels per CSS pixel (one 16-byte vec4f).
-@group(0) @binding(1) var<uniform> params: vec4f;
-@vertex fn vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
-  let positions = array<vec2f, 3>(vec2f(-1, -1), vec2f(3, -1), vec2f(-1, 3));
-  return vec4f(positions[index], 0, 1);
-}
-fn field(p: vec2f) -> f32 {
-  let size = vec2i(textureDimensions(distances));
-  let q = p - .5;
-  let base = vec2i(floor(q));
-  let blend = fract(q);
-  let a = textureLoad(distances, clamp(base, vec2i(0), size - 1), 0).r;
-  let b = textureLoad(distances, clamp(base + vec2i(1, 0), vec2i(0), size - 1), 0).r;
-  let c = textureLoad(distances, clamp(base + vec2i(0, 1), vec2i(0), size - 1), 0).r;
-  let e = textureLoad(distances, clamp(base + vec2i(1, 1), vec2i(0), size - 1), 0).r;
-  return mix(mix(a, b, blend.x), mix(c, e, blend.x), blend.y) / params.w;
-}
-fn hash(p: vec2f) -> f32 {
-  var q = fract(vec3f(p.x, p.y, p.x) * vec3f(.1031, .1030, .0973));
-  q += dot(q, q.yzx + 19.19);
-  return fract((q.x + q.y) * q.z);
-}
-fn gradient(p: vec2f) -> vec2f {
-  let direction = u32(hash(p) * 8);
-  var g = vec2f(1, .5);
-  if ((direction & 1u) != 0u) { g = g.yx; }
-  g *= vec2f(select(1.0, -1.0, (direction & 2u) != 0u),
-             select(1.0, -1.0, (direction & 4u) != 0u));
-  return g * .8944272;
-}
-fn noise(p: vec2f) -> f32 {
-  let cell = floor(p);
-  let f = fract(p);
-  let u = f * f * f * (f * (f * 6 - 15) + 10);
-  let a = dot(gradient(cell), f);
-  let b = dot(gradient(cell + vec2f(1, 0)), f - vec2f(1, 0));
-  let c = dot(gradient(cell + vec2f(0, 1)), f - vec2f(0, 1));
-  let e = dot(gradient(cell + vec2f(1, 1)), f - vec2f(1, 1));
-  return .5 + mix(mix(a, b, u.x), mix(c, e, u.x), u.y) * .8;
-}
+${effectBindings}
+${fullscreenVertex}
+${rasterDistance}
+${scalarHash}
+${gradientDirections}
+${gradientNoise}
 fn rootHeight(p: vec2f, bend: f32) -> f32 {
   var height = 0.0;
   // Trace down to an actual emitter instead of drawing a displaced copy of the shape.

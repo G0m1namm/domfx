@@ -1,43 +1,23 @@
-export const burnedPaperShader = `
-@group(0) @binding(0) var distances: texture_2d<f32>;
-@group(0) @binding(1) var<uniform> params: vec4f;
+import {
+  effectBindings,
+  fullscreenVertex,
+  vectorHash,
+  valueNoise,
+  cssDistanceGradient,
+} from './shader-primitives.js';
 
-@vertex fn vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
-  let positions = array<vec2f, 3>(vec2f(-1, -1), vec2f(3, -1), vec2f(-1, 3));
-  return vec4f(positions[index], 0, 1);
-}
+export const burnedPaperShader = `
+${effectBindings}
+
+${fullscreenVertex}
 
 // CSS distance and its analytic bilinear gradient share four raster reads.
 // The gradient's raster/raster units cancel; only the distance needs division.
-fn field(p: vec2f) -> vec3f {
-  let size = vec2i(textureDimensions(distances));
-  let q = p * params.w - .5;
-  let base = vec2i(floor(q));
-  let blend = fract(q);
-  let a = textureLoad(distances, clamp(base, vec2i(0), size - 1), 0).r;
-  let b = textureLoad(distances, clamp(base + vec2i(1, 0), vec2i(0), size - 1), 0).r;
-  let c = textureLoad(distances, clamp(base + vec2i(0, 1), vec2i(0), size - 1), 0).r;
-  let d = textureLoad(distances, clamp(base + vec2i(1, 1), vec2i(0), size - 1), 0).r;
-  return vec3f(
-    mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y) / params.w,
-    mix(b - a, d - c, blend.y),
-    mix(c - a, d - b, blend.x),
-  );
-}
+${cssDistanceGradient}
 
-fn hash(p: vec2f) -> f32 {
-  var q = fract(vec3f(p.x, p.y, p.x) * vec3f(.1031, .1030, .0973));
-  q += vec3f(dot(q, q.yzx + vec3f(19.19)));
-  return fract((q.x + q.y) * q.z);
-}
+${vectorHash}
 
-fn noise(p: vec2f) -> f32 {
-  let cell = floor(p);
-  let f = fract(p);
-  let u = f * f * (3 - 2 * f);
-  return mix(mix(hash(cell), hash(cell + vec2f(1, 0)), u.x),
-             mix(hash(cell + vec2f(0, 1)), hash(cell + vec2f(1, 1)), u.x), u.y);
-}
+${valueNoise}
 
 // Layered noise supplies one material coordinate for the torn edge, char and
 // scorch bands, rather than stretching noise out from the nearest contour.

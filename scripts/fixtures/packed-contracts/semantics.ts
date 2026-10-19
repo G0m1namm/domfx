@@ -1,6 +1,29 @@
 import { gsap } from 'gsap';
 
-import { attachFire } from '@domfx/browser';
+import {
+  attachFire,
+  attachElectricity,
+  attachFrost,
+  attachKinetic,
+  attachSlime,
+  attachBurnedPaper,
+  attachDither,
+  attachHalftone,
+  attachStipple,
+  attachScanlines,
+  attachCrosshatch,
+  attachDiamonds,
+  attachContourEchoes,
+  attachEngraving,
+  attachWovenMesh,
+  attachHexagons,
+  attachInterference,
+  attachShards,
+  attachCircuits,
+  attachStarShimmer,
+  attachBrushFringe,
+  type AttachmentOptions,
+} from '@domfx/browser';
 import { bindFire, bindFireAsync } from '@domfx/gsap';
 
 // Compile only: these examples are never executed or exported by a package.
@@ -63,3 +86,65 @@ pending.dispose();
 timeline.kill();
 effect.dispose();
 ambient.dispose();
+
+const shared: AttachmentOptions = { host, seed: 314, intensity: 0.7, clock: 'manual' };
+attachElectricity(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachElectricity(target, { host, flameHeight: 48 });
+attachFrost(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachFrost(target, { host, flameHeight: 48 });
+attachKinetic(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachKinetic(target, { host, flameHeight: 48 });
+attachSlime(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachSlime(target, { host, flameHeight: 48 });
+attachBurnedPaper(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachBurnedPaper(target, { host, flameHeight: 48 });
+attachDither(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachDither(target, { host, flameHeight: 48 });
+attachHalftone(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachHalftone(target, { host, flameHeight: 48 });
+attachStipple(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachStipple(target, { host, flameHeight: 48 });
+attachScanlines(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachScanlines(target, { host, flameHeight: 48 });
+attachCrosshatch(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachCrosshatch(target, { host, flameHeight: 48 });
+attachDiamonds(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachDiamonds(target, { host, flameHeight: 48 });
+attachContourEchoes(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachContourEchoes(target, { host, flameHeight: 48 });
+attachEngraving(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachEngraving(target, { host, flameHeight: 48 });
+attachWovenMesh(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachWovenMesh(target, { host, flameHeight: 48 });
+attachHexagons(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachHexagons(target, { host, flameHeight: 48 });
+attachInterference(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachInterference(target, { host, flameHeight: 48 });
+attachShards(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachShards(target, { host, flameHeight: 48 });
+attachCircuits(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachCircuits(target, { host, flameHeight: 48 });
+attachStarShimmer(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachStarShimmer(target, { host, flameHeight: 48 });
+attachBrushFringe(target, shared).dispose();
+// @ts-expect-error Only Fire accepts a flame-height option.
+attachBrushFringe(target, { host, flameHeight: 48 });

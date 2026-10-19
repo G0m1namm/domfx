@@ -1,15 +1,6 @@
-import type { ClockMode } from '@domfx/core';
+import type { AttachmentOptions } from './attachment-options.js';
 
-export interface FireOptions {
-  /** Positioned HTML container; target must be a strict descendant. */
-  readonly host: HTMLElement;
-  /** Defaults to manual for externally owned time. */
-  readonly clock?: ClockMode;
-  /** Respect reduced motion by default; static always paints at time zero. */
-  readonly motion?: 'respect' | 'static';
-  readonly seed?: number;
-  readonly time?: number;
-  readonly intensity?: number;
+export interface FireOptions extends AttachmentOptions {
   /** Flame size in target-local CSS pixels, 8–64. Defaults to 24; padding is automatic. */
   readonly flameHeight?: number;
 }

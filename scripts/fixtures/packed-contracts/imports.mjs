@@ -114,6 +114,7 @@ if (entry === '@domfx/core') {
     'decodeFloat16',
     'estimateFrameMemory',
     'memoryFor',
+    'startEffectDiagnostics',
   ]);
 }
 for (const path of [

@@ -1,4 +1,4 @@
-import type { FireOptions } from './fire-options.js';
+import type { AttachmentOptions } from './attachment-options.js';
 
 export type PatternEffect =
   | 'halftone'
@@ -17,4 +17,4 @@ export type PatternEffect =
   | 'brush-fringe';
 
 /** Shared controls for the pattern-effect explorations. */
-export type PatternOptions = Omit<FireOptions, 'flameHeight'>;
+export type PatternOptions = AttachmentOptions;

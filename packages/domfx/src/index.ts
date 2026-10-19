@@ -207,3 +207,5 @@ export type {
   EffectReason,
   ManualEffectHandle,
 } from '@domfx/core';
+
+export type { AttachmentOptions } from './attachment-options.js';

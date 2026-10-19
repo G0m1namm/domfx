@@ -1,3 +1,5 @@
+import type * as BrowserEffects from '@domfx/browser';
+
 export const effects = [
   { id: 'electricity', name: 'Electricity', category: 'Energy', exportName: 'attachElectricity' },
   { id: 'frost', name: 'Frost', category: 'Material', exportName: 'attachFrost' },
@@ -45,7 +47,12 @@ export const effects = [
     category: 'Pattern',
     exportName: 'attachBrushFringe',
   },
-] as const;
+] as const satisfies readonly {
+  id: string;
+  name: string;
+  category: 'Energy' | 'Material' | 'Pattern';
+  exportName: keyof typeof BrowserEffects & `attach${string}`;
+}[];
 
 export type Effect = (typeof effects)[number];
 export type EffectId = Effect['id'];

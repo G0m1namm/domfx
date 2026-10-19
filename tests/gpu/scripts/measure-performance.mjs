@@ -10,6 +10,7 @@ import { preview } from 'vite';
 import { summarizeCondition } from './performance-gates.mjs';
 import { summarizeSteady, compareSteady } from './steady-gates.mjs';
 
+const effect = process.env.DOMFX_MEASURE_EFFECT ?? 'fire';
 const steady = process.argv.includes('--steady');
 const summarize = (runs) =>
   steady ? summarizeSteady(runs, process.env.DOMFX_REFRESH_RATE) : summarizeCondition(runs);
@@ -23,6 +24,7 @@ const directory = resolve(
 );
 await mkdir(directory, { recursive: true });
 const result = {
+  effect,
   outcome: 'held',
   method: steady
     ? {
@@ -30,7 +32,7 @@ const result = {
           'Five two-second trials per condition after one-second warmup; one fresh visible Chromium process per condition, serial no-effect/one/two.',
         clock:
           'rAF elapsed seconds reset to zero each trial; seed 7, intensity 1, DPR 2. Both fixture elements and assets present in all conditions.',
-        gpu: 'Sum of fire render pass end-minus-begin timestamp pairs per animation frame, nanoseconds / 1e6; excludes preparation, presentation copies, compositor, queue gaps and readback. Per-trial nearest-rank P95 <= 6 ms. Browser timestamp quantization retained, including zero durations.',
+        gpu: 'Sum of selected-effect render pass end-minus-begin timestamp pairs per animation frame, nanoseconds / 1e6; excludes preparation, presentation copies, compositor, queue gaps and readback. Per-trial nearest-rank P95 <= 6 ms. Browser timestamp quantization retained, including zero durations.',
         responsiveness:
           'Five two-second trials; each P95 rAF interval <= 20 ms and no main-thread long task > 50 ms, only eligible without timestamp-query and with operator-recorded DOMFX_REFRESH_RATE=60. rAF is not GPU time.',
         overhead:
@@ -48,7 +50,7 @@ const result = {
         rebuild:
           'Three warmups then 30 batches; nearest-rank P95 (29th of 30) <= 300 ms. Each batch sequentially captures/prepares targets and retains all frames until completion.',
         timing:
-          'performance.now wall time; await GPU queue completion; includes capture RGBA readback, upload, JFA and output allocation; excludes SDF diagnostic readback, oracle and fire rendering.',
+          'performance.now wall time; await GPU queue completion; includes capture RGBA readback, upload, JFA and output allocation; excludes SDF diagnostic readback, oracle and selected-effect rendering (first render reported separately).',
         fixtures:
           'one-target: 280x64 CSS-pixel headline with local font; two-targets: same headline + 96x64 transparent PNG in one shared host. Padding 32 CSS pixels, actual DPR 2; raw padded dimensions in every sample.',
         limits:
@@ -149,7 +151,7 @@ try {
           }
         });
         await page.goto(
-          `${url}/${steady ? 'steady' : 'performance'}.html?targets=${targets}${run.warm ? '&warm' : ''}`,
+          `${url}/${steady ? 'steady' : 'performance'}.html?targets=${targets}${run.warm ? '&warm' : ''}&effect=${encodeURIComponent(effect)}`,
         );
         await page.bringToFront();
         await page.waitForFunction(

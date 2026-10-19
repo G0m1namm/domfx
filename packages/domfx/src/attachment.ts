@@ -3,6 +3,7 @@ import type { EffectHandle, EffectReason } from '@domfx/core';
 import { type captureElementWithReservation, measureCapture } from './browser.js';
 import type { BurnedPaperOptions } from './burned-paper-options.js';
 import { createCaptureRevisions } from './capture-revision.js';
+import { diagnosticsFor } from './diagnostics.js';
 import type { DitherOptions } from './dither-options.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
 import type { ElectricityOptions } from './electricity-options.js';
@@ -119,12 +120,15 @@ function attachWithAdapters(
   let reasonDetail: string | undefined;
 
   const memory = memoryFor(document);
+  const trace = diagnosticsFor(target, effect);
+  let presentedRevision = 0;
   let context: GPUCanvasContext | null = null;
   let retryWork: Promise<void> | undefined;
   let awaitingAssets = true;
   const disposalCallbacks = new Set<() => void>();
 
   const revisions = createCaptureRevisions({
+    trace,
     target,
     memory,
     createRenderer: adapters.createRenderer,
@@ -507,6 +511,10 @@ function attachWithAdapters(
           effect,
         );
         revisions.prepared.present(context.getCurrentTexture());
+        if (trace && presentedRevision !== revisions.revision) {
+          trace(revisions.revision, 'presentation', 'end');
+          presentedRevision = revisions.revision;
+        }
       }
 
       lifecycle = 'active';

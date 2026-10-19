@@ -1,5 +1,7 @@
 import type { GpuExperiment, PreparedGpuFrame } from '@domfx/browser/experimental';
 
+import { measurementEffect } from './effect-selection.js';
+
 interface RebuildSample {
   totalMs: number;
   targets: Array<{
@@ -12,6 +14,7 @@ interface RebuildSample {
 }
 
 interface MeasurementReport {
+  effect?: string;
   outcome: 'running' | 'complete' | 'unavailable' | 'failed';
   condition: 'one-target' | 'two-targets';
   environment: {
@@ -29,6 +32,7 @@ interface MeasurementReport {
     navigationToReadyMs: number;
     urls: string[];
   };
+  firstRender?: { cpuSubmitMs: number; queueCompleteMs: number };
   initialization?: {
     totalMs: number;
     importMs: number;
@@ -79,6 +83,8 @@ async function measure() {
     if (!headline || !raster) {
       throw new Error('missing measurement targets');
     }
+    const effect = measurementEffect();
+    report.effect = effect;
     const targets = twoTargets ? [headline, raster] : [headline];
     raster.hidden = !twoTargets;
     const assetsStarted = performance.now();
@@ -175,6 +181,16 @@ async function measure() {
         serviceMs: initialized - imported,
         firstRebuild,
         navigationToSdfMs: performance.now(),
+      };
+      const firstUse = performance.now();
+      for (const frame of retained) {
+        frame.render(2.4, 314, 0.7, devicePixelRatio, undefined, 24, effect);
+      }
+      const submitted = performance.now();
+      await service.device.queue.onSubmittedWorkDone();
+      report.firstRender = {
+        cpuSubmitMs: submitted - firstUse,
+        queueCompleteMs: performance.now() - firstUse,
       };
       await checkSdf();
       release();

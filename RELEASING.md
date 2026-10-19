@@ -112,7 +112,7 @@ transport_directory=/path/outside/checkout
 pnpm release:rehearse
 pnpm release:handoff "$evidence_directory" "$approved_commit"
 mkdir -p "$transport_directory"
-tar -C "$(dirname "$evidence_directory")" -czf "$transport_directory/domfx-tested-evidence.tgz" "$(basename "$evidence_directory")"
+tar -C "$evidence_directory" -czf "$transport_directory/domfx-tested-evidence.tgz" .
 (
   cd "$transport_directory"
   shasum -a 256 domfx-tested-evidence.tgz > domfx-tested-evidence.tgz.sha256
@@ -127,17 +127,23 @@ unchanged evidence:
 approved_commit=<approved-commit>
 checkout_directory=/path/to/clean/checkout
 transport_directory=/path/outside/checkout
+evidence_directory="$transport_directory/domfx-tested-evidence"
 (
   cd "$transport_directory"
   shasum -a 256 -c domfx-tested-evidence.tgz.sha256
-  tar -xzf domfx-tested-evidence.tgz
+  mkdir -p "$evidence_directory"
+  tar -xzf domfx-tested-evidence.tgz -C "$evidence_directory"
 )
 git -C "$checkout_directory" switch --detach "$approved_commit"
 (
   cd "$checkout_directory"
-  pnpm release:handoff "$transport_directory/domfx-tested-evidence" "$approved_commit"
+  pnpm release:handoff "$evidence_directory" "$approved_commit"
 )
 ```
+
+Keep the archive, checksum and extracted evidence directory outside both checkouts. The archive
+contains the rehearsal directory's contents, so extraction always creates the same evidence path
+regardless of the temporary `domfx-release-*` directory name printed by the rehearsal.
 
 This is read-only: it compares the evidence's normalized repository identity, commit and
 Git tree to the current checkout, rehashes every retained tarball with SHA-256 and SHA-512,

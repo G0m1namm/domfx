@@ -111,6 +111,11 @@ const result = {
     instrumentation:
       'rAF and PerformanceObserver long tasks during ordinary windows; CDP Performance counters and JS heap gauges at window boundaries. No forced GC. No GPU timestamps. Managed GPU reservations are not public; canvas pixel counts are reported only as proxy dimensions.',
   },
+  captureAdapter: {
+    availability: 'unavailable',
+    reason:
+      'The public homepage does not expose a live capture ledger, and its production bundle tree-shakes the unused captureElement export. The runner does not load a separate diagnostic module because that would not be a production homepage path.',
+  },
   assets: [],
   profiles: [],
   errors: [],
@@ -251,38 +256,6 @@ async function sample(page, cdp, label) {
 
 async function wait(page, ms = 1000) {
   await page.waitForTimeout(ms);
-}
-
-async function measureCaptureAdapter(page, bundlePath) {
-  return page.evaluate(
-    async ({ path, count }) => {
-      const { captureElement } = await import(`/${path}`);
-      const captures = [];
-      const flameHeight = Number(document.querySelector('#flame-height')?.value);
-      const paddingCss = Math.max(32, Math.ceil(flameHeight * 1.25 + 2));
-      for (const target of document.querySelectorAll('[data-effect-target]')) {
-        for (let trial = 0; trial < count; trial++) {
-          const start = performance.now();
-          try {
-            const frame = await captureElement(target, { paddingCss });
-            captures.push({
-              target: target.id,
-              trial,
-              paddingCss,
-              wallMs: performance.now() - start,
-              width: frame.width,
-              height: frame.height,
-            });
-            frame.release();
-          } catch (error) {
-            captures.push({ target: target.id, trial, error: String(error) });
-          }
-        }
-      }
-      return captures;
-    },
-    { path: bundlePath, count: trials },
-  );
 }
 
 async function diagnostic(page, cdp, name) {
@@ -699,17 +672,6 @@ async function runCondition(browser, base, assetPaths, profile, kind, index) {
       }
       await page.locator('.timeline-player [data-action="pause"]').click();
       await measureWarmLoads();
-      if (kind === 'none') {
-        const bundlePath = assetPaths.find((path) => /^_astro\/dist\.[^/]+\.js$/.test(path));
-        if (!bundlePath) {
-          errors.push('Production browser bundle unavailable for capture diagnostic');
-        } else {
-          condition.captureAdapter = await measureCaptureAdapter(page, bundlePath);
-          if (condition.captureAdapter.some((capture) => capture.error)) {
-            errors.push('Production DOM capture adapter diagnostic failed');
-          }
-        }
-      }
       condition.beforeTeardown = {
         state: await snapshot(page, cdp),
         processTree: await processTreeRss(browser),

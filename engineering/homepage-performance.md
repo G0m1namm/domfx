@@ -13,16 +13,15 @@ The first context also exercises scrolling, quick intensity changes, Pause, redu
 motion, offscreen and hidden return, the background and GSAP player, warm navigation
 and teardown. Increase repetitions with `DOMFX_HOMEPAGE_TRIALS`; set
 `DOMFX_HOMEPAGE_DURATION_MS` for each ordinary window.
-The first None context for each profile also runs `captureElement` once per
-configured trial per authored target after all ordinary comparisons (three trials
-by default). These time the existing
-capture adapter against the production DOM with the current flame-height-derived
-padding; they are isolated diagnostic calls, not the site's startup capture
-intervals. The runner records each effect canvas insertion time during
-initialization as an attachment proxy. It attempts a second native tab after the
-separate synthetic visibility check and reports native hide/return only if the
-original tab actually becomes hidden. Adapter `timestamp-query` support is
-recorded without making a GPU timing claim about the public attachment path.
+The public homepage does not expose an exact live capture count or resource ledger.
+The runner records effect canvas insertions and per-host canvas counts as attachment
+proxies, not capture or GPU intervals. Its production bundle tree-shakes the unused
+public `captureElement` export, so the runner deliberately does not load a separate
+diagnostic module: doing so would not measure the production homepage path. It
+attempts a second native tab after the separate synthetic visibility check and
+reports native hide/return only if the original tab actually becomes hidden. Adapter
+`timestamp-query` support is recorded without making a GPU timing claim about the
+public attachment path.
 
 Fire/None uses the same production page and assets. The player and background start
 still. Their still/play comparisons run after selecting None and scrolling the same
@@ -292,8 +291,8 @@ guard and 181.8/187.5/197.9 ms after it at desktop DPR 1. Desktop DPR 2 was
 attachment proxies; they cannot separate capture, renderer preparation or GPU
 execution. Both complete matrices used that earlier script, before the current
 startup-observer disconnect change; they provide no retrospective performance or
-latency claim about the current script. The public `captureElement` diagnostic in
-those complete runs used
+latency claim about the current script. The historical isolated `captureElement`
+diagnostic in those complete runs used
 its default 32 CSS px padding, so its raster sizes and wall times do not match
 the live Fire capture's 42 CSS px padding. A later bounded supplement with
 script SHA-256

@@ -1,5 +1,26 @@
 /** SSR-safe capture contracts and alpha classification. */
-export type EffectName = 'fire-edge';
+export type EffectName =
+  | 'fire-edge'
+  | 'electricity-edge'
+  | 'frost-edge'
+  | 'kinetic-edge'
+  | 'slime-edge'
+  | 'burned-paper-edge'
+  | 'dither-edge'
+  | 'halftone-edge'
+  | 'stipple-edge'
+  | 'scanlines-edge'
+  | 'crosshatch-edge'
+  | 'diamonds-edge'
+  | 'contour-echoes-edge'
+  | 'engraving-edge'
+  | 'woven-mesh-edge'
+  | 'hexagons-edge'
+  | 'interference-edge'
+  | 'shards-edge'
+  | 'circuits-edge'
+  | 'star-shimmer-edge'
+  | 'brush-fringe-edge';
 
 /** Stable codes for unavailable effects and temporary suspension. */
 export type EffectReason =

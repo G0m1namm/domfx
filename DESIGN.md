@@ -490,3 +490,152 @@ implementation polish; explicit approved layout and brand choices take precedenc
 | 2026-09-30 | In-site user documentation approved                          | Grouped navigation and reading layout use ultrastorage and Fancy Components as references while retaining domfx typography, palette and verified contracts.                                             |
 
 The 2026-09-29 text-motion refinement follows user-provided recordings of Hungry Tiger, Telkom-OT and Iertqa: anchored artwork, independently moving copy, staggered reveals and a visible handoff to ordinary document scroll. Reference easing names are inferred, not recovered from their implementations.
+
+### Approved Frost direction
+
+Frost uses a mostly white, pale-blue granular coating that spreads inward across
+image, SVG and text contours as intensity rises. Higher intensity also increases
+white smoke height and brightness. Smoke has fine irregular wisps, accompanied by
+small diamond-shaped white ice grains. The original content remains visible and
+interactive. The maintainer approved this direction on 2026-10-18; automated and
+full lifecycle verification remain deferred until the visual exploration is complete.
+
+### Approved Kinetic bloom direction
+
+One silver-violet light pulse sweeps clockwise around the target and sheds small
+geometric fragments. Intensity increases the pulse width, brightness, violet wake,
+and fragment size and reach. Keep one Kinetic bloom option. The maintainer approved
+this direction on 2026-10-18; tests and full lifecycle verification remain deferred.
+
+### Slime exploration direction
+
+On 2026-10-18, the maintainer redirected the Lava exploration to Slime: a solid
+colored rim and gravity-driven droplets. On 2026-10-19, the maintainer replaced
+the inward fade with a solid coating and defined inner and outer boundaries;
+antialiasing is limited to contour coverage. Retain the slow stretching motion
+and remove incandescent cracks and heat shading. The maintainer approved the
+solid green coating and drip motion on 2026-10-19 as the checkpoint before
+exploring gloss and translucency. Tests and full lifecycle verification remain deferred.
+
+The glossy Slime pass was approved on 2026-10-19: rounded wet highlights and
+thickness-based green translucency sit inside the defined coating boundaries.
+Preserve the accepted buildup, pinch-off, falling drops and neck retraction.
+
+### Approved Burned paper direction
+
+The maintainer approved Burned paper on 2026-10-19: a dark charred rim, uneven
+brown scorching and sparse orange-hot seams. Intensity spreads the coating
+inward across the target; the outer material rim stays below one CSS pixel to
+preserve spacing between letters. Keep the original content intact. Tests and
+full lifecycle verification remain deferred until visual exploration is complete.
+
+### Approved Dither direction
+
+The maintainer approved the fine ordered-dot effect on 2026-10-19. Small fixed-grid
+silver-violet dots form an edge coating and rising wisps; intensity increases dot
+density, inward coverage and reach. Keep it free of letters and symbols, with the
+original content intact. Larger halftone variants are not part of this approved
+pass. Tests and full lifecycle verification remain deferred.
+
+### Approved pattern effects
+
+The maintainer approved Halftone, Stipple, Scanlines, Crosshatch, Diamond lattice
+and Contour echoes on 2026-10-19. Preserve their distinct silver-violet marks and
+shared silhouette-following intensity controls alongside the original Dither.
+This approves their visual direction; automated and full lifecycle verification
+remain deferred until the effect exploration is complete.
+
+### Marketing gallery exploration
+
+On 2026-10-19, the maintainer selected Gallery as the marketing prototype direction,
+with Spotlight's alternating two-wide and three-across card arrangement. Keep card
+metadata focused on effect names and categories; remove the promotional taglines.
+Phosphor icons, cleaner control primitives and Lab Mono are being evaluated locally.
+The next local refinement uses a fixed full-width header with the same subtle 1px
+border as cards and inputs, downward effect output below the divider, and more
+space above the hero title and between the hero and collection filters. Remove
+decorative card eyebrows, artificial numbering and redundant promotional copy.
+The header rotation uses the Patterns collection except Star shimmer; lower
+intensity to zero before switching effects, then ease intensity back up. Keep
+this effect visible throughout scrolling, with a slightly longer downward reach.
+Cards retain plain resting surfaces and gain subtle gray illumination on hover
+or keyboard focus.
+The next exploration keeps this header, hero and gallery shared across all variants.
+Only the supporting content changes: setup-led, GSAP-led and compact benefit-led
+approaches, with original domfx copy informed by Canvas UI’s adoption guidance.
+The maintainer selected Setup (variant A) for the supporting content, with variant B’s
+GSAP section: the timeline illustration, binding example and playback-method overview.
+Keep the setup walkthrough first, followed by this GSAP section, the native HTML
+example and FAQ. Name GSAP in the section heading and apply Fire only to the
+word “GSAP”, keeping the surrounding heading text plain.
+Use the selected Setup composition as the sole active prototype; retire the variation
+switcher. Write marketing copy for the public npm launch: installation is available,
+GSAP is optional, and the page must not describe packages as unpublished or direct
+visitors to a local-only preview workflow. Browser and capture limits still apply.
+This composition is approved for the production homepage and full effects gallery.
+
+The maintainer selected Afterglow for the closing section. Keep its existing background
+glow and animated domfx wordmark, placed above the closing headline and installation
+actions. Follow with grouped footer links and a compact credit/copyright strip naming
+Jherson Martelo Medina, plus Back to top. Use official Phosphor assets for interface
+icons, with consistent sizing and accessible labels. Text links need visible resting
+underlines, brighter text, and clear hover and keyboard-focus states.
+
+Afterglow is fixed during the card-design exploration. On mobile, align Build and
+Explore as equal columns; GitHub and npm share a separate row on those column
+starts. Align copyright and Back to top on one row, with the creator credit below.
+Card alternatives change only card composition; retain the approved desktop
+two/three-column rhythm, shared filters, live effects and preview dialog.
+
+The maintainer selected Immersive (B) as the final card composition. Keep the
+alternating large/small composition for the complete gallery; category-filtered
+results use equal-size tiles at each breakpoint, including a consistent scale for
+matching preview types. Retire the card comparison toolbar.
+
+The next refinement reduces hero height with a two-column desktop composition:
+headline and supporting copy on the left, Humans/Agents setup tabs on the right.
+Stack these on mobile. Humans offers the package install command and gallery link.
+Agents previews `pnpm dlx skills add G0m1namm/domfx --skill domfx`, explicitly labeled
+as a preview because the consumer skill is not published yet, alongside the API guide.
+Publishing that skill remains separate work.
+
+Move search from the gallery into the fixed header as an icon-only magnifying-glass
+button with a 44px target, accessible label, shortcut tooltip and Cmd/Ctrl+K support.
+Search effects and documentation in separately labeled groups within one
+keyboard-accessible dialog; effect results open their live preview and documentation
+results navigate to the matching page or section. Keep category filters above the
+full effects gallery. The header GitHub CTA says “Star on GitHub” below 50 stars
+and “Stars” with a count from 50 onward. Fetch public repository statistics and
+retain the plain GitHub link if counts are unavailable; do not invent a count or
+expose credentials for a private repository.
+
+The next local preview refinement gives the effect subject a larger default size
+and a wider inspection pane. Magnify the original subject and its live decorative
+layer together, independently of intensity. Desktop hover temporarily inspects at
+2× with pointer-directed panning; explicit controls provide 100–300% zoom and Fit
+reset for keyboard and touch users. Arrow keys pan the focused preview; touch can
+drag while zoomed. Keep the controls outside the magnified surface, reset on close,
+and suppress automatic hover zoom and zoom transitions under reduced motion.
+
+The marketing homepage shows only the first five effects: Electricity, Frost, Fire,
+Dither and Slime, preserving the two-wide/three-across composition. Remove category
+filters from this selection and place an “Explore all 21 effects” CTA underneath,
+with the total derived from the catalog. A separate effects page owns the complete
+gallery and its category filters, with uniform filtered tiles. Header and footer
+Effects links lead there. Both pages share search and the zoomable effect preview;
+homepage search can open every effect, including those beyond the five featured cards.
+Keep setup, GSAP, native HTML and FAQ content on the marketing homepage.
+
+The header and large Afterglow domfx wordmark use the same pattern sequence and
+one shared time and intensity cycle, including fade-out, effect switch and fade-in.
+The wordmark joins the current phase when it enters view; release its attachment
+when offscreen without restarting the header. Either playback control pauses or
+resumes both decorations. Respect reduced motion and retain the paused state when
+that preference changes back.
+
+On 2026-10-19, the maintainer approved integrating the selected marketing design
+into the official website. `/` contains the five featured effects and Setup story;
+`/effects/` contains the complete filtered gallery. Both use Immersive cards,
+Afterglow, Lab Mono labels, Phosphor icons, shared search and zoomable previews.
+Render content on the server so the site remains readable without JavaScript.
+Keep prototype sources and rejected variants outside the production build.

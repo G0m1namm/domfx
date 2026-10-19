@@ -1,10 +1,17 @@
 import type { EffectHandle, EffectReason } from '@domfx/core';
 
 import { type captureElementWithReservation, measureCapture } from './browser.js';
+import type { BurnedPaperOptions } from './burned-paper-options.js';
 import { createCaptureRevisions } from './capture-revision.js';
+import type { DitherOptions } from './dither-options.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
+import type { ElectricityOptions } from './electricity-options.js';
 import type { FireOptions } from './fire-options.js';
+import type { FrostOptions } from './frost-options.js';
+import type { RenderEffect } from './gpu.js';
+import type { KineticOptions } from './kinetic-options.js';
 import { memoryFor } from './memory.js';
+import type { PatternEffect, PatternOptions } from './pattern-options.js';
 import {
   assertEffectComposition,
   isPlacementMutation,
@@ -14,12 +21,13 @@ import {
 } from './placement.js';
 import type { AttachmentRenderer } from './renderer-service.js';
 import { schedulerFor } from './scheduler.js';
+import type { SlimeOptions } from './slime-options.js';
 
 const owners = new WeakMap<Document, Set<Element>>();
 
-function finite(value: number): number {
+function finite(value: number, effect: RenderEffect): number {
   if (!Number.isFinite(value) || !Number.isFinite(Math.fround(value))) {
-    throw new Error('invalid-fire-parameter');
+    throw new Error(`invalid-${effect}-parameter`);
   }
 
   return value;
@@ -32,20 +40,28 @@ export interface AttachmentAdapters {
   createRenderer: () => Promise<AttachmentRenderer>;
 }
 
-export function attachFireWithAdapters(
+function attachWithAdapters(
   target: Element,
-  options: FireOptions,
+  request:
+    | { effect: 'fire'; options: FireOptions }
+    | { effect: 'electricity'; options: ElectricityOptions }
+    | { effect: 'frost'; options: FrostOptions }
+    | { effect: 'kinetic'; options: KineticOptions }
+    | { effect: 'slime'; options: SlimeOptions }
+    | { effect: 'burned-paper'; options: BurnedPaperOptions }
+    | { effect: 'dither'; options: DitherOptions }
+    | { effect: PatternEffect; options: PatternOptions },
   adapters: AttachmentAdapters,
 ): EffectHandle {
+  const { effect, options } = request;
   const document = target?.ownerDocument;
   const view = document?.defaultView;
   if (!view || !(target instanceof view.Element)) {
     throw new Error('invalid-effect-target');
   }
   if (!options || typeof options !== 'object') {
-    throw new Error('invalid-fire-options');
+    throw new Error(`invalid-${effect}-options`);
   }
-
   const clock = options.clock === undefined ? 'manual' : options.clock;
   if (clock !== 'manual' && clock !== 'ambient') {
     throw new Error('invalid-clock-mode');
@@ -73,16 +89,19 @@ export function attachFireWithAdapters(
     throw new Error('effect-target-owned');
   }
 
-  const seed = finite(options.seed === undefined ? 0 : options.seed);
-  const flameHeight = finite(options.flameHeight === undefined ? 24 : options.flameHeight);
+  const seed = finite(options.seed === undefined ? 0 : options.seed, effect);
+  const flameHeight = finite(
+    request.effect === 'fire' ? (request.options.flameHeight ?? 24) : 24,
+    effect,
+  );
   if (flameHeight < 8 || flameHeight > 64) {
-    throw new Error('invalid-fire-parameter');
+    throw new Error(`invalid-${effect}-parameter`);
   }
   const paddingCss = Math.max(32, Math.ceil(flameHeight * 1.25 + 2));
-  let time = finite(options.time === undefined ? 0 : options.time);
+  let time = finite(options.time === undefined ? 0 : options.time, effect);
   let intensity = Math.max(
     0,
-    Math.min(1, finite(options.intensity === undefined ? 1 : options.intensity)),
+    Math.min(1, finite(options.intensity === undefined ? 1 : options.intensity, effect)),
   );
 
   const motion = view.matchMedia('(prefers-reduced-motion: reduce)');
@@ -485,6 +504,7 @@ export function attachFireWithAdapters(
           1 / revisions.frame.pixelToLocal.a,
           undefined,
           flameHeight,
+          effect,
         );
         revisions.prepared.present(context.getCurrentTexture());
       }
@@ -725,7 +745,7 @@ export function attachFireWithAdapters(
     },
 
     set time(value) {
-      time = finite(value);
+      time = finite(value, effect);
       if (running()) {
         lastTimestamp = now();
       }
@@ -737,7 +757,7 @@ export function attachFireWithAdapters(
     },
 
     set intensity(value) {
-      intensity = Math.max(0, Math.min(1, finite(value)));
+      intensity = Math.max(0, Math.min(1, finite(value, effect)));
       invalidate();
     },
 
@@ -754,4 +774,69 @@ export function attachFireWithAdapters(
 
     dispose,
   };
+}
+
+export function attachFireWithAdapters(
+  target: Element,
+  options: FireOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect: 'fire', options }, adapters);
+}
+
+export function attachElectricityWithAdapters(
+  target: Element,
+  options: ElectricityOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect: 'electricity', options }, adapters);
+}
+
+export function attachFrostWithAdapters(
+  target: Element,
+  options: FrostOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect: 'frost', options }, adapters);
+}
+
+export function attachKineticWithAdapters(
+  target: Element,
+  options: KineticOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect: 'kinetic', options }, adapters);
+}
+
+export function attachSlimeWithAdapters(
+  target: Element,
+  options: SlimeOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect: 'slime', options }, adapters);
+}
+
+export function attachBurnedPaperWithAdapters(
+  target: Element,
+  options: BurnedPaperOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect: 'burned-paper', options }, adapters);
+}
+
+export function attachDitherWithAdapters(
+  target: Element,
+  options: DitherOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect: 'dither', options }, adapters);
+}
+
+export function attachPatternWithAdapters(
+  target: Element,
+  effect: PatternEffect,
+  options: PatternOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect, options }, adapters);
 }

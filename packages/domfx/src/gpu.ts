@@ -3,7 +3,25 @@ import { d, std, tgpu, type TgpuRoot } from 'typegpu';
 
 import type { CaptureFrame } from '@domfx/core';
 
+import { burnedPaperShader } from './burned-paper-shader.js';
+import { ditherShader } from './dither-shader.js';
 import { EffectError } from './effect-error.js';
+import { electricityShader } from './electricity-shader.js';
+import { frostShader } from './frost-shader.js';
+import { kineticShader } from './kinetic-shader.js';
+import type { PatternEffect } from './pattern-options.js';
+import { createPatternShader } from './pattern-shader.js';
+import { slimeShader } from './slime-shader.js';
+
+export type RenderEffect =
+  | 'fire'
+  | 'electricity'
+  | 'frost'
+  | 'kinetic'
+  | 'slime'
+  | 'burned-paper'
+  | 'dither'
+  | PatternEffect;
 
 const sourceLayout = tgpu.bindGroupLayout({ source: { texture: d.texture2d() } });
 const classifyMask = (coord: d.v2u) => {
@@ -155,6 +173,7 @@ export interface PreparedGpuFrame {
     pixelsPerCss: number,
     timestampWrites?: GPURenderPassTimestampWrites,
     flameHeight?: number,
+    effect?: RenderEffect,
   ): void;
   present(destination: GPUTexture): void;
   readFire(): Promise<Uint8Array>;
@@ -166,7 +185,7 @@ export interface PreparedGpuFrame {
  */
 export class GpuExperiment {
   private readonly prepared = new Set<PreparedGpuFrame>();
-  private readonly pipeline: GPURenderPipeline;
+  private readonly pipelines: Record<RenderEffect, GPURenderPipeline>;
   private preparation: Promise<void> = Promise.resolve();
   private destroyed = false;
   readonly errors: string[] = [];
@@ -176,17 +195,77 @@ export class GpuExperiment {
   ) {
     const device = root.device;
     device.addEventListener('uncapturederror', (event) => this.errors.push(event.error.message));
-    const module = device.createShaderModule({
+    const fireModule = device.createShaderModule({
       label: 'domfx deterministic fire',
       code: fireShader,
     });
-    this.pipeline = device.createRenderPipeline({
-      label: 'domfx fire',
-      layout: 'auto',
-      vertex: { module, entryPoint: 'vertex' },
-      fragment: { module, entryPoint: 'fragment', targets: [{ format: 'rgba8unorm' }] },
-      primitive: { topology: 'triangle-list' },
+    const electricityModule = device.createShaderModule({
+      label: 'domfx deterministic electricity',
+      code: electricityShader,
     });
+    const frostModule = device.createShaderModule({
+      label: 'domfx deterministic frost',
+      code: frostShader,
+    });
+    const kineticModule = device.createShaderModule({
+      label: 'domfx deterministic kinetic bloom',
+      code: kineticShader,
+    });
+    const slimeModule = device.createShaderModule({
+      label: 'domfx deterministic slime drips',
+      code: slimeShader,
+    });
+    const burnedPaperModule = device.createShaderModule({
+      label: 'domfx deterministic burned paper',
+      code: burnedPaperShader,
+    });
+    const ditherModule = device.createShaderModule({
+      label: 'domfx deterministic dither',
+      code: ditherShader,
+    });
+    const pipeline = (name: RenderEffect, module: GPUShaderModule) =>
+      device.createRenderPipeline({
+        label: `domfx ${name}`,
+        layout: 'auto',
+        vertex: { module, entryPoint: 'vertex' },
+        fragment: {
+          module,
+          entryPoint: 'fragment',
+          targets: [{ format: 'rgba8unorm' }],
+        },
+        primitive: { topology: 'triangle-list' },
+      });
+    const patternPipeline = (effect: PatternEffect) =>
+      pipeline(
+        effect,
+        device.createShaderModule({
+          label: `domfx ${effect} exploration`,
+          code: createPatternShader(effect),
+        }),
+      );
+    this.pipelines = {
+      fire: pipeline('fire', fireModule),
+      electricity: pipeline('electricity', electricityModule),
+      frost: pipeline('frost', frostModule),
+      kinetic: pipeline('kinetic', kineticModule),
+      slime: pipeline('slime', slimeModule),
+      'burned-paper': pipeline('burned-paper', burnedPaperModule),
+      dither: pipeline('dither', ditherModule),
+      halftone: patternPipeline('halftone'),
+      stipple: patternPipeline('stipple'),
+      scanlines: patternPipeline('scanlines'),
+      crosshatch: patternPipeline('crosshatch'),
+      diamonds: patternPipeline('diamonds'),
+      'contour-echoes': patternPipeline('contour-echoes'),
+      engraving: patternPipeline('engraving'),
+      'woven-mesh': patternPipeline('woven-mesh'),
+      hexagons: patternPipeline('hexagons'),
+      interference: patternPipeline('interference'),
+      shards: patternPipeline('shards'),
+      circuits: patternPipeline('circuits'),
+      'star-shimmer': patternPipeline('star-shimmer'),
+      'brush-fringe': patternPipeline('brush-fringe'),
+    };
   }
 
   static async create(
@@ -302,7 +381,7 @@ export class GpuExperiment {
       this.assertAvailable();
       const sdfTexture = root.unwrap(runner.sdfOutput);
       output = device.createTexture({
-        label: 'domfx fire output',
+        label: 'domfx effect output',
         size: [width, height],
         format: 'rgba8unorm',
         usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
@@ -311,20 +390,44 @@ export class GpuExperiment {
         size: 16,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
-      const bindGroup = device.createBindGroup({
-        layout: this.pipeline.getBindGroupLayout(0),
-        entries: [
-          { binding: 0, resource: sdfTexture.createView() },
-          { binding: 1, resource: { buffer: uniform } },
-        ],
-      });
       const outputTexture = output;
       const parameters = uniform;
+      const bindGroupFor = (effect: RenderEffect) =>
+        device.createBindGroup({
+          layout: this.pipelines[effect].getBindGroupLayout(0),
+          entries: [
+            { binding: 0, resource: sdfTexture.createView() },
+            { binding: 1, resource: { buffer: parameters } },
+          ],
+        });
+      const bindGroups = {
+        fire: bindGroupFor('fire'),
+        electricity: bindGroupFor('electricity'),
+        frost: bindGroupFor('frost'),
+        kinetic: bindGroupFor('kinetic'),
+        slime: bindGroupFor('slime'),
+        'burned-paper': bindGroupFor('burned-paper'),
+        dither: bindGroupFor('dither'),
+        halftone: bindGroupFor('halftone'),
+        stipple: bindGroupFor('stipple'),
+        scanlines: bindGroupFor('scanlines'),
+        crosshatch: bindGroupFor('crosshatch'),
+        diamonds: bindGroupFor('diamonds'),
+        'contour-echoes': bindGroupFor('contour-echoes'),
+        engraving: bindGroupFor('engraving'),
+        'woven-mesh': bindGroupFor('woven-mesh'),
+        hexagons: bindGroupFor('hexagons'),
+        interference: bindGroupFor('interference'),
+        shards: bindGroupFor('shards'),
+        circuits: bindGroupFor('circuits'),
+        'star-shimmer': bindGroupFor('star-shimmer'),
+        'brush-fringe': bindGroupFor('brush-fringe'),
+      };
       let disposed = false;
       const prepared: PreparedGpuFrame = {
         width,
         height,
-        // Source/JFA/fire textures + fire vec4f (16) and patched JFA i32 (4).
+        // Source/JFA/effect textures + one vec4f (16) and patched JFA i32 (4).
         managedBytes: width * height * 36 + 20,
         prepareMs: performance.now() - started,
         readSdf: async () => {
@@ -334,7 +437,15 @@ export class GpuExperiment {
             decodeFloat16(view.getUint16(i * 8, true)),
           );
         },
-        render: (time, seed, intensity, pixelsPerCss, timestampWrites, flameHeight = 24) => {
+        render: (
+          time,
+          seed,
+          intensity,
+          pixelsPerCss,
+          timestampWrites,
+          flameHeight = 24,
+          effect = 'fire',
+        ) => {
           if (disposed) {
             throw new Error('frame-disposed');
           }
@@ -369,8 +480,8 @@ export class GpuExperiment {
               },
             ],
           });
-          pass.setPipeline(this.pipeline);
-          pass.setBindGroup(0, bindGroup);
+          pass.setPipeline(this.pipelines[effect]);
+          pass.setBindGroup(0, bindGroups[effect]);
           pass.draw(3);
           pass.end();
           device.queue.submit([encoder.finish()]);

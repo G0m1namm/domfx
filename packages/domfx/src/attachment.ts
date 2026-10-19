@@ -1,10 +1,10 @@
-import type { CaptureFrame, EffectHandle, EffectReason } from '@domfx/core';
+import type { EffectHandle, EffectReason } from '@domfx/core';
 
 import { type captureElementWithReservation, measureCapture } from './browser.js';
+import { createCaptureRevisions } from './capture-revision.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
 import type { FireOptions } from './fire-options.js';
-import type { PreparedGpuFrame } from './gpu.js';
-import { estimateFrameMemory, memoryFor, type AllocationReservation } from './memory.js';
+import { memoryFor } from './memory.js';
 import {
   assertEffectComposition,
   isPlacementMutation,
@@ -16,8 +16,6 @@ import type { AttachmentRenderer } from './renderer-service.js';
 import { schedulerFor } from './scheduler.js';
 
 const owners = new WeakMap<Document, Set<Element>>();
-// A disposed owner may still be capturing when this target is reattached.
-const captures = new WeakMap<Element, Promise<void>>();
 
 function finite(value: number): number {
   if (!Number.isFinite(value) || !Number.isFinite(Math.fround(value))) {
@@ -25,15 +23,6 @@ function finite(value: number): number {
   }
 
   return value;
-}
-
-// Clear the callback on cleanup so a shared device does not retain disposed targets.
-function watchDeviceLoss(device: GPUDevice, callback: (info: GPUDeviceLostInfo) => void) {
-  const subscription: { callback?: typeof callback } = { callback };
-  void device.lost.then((info) => subscription.callback?.(info));
-  return () => {
-    subscription.callback = undefined;
-  };
 }
 
 /** Internal adapter seam for controlled lifecycle verification in the lab. */
@@ -107,30 +96,43 @@ export function attachFireWithAdapters(
   let lastTimestamp: number | undefined;
 
   let lifecycle: EffectHandle['lifecycle'] = 'suspended';
-  let raster: EffectHandle['raster'] = 'refreshing';
   let reason: EffectReason | undefined;
   let reasonDetail: string | undefined;
 
-  let service: AttachmentRenderer | undefined;
-  let unwatchDeviceLoss: (() => void) | undefined;
-  let prepared: PreparedGpuFrame | undefined;
-  let retainedMemory: AllocationReservation | undefined;
   const memory = memoryFor(document);
-  let frame: CaptureFrame | undefined;
   let context: GPUCanvasContext | null = null;
-  let work: Promise<void> | undefined;
   let retryWork: Promise<void> | undefined;
-  let revision = 1;
-  let generation = 0;
   let awaitingAssets = true;
-  const refreshes: { resolve: () => void; reject: (error: unknown) => void }[] = [];
-
-  function rejectRefreshes(error: unknown) {
-    for (const refresh of refreshes.splice(0)) {
-      refresh.reject(error);
-    }
-  }
   const disposalCallbacks = new Set<() => void>();
+
+  const revisions = createCaptureRevisions({
+    target,
+    memory,
+    createRenderer: adapters.createRenderer,
+    capture: (reserve, current) => {
+      if (!current()) {
+        return Promise.resolve(undefined);
+      }
+      const estimate = measureCapture(target, paddingCss);
+      observedSize = targetSize();
+      reserve(estimate.width, estimate.height);
+      awaitingAssets = true;
+      return adapters.capture(target, { paddingCss }, reserve, () => {
+        observedSize = targetSize();
+        awaitingAssets = false;
+      });
+    },
+    canRun: canCapture,
+    present: presentRevision,
+    committed: () => {
+      if (running()) {
+        lastTimestamp = now();
+      }
+      scheduler.schedule(commit);
+    },
+    failed: unavailable,
+    deviceLost: unavailable,
+  });
 
   let canvas: HTMLCanvasElement | undefined;
   let lastPlacement: ReturnType<typeof measureEffectPlacement> | undefined;
@@ -210,7 +212,7 @@ export function attachFireWithAdapters(
   function assetChanged() {
     // Initial/explicit captures establish readiness themselves. Their expected
     // load events must not invalidate the revision waiting for those assets.
-    if (raster !== 'refreshing' || !awaitingAssets) {
+    if (revisions.raster !== 'refreshing' || !awaitingAssets) {
       observePaint();
     }
   }
@@ -218,7 +220,7 @@ export function attachFireWithAdapters(
   function observePaint() {
     stale();
     if (
-      raster === 'stale' &&
+      revisions.raster === 'stale' &&
       lifecycle === 'suspended' &&
       !motionSuspended &&
       !visibilitySuspended &&
@@ -242,9 +244,7 @@ export function attachFireWithAdapters(
       return;
     }
 
-    generation += 1;
-    rejectRefreshes(new Error('refresh-invalidated'));
-    raster = 'stale';
+    revisions.invalidate(new Error('refresh-invalidated'));
     lifecycle = 'suspended';
     reason = 'stale-raster';
     reasonDetail = undefined;
@@ -285,19 +285,6 @@ export function attachFireWithAdapters(
       canvas = undefined;
     }
     lastPlacement = undefined;
-
-    prepared?.destroy();
-    prepared = undefined;
-    retainedMemory?.release();
-    retainedMemory = undefined;
-    unwatchDeviceLoss?.();
-    unwatchDeviceLoss = undefined;
-
-    // Pending preparation owns the device until its late result is released.
-    if (!work) {
-      service?.destroy();
-      service = undefined;
-    }
   }
 
   function running() {
@@ -323,13 +310,10 @@ export function attachFireWithAdapters(
       return;
     }
 
-    generation += 1;
-    rejectRefreshes(new Error('refresh-invalidated'));
+    revisions.stop(new Error('refresh-invalidated'));
     motionSuspended = true;
-    raster = 'stale';
     suspend('reduced-motion');
     cleanup();
-    frame = undefined;
   }
 
   function syncVisibility() {
@@ -344,9 +328,9 @@ export function attachFireWithAdapters(
     }
     if (visibilitySuspended) {
       scheduler.cancel(refreshObserved);
-      if (raster === 'refreshing') {
+      if (revisions.raster === 'refreshing') {
         stale();
-      } else if (raster === 'fresh') {
+      } else if (revisions.raster === 'fresh') {
         suspend('target-not-visible');
       }
       return false;
@@ -364,7 +348,7 @@ export function attachFireWithAdapters(
       intersectionObserver.observe(target);
     }
     checkMutations(observer.takeRecords());
-    if (checkComposition() && syncVisibility() && raster === 'fresh') {
+    if (checkComposition() && syncVisibility() && revisions.raster === 'fresh') {
       // Re-entry must place the retained raster before making it visible. It
       // does not itself change pixels or the caller's manual/paused time.
       scheduler.schedule(commit);
@@ -381,7 +365,7 @@ export function attachFireWithAdapters(
     if (
       lifecycle === 'disposed' ||
       lifecycle === 'unavailable' ||
-      raster !== 'fresh' ||
+      revisions.raster !== 'fresh' ||
       visibilitySuspended
     ) {
       return;
@@ -403,8 +387,8 @@ export function attachFireWithAdapters(
     dirty = false;
     lastTimestamp = running() ? timestamp : undefined;
     return (
-      (lifecycle === 'active' && raster === 'fresh') ||
-      (lifecycle === 'suspended' && raster === 'refreshing' && !visibilitySuspended)
+      (lifecycle === 'active' && revisions.raster === 'fresh') ||
+      (lifecycle === 'suspended' && revisions.raster === 'refreshing' && !visibilitySuspended)
     );
   }
 
@@ -417,11 +401,9 @@ export function attachFireWithAdapters(
     }
 
     const failure = normalizeEffectError(error, fallback);
-    generation += 1;
     // Preserve the adapter's rejection value, including public CaptureError metadata.
-    rejectRefreshes(error);
+    revisions.stop(error);
     lifecycle = 'unavailable';
-    raster = 'stale';
     reasonDetail = failure.message;
     reason = failure.code;
 
@@ -454,16 +436,16 @@ export function attachFireWithAdapters(
   function paint(render = true) {
     suspendForMotion();
     // Pending work has no raster to place yet, but must observe invalid CSS too.
-    if (raster === 'refreshing' && !checkComposition()) {
+    if (revisions.raster === 'refreshing' && !checkComposition()) {
       return;
     }
     checkMutations(observer.takeRecords());
     if (
       lifecycle === 'disposed' ||
       lifecycle === 'unavailable' ||
-      raster !== 'fresh' ||
-      !prepared ||
-      !frame ||
+      revisions.raster !== 'fresh' ||
+      !revisions.prepared ||
+      !revisions.frame ||
       !context ||
       !canvas
     ) {
@@ -475,7 +457,7 @@ export function attachFireWithAdapters(
     }
 
     try {
-      const placement = measureEffectPlacement(target, host, frame);
+      const placement = measureEffectPlacement(target, host, revisions.frame);
       if (
         !lastPlacement ||
         placement.left !== lastPlacement.left ||
@@ -496,15 +478,15 @@ export function attachFireWithAdapters(
       }
 
       if (render) {
-        prepared.render(
+        revisions.prepared.render(
           motionPolicy === 'static' ? 0 : time,
           seed,
           intensity,
-          1 / frame.pixelToLocal.a,
+          1 / revisions.frame.pixelToLocal.a,
           undefined,
           flameHeight,
         );
-        prepared.present(context.getCurrentTexture());
+        revisions.prepared.present(context.getCurrentTexture());
       }
 
       lifecycle = 'active';
@@ -515,190 +497,43 @@ export function attachFireWithAdapters(
     }
   }
 
-  function current(requestedRevision: number, requestedGeneration: number) {
+  function canCapture() {
     suspendForMotion();
     if (!checkComposition()) {
       return false;
     }
     checkMutations(observer.takeRecords());
-    if (raster === 'refreshing' && !syncVisibility()) {
+    if (revisions.raster === 'refreshing' && !syncVisibility()) {
       stale();
     }
     return (
-      lifecycle !== 'disposed' &&
-      lifecycle !== 'unavailable' &&
-      raster === 'refreshing' &&
-      revision === requestedRevision &&
-      generation === requestedGeneration
+      lifecycle !== 'disposed' && lifecycle !== 'unavailable' && revisions.raster === 'refreshing'
     );
   }
 
-  function captureRevision(
-    requestedRevision: number,
-    requestedGeneration: number,
-    reserve: (width: number, height: number) => void,
+  function presentRevision(
+    frame: NonNullable<typeof revisions.frame>,
+    renderer: AttachmentRenderer,
   ) {
-    const previous = captures.get(target) ?? Promise.resolve();
-    const captured = previous.then(() => {
-      if (!current(requestedRevision, requestedGeneration)) {
-        return undefined;
-      }
-      const estimate = measureCapture(target, paddingCss);
-      observedSize = targetSize();
-      reserve(estimate.width, estimate.height);
-      awaitingAssets = true;
-      return adapters.capture(target, { paddingCss }, reserve, () => {
-        // Asset-driven layout is already part of this capture's readiness boundary.
-        observedSize = targetSize();
-        awaitingAssets = false;
-      });
-    });
-    const settled = captured
-      .then(
-        () => {},
-        () => {},
-      )
-      .finally(() => {
-        if (captures.get(target) === settled) {
-          captures.delete(target);
-        }
-      });
-    captures.set(target, settled);
-    return captured;
-  }
-
-  async function refreshLoop() {
-    try {
-      suspendForMotion();
-      if (!service && lifecycle !== 'disposed' && lifecycle !== 'unavailable' && !motionSuspended) {
-        service = await adapters.createRenderer();
-        unwatchDeviceLoss = watchDeviceLoss(service.device, (info) => {
-          unavailable(new EffectError('device-lost', info.message, info));
-        });
-      }
-      while (
-        service &&
-        raster === 'refreshing' &&
-        lifecycle !== 'disposed' &&
-        lifecycle !== 'unavailable'
-      ) {
-        const requestedRevision = revision;
-        const requestedGeneration = generation;
-        let nextFrame: CaptureFrame | undefined;
-        let nextPrepared: PreparedGpuFrame | undefined;
-        let reservation: AllocationReservation | undefined;
-        const reserve = (width: number, height: number) => {
-          const estimate = estimateFrameMemory(width, height);
-          if (reservation) {
-            reservation.reconcile(estimate);
-          } else {
-            reservation = memory.reserve(target, estimate);
-          }
-        };
-        let failureReason: 'capture-failed' | 'renderer-failed' = 'capture-failed';
-        try {
-          if (!current(requestedRevision, requestedGeneration)) {
-            continue;
-          }
-          nextFrame = await captureRevision(requestedRevision, requestedGeneration, reserve);
-          if (!nextFrame || !current(requestedRevision, requestedGeneration)) {
-            continue;
-          }
-          reserve(nextFrame.width, nextFrame.height);
-          if (nextFrame.pixels.byteLength !== nextFrame.width * nextFrame.height * 4) {
-            throw new Error('invalid-frame');
-          }
-          failureReason = 'renderer-failed';
-          nextPrepared = await service.prepare(nextFrame);
-          if (!current(requestedRevision, requestedGeneration)) {
-            continue;
-          }
-
-          const actual = estimateFrameMemory(nextPrepared.width, nextPrepared.height);
-          if (nextPrepared.width !== nextFrame.width || nextPrepared.height !== nextFrame.height) {
-            throw new Error('invalid-frame');
-          }
-          reservation?.reconcile({ ...actual, managedBytes: nextPrepared.managedBytes });
-
-          // No await between installing and painting the replacement. Keep the
-          // previous resources alive until presentation has consumed the new frame.
-          if (!canvas) {
-            canvas = document.createElement('canvas');
-            canvas.setAttribute('aria-hidden', 'true');
-            canvas.style.cssText = 'position:absolute;pointer-events:none;display:none;';
-          }
-          canvas.width = nextFrame.width;
-          canvas.height = nextFrame.height;
-          context ??= canvas.getContext('webgpu');
-          if (!context) {
-            throw new EffectError('canvas-webgpu-unavailable');
-          }
-          context.configure({
-            device: service.device,
-            format: 'rgba8unorm',
-            alphaMode: 'premultiplied',
-            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
-          });
-          const previous = prepared;
-          const previousMemory = retainedMemory;
-          retainedMemory = reservation;
-          reservation = undefined;
-          prepared = nextPrepared;
-          nextPrepared = undefined;
-          frame = nextFrame;
-          host.append(canvas);
-          raster = 'fresh';
-          paint();
-          previous?.destroy();
-          previousMemory?.release();
-          if (raster === 'fresh') {
-            for (const refresh of refreshes.splice(0)) {
-              refresh.resolve();
-            }
-            if (running()) {
-              lastTimestamp = now();
-            }
-            scheduler.schedule(commit);
-          }
-        } catch (error) {
-          // A superseded failure cannot reject requests for the newer revision.
-          if (current(requestedRevision, requestedGeneration)) {
-            unavailable(error, failureReason);
-          }
-        } finally {
-          nextPrepared?.destroy();
-          nextFrame?.release();
-          if (frame && nextFrame === frame && prepared && retainedMemory) {
-            retainedMemory.reconcile({
-              ...estimateFrameMemory(frame.width, frame.height),
-              managedBytes: prepared.managedBytes,
-              captureBytes: 0,
-            });
-          }
-          reservation?.release();
-        }
-      }
-    } catch (error) {
-      unavailable(error);
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.setAttribute('aria-hidden', 'true');
+      canvas.style.cssText = 'position:absolute;pointer-events:none;display:none;';
     }
-  }
-
-  function startRefresh(): Promise<void> {
-    // Deferring entry also coalesces requests made in the same task, and installs
-    // the work owner before any adapter can complete or fail.
-    work ??= Promise.resolve()
-      .then(refreshLoop)
-      .finally(() => {
-        work = undefined;
-        if (lifecycle === 'disposed' || lifecycle === 'unavailable' || motionSuspended) {
-          cleanup();
-          frame = undefined;
-        } else if (raster === 'refreshing') {
-          // A settlement callback may request another revision before this finally.
-          return startRefresh();
-        }
-      });
-    return work;
+    canvas.width = frame.width;
+    canvas.height = frame.height;
+    context ??= canvas.getContext('webgpu');
+    if (!context) {
+      throw new EffectError('canvas-webgpu-unavailable');
+    }
+    context.configure({
+      device: renderer.device,
+      format: 'rgba8unorm',
+      alphaMode: 'premultiplied',
+      usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    host.append(canvas);
+    paint();
   }
 
   function refresh(): Promise<void> {
@@ -717,11 +552,8 @@ export function attachFireWithAdapters(
     observer.takeRecords();
     scheduler.cancel(refreshObserved);
     awaitingAssets = true;
-    revision += 1;
-    raster = 'refreshing';
     suspend('stale-raster');
-    const promise = new Promise<void>((resolve, reject) => refreshes.push({ resolve, reject }));
-    void startRefresh();
+    const promise = revisions.request();
     scheduler.schedule(commit);
     return promise;
   }
@@ -730,10 +562,8 @@ export function attachFireWithAdapters(
     if (lifecycle === 'disposed') {
       return;
     }
-    generation += 1;
-    rejectRefreshes(new Error('effect-disposed'));
+    revisions.stop(new Error('effect-disposed'));
     lifecycle = 'disposed';
-    raster = 'stale';
     reason = undefined;
     reasonDetail = undefined;
     releaseOwnership();
@@ -798,20 +628,16 @@ export function attachFireWithAdapters(
       return retryWork;
     }
 
-    // Stop the old generation immediately. Its non-cancellable work still owns
-    // resources until startRefresh's finally has completed.
-    generation += 1;
-    rejectRefreshes(new Error('refresh-invalidated'));
-    raster = 'stale';
+    // Pending work retains its resources until the revision owner drains.
+    revisions.stop(new Error('refresh-invalidated'));
     if (lifecycle !== 'unavailable') {
       suspend('stale-raster');
     }
     cleanup();
     retryWork = Promise.resolve()
       .then(async () => {
-        await work;
+        await revisions.drain();
         cleanup();
-        frame = undefined;
         checkConnection();
         if (lifecycle === 'disposed') {
           return;
@@ -830,12 +656,11 @@ export function attachFireWithAdapters(
         }
         claimed.add(target);
         ownsTarget = true;
-        revision += 1;
-        raster = 'refreshing';
         awaitingAssets = true;
         dirty = false;
+        const restarted = revisions.restart();
         initialize();
-        await startRefresh();
+        await restarted;
       })
       .finally(() => {
         retryWork = undefined;
@@ -844,7 +669,7 @@ export function attachFireWithAdapters(
   }
 
   initialize();
-  const ready = startRefresh();
+  const ready = revisions.start();
 
   return {
     ready,
@@ -856,7 +681,7 @@ export function attachFireWithAdapters(
     },
 
     get raster() {
-      return raster;
+      return revisions.raster;
     },
 
     get reason() {

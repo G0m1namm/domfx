@@ -18,8 +18,10 @@ import { chromium } from 'playwright';
 
 import {
   assertReleaseVisibility,
+  assertCleanReleaseCheckout,
   publishedArtifactMatches,
   registryMetadata,
+  releaseSourceIdentity,
   testedReleaseArtifacts,
   validateArtifact,
 } from './check-release-artifacts.mjs';
@@ -27,6 +29,8 @@ import { captureFailureEvidence } from './release-failure-evidence.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const registry = process.argv[2] === '--registry';
+assertCleanReleaseCheckout(root);
+const source = releaseSourceIdentity(root);
 // These same strings are rendered verbatim by Astro and tested by the website suite.
 const { gsapCode, standaloneCode } = await import(
   pathToFileURL(join(root, 'apps/web/src/content/examples.ts')).href
@@ -44,7 +48,8 @@ const report = {
   startedAt: new Date().toISOString(),
   node: process.version,
   platform: `${process.platform}/${process.arch}`,
-  revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+  revision: source.revision,
+  source,
   dirty: execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim(),
   lockfileSha256: hash(readFileSync(join(root, 'pnpm-lock.yaml'))),
   artifacts: [],
@@ -87,7 +92,11 @@ try {
       'registry recipe checkout must match the released revision',
     );
     report.registry = [];
-    for (const artifact of testedReleaseArtifacts(resolve(process.argv[3]), process.argv[4])) {
+    for (const artifact of testedReleaseArtifacts(
+      resolve(process.argv[3]),
+      process.argv[4],
+      source,
+    )) {
       const metadata = registryMetadata(`${artifact.name}@${artifact.version}`);
       assert.ok(metadata, 'published package missing');
       publishedArtifactMatches(artifact, metadata);
@@ -156,6 +165,7 @@ try {
       report.artifacts.push({
         tarball,
         sha256: hash(readFileSync(tarball)),
+        integrity: `sha512-${createHash('sha512').update(readFileSync(tarball)).digest('base64')}`,
         manifest: packedManifest,
         files,
       });

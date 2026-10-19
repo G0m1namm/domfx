@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -7,11 +7,20 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import {
+  assertCleanReleaseCheckout,
   assertReleaseVisibility,
+  publishableTestedReleaseArtifacts,
   publishedArtifactMatches,
+  releaseSourceIdentity,
   testedReleaseArtifacts,
   validateArtifact,
 } from './check-release-artifacts.mjs';
+
+const source = {
+  repository: 'github.com/example/domfx',
+  revision: 'approved',
+  tree: 'tree',
+};
 
 const manifest = {
   name: '@domfx/core',
@@ -102,7 +111,13 @@ for (const path of ['.', 'tests/gpu', 'apps/web', 'packages/other']) {
   });
 }
 
-function releaseEvidence(t) {
+test('disabled publication workflow has no hosted artifact preparation or registry action', () => {
+  const workflow = readFileSync(join(process.cwd(), '.github/workflows/publish.yml'), 'utf8');
+  assert.match(workflow, /if: \$\{\{ false \}\}/);
+  assert.doesNotMatch(workflow, /release:rehearse|upload-artifact|npm publish/);
+});
+
+function releaseEvidence(t, sourceIdentity = source, options = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'domfx-tested-artifact-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   mkdirSync(join(directory, 'artifacts'));
@@ -110,9 +125,11 @@ function releaseEvidence(t) {
   const artifacts = ['core', 'browser', 'gsap'].map((name) => {
     const manifest = {
       name: `@domfx/${name}`,
-      version: '0.1.0-alpha.0',
-      publishConfig: { access: 'public' },
-      ...(name === 'core' ? {} : { dependencies: { '@domfx/core': '0.1.0-alpha.0' } }),
+      version: options.version ?? '0.1.0-alpha.0',
+      ...(options.private ? { private: true } : { publishConfig: { access: 'public' } }),
+      ...(name === 'core'
+        ? {}
+        : { dependencies: { '@domfx/core': options.version ?? '0.1.0-alpha.0' } }),
     };
     writeFileSync(join(directory, 'package/package.json'), JSON.stringify(manifest));
     const tarball = join(directory, 'artifacts', `${name}.tgz`);
@@ -121,11 +138,13 @@ function releaseEvidence(t) {
       tarball,
       manifest,
       sha256: createHash('sha256').update(readFileSync(tarball)).digest('hex'),
+      integrity: `sha512-${createHash('sha512').update(readFileSync(tarball)).digest('base64')}`,
     };
   });
   const report = {
     outcome: 'PASS',
-    revision: 'approved',
+    revision: sourceIdentity.revision,
+    source: sourceIdentity,
     dirty: '',
     finishedAt: new Date().toISOString(),
     artifacts,
@@ -143,9 +162,24 @@ function releaseEvidence(t) {
   return { directory, report, save };
 }
 
+function cleanCheckout(t) {
+  const directory = mkdtempSync(join(tmpdir(), 'domfx-release-checkout-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  writeFileSync(join(directory, 'tracked.txt'), 'tracked\n');
+  execFileSync('git', ['init', '--initial-branch=main'], { cwd: directory });
+  execFileSync('git', ['config', 'user.email', 'release@example.com'], { cwd: directory });
+  execFileSync('git', ['config', 'user.name', 'Release test'], { cwd: directory });
+  execFileSync('git', ['add', 'tracked.txt'], { cwd: directory });
+  execFileSync('git', ['commit', '--quiet', '-m', 'test release checkout'], { cwd: directory });
+  execFileSync('git', ['remote', 'add', 'origin', 'https://github.com/example/domfx.git'], {
+    cwd: directory,
+  });
+  return directory;
+}
+
 test('transports the three tested alpha tarballs without repacking', (t) => {
   const { directory } = releaseEvidence(t);
-  const artifacts = testedReleaseArtifacts(directory, 'approved');
+  const artifacts = testedReleaseArtifacts(directory, 'approved', source);
   assert.deepEqual(
     artifacts.map(({ name }) => name),
     ['@domfx/core', '@domfx/browser', '@domfx/gsap'],
@@ -166,6 +200,69 @@ test('transports the three tested alpha tarballs without repacking', (t) => {
     /alpha tag/,
   );
 });
+
+test('read-only handoff rejects source-mismatched evidence without a registry action', (t) => {
+  const { directory } = releaseEvidence(t);
+  const checkout = cleanCheckout(t);
+  const result = spawnSync(
+    process.execPath,
+    [join(import.meta.dirname, 'check-release-artifacts.mjs'), '--handoff', directory, 'approved'],
+    { cwd: checkout, encoding: 'utf8' },
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /source identity differs/);
+});
+
+test('read-only handoff accepts matching private non-alpha evidence without a registry action', (t) => {
+  const checkout = cleanCheckout(t);
+  const sourceIdentity = releaseSourceIdentity(checkout);
+  const { directory } = releaseEvidence(t, sourceIdentity, { private: true, version: '0.0.1' });
+  const result = spawnSync(
+    process.execPath,
+    [
+      join(import.meta.dirname, 'check-release-artifacts.mjs'),
+      '--handoff',
+      directory,
+      sourceIdentity.revision,
+    ],
+    { cwd: checkout, encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /npm/);
+});
+
+test('read-only handoff requires the receiving checkout to be clean', (t) => {
+  const checkout = cleanCheckout(t);
+  const sourceIdentity = releaseSourceIdentity(checkout);
+  const { directory } = releaseEvidence(t, sourceIdentity);
+  writeFileSync(join(checkout, 'untracked.txt'), 'not clean\n');
+  assert.throws(() => assertCleanReleaseCheckout(checkout), /checkout must be clean/);
+  const result = spawnSync(
+    process.execPath,
+    [
+      join(import.meta.dirname, 'check-release-artifacts.mjs'),
+      '--handoff',
+      directory,
+      sourceIdentity.revision,
+    ],
+    { cwd: checkout, encoding: 'utf8' },
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /checkout must be clean/);
+});
+
+test('technical handoff defers private alpha policy to publication', (t) => {
+  const { directory } = releaseEvidence(t, source, { private: true, version: '0.0.1' });
+  assert.doesNotThrow(() => testedReleaseArtifacts(directory, 'approved', source));
+  assert.throws(
+    () => publishableTestedReleaseArtifacts(directory, 'approved', source),
+    /approve public library metadata/,
+  );
+});
+
 for (const failure of [
   'revision',
   'dirty',
@@ -176,6 +273,8 @@ for (const failure of [
   'private',
   'changed-bytes',
   'missing-tarball',
+  'source',
+  'changed-integrity',
 ]) {
   test(`stops publication with ${failure} evidence`, (t) => {
     const { directory, report, save } = releaseEvidence(t);
@@ -206,7 +305,13 @@ for (const failure of [
     if (failure === 'missing-tarball') {
       rmSync(report.artifacts[0].tarball);
     }
+    if (failure === 'source') {
+      report.source = { ...source, tree: 'other-tree' };
+    }
+    if (failure === 'changed-integrity') {
+      report.artifacts[0].integrity = 'sha512-different';
+    }
     save();
-    assert.throws(() => testedReleaseArtifacts(directory, 'approved'));
+    assert.throws(() => publishableTestedReleaseArtifacts(directory, 'approved', source));
   });
 }

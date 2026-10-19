@@ -15,6 +15,7 @@
     "changeset": "changeset",
     "release:status": "changeset status",
     "release:artifacts": "node scripts/check-release-artifacts.mjs",
+    "release:handoff": "node scripts/check-release-artifacts.mjs --handoff",
     "release:rehearse": "pnpm build && node scripts/rehearse-release.mjs",
     "release:verify:registry": "node scripts/rehearse-release.mjs --registry",
     "release:check": "pnpm check && pnpm build:web:built && pnpm release:status && pnpm release:artifacts",

@@ -99,6 +99,64 @@ for (const stage of ['renderer', 'capture', 'prepare'] as const) {
   }
 }
 
+for (const stage of ['capture', 'prepare'] as const) {
+  test(`device loss makes the public handle unavailable before ${stage} drains`, async ({
+    page,
+  }) => {
+    await page.evaluate(async (stage) => {
+      const fixture = window.manual.createMotionFixture('respect');
+      fixture.effect.pause();
+      await fixture.effect.ready;
+      fixture.block(stage);
+      window.manual.motionFixture = fixture;
+      void fixture.effect.refresh().catch(() => {});
+      await fixture.entered;
+      fixture.loseDevice();
+    }, stage);
+
+    await expect
+      .poll(() => page.evaluate(() => window.manual.motionFixture?.snapshot().lifecycle))
+      .toBe('unavailable');
+    const pending = await page.evaluate(async () => {
+      const fixture = window.manual.motionFixture;
+      if (!fixture) {
+        throw new Error('missing-retry-fixture');
+      }
+      const refresh = await fixture.effect.refresh().then(
+        () => 'resolved',
+        (error: Error) => error.message,
+      );
+      return { ...fixture.snapshot(), refresh };
+    });
+    expect(pending).toMatchObject({
+      lifecycle: 'unavailable',
+      raster: 'stale',
+      reason: 'device-lost',
+      canvases: 0,
+      previousWidth: 0,
+      refresh: 'effect-unavailable',
+      serviceDestroys: 0,
+    });
+
+    await page.evaluate(() => window.manual.motionFixture?.release());
+    await expect
+      .poll(() => page.evaluate(() => window.manual.motionFixture?.snapshot().serviceDestroys))
+      .toBe(1);
+    const drained = await page.evaluate(() => {
+      const fixture = window.manual.motionFixture;
+      if (!fixture) {
+        throw new Error('missing-retry-fixture');
+      }
+      const result = fixture.snapshot();
+      fixture.dispose();
+      return result;
+    });
+    expect(drained).toMatchObject({ reservedBytes: 0, canvases: 0 });
+    expect(drained.releases).toBe(drained.captures);
+    expect(drained.destroys).toBe(drained.preparations);
+  });
+}
+
 test('retry rechecks motion at admission and during the new generation', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.evaluate(async () => {

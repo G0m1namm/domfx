@@ -1,10 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022"],
-    "types": ["node"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node", "@webgpu/types"],
     "rootDir": ".",
     "outDir": ".test-dist"
   },
-  "include": ["src/placement-geometry.ts", "tests/**/*.ts"]
+  "include": ["src/capture-revision.ts", "src/placement-geometry.ts", "tests/**/*.ts"]
 }

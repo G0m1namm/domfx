@@ -1,6 +1,5 @@
-import type { EffectHandle } from '@domfx/browser';
-
 import { createAgentPrompt } from './agent-prompt';
+import { createEffectTargetSession } from './effect-targets';
 
 function required<T extends Element>(selector: string) {
   const element = document.querySelector<T>(selector);
@@ -42,13 +41,13 @@ try {
   // In-memory preferences remain available when session storage is blocked.
 }
 
-let timelineTime = 0;
 let motionSpeed = 1;
 let motionLoop = false;
 let rangeStart = 0;
 let rangeEnd = 10;
 let maximumIntensity = 0.7;
 let flameHeight = 32;
+const mountEffects = createEffectTargetSession();
 
 function initializePage() {
   const events = new AbortController();
@@ -82,21 +81,7 @@ function initializePage() {
   const panels = panelTriggers.map((trigger) =>
     required<HTMLElement>(`#${trigger.getAttribute('aria-controls')}`),
   );
-  const targets = [
-    ...document.querySelectorAll<HTMLElement | SVGElement>('[data-effect-target]'),
-  ].map((element) => {
-    return {
-      element,
-      host: element.closest<HTMLElement>('[data-effect-host]'),
-      visible: false,
-      factor: 1,
-      revision: 0,
-      loading: false,
-      failure: '',
-      attachment: undefined as EffectHandle | undefined,
-    };
-  });
-  type Target = (typeof targets)[number];
+  const targets = [...document.querySelectorAll<HTMLElement | SVGElement>('[data-effect-target]')];
   const promptTarget = required<HTMLInputElement>('#prompt-target');
   const promptContent = required<HTMLElement>('#prompt-content');
   const promptFeedback = required<HTMLElement>('#prompt-feedback');
@@ -105,7 +90,7 @@ function initializePage() {
   let promptDirty = true;
   let frame = 0;
   let layoutDirty = true;
-  let lastTick = 0;
+  const effects = mountEffects(targets, effectSettings(), schedule);
 
   function reduced() {
     return preferences.reduced || motion.matches;
@@ -119,22 +104,25 @@ function initializePage() {
     }
   }
 
-  function renderingPermitted() {
-    return (
-      preferences.effect === 'fire' &&
-      hasGpu &&
-      !reduced() &&
-      !preferences.needsResume &&
-      !document.hidden &&
-      !signal.aborted
-    );
+  function effectSettings() {
+    return {
+      effect: preferences.effect,
+      paused: preferences.paused,
+      reduced: reduced(),
+      needsResume: preferences.needsResume,
+      hasGpu,
+      hidden: document.hidden,
+      intensity: maximumIntensity,
+      flameHeight,
+      speed: motionSpeed,
+      loop: motionLoop,
+      rangeStart,
+      rangeEnd,
+    };
   }
 
-  function release(target: Target) {
-    target.revision += 1;
-    target.attachment?.dispose();
-    target.attachment = undefined;
-    target.loading = false;
+  function syncEffects() {
+    effects.configure(effectSettings());
   }
 
   function updatePrompt() {
@@ -224,7 +212,7 @@ function initializePage() {
     required<HTMLElement>('#system-motion').textContent = motion.matches
       ? 'System reduced motion is on. Effects stay off.'
       : 'System reduced motion is off.';
-    const failures = targets.filter((target) => target.failure);
+    const { failed, loading } = effects.status();
     const statusText =
       preferences.effect === 'none'
         ? ''
@@ -234,9 +222,9 @@ function initializePage() {
             ? 'WebGPU is unavailable. Your HTML still works.'
             : preferences.needsResume
               ? 'Select Resume to show Fire.'
-              : failures.length
+              : failed
                 ? 'Some effects are unavailable. The original elements still work.'
-                : targets.some((target) => target.loading)
+                : loading
                   ? 'Preparing Fire…'
                   : '';
     status.hidden = statusText === '';
@@ -254,75 +242,6 @@ function initializePage() {
     }
   }
 
-  async function attach(target: Target) {
-    const request = ++target.revision;
-    target.loading = true;
-    try {
-      const images =
-        target.element instanceof HTMLImageElement
-          ? [target.element]
-          : [...target.element.querySelectorAll('img')];
-      const [{ attachFire }] = await Promise.all([
-        import('@domfx/browser'),
-        document.fonts.ready,
-        ...images.map((image) => image.decode()),
-      ]);
-      if (request !== target.revision || !renderingPermitted() || !target.visible || !target.host) {
-        return;
-      }
-      const attachment = attachFire(target.element, {
-        host: target.host,
-        clock: 'manual',
-        seed: 314,
-        time: timelineTime,
-        intensity: maximumIntensity * target.factor,
-        flameHeight,
-      });
-      target.attachment = attachment;
-      await attachment.ready;
-      if (request !== target.revision || signal.aborted) {
-        attachment.dispose();
-        return;
-      }
-      if (attachment.lifecycle !== 'active' && attachment.reason !== 'stale-raster') {
-        target.failure = attachment.reason ?? attachment.lifecycle;
-        console.warn(
-          `domfx showcase unavailable on ${target.element.id}: ${target.failure}`,
-          attachment.reasonDetail,
-        );
-        release(target);
-      } else {
-        attachment.time = timelineTime;
-        attachment.intensity = maximumIntensity * target.factor;
-      }
-    } catch (error) {
-      if (request === target.revision && !signal.aborted) {
-        target.failure = 'load or capture failed';
-        release(target);
-        console.error(`domfx showcase failed on ${target.element.id}:`, error);
-      }
-    } finally {
-      if (request === target.revision && !signal.aborted) {
-        target.loading = false;
-      }
-      if (!signal.aborted) {
-        schedule();
-      }
-    }
-  }
-
-  function syncTargets() {
-    for (const target of targets) {
-      if (!renderingPermitted() || !target.visible) {
-        if (target.attachment || target.loading) {
-          release(target);
-        }
-      } else if (!target.attachment && !target.loading && !target.failure) {
-        void attach(target);
-      }
-    }
-  }
-
   function tick(now: number) {
     frame = 0;
     if (signal.aborted) {
@@ -330,61 +249,9 @@ function initializePage() {
     }
     if (layoutDirty) {
       layoutDirty = false;
-      for (const target of targets) {
-        const rect = target.element.getBoundingClientRect();
-        const style = getComputedStyle(target.element);
-        const visible =
-          rect.width > 0 &&
-          rect.height > 0 &&
-          rect.bottom > 0 &&
-          rect.top < innerHeight &&
-          rect.right > 0 &&
-          rect.left < innerWidth &&
-          style.visibility !== 'hidden';
-        if (visible !== target.visible) {
-          target.failure = '';
-        }
-        target.visible = visible;
-        target.factor =
-          target.element.id === 'scroll-target'
-            ? Math.max(
-                0,
-                Math.min(
-                  1,
-                  1 -
-                    Math.abs(rect.top + rect.height / 2 - innerHeight / 2) /
-                      ((innerHeight + rect.height) / 2),
-                ),
-              )
-            : 1;
-      }
+      effects.refreshLayout();
     }
-    syncTargets();
-    const active = targets.some((target) => target.attachment?.lifecycle === 'active');
-    const running = active && renderingPermitted() && !preferences.paused;
-    if (running && lastTick) {
-      timelineTime += ((now - lastTick) / 1000) * motionSpeed;
-      if (motionLoop && timelineTime >= rangeEnd) {
-        timelineTime = rangeStart + ((timelineTime - rangeStart) % (rangeEnd - rangeStart));
-      }
-    }
-    lastTick = running ? now : 0;
-    for (const target of targets) {
-      const attachment = target.attachment;
-      if (!attachment) {
-        continue;
-      }
-      if (attachment.lifecycle === 'active' || attachment.reason === 'stale-raster') {
-        attachment.time = timelineTime;
-        const value = maximumIntensity * target.factor;
-        if (attachment.intensity !== value) {
-          attachment.intensity = value;
-        }
-      } else if (!target.loading) {
-        target.failure = attachment.reason ?? attachment.lifecycle;
-        release(target);
-      }
-    }
+    const running = effects.tick(now);
     updateControls();
     if (running) {
       schedule();
@@ -472,6 +339,7 @@ function initializePage() {
         number.value = String(value);
       }
       change(value);
+      syncEffects();
       promptDirty = true;
       updateControls();
       schedule();
@@ -495,13 +363,7 @@ function initializePage() {
     maximumIntensity = value / 100;
   });
   bindNumber(height, heightNumber, (value) => {
-    if (flameHeight !== value) {
-      flameHeight = value;
-      for (const target of targets) {
-        release(target);
-        target.failure = '';
-      }
-    }
+    flameHeight = value;
   });
   bindNumber(speed, speedNumber, (value) => {
     motionSpeed = value;
@@ -518,12 +380,9 @@ function initializePage() {
   }
   function updateRange() {
     motionLoop = loop.checked;
-    if (motionLoop) {
-      timelineTime = rangeStart;
-    }
+    syncEffects();
     syncRangeFields();
     promptDirty = true;
-    lastTick = 0;
     updateControls();
     schedule();
   }
@@ -553,11 +412,7 @@ function initializePage() {
     preferences.effect = value === 'fire' ? 'fire' : 'none';
     required<HTMLInputElement>(`input[name="effect"][value="${preferences.effect}"]`).checked =
       true;
-    for (const target of targets) {
-      release(target);
-      target.failure = '';
-    }
-    lastTick = 0;
+    syncEffects();
     promptDirty = true;
     remember();
     schedule();
@@ -575,10 +430,8 @@ function initializePage() {
       preferences.paused = !(preferences.paused || preferences.needsResume);
       preferences.needsResume = false;
       promptDirty = true;
-      lastTick = 0;
-      for (const target of targets) {
-        target.failure = '';
-      }
+      syncEffects();
+      effects.retry();
       remember();
       schedule();
       updateControls();
@@ -591,11 +444,8 @@ function initializePage() {
     if (reduced()) {
       preferences.paused = true;
       preferences.needsResume = true;
-      for (const target of targets) {
-        release(target);
-      }
     }
-    lastTick = 0;
+    syncEffects();
     remember();
     updateControls();
     schedule();
@@ -614,15 +464,14 @@ function initializePage() {
   document.addEventListener(
     'visibilitychange',
     () => {
-      lastTick = 0;
-      syncTargets(); // Release immediately; hidden pages may not receive another frame.
+      syncEffects(); // Release immediately; hidden pages may not receive another frame.
       invalidateLayout();
     },
     { signal },
   );
   const visibilityObserver = new IntersectionObserver(invalidateLayout);
   const sizeObserver = new ResizeObserver(invalidateLayout);
-  for (const { element } of targets) {
+  for (const element of targets) {
     visibilityObserver.observe(element);
     sizeObserver.observe(element);
   }
@@ -646,9 +495,7 @@ function initializePage() {
     sizeObserver.disconnect();
     dockObserver.disconnect();
     closePanel();
-    for (const target of targets) {
-      release(target);
-    }
+    effects.dispose();
   };
 }
 

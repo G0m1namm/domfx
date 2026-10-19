@@ -417,13 +417,24 @@ Object.assign(window, { recipe: { fire${kind === 'gsap' ? ', timeline, binding, 
       // Native mouse selection on the real heading; a synthetic Selection is no proof.
       const rect = await page.locator('#recipe-target').evaluate((element) => {
         window.releaseSelectionEvents = [];
-        for (const type of ['pointerdown', 'pointerup', 'selectionchange']) {
+        for (const type of [
+          'pointermove',
+          'pointerdown',
+          'pointerup',
+          'mousemove',
+          'mousedown',
+          'mouseup',
+          'selectionchange',
+        ]) {
           document.addEventListener(
             type,
             (event) => {
               window.releaseSelectionEvents.push({
                 type,
                 target: event.target?.id ?? event.target?.nodeName,
+                ...(event instanceof MouseEvent
+                  ? { x: event.clientX, y: event.clientY, buttons: event.buttons }
+                  : {}),
               });
             },
             { capture: true },
@@ -432,29 +443,48 @@ Object.assign(window, { recipe: { fire${kind === 'gsap' ? ', timeline, binding, 
         const range = document.createRange();
         range.selectNodeContents(element);
         const rect = range.getClientRects()[0];
-        return { left: rect.left, right: rect.right, y: rect.top + rect.height / 2 };
+        return {
+          left: rect.left,
+          right: rect.right,
+          y: rect.top + rect.height / 2,
+          bounds: rect.toJSON(),
+        };
       });
       const start = { x: rect.left + 1, y: rect.y };
       const end = { x: rect.right - 1, y: rect.y };
       const beforeSelection = await page.evaluate(
-        ({ start, end }) => ({
+        ({ start, end, textBounds }) => ({
+          start,
+          end,
+          textBounds,
           startHit: document.elementFromPoint(start.x, start.y)?.id,
           endHit: document.elementFromPoint(end.x, end.y)?.id,
           targetBounds: document.querySelector('#recipe-target').getBoundingClientRect().toJSON(),
           activeElement: document.activeElement?.id,
+          documentHasFocus: document.hasFocus(),
+          userSelect: getComputedStyle(document.querySelector('#recipe-target')).userSelect,
         }),
-        { start, end },
+        { start, end, textBounds: rect.bounds },
       );
       await page.mouse.move(rect.left + 1, rect.y);
       await page.mouse.down();
       await page.mouse.move(rect.right - 1, rect.y, { steps: 10 });
       await page.mouse.up();
-      const afterSelection = await page.evaluate(() => ({
-        selectedText: getSelection()?.toString() ?? '',
-        targetBounds: document.querySelector('#recipe-target').getBoundingClientRect().toJSON(),
-        activeElement: document.activeElement?.id,
-        events: window.releaseSelectionEvents,
-      }));
+      const afterSelection = await page.evaluate(
+        ({ start, end }) => ({
+          selectedText: getSelection()?.toString() ?? '',
+          anchorOffset: getSelection()?.anchorOffset ?? null,
+          focusOffset: getSelection()?.focusOffset ?? null,
+          selectionCollapsed: getSelection()?.isCollapsed ?? null,
+          targetBounds: document.querySelector('#recipe-target').getBoundingClientRect().toJSON(),
+          activeElement: document.activeElement?.id,
+          documentHasFocus: document.hasFocus(),
+          startHit: document.elementFromPoint(start.x, start.y)?.id,
+          endHit: document.elementFromPoint(end.x, end.y)?.id,
+          events: window.releaseSelectionEvents,
+        }),
+        { start, end },
+      );
       consumer.nativeSelection = { before: beforeSelection, after: afterSelection };
       assert.ok(afterSelection.selectedText.length > 0, 'native mouse selection');
       await recipeCanvas.screenshot({ path: join(cwd, 'heading-recipe.png') });

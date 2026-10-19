@@ -89,10 +89,10 @@ const setup = '/docs/installation';
     <aside class="effect-dock" id="playground" aria-label="Showcase controls" hidden>
       <section class="dock-panel" id="effect-panel" role="region" aria-labelledby="effect-title" hidden inert>
         <h2 class="dock-sr-only" id="effect-title">Effect</h2>
-        <div class="control-row"><span id="effect-choice-label">Effect</span><fieldset id="effect-presets" aria-labelledby="effect-choice-label"><legend class="dock-sr-only">Available effects</legend><label><input type="radio" name="effect" value="none" /><span>None</span></label><label><input type="radio" name="effect" value="fire" checked /><span>Fire</span></label></fieldset></div>
+        <div class="control-row"><span id="effect-choice-label">Effect</span><fieldset id="effect-presets" aria-labelledby="effect-choice-label"><legend class="dock-sr-only">Available effects</legend><label><input type="radio" name="effect" value="none" /><span>None</span></label><label><input type="radio" name="effect" value="fire" checked /><span>Fire</span></label><label><input type="radio" name="effect" value="electricity" /><span>Electricity</span></label><label><input type="radio" name="effect" value="frost" /><span>Frost</span></label><label><input type="radio" name="effect" value="kinetic" /><span>Kinetic bloom</span></label><label><input type="radio" name="effect" value="slime" /><span>Slime</span></label></fieldset></div>
         <div class="settings-fields">
           <div class="control-row"><label for="intensity-number">Intensity</label><label class="numeric-value"><input id="intensity-number" aria-label="Maximum intensity percent" type="number" min="0" max="100" step="5" value="70" /><span>%</span></label><p class="dock-sr-only">The scroll card peaks at this value. Other targets use it directly.</p></div>
-          <div class="slider-row"><div class="value-row"><label for="flame-height">Flame height</label><label class="numeric-value"><input id="height-number" aria-label="Flame height pixels" type="number" min="8" max="64" step="1" value="32" /><span>px</span></label></div><input id="flame-height" type="range" min="8" max="64" step="1" value="32" /></div>
+          <div class="slider-row" id="flame-height-row"><div class="value-row"><label for="flame-height">Flame height</label><label class="numeric-value"><input id="height-number" aria-label="Flame height pixels" type="number" min="8" max="64" step="1" value="32" /><span>px</span></label></div><input id="flame-height" type="range" min="8" max="64" step="1" value="32" /></div>
         </div>
       </section>
       <section class="dock-panel" id="motion-panel" role="region" aria-labelledby="motion-title" hidden inert>
@@ -100,7 +100,7 @@ const setup = '/docs/installation';
         <div class="settings-fields">
           <div class="slider-row"><div class="value-row"><label for="motion-speed">Speed</label><label class="numeric-value"><input id="speed-number" aria-label="Motion speed multiplier" type="number" min="0.1" max="2" step="0.1" value="1" /><span>×</span></label></div><input id="motion-speed" type="range" min="0.1" max="2" step="0.1" value="1" /></div>
           <div class="control-row"><span title="On repeats the selected range. Off runs continuously.">Range <span class="control-hint" aria-hidden="true">ⓘ</span></span><label class="segmented-switch"><span class="dock-sr-only">Repeat a range</span><input id="motion-loop" type="checkbox" role="switch" /><span class="switch-on" aria-hidden="true">On</span><span class="switch-off" aria-hidden="true">Off</span></label></div>
-          <div class="control-row"><span title="Set the beginning and end of the repeated Fire time range, in seconds.">Start / end <span class="control-hint" aria-hidden="true">ⓘ</span></span><div class="motion-range"><input id="range-start" aria-label="Range start seconds" type="number" min="0" max="119.95" step="0.05" value="0" disabled /><div class="range-track"><input id="range-start-slider" aria-label="Range start slider" type="range" min="0" max="10" step="0.05" value="0" disabled /><input id="range-end-slider" aria-label="Range end slider" type="range" min="0" max="10" step="0.05" value="10" disabled /></div><input id="range-end" aria-label="Range end seconds" type="number" min="0.05" max="120" step="0.05" value="10" disabled /></div></div>
+          <div class="control-row"><span title="Set the beginning and end of the repeated effect time range, in seconds.">Start / end <span class="control-hint" aria-hidden="true">ⓘ</span></span><div class="motion-range"><input id="range-start" aria-label="Range start seconds" type="number" min="0" max="119.95" step="0.05" value="0" disabled /><div class="range-track"><input id="range-start-slider" aria-label="Range start slider" type="range" min="0" max="10" step="0.05" value="0" disabled /><input id="range-end-slider" aria-label="Range end slider" type="range" min="0" max="10" step="0.05" value="10" disabled /></div><input id="range-end" aria-label="Range end seconds" type="number" min="0.05" max="120" step="0.05" value="10" disabled /></div></div>
           <div class="control-row"><span title="System reduced motion always takes priority over this page setting.">Reduce motion <span class="control-hint" aria-hidden="true">ⓘ</span></span><label class="segmented-switch"><span class="dock-sr-only">Reduce motion on this page</span><input id="reduce-motion" type="checkbox" /><span class="switch-on" aria-hidden="true">On</span><span class="switch-off" aria-hidden="true">Off</span></label></div>
           <p class="dock-sr-only" id="system-motion">System motion preference is being checked.</p>
         </div>
@@ -116,7 +116,7 @@ const setup = '/docs/installation';
       <div class="collapsed-bar">
         <div class="hero-demo-controls" role="group" aria-label="Demo controls">
           <label class="hero-effect-choice" for="hero-effect">Effect
-            <select id="hero-effect"><option value="fire">Fire</option><option value="none">None</option></select>
+            <select id="hero-effect"><option value="fire">Fire</option><option value="electricity">Electricity</option><option value="frost">Frost</option><option value="kinetic">Kinetic bloom</option><option value="slime">Slime</option><option value="none">None</option></select>
           </label>
           <div class="hero-intensity">
             <label for="effect-intensity">Intensity</label><output id="hero-intensity-value" for="effect-intensity">70%</output>
@@ -131,7 +131,7 @@ const setup = '/docs/installation';
         </div>
       </div>
     </aside>
-<p id="toolbar-instruction" class="visually-hidden" hidden>Use Effect and Motion to adjust Fire on the three live elements.</p>
+<p id="toolbar-instruction" class="visually-hidden" hidden>Use Effect and Motion to adjust the selected effect on the three live elements.</p>
           </div>
         </div>
       </section>

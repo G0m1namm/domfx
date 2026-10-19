@@ -490,3 +490,29 @@ implementation polish; explicit approved layout and brand choices take precedenc
 | 2026-09-30 | In-site user documentation approved                          | Grouped navigation and reading layout use ultrastorage and Fancy Components as references while retaining domfx typography, palette and verified contracts.                                             |
 
 The 2026-09-29 text-motion refinement follows user-provided recordings of Hungry Tiger, Telkom-OT and Iertqa: anchored artwork, independently moving copy, staggered reveals and a visible handoff to ordinary document scroll. Reference easing names are inferred, not recovered from their implementations.
+
+### Approved Frost direction
+
+Frost uses a mostly white, pale-blue granular coating that spreads inward across
+image, SVG and text contours as intensity rises. Higher intensity also increases
+white smoke height and brightness. Smoke has fine irregular wisps, accompanied by
+small diamond-shaped white ice grains. The original content remains visible and
+interactive. The maintainer approved this direction on 2026-10-18; automated and
+full lifecycle verification remain deferred until the visual exploration is complete.
+
+### Approved Kinetic bloom direction
+
+One silver-violet light pulse sweeps clockwise around the target and sheds small
+geometric fragments. Intensity increases the pulse width, brightness, violet wake,
+and fragment size and reach. Keep one Kinetic bloom option. The maintainer approved
+this direction on 2026-10-18; tests and full lifecycle verification remain deferred.
+
+### Slime exploration direction
+
+On 2026-10-18, the maintainer redirected the Lava exploration to Slime: a solid
+colored rim and gravity-driven droplets. On 2026-10-19, the maintainer replaced
+the inward fade with a solid coating and defined inner and outer boundaries;
+antialiasing is limited to contour coverage. Retain the slow stretching motion
+and remove incandescent cracks and heat shading. The maintainer approved the
+solid green coating and drip motion on 2026-10-19 as the checkpoint before
+exploring gloss and translucency. Tests and full lifecycle verification remain deferred.

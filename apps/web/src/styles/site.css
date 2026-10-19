@@ -265,6 +265,9 @@ body {
   padding: 0;
   border: 0;
 }
+#effect-choice-label {
+  align-self: start;
+}
 #effect-presets label {
   position: relative;
   flex: 1 0 72px;

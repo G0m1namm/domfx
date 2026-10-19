@@ -10,7 +10,7 @@ function required<T extends Element>(selector: string) {
 }
 
 type Preferences = {
-  effect: 'none' | 'fire';
+  effect: 'none' | 'fire' | 'electricity' | 'frost' | 'kinetic' | 'slime';
   paused: boolean;
   reduced: boolean;
   needsResume: boolean;
@@ -27,7 +27,14 @@ try {
   const saved: unknown = JSON.parse(sessionStorage.getItem('domfx-showcase') ?? 'null');
   if (saved && typeof saved === 'object' && 'effect' in saved) {
     preferences = {
-      effect: saved.effect === 'none' ? 'none' : 'fire',
+      effect:
+        saved.effect === 'none' ||
+        saved.effect === 'electricity' ||
+        saved.effect === 'frost' ||
+        saved.effect === 'kinetic' ||
+        saved.effect === 'slime'
+          ? saved.effect
+          : 'fire',
       paused: 'paused' in saved && saved.paused === true,
       reduced: 'reduced' in saved && saved.reduced === true,
       needsResume: 'needsResume' in saved && saved.needsResume === true,
@@ -64,6 +71,7 @@ function initializePage() {
   const intensityNumber = required<HTMLInputElement>('#intensity-number');
   const height = required<HTMLInputElement>('#flame-height');
   const heightNumber = required<HTMLInputElement>('#height-number');
+  const heightRow = required<HTMLElement>('#flame-height-row');
   const speed = required<HTMLInputElement>('#motion-speed');
   const speedNumber = required<HTMLInputElement>('#speed-number');
   const loop = required<HTMLInputElement>('#motion-loop');
@@ -134,7 +142,7 @@ function initializePage() {
     required<HTMLElement>('#prompt-summary').textContent =
       preferences.effect === 'none'
         ? 'None · Keep your HTML undecorated'
-        : `Fire · ${Math.round(maximumIntensity * 100)}% · ${flameHeight}px · ${motionSpeed}× · ${motionLoop ? `${rangeStart}–${rangeEnd}s loop` : 'Continuous'} · ${paused ? 'Paused' : 'Animate'}`;
+        : `${preferences.effect === 'fire' ? 'Fire' : preferences.effect === 'electricity' ? 'Electricity' : preferences.effect === 'frost' ? 'Frost' : preferences.effect === 'kinetic' ? 'Kinetic bloom' : 'Slime'} · ${Math.round(maximumIntensity * 100)}% · ${preferences.effect === 'fire' ? `${flameHeight}px · ` : ''}${motionSpeed}× · ${motionLoop ? `${rangeStart}–${rangeEnd}s loop` : 'Continuous'} · ${paused ? 'Paused' : 'Animate'}`;
     promptContent.textContent = createAgentPrompt({
       target: promptTarget.value.trim() || 'the main hero heading',
       effect: preferences.effect,
@@ -190,24 +198,29 @@ function initializePage() {
     play.setAttribute('aria-pressed', String(paused));
     play.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
     play.title = paused ? 'Resume' : 'Pause';
-    const effectLabel = preferences.effect === 'fire' ? 'Fire' : 'None';
+    const effectLabel =
+      preferences.effect === 'fire'
+        ? 'Fire'
+        : preferences.effect === 'electricity'
+          ? 'Electricity'
+          : preferences.effect === 'frost'
+            ? 'Frost'
+            : preferences.effect === 'kinetic'
+              ? 'Kinetic bloom'
+              : preferences.effect === 'slime'
+                ? 'Slime'
+                : 'None';
     panelTriggers[0].setAttribute('aria-label', `Effect settings: ${effectLabel}`);
     effectChoice.value = preferences.effect;
     const percent = `${Math.round(maximumIntensity * 100)}%`;
     if (intensityValue.value !== percent) {
       intensityValue.value = percent;
     }
-    for (const input of [
-      intensity,
-      intensityNumber,
-      height,
-      heightNumber,
-      speed,
-      speedNumber,
-      loop,
-    ]) {
+    for (const input of [intensity, intensityNumber, speed, speedNumber, loop]) {
       input.disabled = preferences.effect === 'none';
     }
+    heightRow.hidden = preferences.effect !== 'fire';
+    height.disabled = heightNumber.disabled = preferences.effect !== 'fire';
     for (const input of [start, end, startSlider, endSlider]) {
       input.disabled = preferences.effect === 'none' || !motionLoop;
     }
@@ -229,11 +242,11 @@ function initializePage() {
           : !hasGpu
             ? 'WebGPU is unavailable. Your HTML still works.'
             : preferences.needsResume
-              ? 'Select Resume to show Fire.'
+              ? `Select Resume to show ${effectLabel}.`
               : failed
                 ? 'Some effects are unavailable. The original elements still work.'
                 : loading
-                  ? 'Preparing Fire…'
+                  ? `Preparing ${effectLabel}…`
                   : '';
     status.hidden = statusText === '';
     if (status.textContent !== statusText) {
@@ -417,7 +430,14 @@ function initializePage() {
   }
   const effectPresets = required<HTMLFieldSetElement>('#effect-presets');
   function changeEffect(value: string) {
-    preferences.effect = value === 'fire' ? 'fire' : 'none';
+    preferences.effect =
+      value === 'fire' ||
+      value === 'electricity' ||
+      value === 'frost' ||
+      value === 'kinetic' ||
+      value === 'slime'
+        ? value
+        : 'none';
     required<HTMLInputElement>(`input[name="effect"][value="${preferences.effect}"]`).checked =
       true;
     syncEffects();

@@ -13,14 +13,17 @@ type Attach = (
     seed: number;
     time: number;
     intensity: number;
-    flameHeight: number;
+    flameHeight?: number;
   },
 ) => Attachment;
 
-type Adapters = { load?: () => Promise<Attach>; prepare?: (element: Element) => Promise<unknown> };
+type Adapters = {
+  load?: (effect: 'fire' | 'electricity' | 'frost' | 'kinetic' | 'slime') => Promise<Attach>;
+  prepare?: (element: Element) => Promise<unknown>;
+};
 
 export type EffectSettings = {
-  effect: 'none' | 'fire';
+  effect: 'none' | 'fire' | 'electricity' | 'frost' | 'kinetic' | 'slime';
   paused: boolean;
   reduced: boolean;
   needsResume: boolean;
@@ -45,9 +48,20 @@ type Target = {
   attachment?: Attachment;
 };
 
-async function loadFire(): Promise<Attach> {
-  const { attachFire } = await import('@domfx/browser');
-  return attachFire;
+async function loadEffect(
+  effect: 'fire' | 'electricity' | 'frost' | 'kinetic' | 'slime',
+): Promise<Attach> {
+  const { attachFire, attachElectricity, attachFrost, attachKinetic, attachSlime } =
+    await import('@domfx/browser');
+  return effect === 'fire'
+    ? attachFire
+    : effect === 'electricity'
+      ? attachElectricity
+      : effect === 'frost'
+        ? attachFrost
+        : effect === 'kinetic'
+          ? attachKinetic
+          : attachSlime;
 }
 
 async function prepareTarget(element: Element) {
@@ -82,7 +96,7 @@ function createEffectTargets(
     loading: false,
     failure: '',
   }));
-  const load = adapters.load ?? loadFire;
+  const load = adapters.load ?? loadEffect;
   const prepare = adapters.prepare ?? prepareTarget;
   let settings = { ...initial };
   let lastTick = 0;
@@ -90,7 +104,7 @@ function createEffectTargets(
 
   function permitted() {
     return (
-      settings.effect === 'fire' &&
+      settings.effect !== 'none' &&
       settings.hasGpu &&
       !settings.reduced &&
       !settings.needsResume &&
@@ -110,17 +124,21 @@ function createEffectTargets(
     const request = ++target.revision;
     target.loading = true;
     try {
-      const [attachFire] = await Promise.all([load(), prepare(target.element)]);
+      const effect = settings.effect;
+      if (effect === 'none') {
+        return;
+      }
+      const [attachEffect] = await Promise.all([load(effect), prepare(target.element)]);
       if (request !== target.revision || !permitted() || !target.visible || !target.host) {
         return;
       }
-      const attachment = attachFire(target.element, {
+      const attachment = attachEffect(target.element, {
         host: target.host,
         clock: 'manual',
         seed: 314,
         time: clock.time,
         intensity: settings.intensity * target.factor,
-        flameHeight: settings.flameHeight,
+        ...(effect === 'fire' ? { flameHeight: settings.flameHeight } : {}),
       });
       target.attachment = attachment;
       await attachment.ready;
@@ -168,7 +186,10 @@ function createEffectTargets(
   }
 
   function configure(next: EffectSettings) {
-    const replace = settings.flameHeight !== next.flameHeight;
+    const replace =
+      settings.effect === 'fire' &&
+      next.effect === 'fire' &&
+      settings.flameHeight !== next.flameHeight;
     const changeEffect = settings.effect !== next.effect;
     const resetTime =
       next.loop &&

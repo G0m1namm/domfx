@@ -1,5 +1,10 @@
 /** SSR-safe capture contracts and alpha classification. */
-export type EffectName = 'fire-edge';
+export type EffectName =
+  | 'fire-edge'
+  | 'electricity-edge'
+  | 'frost-edge'
+  | 'kinetic-edge'
+  | 'slime-edge';
 
 /** Stable codes for unavailable effects and temporary suspension. */
 export type EffectReason =

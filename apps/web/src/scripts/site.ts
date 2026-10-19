@@ -24,7 +24,15 @@ type Preferences = {
     | 'scanlines'
     | 'crosshatch'
     | 'diamonds'
-    | 'contour-echoes';
+    | 'contour-echoes'
+    | 'engraving'
+    | 'woven-mesh'
+    | 'hexagons'
+    | 'interference'
+    | 'shards'
+    | 'circuits'
+    | 'star-shimmer'
+    | 'brush-fringe';
   paused: boolean;
   reduced: boolean;
   needsResume: boolean;
@@ -54,7 +62,15 @@ try {
         saved.effect === 'scanlines' ||
         saved.effect === 'crosshatch' ||
         saved.effect === 'diamonds' ||
-        saved.effect === 'contour-echoes'
+        saved.effect === 'contour-echoes' ||
+        saved.effect === 'engraving' ||
+        saved.effect === 'woven-mesh' ||
+        saved.effect === 'hexagons' ||
+        saved.effect === 'interference' ||
+        saved.effect === 'shards' ||
+        saved.effect === 'circuits' ||
+        saved.effect === 'star-shimmer' ||
+        saved.effect === 'brush-fringe'
           ? saved.effect
           : 'fire',
       paused: 'paused' in saved && saved.paused === true,
@@ -164,7 +180,7 @@ function initializePage() {
     required<HTMLElement>('#prompt-summary').textContent =
       preferences.effect === 'none'
         ? 'None · Keep your HTML undecorated'
-        : `${preferences.effect === 'fire' ? 'Fire' : preferences.effect === 'electricity' ? 'Electricity' : preferences.effect === 'frost' ? 'Frost' : preferences.effect === 'kinetic' ? 'Kinetic bloom' : preferences.effect === 'slime' ? 'Slime' : preferences.effect === 'burned-paper' ? 'Burned paper' : preferences.effect === 'dither' ? 'Dither dissolve' : preferences.effect === 'halftone' ? 'Halftone' : preferences.effect === 'stipple' ? 'Stipple' : preferences.effect === 'scanlines' ? 'Scanlines' : preferences.effect === 'crosshatch' ? 'Crosshatch' : preferences.effect === 'diamonds' ? 'Diamond lattice' : preferences.effect === 'contour-echoes' ? 'Contour echoes' : 'None'} · ${Math.round(maximumIntensity * 100)}% · ${preferences.effect === 'fire' ? `${flameHeight}px · ` : ''}${motionSpeed}× · ${motionLoop ? `${rangeStart}–${rangeEnd}s loop` : 'Continuous'} · ${paused ? 'Paused' : 'Animate'}`;
+        : `${preferences.effect === 'fire' ? 'Fire' : preferences.effect === 'electricity' ? 'Electricity' : preferences.effect === 'frost' ? 'Frost' : preferences.effect === 'kinetic' ? 'Kinetic bloom' : preferences.effect === 'slime' ? 'Slime' : preferences.effect === 'burned-paper' ? 'Burned paper' : preferences.effect === 'dither' ? 'Dither dissolve' : preferences.effect === 'halftone' ? 'Halftone' : preferences.effect === 'stipple' ? 'Stipple' : preferences.effect === 'scanlines' ? 'Scanlines' : preferences.effect === 'crosshatch' ? 'Crosshatch' : preferences.effect === 'diamonds' ? 'Diamond lattice' : preferences.effect === 'contour-echoes' ? 'Contour echoes' : preferences.effect === 'engraving' ? 'Engraving' : preferences.effect === 'woven-mesh' ? 'Woven mesh' : preferences.effect === 'hexagons' ? 'Hexagonal dissolve' : preferences.effect === 'interference' ? 'Wave interference' : preferences.effect === 'shards' ? 'Prismatic shards' : preferences.effect === 'circuits' ? 'Circuit traces' : preferences.effect === 'star-shimmer' ? 'Star shimmer' : preferences.effect === 'brush-fringe' ? 'Brush fringe' : 'None'} · ${Math.round(maximumIntensity * 100)}% · ${preferences.effect === 'fire' ? `${flameHeight}px · ` : ''}${motionSpeed}× · ${motionLoop ? `${rangeStart}–${rangeEnd}s loop` : 'Continuous'} · ${paused ? 'Paused' : 'Animate'}`;
     promptContent.textContent = createAgentPrompt({
       target: promptTarget.value.trim() || 'the main hero heading',
       effect: preferences.effect,
@@ -247,7 +263,23 @@ function initializePage() {
                               ? 'Diamond lattice'
                               : preferences.effect === 'contour-echoes'
                                 ? 'Contour echoes'
-                                : 'None';
+                                : preferences.effect === 'engraving'
+                                  ? 'Engraving'
+                                  : preferences.effect === 'woven-mesh'
+                                    ? 'Woven mesh'
+                                    : preferences.effect === 'hexagons'
+                                      ? 'Hexagonal dissolve'
+                                      : preferences.effect === 'interference'
+                                        ? 'Wave interference'
+                                        : preferences.effect === 'shards'
+                                          ? 'Prismatic shards'
+                                          : preferences.effect === 'circuits'
+                                            ? 'Circuit traces'
+                                            : preferences.effect === 'star-shimmer'
+                                              ? 'Star shimmer'
+                                              : preferences.effect === 'brush-fringe'
+                                                ? 'Brush fringe'
+                                                : 'None';
     panelTriggers[0].setAttribute('aria-label', `Effect settings: ${effectLabel}`);
     effectChoice.value = preferences.effect;
     const percent = `${Math.round(maximumIntensity * 100)}%`;
@@ -481,7 +513,15 @@ function initializePage() {
       value === 'scanlines' ||
       value === 'crosshatch' ||
       value === 'diamonds' ||
-      value === 'contour-echoes'
+      value === 'contour-echoes' ||
+      value === 'engraving' ||
+      value === 'woven-mesh' ||
+      value === 'hexagons' ||
+      value === 'interference' ||
+      value === 'shards' ||
+      value === 'circuits' ||
+      value === 'star-shimmer' ||
+      value === 'brush-fringe'
         ? value
         : 'none';
     required<HTMLInputElement>(`input[name="effect"][value="${preferences.effect}"]`).checked =

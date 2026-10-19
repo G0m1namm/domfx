@@ -32,7 +32,15 @@ type Adapters = {
       | 'scanlines'
       | 'crosshatch'
       | 'diamonds'
-      | 'contour-echoes',
+      | 'contour-echoes'
+      | 'engraving'
+      | 'woven-mesh'
+      | 'hexagons'
+      | 'interference'
+      | 'shards'
+      | 'circuits'
+      | 'star-shimmer'
+      | 'brush-fringe',
   ) => Promise<Attach>;
   prepare?: (element: Element) => Promise<unknown>;
 };
@@ -52,7 +60,15 @@ export type EffectSettings = {
     | 'scanlines'
     | 'crosshatch'
     | 'diamonds'
-    | 'contour-echoes';
+    | 'contour-echoes'
+    | 'engraving'
+    | 'woven-mesh'
+    | 'hexagons'
+    | 'interference'
+    | 'shards'
+    | 'circuits'
+    | 'star-shimmer'
+    | 'brush-fringe';
   paused: boolean;
   reduced: boolean;
   needsResume: boolean;
@@ -91,7 +107,15 @@ async function loadEffect(
     | 'scanlines'
     | 'crosshatch'
     | 'diamonds'
-    | 'contour-echoes',
+    | 'contour-echoes'
+    | 'engraving'
+    | 'woven-mesh'
+    | 'hexagons'
+    | 'interference'
+    | 'shards'
+    | 'circuits'
+    | 'star-shimmer'
+    | 'brush-fringe',
 ): Promise<Attach> {
   const {
     attachFire,
@@ -107,6 +131,14 @@ async function loadEffect(
     attachCrosshatch,
     attachDiamonds,
     attachContourEchoes,
+    attachEngraving,
+    attachWovenMesh,
+    attachHexagons,
+    attachInterference,
+    attachShards,
+    attachCircuits,
+    attachStarShimmer,
+    attachBrushFringe,
   } = await import('@domfx/browser');
   return effect === 'fire'
     ? attachFire
@@ -132,7 +164,23 @@ async function loadEffect(
                         ? attachCrosshatch
                         : effect === 'diamonds'
                           ? attachDiamonds
-                          : attachContourEchoes;
+                          : effect === 'contour-echoes'
+                            ? attachContourEchoes
+                            : effect === 'engraving'
+                              ? attachEngraving
+                              : effect === 'woven-mesh'
+                                ? attachWovenMesh
+                                : effect === 'hexagons'
+                                  ? attachHexagons
+                                  : effect === 'interference'
+                                    ? attachInterference
+                                    : effect === 'shards'
+                                      ? attachShards
+                                      : effect === 'circuits'
+                                        ? attachCircuits
+                                        : effect === 'star-shimmer'
+                                          ? attachStarShimmer
+                                          : attachBrushFringe;
 }
 
 async function prepareTarget(element: Element) {

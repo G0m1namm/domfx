@@ -6,7 +6,15 @@ export type PatternEffect =
   | 'scanlines'
   | 'crosshatch'
   | 'diamonds'
-  | 'contour-echoes';
+  | 'contour-echoes'
+  | 'engraving'
+  | 'woven-mesh'
+  | 'hexagons'
+  | 'interference'
+  | 'shards'
+  | 'circuits'
+  | 'star-shimmer'
+  | 'brush-fringe';
 
-/** Shared controls for the six pattern-effect explorations. */
+/** Shared controls for the pattern-effect explorations. */
 export type PatternOptions = Omit<FireOptions, 'flameHeight'>;

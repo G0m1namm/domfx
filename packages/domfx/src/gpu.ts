@@ -257,6 +257,14 @@ export class GpuExperiment {
       crosshatch: patternPipeline('crosshatch'),
       diamonds: patternPipeline('diamonds'),
       'contour-echoes': patternPipeline('contour-echoes'),
+      engraving: patternPipeline('engraving'),
+      'woven-mesh': patternPipeline('woven-mesh'),
+      hexagons: patternPipeline('hexagons'),
+      interference: patternPipeline('interference'),
+      shards: patternPipeline('shards'),
+      circuits: patternPipeline('circuits'),
+      'star-shimmer': patternPipeline('star-shimmer'),
+      'brush-fringe': patternPipeline('brush-fringe'),
     };
   }
 
@@ -406,6 +414,14 @@ export class GpuExperiment {
         crosshatch: bindGroupFor('crosshatch'),
         diamonds: bindGroupFor('diamonds'),
         'contour-echoes': bindGroupFor('contour-echoes'),
+        engraving: bindGroupFor('engraving'),
+        'woven-mesh': bindGroupFor('woven-mesh'),
+        hexagons: bindGroupFor('hexagons'),
+        interference: bindGroupFor('interference'),
+        shards: bindGroupFor('shards'),
+        circuits: bindGroupFor('circuits'),
+        'star-shimmer': bindGroupFor('star-shimmer'),
+        'brush-fringe': bindGroupFor('brush-fringe'),
       };
       let disposed = false;
       const prepared: PreparedGpuFrame = {

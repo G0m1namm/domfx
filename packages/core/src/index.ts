@@ -12,7 +12,15 @@ export type EffectName =
   | 'scanlines-edge'
   | 'crosshatch-edge'
   | 'diamonds-edge'
-  | 'contour-echoes-edge';
+  | 'contour-echoes-edge'
+  | 'engraving-edge'
+  | 'woven-mesh-edge'
+  | 'hexagons-edge'
+  | 'interference-edge'
+  | 'shards-edge'
+  | 'circuits-edge'
+  | 'star-shimmer-edge'
+  | 'brush-fringe-edge';
 
 /** Stable codes for unavailable effects and temporary suspension. */
 export type EffectReason =

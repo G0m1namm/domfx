@@ -125,6 +125,70 @@ export function attachContourEchoes(target: Element, options: PatternOptions): E
   });
 }
 
+/** Attach the engraving exploration to a captured silhouette. */
+export function attachEngraving(target: Element, options: PatternOptions): EffectHandle {
+  return attachPatternWithAdapters(target, 'engraving', options, {
+    capture: captureElementWithReservation,
+    createRenderer: () => acquireRenderer(target.ownerDocument),
+  });
+}
+
+/** Attach the woven mesh exploration to a captured silhouette. */
+export function attachWovenMesh(target: Element, options: PatternOptions): EffectHandle {
+  return attachPatternWithAdapters(target, 'woven-mesh', options, {
+    capture: captureElementWithReservation,
+    createRenderer: () => acquireRenderer(target.ownerDocument),
+  });
+}
+
+/** Attach the hexagonal dissolve exploration to a captured silhouette. */
+export function attachHexagons(target: Element, options: PatternOptions): EffectHandle {
+  return attachPatternWithAdapters(target, 'hexagons', options, {
+    capture: captureElementWithReservation,
+    createRenderer: () => acquireRenderer(target.ownerDocument),
+  });
+}
+
+/** Attach the wave interference exploration to a captured silhouette. */
+export function attachInterference(target: Element, options: PatternOptions): EffectHandle {
+  return attachPatternWithAdapters(target, 'interference', options, {
+    capture: captureElementWithReservation,
+    createRenderer: () => acquireRenderer(target.ownerDocument),
+  });
+}
+
+/** Attach the prismatic shards exploration to a captured silhouette. */
+export function attachShards(target: Element, options: PatternOptions): EffectHandle {
+  return attachPatternWithAdapters(target, 'shards', options, {
+    capture: captureElementWithReservation,
+    createRenderer: () => acquireRenderer(target.ownerDocument),
+  });
+}
+
+/** Attach the circuit traces exploration to a captured silhouette. */
+export function attachCircuits(target: Element, options: PatternOptions): EffectHandle {
+  return attachPatternWithAdapters(target, 'circuits', options, {
+    capture: captureElementWithReservation,
+    createRenderer: () => acquireRenderer(target.ownerDocument),
+  });
+}
+
+/** Attach the star shimmer exploration to a captured silhouette. */
+export function attachStarShimmer(target: Element, options: PatternOptions): EffectHandle {
+  return attachPatternWithAdapters(target, 'star-shimmer', options, {
+    capture: captureElementWithReservation,
+    createRenderer: () => acquireRenderer(target.ownerDocument),
+  });
+}
+
+/** Attach the brush fringe exploration to a captured silhouette. */
+export function attachBrushFringe(target: Element, options: PatternOptions): EffectHandle {
+  return attachPatternWithAdapters(target, 'brush-fringe', options, {
+    capture: captureElementWithReservation,
+    createRenderer: () => acquireRenderer(target.ownerDocument),
+  });
+}
+
 export type { PatternEffect, PatternOptions } from './pattern-options.js';
 export type { DitherOptions } from './dither-options.js';
 export type { BurnedPaperOptions } from './burned-paper-options.js';

@@ -14,7 +14,15 @@ export function createAgentPrompt(settings: {
     | 'scanlines'
     | 'crosshatch'
     | 'diamonds'
-    | 'contour-echoes';
+    | 'contour-echoes'
+    | 'engraving'
+    | 'woven-mesh'
+    | 'hexagons'
+    | 'interference'
+    | 'shards'
+    | 'circuits'
+    | 'star-shimmer'
+    | 'brush-fringe';
   intensity: number;
   flameHeight: number;
   time: number;
@@ -56,7 +64,23 @@ export function createAgentPrompt(settings: {
                         ? 'Diamond lattice'
                         : settings.effect === 'contour-echoes'
                           ? 'Contour echoes'
-                          : 'Electricity';
+                          : settings.effect === 'engraving'
+                            ? 'Engraving'
+                            : settings.effect === 'woven-mesh'
+                              ? 'Woven mesh'
+                              : settings.effect === 'hexagons'
+                                ? 'Hexagonal dissolve'
+                                : settings.effect === 'interference'
+                                  ? 'Wave interference'
+                                  : settings.effect === 'shards'
+                                    ? 'Prismatic shards'
+                                    : settings.effect === 'circuits'
+                                      ? 'Circuit traces'
+                                      : settings.effect === 'star-shimmer'
+                                        ? 'Star shimmer'
+                                        : settings.effect === 'brush-fringe'
+                                          ? 'Brush fringe'
+                                          : 'Electricity';
   const api = isFire
     ? 'attachFire'
     : isFrost
@@ -81,7 +105,23 @@ export function createAgentPrompt(settings: {
                         ? 'attachDiamonds'
                         : settings.effect === 'contour-echoes'
                           ? 'attachContourEchoes'
-                          : 'attachElectricity';
+                          : settings.effect === 'engraving'
+                            ? 'attachEngraving'
+                            : settings.effect === 'woven-mesh'
+                              ? 'attachWovenMesh'
+                              : settings.effect === 'hexagons'
+                                ? 'attachHexagons'
+                                : settings.effect === 'interference'
+                                  ? 'attachInterference'
+                                  : settings.effect === 'shards'
+                                    ? 'attachShards'
+                                    : settings.effect === 'circuits'
+                                      ? 'attachCircuits'
+                                      : settings.effect === 'star-shimmer'
+                                        ? 'attachStarShimmer'
+                                        : settings.effect === 'brush-fringe'
+                                          ? 'attachBrushFringe'
+                                          : 'attachElectricity';
   const handle = isFire
     ? 'fire'
     : isFrost
@@ -106,7 +146,23 @@ export function createAgentPrompt(settings: {
                         ? 'diamonds'
                         : settings.effect === 'contour-echoes'
                           ? 'contourEchoes'
-                          : 'electricity';
+                          : settings.effect === 'engraving'
+                            ? 'engraving'
+                            : settings.effect === 'woven-mesh'
+                              ? 'wovenMesh'
+                              : settings.effect === 'hexagons'
+                                ? 'hexagons'
+                                : settings.effect === 'interference'
+                                  ? 'interference'
+                                  : settings.effect === 'shards'
+                                    ? 'shards'
+                                    : settings.effect === 'circuits'
+                                      ? 'circuits'
+                                      : settings.effect === 'star-shimmer'
+                                        ? 'starShimmer'
+                                        : settings.effect === 'brush-fringe'
+                                          ? 'brushFringe'
+                                          : 'electricity';
   const sizeSetting = isFire ? `, flameHeight ${settings.flameHeight} CSS pixels` : '';
   const sizeOption = isFire ? `, flameHeight: ${settings.flameHeight}` : '';
   const manual = settings.loop || settings.speed !== 1;

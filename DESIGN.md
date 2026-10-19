@@ -544,3 +544,28 @@ and Contour echoes on 2026-10-19. Preserve their distinct silver-violet marks an
 shared silhouette-following intensity controls alongside the original Dither.
 This approves their visual direction; automated and full lifecycle verification
 remain deferred until the effect exploration is complete.
+
+### Marketing gallery exploration
+
+On 2026-10-19, the maintainer selected Gallery as the marketing prototype direction,
+with Spotlight's alternating two-wide and three-across card arrangement. Keep card
+metadata focused on effect names and categories; remove the promotional taglines.
+Phosphor icons, cleaner control primitives and Lab Mono are being evaluated locally.
+The next local refinement uses a fixed full-width header with the same subtle 1px
+border as cards and inputs, downward effect output below the divider, and more
+space above the hero title and between the hero and collection filters. Remove
+decorative card eyebrows, artificial numbering and redundant promotional copy.
+The header rotation uses the Patterns collection except Star shimmer; lower
+intensity to zero before switching effects, then ease intensity back up. Keep
+this effect visible throughout scrolling, with a slightly longer downward reach.
+Cards retain plain resting surfaces and gain subtle gray illumination on hover
+or keyboard focus.
+The next exploration keeps this header, hero and gallery shared across all variants.
+Only the supporting content changes: setup-led, GSAP-led and compact benefit-led
+approaches, with original domfx copy informed by Canvas UI’s adoption guidance.
+The maintainer selected Setup (variant A) for the supporting content, with variant B’s
+GSAP section: the timeline illustration, binding example and playback-method overview.
+Keep the setup walkthrough first, followed by this GSAP section, the native HTML
+example and FAQ. Name GSAP in the section heading and apply Fire only to the
+word “GSAP”, keeping the surrounding heading text plain.
+This records the chosen composition; the production homepage migration remains pending.

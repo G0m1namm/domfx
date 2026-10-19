@@ -1,5 +1,6 @@
 ---
 import { Code } from 'astro:components';
+import DocsFireLab from '../../components/DocsFireLab.astro';
 import { codeTheme, standaloneCode } from '../../content/examples';
 import Documentation from '../../layouts/Documentation.astro';
 ---
@@ -12,6 +13,7 @@ if (!(host instanceof HTMLElement) || !target) {
 }`} lang="ts" theme={codeTheme} /></div>
   <h2 id="attach-fire">Attach Fire</h2>
   <p>Add the following code to the same module. The ambient clock advances automatically. Fonts are ready before capture, and teardown is registered before initialization settles.</p>
+  <DocsFireLab title="Tune the attachment" description="Change the two Fire inputs before copying the full setup below. The native text stays available beneath its decorative canvas." />
   <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Standalone ambient attachment example"><Code code={standaloneCode} lang="ts" theme={codeTheme} /></div>
   <p>On component unmount, call <code>fire.dispose()</code> and remove your own listeners. The pagehide handler covers leaving the page; it does not replace framework teardown.</p>
   <h2 id="control-time">Control time and intensity</h2>

@@ -43,10 +43,10 @@ await fire.ready;`;
 export const codeTheme = {
   name: 'domfx',
   type: 'dark' as const,
-  colors: { 'editor.background': '#14151B', 'editor.foreground': '#E8EAF3' },
+  colors: { 'editor.background': '#101117', 'editor.foreground': '#F4F5FB' },
   tokenColors: [
     { scope: ['comment'], settings: { foreground: '#AEB1C1' } },
-    { scope: ['keyword', 'storage', 'entity.name.function'], settings: { foreground: '#C2C5DB' } },
+    { scope: ['keyword', 'storage', 'entity.name.function'], settings: { foreground: '#D7DAEE' } },
     { scope: ['string'], settings: { foreground: '#E6DC6A' } },
     { scope: ['constant.numeric'], settings: { foreground: '#9ED9AD' } },
   ],

@@ -109,6 +109,53 @@ test('documentation keyboard navigation reaches guides and scrolls code', async 
   await expect(page.locator('canvas')).toHaveCount(0);
 });
 
+test('the Fire lab preserves its source content when WebGPU is unavailable', async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
+  await page.goto('/docs/standalone');
+  const lab = page.locator('[data-docs-fire-lab]');
+  await lab.scrollIntoViewIfNeeded();
+  await expect(lab).toHaveAttribute('data-status', 'unavailable');
+  await expect(lab.getByText('domfx', { exact: true })).toBeVisible();
+  await expect(lab.locator('canvas')).toHaveCount(0);
+  await expect(lab.getByRole('button', { name: 'Effects unavailable' })).toBeDisabled();
+});
+
+test('the Fire lab attaches, updates and disposes one real effect', async ({ page }) => {
+  await page.goto('/docs/standalone');
+  const lab = page.locator('[data-docs-fire-lab]');
+  await lab.scrollIntoViewIfNeeded();
+  const supportsGpu = await page.evaluate(() => 'gpu' in navigator && Boolean(navigator.gpu));
+  test.skip(!supportsGpu, 'WebGPU is unavailable in this browser');
+  await expect(lab).toHaveAttribute('data-status', 'active');
+  const canvas = lab.locator('canvas');
+  await expect(canvas).toHaveCount(1);
+  await expect(canvas).toHaveAttribute('aria-hidden', 'true');
+  await expect(canvas).toHaveCSS('pointer-events', 'none');
+  expect(
+    await lab.locator('[data-docs-fire-host]').evaluate((host) => getComputedStyle(host).overflow),
+  ).toBe('visible');
+
+  const intensity = lab.locator('[data-docs-intensity]');
+  await intensity.fill('45');
+  await expect(lab.locator('[data-docs-intensity-code]')).toHaveText('0.45');
+
+  const height = lab.locator('[data-docs-height]');
+  await height.fill('44');
+  await height.press('Tab');
+  await expect(lab).toHaveAttribute('data-status', 'active');
+  await expect(canvas).toHaveCount(1);
+
+  const toggle = lab.locator('[data-docs-fire-toggle]');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(lab).toHaveAttribute('data-status', 'paused');
+  await toggle.click();
+  await expect(lab).toHaveAttribute('data-status', 'active');
+
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
+  await expect(canvas).toHaveCount(0);
+});
+
 // Bundle the rendered code verbatim with only its caller-provided DOM and exports.
 // No copied example, package alias, capture mock or renderer transform is involved.
 async function loadDisclosure(page: Page, kind: keyof typeof disclosures, path: string) {

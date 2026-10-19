@@ -1,5 +1,6 @@
 ---
 import { Code } from 'astro:components';
+import DocsFireLab from '../../components/DocsFireLab.astro';
 import { codeTheme, gsapCode } from '../../content/examples';
 import Documentation from '../../layouts/Documentation.astro';
 ---
@@ -15,6 +16,7 @@ if (!(host instanceof HTMLElement) || !target) {
   <p>To use your own heading, replace the preview button with <code>&lt;h1 id="target"&gt;Your heading&lt;/h1&gt;</code> inside the positioned host. Keep the heading's text selectable; the effect uses a separate decorative canvas.</p>
   <h2 id="build-your-sequence">Build your sequence</h2>
   <p>Add this to the same module. The host fades in over half a second; Fire then moves from time 0 to 4 and intensity 0.8 to 0.4 over four seconds. Fade the host so the original target and its effect share opacity. Fading the target alone is unsupported composition.</p>
+  <DocsFireLab title="Inspect the attachment" description="This is an independent ambient Fire attachment. The guide below shows how a GSAP timeline instead becomes the single animation owner." />
   <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Full manual attachment and GSAP lifecycle example"><Code code={gsapCode} lang="ts" theme={codeTheme} /></div>
   <h2 id="seek-and-play">Seek and play</h2>
   <p>Use <code>timeline.play()</code>, <code>pause()</code>, <code>seek()</code> or <code>reverse()</code>. At <code>timeline.seek(2.5)</code>, Fire has time 2 and intensity 0.6. Seeking backward to 1.5 gives time 1 and intensity 0.7. Default callback-suppressed seeking still updates the controls.</p>

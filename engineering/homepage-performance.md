@@ -13,6 +13,16 @@ The first context also exercises scrolling, quick intensity changes, Pause, redu
 motion, offscreen and hidden return, the background and GSAP player, warm navigation
 and teardown. Increase repetitions with `DOMFX_HOMEPAGE_TRIALS`; set
 `DOMFX_HOMEPAGE_DURATION_MS` for each ordinary window.
+The first None context for each profile also runs `captureElement` once per
+configured trial per authored target after all ordinary comparisons (three trials
+by default). These time the existing
+capture adapter against the production DOM with the current flame-height-derived
+padding; they are isolated diagnostic calls, not the site's startup capture
+intervals. The runner records each effect canvas insertion time during
+initialization as an attachment proxy. It attempts a second native tab after the
+separate synthetic visibility check and reports native hide/return only if the
+original tab actually becomes hidden. Adapter `timestamp-query` support is
+recorded without making a GPU timing claim about the public attachment path.
 
 Fire/None uses the same production page and assets. The player and background start
 still. Their still/play comparisons run after selecting None and scrolling the same
@@ -37,11 +47,11 @@ First canvas is an initialization proxy, not an exact capture or GPU interval.
 RSS covers the browser's reported processes, includes shared browser overhead,
 and cannot be assigned exclusively to one target. Heap deltas are gauge changes,
 not allocated bytes. Long-task observation does not capture all main-thread work.
-The public homepage exposes no exact capture count, managed GPU reservation count or
-GPU timestamp. Canvas additions/removals expose a subset of attachment churn; canvas
-pixel counts do not measure GPU usage. Allocation sampling is statistical, not an
-exact count. Inspect retained traces/profiles before attributing a repeated hotspot,
-and report unavailable quantities explicitly.
+The public homepage exposes no exact live capture count, managed GPU reservation
+count or GPU timestamp. Canvas additions/removals expose a subset of attachment
+churn; canvas pixel counts do not measure GPU usage. Allocation sampling is
+statistical, not an exact count. Inspect retained traces/profiles before
+attributing a repeated hotspot, and report unavailable quantities explicitly.
 
 The runner records every condition and failure; exit zero means collection completed,
 not that a performance budget passed. #37 owns website budget decisions, so this
@@ -197,14 +207,11 @@ are no GPU timestamp queries on this public path.
 ## Decision and follow-up boundary
 
 No website budget was approved in #37, so no pass/fail verdict is assigned.
-**No optimization is approved from this baseline alone.** The repeated Fire
-layout/style and `scaleToViewport` allocation work is a bounded follow-up candidate
-if slower real hardware or an approved responsiveness budget shows a problem.
-First isolate which Fire frame action invalidates layout on the production page;
-only then compare a small candidate on identical fixed-time pixels and lifecycle
-behavior. Expected benefit is fewer layout/JS allocations if that action is
-causal; implementation complexity is moderate because scheduling and ownership
-must stay correct. The rapid flame-height stress is lower priority: it triggers
+**No broad optimization is approved from this baseline alone.** The later
+controlled probe below isolated repeated Fire layout to unchanged homepage label
+writes. Equality guards at those two writes are the bounded correction; the
+remaining style and `scaleToViewport` allocation work has no demonstrated
+responsiveness cost here. The rapid flame-height stress is lower priority: it triggers
 expected recapture churn, and any app-level coalescing would need a real input
 frequency and visual-response requirement before changing behavior. The player and
 background evidence does not justify a rewrite. The WebGPU format warning is an
@@ -212,3 +219,119 @@ observed condition, not a measured bottleneck; any investigation must isolate it
 cost and preserve rendered output correctness. Real mobile hardware, native
 hidden-tab behavior, managed/GPU memory instrumentation and GPU pass timings remain
 separate evidence gaps.
+
+## Follow-up layout attribution, 2026-10-18 UTC
+
+The baseline traces contained 184–185 full-document Layout events in each Fire
+diagnostic window and none in the None windows. Each Fire Layout followed a
+homepage script callback; the trace alone did not prove which operation dirtied
+layout. The app calls `updateControls()` on every active Fire frame, including
+unchanged assignments to the playback and system-motion labels. A bounded
+page-side diagnostic suppressed only assignments of the existing text to those
+two labels. It did not change application or library source.
+
+Four fresh headed Chromium contexts ran serially at 1440 × 900 DPR 1 on the same
+40-file production build (`6f20cba1f8313b222cc5e789857e55978c17f564c926732b7c583c506099bd45`):
+None, Fire, guarded Fire, Fire. Each had three 1.5-second CDP Performance windows
+after a 1.5-second warmup. Layout counts were 0/0/0 for None,
+180/181/180 for Fire, 0/0/0 for guarded Fire, and 181/179/180 for the
+return Fire control. The guard skipped 1,451 unchanged text assignments while
+three Fire canvases stayed attached. All contexts reported the requested effect,
+visible page and no page errors. Style recalculation stayed at 180–181 per
+guarded window, so the experiment isolates the repeated layout invalidation,
+not all style work. CDP task time overlapped across Fire and guarded Fire;
+this small sample establishes neither a user-visible latency improvement nor a
+budget result.
+
+The probe used source revision `8d7eeecbf4faa1ea4609de19147b23abd09770d4`
+with only measurement-script edits, lockfile SHA-256
+`9fd9ab1136ae32a42690f0ef80763d4a47cf468cc8f2343cab20991d2b1f8b89`,
+Playwright Chromium 153.0.8010.12 and ignored local script SHA-256
+`0f7dd44d84ffdcfe37e85f4267069c87e9a6e6b7fb443c75206585f85db1adac`.
+Raw windows remain in `.scratch/homepage-layout-probe.json`. The finding supports
+guarding unchanged control text at its owning site call; later evidence must
+verify real source changes, interaction, fixed-time output and lifecycle behavior.
+
+## Guarded page comparison and remaining gaps
+
+The production source then gained equality guards for the playback and system
+motion label writes only. A website regression observed zero redundant mutations
+over eight active Fire frames, while Pause/Resume and system motion text still
+changed when their states changed. It failed against the original source (16
+mutations in each development and production run) and passed after the guards
+(2/2 focused browser cases). This is a label behavior check; unchanged broad
+website verification is deferred to final combined integration.
+
+Two complete, serial 18-context runs used the same earlier measurement script
+SHA-256
+`f964a21a2b4dee04dfc2c1732592292081a8f4998f4b2b8350d483ea958d95ca`,
+lockfile SHA-256
+`9fd9ab1136ae32a42690f0ef80763d4a47cf468cc8f2343cab20991d2b1f8b89`,
+and source base `8d7eeecbf4faa1ea4609de19147b23abd09770d4`.
+The pre-guard raw report is
+`.scratch/homepage-performance/2026-10-18T23-44-08-807Z/report.json` with build
+SHA-256 `6f20cba1f8313b222cc5e789857e55978c17f564c926732b7c583c506099bd45`;
+the post-guard report is
+`.scratch/homepage-performance/2026-10-18T23-51-16-226Z/report.json` with build
+SHA-256 `e5751e62fb316c6ebcb8875669ac965e2cac3ceb5f504c6b1030cbc667b3da84`.
+Both completed all 18 contexts without collection errors. These runs started
+after a separate source-only check ended at 23:41:33 UTC; an earlier failed
+instrumentation run that overlapped that check is excluded. Each profile had
+nine ordinary steady windows for Fire and nine for None. Pre-guard Fire had
+181–182 Layout increments per 1.5-second window across desktop DPR 1/2 and
+narrow DPR 2; post-guard Fire had zero in every window. None had zero throughout.
+Fire main-thread task increments varied and overlapped before and after, and
+rAF P95 stayed around 9 ms; the runs do not establish a broad latency win.
+This removes the specific repeated layout invalidation, not all style updates.
+
+Canvas insertion timestamps in the first Fire context show heading, SVG and
+image attachment at 176.4/182.1/190.2 ms from navigation start before the
+guard and 181.8/187.5/197.9 ms after it at desktop DPR 1. Desktop DPR 2 was
+179.7/187.6/195.2 ms before and 178.0/187.5/192.5 ms after; narrow DPR 2 was
+174.4/185.2/191.6 ms before and 171.5/185.1/193.8 ms after. These are DOM
+attachment proxies; they cannot separate capture, renderer preparation or GPU
+execution. Both complete matrices used that earlier script, before the current
+startup-observer disconnect change; they provide no retrospective performance or
+latency claim about the current script. The public `captureElement` diagnostic in
+those complete runs used
+its default 32 CSS px padding, so its raster sizes and wall times do not match
+the live Fire capture's 42 CSS px padding. A later bounded supplement with
+script SHA-256
+`88bc0e4b3716c84252727ca0933e4169d7ac27885145b939f90e4e325d65af5e`
+used the post-guard build and recorded 42 CSS px padding. Its desktop DPR 1
+first None context has three isolated serial samples for each authored target
+in `.scratch/homepage-performance/2026-10-18T23-59-01-386Z/report.json`:
+image 72.5/35.4/26.5 ms at 340 × 276 px, SVG 11.0/7.2/7.2 ms at
+340 × 276 px, heading 9.2/6.1/6.1 ms at 308 × 191 px, and installation
+action 13.3/8.2/11.5 ms at 228 × 128 px. This run was deliberately stopped
+after the bounded supplement; its report retains `outcome: running` and seven
+completed contexts and is not a third comparable matrix. None of these adapter
+calls is a live page startup interval or GPU duration.
+
+A separate bounded narrow DPR 2 probe closed the missing matched-padding row.
+On the same post-guard build (`e5751e62fb316c6ebcb8875669ac965e2cac3ceb5f504c6b1030cbc667b3da84`),
+headed Chromium 153.0.8010.12 on macOS 26.6.2 at 360 × 780 used the Apple `metal-3` adapter,
+Fire None, still background/player and no reduced motion. Each authored target
+was scrolled into view and checked for stable dimensions, visible paint and no
+effect canvas before three serial public `captureElement` calls; every frame
+was released. With the live flame-height-derived 42 CSS px padding, image
+captures were 73.8/25.4/23.8 ms at 680 × 552 px, SVG 14.5/10.3/9.6 ms at
+680 × 552 px, heading 18.9/8.7/7.6 ms at 428 × 360 px, and installation
+action 24.3/11.4/10.7 ms at 456 × 256 px. The current runner script SHA-256
+was `a9436e7b36917a1331977d48c134a12ea3dc82e2664c2810c504bbf1fa8bd8c1`;
+the standalone probe SHA-256 was
+`c647f50cde5bfb3787aac6bf64f069f737818d86f06cfdd89ef122f56584f5b5`.
+Raw state, dimensions, wall times and errors are retained in ignored
+`.scratch/narrow-capture-results.json`. These isolated captures are diagnostic
+adapter calls, not visible Fire attachments, live startup intervals or GPU
+timings. No full matrix ran with the current runner script.
+
+The Apple `metal-3` adapter advertised `timestamp-query`, but the public Fire
+attachment path did not request a query; GPU pass duration and actual VRAM
+remain unmeasured. A second Chromium tab did not make the original tab report
+`document.hidden` on this headed macOS host, so actual native hide/return is
+unavailable. The separate synthetic visibility test remains lifecycle evidence
+only. Process RSS and logical reservation estimates retain their original
+limitations. Real mobile hardware was unavailable. With no approved website
+budget or reproduced remaining bottleneck, broader runtime work is a bounded
+no-go pending direct evidence on representative devices.

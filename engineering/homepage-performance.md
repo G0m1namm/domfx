@@ -13,16 +13,15 @@ The first context also exercises scrolling, quick intensity changes, Pause, redu
 motion, offscreen and hidden return, the background and GSAP player, warm navigation
 and teardown. Increase repetitions with `DOMFX_HOMEPAGE_TRIALS`; set
 `DOMFX_HOMEPAGE_DURATION_MS` for each ordinary window.
-The first None context for each profile also runs `captureElement` once per
-configured trial per authored target after all ordinary comparisons (three trials
-by default). These time the existing
-capture adapter against the production DOM with the current flame-height-derived
-padding; they are isolated diagnostic calls, not the site's startup capture
-intervals. The runner records each effect canvas insertion time during
-initialization as an attachment proxy. It attempts a second native tab after the
-separate synthetic visibility check and reports native hide/return only if the
-original tab actually becomes hidden. Adapter `timestamp-query` support is
-recorded without making a GPU timing claim about the public attachment path.
+The public homepage does not expose an exact live capture count or resource ledger.
+The runner records effect canvas insertions and per-host canvas counts as attachment
+proxies, not capture or GPU intervals. Its production bundle tree-shakes the unused
+public `captureElement` export, so the runner deliberately does not load a separate
+diagnostic module: doing so would not measure the production homepage path. It
+attempts a second native tab after the separate synthetic visibility check and
+reports native hide/return only if the original tab actually becomes hidden. Adapter
+`timestamp-query` support is recorded without making a GPU timing claim about the
+public attachment path.
 
 Fire/None uses the same production page and assets. The player and background start
 still. Their still/play comparisons run after selecting None and scrolling the same
@@ -292,8 +291,8 @@ guard and 181.8/187.5/197.9 ms after it at desktop DPR 1. Desktop DPR 2 was
 attachment proxies; they cannot separate capture, renderer preparation or GPU
 execution. Both complete matrices used that earlier script, before the current
 startup-observer disconnect change; they provide no retrospective performance or
-latency claim about the current script. The public `captureElement` diagnostic in
-those complete runs used
+latency claim about the current script. The historical isolated `captureElement`
+diagnostic in those complete runs used
 its default 32 CSS px padding, so its raster sizes and wall times do not match
 the live Fire capture's 42 CSS px padding. A later bounded supplement with
 script SHA-256
@@ -308,6 +307,25 @@ after the bounded supplement; its report retains `outcome: running` and seven
 completed contexts and is not a third comparable matrix. None of these adapter
 calls is a live page startup interval or GPU duration.
 
+The first capture-adapter diagnostic was attempted at 2026-10-19 01:06 UTC on
+clean source revision `c6805fea03845c26ff6993ff83eb513ebc9e1da5`, with production
+build SHA-256 `12a8ac42a6a237cdb0db6565e62cb8bdac25553767e56851dfc0cbd29f2e03a6`
+and measurement-script SHA-256
+`a9436e7b36917a1331977d48c134a12ea3dc82e2664c2810c504bbf1fa8bd8c1`. All three
+`None` conditions failed because `captureElement` was not a function; each had
+four failed target calls. Their corresponding `Fire` conditions completed, but
+the overall diagnostic was incomplete and provides no successful adapter
+captures. The ignored raw report is
+`.scratch/homepage-performance/2026-10-19T01-06-51-773Z/report.json`.
+Subsequent diagnostic attempts failed separately during module-path resolution,
+bare `typegpu` dependency resolution, and a browser-side `process` reference;
+their incomplete reports are retained at
+`.scratch/homepage-performance/2026-10-19T01-20-12-312Z/report.json`,
+`.scratch/homepage-performance/2026-10-19T01-29-35-345Z/report.json`, and
+`.scratch/homepage-performance/2026-10-19T01-31-44-710Z/report.json`.
+The completed direct adapter observations documented below are separate from
+these failed runner diagnostics.
+
 A separate bounded narrow DPR 2 probe closed the missing matched-padding row.
 On the same post-guard build (`e5751e62fb316c6ebcb8875669ac965e2cac3ceb5f504c6b1030cbc667b3da84`),
 headed Chromium 153.0.8010.12 on macOS 26.6.2 at 360 × 780 used the Apple `metal-3` adapter,
@@ -317,7 +335,7 @@ effect canvas before three serial public `captureElement` calls; every frame
 was released. With the live flame-height-derived 42 CSS px padding, image
 captures were 73.8/25.4/23.8 ms at 680 × 552 px, SVG 14.5/10.3/9.6 ms at
 680 × 552 px, heading 18.9/8.7/7.6 ms at 428 × 360 px, and installation
-action 24.3/11.4/10.7 ms at 456 × 256 px. The current runner script SHA-256
+action 24.3/11.4/10.7 ms at 456 × 256 px. The probe-era runner script SHA-256
 was `a9436e7b36917a1331977d48c134a12ea3dc82e2664c2810c504bbf1fa8bd8c1`;
 the standalone probe SHA-256 was
 `c647f50cde5bfb3787aac6bf64f069f737818d86f06cfdd89ef122f56584f5b5`.

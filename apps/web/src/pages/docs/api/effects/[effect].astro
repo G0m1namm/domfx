@@ -1,6 +1,8 @@
 ---
 import { Code } from 'astro:components';
 import DocsApiTable from '../../../../components/DocsApiTable.astro';
+import DocsEffectLab from '../../../../components/DocsEffectLab.astro';
+import DocsEffectLinks from '../../../../components/docs-effect-links.astro';
 import DocsEffectControls from '../../../../components/docs-effect-controls.astro';
 import DocsSharedOptions from '../../../../components/docs-shared-options.astro';
 import { effectReference } from '../../../../content/effect-reference';
@@ -14,6 +16,7 @@ export function getStaticPaths() {
 interface Props { effect: Effect; }
 const { effect } = Astro.props;
 const reference = effectReference[effect.id];
+const related = effects.filter((entry) => entry.category === effect.category && entry.id !== effect.id);
 const optionsType = effect.category === 'Pattern' && effect.id !== 'dither'
   ? 'PatternOptions'
   : `${effect.exportName.slice('attach'.length)}Options`;
@@ -33,10 +36,17 @@ if (effect.lifecycle !== 'active') {
 }`;
 ---
 <Documentation>
-  <nav class="docs-page-links" aria-label="On this page"><ul>
+  <DocsEffectLab effect={effect} />
+  <dl class="docs-effect-facts">
+    <div><dt>Category</dt><dd><a href={`/docs/api/effects#${effect.category.toLowerCase()}`}>{effect.category}</a></dd></div>
+    <div><dt>Function</dt><dd><code>{effect.exportName}</code></dd></div>
+    <div><dt>Options</dt><dd><code>{optionsType}</code></dd></div>
+    <div><dt>Package</dt><dd><code>@domfx/browser</code></dd></div>
+  </dl>
+  <nav class="docs-page-links" aria-label="On this page"><p>On this page</p><ul>
     <li><a href="#usage">Usage</a></li><li><a href="#effect-options">Effect options</a></li>
     <li><a href="#shared-options">Shared options</a></li><li><a href="#controls">Controls</a></li>
-    <li><a href="#limits">Limits</a></li>
+    <li><a href="#limits">Limits</a></li><li><a href="#related">More {effect.category.toLowerCase()} effects</a></li>
   </ul></nav>
   <h2 id="usage">Usage</h2>
   <p><code>{`${effect.exportName}(target: Element, options: ${optionsType}): EffectHandle`}</code></p>
@@ -59,5 +69,7 @@ if (effect.lifecycle !== 'active') {
   <h2 id="limits">Limits</h2>
   <p>The effect follows the captured visible shape, including holes and disconnected regions. An opaque image has a rectangular shape. The original content remains intact; this is a decorative layer, not a change to the source image or text.</p>
   <p>Colors, gradients, particle counts and whole-element processing are not public controls. Only the options listed here are supported. WebGPU, capture and composition limits apply; keep the original content usable when output is unavailable. See <a href="/docs/support">browser support</a> and <a href="/docs/troubleshooting">troubleshooting</a>.</p>
-  <p><a href={`/effects/#${effect.id}`}>Preview {effect.name} in the gallery</a> or <a href="/docs/standalone#attach-fire">try the shared controls in the Fire playground</a>.</p>
+  <h2 id="related">More {effect.category.toLowerCase()} effects</h2>
+  <DocsEffectLinks effects={related} />
+  <p>Compare every effect side by side in the <a href={`/effects/#${effect.id}`}>gallery</a>.</p>
 </Documentation>

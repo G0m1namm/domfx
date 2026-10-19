@@ -1,5 +1,19 @@
 import { effectReference } from './effect-reference';
-import { effects } from './effects';
+import { effectCategories, effects } from './effects';
+
+// Array order defines sidebar order and previous/next pagination.
+export const documentationGroups = [
+  'Getting started',
+  'Guides',
+  'Effects',
+  'Reference',
+  'Help',
+] as const;
+
+export const effectsByCategory = effectCategories.map((category) => ({
+  category,
+  effects: effects.filter((effect) => effect.category === category),
+}));
 
 export const documentation = [
   {
@@ -27,11 +41,19 @@ export const documentation = [
     description: 'Control effect time and intensity with a timeline you own.',
   },
   {
-    slug: 'upgrading',
-    title: 'Upgrading',
-    group: 'Guides',
-    description: 'Update compatible packages and check migration notes.',
+    slug: 'api/effects',
+    title: 'All effects',
+    group: 'Effects',
+    description: `Browse all ${effects.length} effects by category, with live previews on each reference.`,
   },
+  ...effectsByCategory.flatMap(({ effects: categoryEffects }) =>
+    categoryEffects.map((effect) => ({
+      slug: `api/effects/${effect.id}`,
+      title: effect.name,
+      group: 'Effects' as const,
+      description: effectReference[effect.id].description,
+    })),
+  ),
   {
     slug: 'api',
     title: 'API reference',
@@ -51,33 +73,34 @@ export const documentation = [
     description: 'Read effect state, update the captured image and release resources.',
   },
   {
-    slug: 'api/effects',
-    title: 'Effect index',
-    group: 'Reference',
-    description: 'Import names and individual API references for every effect.',
-  },
-  {
     slug: 'api/gsap',
     title: 'GSAP API',
     group: 'Reference',
     description: 'Native property tweens and optional lifecycle-aware snapshot bindings.',
   },
-  ...effects.map((effect) => ({
-    slug: `api/effects/${effect.id}`,
-    title: effect.name,
-    group: 'Effects',
-    description: effectReference[effect.id].description,
-  })),
+  {
+    slug: 'upgrading',
+    title: 'Upgrading',
+    group: 'Help',
+    description: 'Update compatible packages and check migration notes.',
+  },
   {
     slug: 'support',
     title: 'Browser support',
-    group: 'Reference',
+    group: 'Help',
     description: 'Measured environments, capture limits and untested coverage.',
   },
   {
     slug: 'troubleshooting',
     title: 'Troubleshooting',
-    group: 'Reference',
+    group: 'Help',
     description: 'Read the reported reason, correct the condition, then retry explicitly.',
   },
-] as const;
+] as const satisfies readonly {
+  slug: string;
+  title: string;
+  group: (typeof documentationGroups)[number];
+  description: string;
+}[];
+
+export type DocumentationPage = (typeof documentation)[number];

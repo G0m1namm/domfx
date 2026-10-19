@@ -219,7 +219,7 @@ normal scrolling; it does not pin or intercept scroll input.
 The user approved in-site documentation on 2026-09-30, using ultrastorage.dev and
 Fancy Components' introduction as layout references. Keep the graphite palette,
 Cabinet Grotesk headings, General Sans reading text and JetBrains Mono code. Group
-a sticky desktop sidebar into Getting started, Guides and Reference; pair it with
+a sticky desktop sidebar into Getting started, Guides, Effects, Reference and Help; pair it with
 a clear reading column, quiet breadcrumbs, ruled section headings and readable
 code. On mobile, use native collapsible navigation and internally scrollable code.
 Documentation stays complete without JavaScript or GPU output. Introduction,
@@ -231,15 +231,33 @@ shadcn/ui documentation. Lead with usage, then use consistent semantic tables fo
 creation options, writable controls, read-only state, methods and GSAP options.
 Keep property explanations beside their types and defaults, mark required values,
 and provide native section links. Retain the existing fonts and graphite tokens;
-wide tables scroll inside keyboard-focusable regions on mobile. Fire remains the
-single interactive documentation example, with all effects covered by the shared
-API reference.
+wide tables scroll inside keyboard-focusable regions on mobile. All effects are
+covered by the shared API reference.
 
 The effect references have individual addressable pages under a native collapsible
 Effects navigation group. Reuse the canonical options and controls tables on each
 page; keep effect-specific settings separate. Link references from gallery previews
 and include them in documentation search. Preserve the existing API section anchors
-as links to the expanded references. This adds no further interactive playgrounds.
+as links to the expanded references.
+
+Later on 2026-10-19, the maintainer requested a stronger documentation architecture
+and a live preview on every effect reference. The sidebar follows the reading path:
+Getting started, Guides, Effects, Reference and Help (Upgrading, Browser support,
+Troubleshooting). Effects starts with an All effects overview grouped by category;
+the sidebar groups the 21 references into native Energy, Material and Pattern
+disclosures, opening only the current category. Pagination follows the same order.
+
+Each effect reference opens with one live preview directly below its description,
+followed by a facts strip (category, function, options type, package), section links,
+the reference tables and same-category links. The Standalone guide uses the same
+preview for Fire. The preview follows the toolbar control language: aligned rows
+with a label column, a Text/SVG/Image segmented subject switch, thin silver sliders
+with numeric readouts, Fire's flame height marked as a creation option, a text status
+indicator and a 44px Pause/Resume icon button with an accessible name. A live settings
+snippet mirrors the controls and offers Copy with a manual-selection fallback. Previews
+attach only while visible, release on pagehide, respect reduced motion, never clip
+the host's output and leave the original subject and disabled controls in place
+without JavaScript or WebGPU. They are demonstrations, not verification evidence.
 
 ### Examples and toolbar
 

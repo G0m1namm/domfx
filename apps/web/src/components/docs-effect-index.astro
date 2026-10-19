@@ -2,7 +2,7 @@
 import { effects } from '../content/effects';
 import DocsApiTable from './DocsApiTable.astro';
 ---
-<p>Import these functions from <code>@domfx/browser</code>. Open an effect's reference for its exact options. The <a href="/effects/">gallery</a> provides live previews.</p>
+<p>Import these functions from <code>@domfx/browser</code>. Each reference opens with a live preview, followed by its exact options.</p>
 <DocsApiTable label="Attachment functions">
   <thead><tr><th scope="col">Effect</th><th scope="col">Function</th><th scope="col">Category</th></tr></thead>
   <tbody>{effects.map((effect) => <tr><th scope="row"><a href={`/docs/api/effects/${effect.id}`}>{effect.name}</a></th><td><code>{effect.exportName}</code></td><td>{effect.category}</td></tr>)}</tbody>

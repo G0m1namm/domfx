@@ -1,20 +1,28 @@
 ---
-import { documentation } from '../content/documentation';
+import { documentation, documentationGroups, effectsByCategory } from '../content/documentation';
 
-const groups = [...new Set(documentation.filter((page) => page.group !== 'Effects').map((page) => page.group))];
 const currentPath = Astro.url.pathname.replace(/\/$/, '');
+const href = (slug: string) => `/docs/${slug}`;
+const current = (slug: string) => (currentPath === href(slug) ? 'page' : undefined);
 ---
 <nav aria-label="Documentation">
-  {groups.map((group) => <div class="docs-nav-group">
-    <h2>{group}</h2>
-    {documentation.filter((page) => page.group === group).map((page) =>
-      <a href={`/docs/${page.slug}`} aria-current={currentPath === `/docs/${page.slug}` ? 'page' : undefined}>{page.title}</a>
-    )}
-  </div>)}
-  <details class="docs-nav-group docs-effects-nav" open={currentPath.startsWith('/docs/api/effects')}>
-    <summary>Effects</summary>
-    {documentation.filter((page) => page.group === 'Effects').map((page) =>
-      <a href={`/docs/${page.slug}`} aria-current={currentPath === `/docs/${page.slug}` ? 'page' : undefined}>{page.title}</a>
-    )}
-  </details>
+  {documentationGroups.map((group) => group === 'Effects' ? (
+    <div class="docs-nav-group docs-effects-nav">
+      <h2>Effects</h2>
+      <a href={href('api/effects')} aria-current={current('api/effects')}>All effects</a>
+      {effectsByCategory.map(({ category, effects }) => (
+        <details class="docs-nav-category" open={effects.some((effect) => current(`api/effects/${effect.id}`))}>
+          <summary><span>{category}</span><span class="docs-nav-count">{effects.length}</span></summary>
+          {effects.map((effect) => <a href={href(`api/effects/${effect.id}`)} aria-current={current(`api/effects/${effect.id}`)}>{effect.name}</a>)}
+        </details>
+      ))}
+    </div>
+  ) : (
+    <div class="docs-nav-group">
+      <h2>{group}</h2>
+      {documentation.filter((page) => page.group === group).map((page) =>
+        <a href={href(page.slug)} aria-current={current(page.slug)}>{page.title}</a>
+      )}
+    </div>
+  ))}
 </nav>

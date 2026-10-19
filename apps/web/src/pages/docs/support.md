@@ -9,7 +9,8 @@ browser version, browser-family support or release approval.
 All [available effects](/docs/api#available-effects) share the browser capture,
 placement and composition limits below. The historical record includes Fire
 fixtures; it does not establish the same visual or performance coverage for every
-effect. The Standalone playground uses Fire as one example of the shared API.
+effect. The Standalone guide uses Fire as one example of the shared API, and the
+live previews on effect references are demonstrations, not verification evidence.
 
 ## Measured environments
 

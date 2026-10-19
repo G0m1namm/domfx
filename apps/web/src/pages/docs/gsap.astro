@@ -45,5 +45,5 @@ context.revert();`} lang="ts" theme={codeTheme} /></div>
   <p>These helpers capture starting controls when created and animate private proxy targets. They differ from native chained <code>.to()</code> calls, target-based kill and overwrite. Use the <a href="/docs/api/gsap#snapshot-bindings">binding reference</a> when you need that contract; prefer native tweens for ordinary sequencing.</p>
   <h2 id="unavailable-and-retry">Unavailable output and retry</h2>
   <p>The main example starts playback only when the effect is active. Missing GPU support or reduced motion preserves the original target. Correct the condition, then await <code>fire.retry()</code>, inspect its state and play the existing timeline. Retry retains controls; it does not require another tween.</p>
-  <p>The <a href="/docs/standalone#attach-fire">single Fire playground</a> demonstrates the shared controls. See <a href="/docs/api/gsap">GSAP API</a> and <a href="/docs/troubleshooting">troubleshooting</a> for reference details.</p>
+  <p>Every <a href="/docs/api/effects">effect reference</a> opens with a live preview of the shared controls. See <a href="/docs/api/gsap">GSAP API</a> and <a href="/docs/troubleshooting">troubleshooting</a> for reference details.</p>
 </Documentation>

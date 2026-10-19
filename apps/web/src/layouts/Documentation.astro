@@ -1,7 +1,9 @@
 ---
 import DocsNavigation from '../components/DocsNavigation.astro';
+import PhosphorIcons from '../components/phosphor-icons.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import { documentation } from '../content/documentation';
+import { effects } from '../content/effects';
 import '../styles/documentation.css';
 
 const slug = Astro.url.pathname.replace(/\/$/, '').replace(/^\/docs\//, '');
@@ -12,6 +14,8 @@ if (!page) {
 }
 const previous = documentation[index - 1];
 const next = documentation[index + 1];
+const groupHome = documentation.find((entry) => entry.group === page.group);
+const effect = effects.find((entry) => page.slug === `api/effects/${entry.id}`);
 ---
 <!doctype html>
 <html lang="en">
@@ -25,6 +29,7 @@ const next = documentation[index + 1];
     <link rel="preload" href="/fonts/CabinetGrotesk-Medium.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body class="docs-page">
+    <PhosphorIcons />
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="docs-shell">
       <SiteHeader />
@@ -32,18 +37,18 @@ const next = documentation[index + 1];
       <div class="docs-layout">
         <aside class="docs-sidebar"><DocsNavigation /><p>Experimental API.</p><a class="text-link" href="/docs/installation">Installation options ↗</a><a class="text-link" href="/effects/">Try the live examples ↗</a></aside>
         <main id="main" tabindex="-1">
-          <div class="docs-breadcrumb"><a href="/docs/introduction">Docs</a><span aria-hidden="true">/</span><span>{page.group}</span></div>
+          <nav class="docs-breadcrumb" aria-label="Breadcrumb"><a href="/docs/introduction">Docs</a><span aria-hidden="true">/</span>{groupHome && groupHome !== page ? <a href={`/docs/${groupHome.slug}`}>{page.group}</a> : <span>{page.group}</span>}{effect && <><span aria-hidden="true">/</span><span>{effect.category}</span></>}</nav>
           <h1>{page.title}</h1>
           <p class="docs-description">{page.description}</p>
           <article class="docs-content"><slot /></article>
           <nav class="docs-pagination" aria-label="Documentation pages">
-            {previous ? <a href={`/docs/${previous.slug}`}><span>Previous</span>{previous.title}</a> : <span />}
-            {next && <a href={`/docs/${next.slug}`}><span>Next</span>{next.title} <span aria-hidden="true">→</span></a>}
+            {previous ? <a href={`/docs/${previous.slug}`}><span>Previous</span><strong><span aria-hidden="true">←</span> {previous.title}</strong></a> : <span />}
+            {next && <a href={`/docs/${next.slug}`}><span>Next</span><strong>{next.title} <span aria-hidden="true">→</span></strong></a>}
           </nav>
           <footer class="docs-footer"><a href="https://github.com/G0m1namm/domfx/blob/main/QUICKSTART.md">Repository quickstart ↗</a><a href="https://github.com/G0m1namm/domfx/blob/main/LICENSE">MIT licensed ↗</a></footer>
         </main>
       </div>
     </div>
-    <script src="../scripts/docs-fire-lab.ts"></script>
+    <script src="../scripts/docs-effect-lab.ts"></script>
   </body>
 </html>

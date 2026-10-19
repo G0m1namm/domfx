@@ -80,9 +80,7 @@ test('documentation is readable and navigable without JavaScript at mobile and d
         );
       }
       if (slug === 'standalone' || slug === 'gsap') {
-        await expect(page.locator('[data-docs-fire-lab]')).toHaveCount(
-          slug === 'standalone' ? 1 : 0,
-        );
+        await expect(page.locator('[data-docs-lab]')).toHaveCount(slug === 'standalone' ? 1 : 0);
       }
       if (width <= 900) {
         await page.getByText('Browse documentation', { exact: false }).click();
@@ -134,7 +132,11 @@ test('all effect references work without JavaScript, with canonical controls and
       await expect(
         page.getByRole('table', { name: 'Writable effect controls', exact: true }),
       ).toContainText('intensity');
-      await expect(page.locator('canvas, [data-docs-fire-lab]')).toHaveCount(0);
+      const lab = page.locator('[data-docs-lab]');
+      await expect(lab).toHaveCount(1);
+      await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
+      await expect(lab.getByRole('slider', { name: `${effect.name} intensity` })).toBeDisabled();
+      await expect(page.locator('canvas')).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       );
@@ -176,52 +178,77 @@ test('documentation keyboard navigation reaches guides and scrolls code', async 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('the Fire lab preserves its source content when WebGPU is unavailable', async ({ page }) => {
-  await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
-  await page.goto('/docs/standalone');
-  const lab = page.locator('[data-docs-fire-lab]');
-  await lab.scrollIntoViewIfNeeded();
-  await expect(lab).toHaveAttribute('data-status', 'unavailable');
-  await expect(lab.getByText('domfx', { exact: true })).toBeVisible();
-  await expect(lab.locator('canvas')).toHaveCount(0);
-  await expect(lab.getByRole('button', { name: 'Effects unavailable' })).toBeDisabled();
-});
+const labPages = [
+  { path: '/docs/standalone', effect: 'Fire', text: true },
+  { path: '/docs/api/effects/frost', effect: 'Frost', text: false },
+] as const;
 
-test('the Fire lab attaches, updates and disposes one real effect', async ({ page }) => {
-  await page.goto('/docs/standalone');
-  const lab = page.locator('[data-docs-fire-lab]');
-  await lab.scrollIntoViewIfNeeded();
-  const supportsGpu = await page.evaluate(() => 'gpu' in navigator && Boolean(navigator.gpu));
-  test.skip(!supportsGpu, 'WebGPU is unavailable in this browser');
-  await expect(lab).toHaveAttribute('data-status', 'active');
-  const canvas = lab.locator('canvas');
-  await expect(canvas).toHaveCount(1);
-  await expect(canvas).toHaveAttribute('aria-hidden', 'true');
-  await expect(canvas).toHaveCSS('pointer-events', 'none');
-  expect(
-    await lab.locator('[data-docs-fire-host]').evaluate((host) => getComputedStyle(host).overflow),
-  ).toBe('visible');
+for (const { path, effect, text } of labPages) {
+  test(`${path} preview preserves its source content when WebGPU is unavailable`, async ({
+    page,
+  }) => {
+    await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
+    await page.goto(path);
+    const lab = page.locator('[data-docs-lab]');
+    await lab.scrollIntoViewIfNeeded();
+    await expect(lab).toHaveAttribute('data-status', 'unavailable');
+    if (text) {
+      await expect(lab.getByText('domfx', { exact: true })).toBeVisible();
+    }
+    await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
+    await expect(lab.locator('canvas')).toHaveCount(0);
+    await expect(lab.getByRole('button', { name: 'Effects unavailable' })).toBeDisabled();
+    await expect(lab.getByRole('slider', { name: `${effect} intensity` })).toBeDisabled();
+  });
 
-  const intensity = lab.locator('[data-docs-intensity]');
-  await intensity.fill('45');
-  await expect(lab.locator('[data-docs-intensity-code]')).toHaveText('0.45');
+  test(`${path} preview attaches, updates and disposes one real effect`, async ({ page }) => {
+    await page.goto(path);
+    const lab = page.locator('[data-docs-lab]');
+    await lab.scrollIntoViewIfNeeded();
+    const supportsGpu = await page.evaluate(() => 'gpu' in navigator && Boolean(navigator.gpu));
+    test.skip(!supportsGpu, 'WebGPU is unavailable in this browser');
+    await expect(lab).toHaveAttribute('data-status', 'active');
+    const canvas = lab.locator('canvas');
+    await expect(canvas).toHaveCount(1);
+    await expect(canvas).toHaveAttribute('aria-hidden', 'true');
+    await expect(canvas).toHaveCSS('pointer-events', 'none');
+    expect(
+      await lab.locator('[data-docs-lab-host]').evaluate((host) => getComputedStyle(host).overflow),
+    ).toBe('visible');
 
-  const height = lab.locator('[data-docs-height]');
-  await height.fill('44');
-  await height.press('Tab');
-  await expect(lab).toHaveAttribute('data-status', 'active');
-  await expect(canvas).toHaveCount(1);
+    const intensity = lab.locator('[data-docs-lab-intensity]');
+    await intensity.fill('45');
+    await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+    await expect(lab.locator('[data-docs-lab-intensity-output]')).toHaveText('45%');
 
-  const toggle = lab.locator('[data-docs-fire-toggle]');
-  await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await expect(lab).toHaveAttribute('data-status', 'paused');
-  await toggle.click();
-  await expect(lab).toHaveAttribute('data-status', 'active');
+    if (effect === 'Fire') {
+      const height = lab.locator('[data-docs-lab-height]');
+      await height.fill('44');
+      await height.press('Tab');
+      await expect(lab.locator('[data-docs-lab-height-code]')).toHaveText('44');
+      await expect(lab).toHaveAttribute('data-status', 'active');
+      await expect(canvas).toHaveCount(1);
+    }
 
-  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
-  await expect(canvas).toHaveCount(0);
-});
+    for (const subject of ['SVG', 'Image', 'Text']) {
+      await lab.getByRole('radio', { name: subject, exact: true }).check();
+      await expect(lab).toHaveAttribute('data-status', 'active');
+      await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
+      await expect(canvas).toHaveCount(1);
+    }
+
+    const toggle = lab.locator('[data-docs-lab-toggle]');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(toggle).toHaveAccessibleName('Resume effect');
+    await expect(lab).toHaveAttribute('data-status', 'paused');
+    await toggle.click();
+    await expect(lab).toHaveAttribute('data-status', 'active');
+
+    await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
+    await expect(canvas).toHaveCount(0);
+  });
+}
 
 // Bundle the rendered code verbatim with only its caller-provided DOM and exports.
 // No copied example, package alias, capture mock or renderer transform is involved.

@@ -568,4 +568,74 @@ GSAP section: the timeline illustration, binding example and playback-method ove
 Keep the setup walkthrough first, followed by this GSAP section, the native HTML
 example and FAQ. Name GSAP in the section heading and apply Fire only to the
 word “GSAP”, keeping the surrounding heading text plain.
-This records the chosen composition; the production homepage migration remains pending.
+Use the selected Setup composition as the sole active prototype; retire the variation
+switcher. Write marketing copy for the public npm launch: installation is available,
+GSAP is optional, and the page must not describe packages as unpublished or direct
+visitors to a local-only preview workflow. Browser and capture limits still apply.
+This composition is approved for the production homepage and full effects gallery.
+
+The maintainer selected Afterglow for the closing section. Keep its existing background
+glow and animated domfx wordmark, placed above the closing headline and installation
+actions. Follow with grouped footer links and a compact credit/copyright strip naming
+Jherson Martelo Medina, plus Back to top. Use official Phosphor assets for interface
+icons, with consistent sizing and accessible labels. Text links need visible resting
+underlines, brighter text, and clear hover and keyboard-focus states.
+
+Afterglow is fixed during the card-design exploration. On mobile, align Build and
+Explore as equal columns; GitHub and npm share a separate row on those column
+starts. Align copyright and Back to top on one row, with the creator credit below.
+Card alternatives change only card composition; retain the approved desktop
+two/three-column rhythm, shared filters, live effects and preview dialog.
+
+The maintainer selected Immersive (B) as the final card composition. Keep the
+alternating large/small composition for the complete gallery; category-filtered
+results use equal-size tiles at each breakpoint, including a consistent scale for
+matching preview types. Retire the card comparison toolbar.
+
+The next refinement reduces hero height with a two-column desktop composition:
+headline and supporting copy on the left, Humans/Agents setup tabs on the right.
+Stack these on mobile. Humans offers the package install command and gallery link.
+Agents previews `pnpm dlx skills add G0m1namm/domfx --skill domfx`, explicitly labeled
+as a preview because the consumer skill is not published yet, alongside the API guide.
+Publishing that skill remains separate work.
+
+Move search from the gallery into the fixed header as an icon-only magnifying-glass
+button with a 44px target, accessible label, shortcut tooltip and Cmd/Ctrl+K support.
+Search effects and documentation in separately labeled groups within one
+keyboard-accessible dialog; effect results open their live preview and documentation
+results navigate to the matching page or section. Keep category filters above the
+full effects gallery. The header GitHub CTA says “Star on GitHub” below 50 stars
+and “Stars” with a count from 50 onward. Fetch public repository statistics and
+retain the plain GitHub link if counts are unavailable; do not invent a count or
+expose credentials for a private repository.
+
+The next local preview refinement gives the effect subject a larger default size
+and a wider inspection pane. Magnify the original subject and its live decorative
+layer together, independently of intensity. Desktop hover temporarily inspects at
+2× with pointer-directed panning; explicit controls provide 100–300% zoom and Fit
+reset for keyboard and touch users. Arrow keys pan the focused preview; touch can
+drag while zoomed. Keep the controls outside the magnified surface, reset on close,
+and suppress automatic hover zoom and zoom transitions under reduced motion.
+
+The marketing homepage shows only the first five effects: Electricity, Frost, Fire,
+Dither and Slime, preserving the two-wide/three-across composition. Remove category
+filters from this selection and place an “Explore all 21 effects” CTA underneath,
+with the total derived from the catalog. A separate effects page owns the complete
+gallery and its category filters, with uniform filtered tiles. Header and footer
+Effects links lead there. Both pages share search and the zoomable effect preview;
+homepage search can open every effect, including those beyond the five featured cards.
+Keep setup, GSAP, native HTML and FAQ content on the marketing homepage.
+
+The header and large Afterglow domfx wordmark use the same pattern sequence and
+one shared time and intensity cycle, including fade-out, effect switch and fade-in.
+The wordmark joins the current phase when it enters view; release its attachment
+when offscreen without restarting the header. Either playback control pauses or
+resumes both decorations. Respect reduced motion and retain the paused state when
+that preference changes back.
+
+On 2026-10-19, the maintainer approved integrating the selected marketing design
+into the official website. `/` contains the five featured effects and Setup story;
+`/effects/` contains the complete filtered gallery. Both use Immersive cards,
+Afterglow, Lab Mono labels, Phosphor icons, shared search and zoomable previews.
+Render content on the server so the site remains readable without JavaScript.
+Keep prototype sources and rejected variants outside the production build.

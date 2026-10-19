@@ -1,0 +1,65 @@
+---
+import MarketingClosing from '../components/marketing-closing.astro';
+import MarketingStory from '../components/marketing-story.astro';
+import EffectCard from '../components/effect-card.astro';
+import PhosphorIcons from '../components/phosphor-icons.astro';
+import SiteSearch from '../components/site-search.astro';
+import { effects } from '../content/effects';
+import '../styles/marketing.css';
+interface Props { surface?: 'marketing' | 'library' }
+const { surface = 'marketing' } = Astro.props;
+const isLibrary = surface === 'library';
+
+---
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="description" content="GPU effects for text, images and SVG. Explore the gallery, attach an effect to your HTML, and animate with GSAP or on its own."/><meta name="theme-color" content="#14151B"/><meta property="og:title" content="domfx — Effects for your HTML"/><meta property="og:description" content="Give your HTML an expressive edge. GPU effects with native HTML and optional GSAP controls."/><meta property="og:type" content="website"/><meta property="og:image" content="/silver-mark.png"/><title>{isLibrary ? 'Effects — domfx' : 'domfx — Effects for your HTML'}</title><link rel="icon" href="/favicon.svg"/><link rel="preload" href="/fonts/CabinetGrotesk-Medium.woff2" as="font" type="font/woff2" crossorigin/></head>
+<body class="marketing-page" id="top" data-surface={surface}>
+<PhosphorIcons />
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-nav"><div class="nav-inner">
+  <a class="wordmark" href="/" aria-label="domfx home">domfx<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-asterisk-simple"/></svg></a>
+  <nav aria-label="Main"><a href="/effects/" aria-current={isLibrary ? 'page' : undefined}>Effects</a><a href="/docs/introduction">Docs</a></nav>
+  <button class="header-search" data-search-open data-js-control hidden aria-label="Search effects and documentation" title="Search effects and docs (⌘K / Ctrl+K)" aria-keyshortcuts="Meta+K Control+K" aria-haspopup="dialog" aria-controls="site-search"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-magnifying-glass"/></svg></button>
+  <a class="nav-cta star-cta" href="https://github.com/G0m1namm/domfx" aria-label="Star domfx on GitHub" title="Star domfx on GitHub" data-repo-stars><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg><span data-star-label>Star on GitHub</span><span class="star-count" data-star-count hidden></span></a>
+  <button class="header-playback" data-header-pause data-js-control hidden aria-label="Pause header and wordmark effects" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg></button>
+</div><div class="header-effect-host" aria-hidden="true"><span class="header-effect-line"></span></div></header>
+<main id="main">
+  {!isLibrary && <section class="gallery-hero wrap">
+    <div class="hero-copy"><h1 id="hero-title">Give your HTML<br/>an expressive edge<span class="title-dot">.</span></h1><p>GPU effects for text, images and SVG.<br/>Animate with GSAP or on its own.</p></div>
+    <div class="hero-start">
+      <div class="audience-tabs" aria-label="Get started"><a id="humans-tab" href="#humans-panel" data-audience="humans" aria-controls="humans-panel">For humans</a><a id="agents-tab" href="#agents-panel" data-audience="agents" aria-controls="agents-panel">For agents</a></div>
+      <div id="humans-panel" aria-labelledby="humans-tab"><button class="install hero-command" data-copy="pnpm add @domfx/browser" aria-label="Copy package install command"><code>pnpm add @domfx/browser</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><a class="button silver hero-action" href="#collection">Find your effect <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-down"/></svg></a></div>
+      <div id="agents-panel" aria-labelledby="agents-tab"><button class="install hero-command" data-copy="pnpm dlx skills add G0m1namm/domfx --skill domfx" aria-label="Copy planned skill command"><code>pnpm dlx skills add G0m1namm/domfx --skill domfx</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><p class="agent-preview-note">Skill command preview. The consumer skill is not published yet.</p><a class="story-link" href="/docs/api">Read the API guide <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
+    </div>
+  </section>}
+  <span id="examples"></span><section id="collection" class:list={['wrap', 'gallery-collection', { 'library-collection': isLibrary }]}>
+    <div class="collection-top">
+      {isLibrary ? <h1>Effects<span class="effect-count" data-count>{effects.length}</span></h1> : <h2>Explore the effects</h2>}
+    </div>
+    {isLibrary && <div class="collection-tools" data-js-control hidden><div class="filters" aria-label="Effect categories"><button data-filter="All" aria-pressed="true">All effects <span>{effects.length}</span></button><button data-filter="Energy" aria-pressed="false">Energy</button><button data-filter="Material" aria-pressed="false">Material</button><button data-filter="Pattern" aria-pressed="false">Patterns</button></div></div>}
+    <div class="effect-grid spotlight-grid gallery-grid">{(isLibrary ? effects : effects.slice(0, 5)).map((effect, index) => <EffectCard effect={effect} index={index}/>)}</div>
+    {isLibrary ? <p class="empty" hidden>No effects found. Try another category.</p> : <div class="gallery-more"><a class="button" href="/effects/">Explore all {effects.length} effects <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>}
+  </section>
+{!isLibrary && <div id="supporting-content"><MarketingStory/></div>}
+</main>
+<div id="closing-content"><MarketingClosing/></div>
+<noscript><p class="wrap">Enable JavaScript to preview effects and use search. All documentation and setup guides remain available.</p></noscript>
+<dialog class="effect-dialog" aria-labelledby="dialog-title"><div class="dialog-top"><span>Preview</span><button data-close aria-label="Close preview"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div><div class="dialog-layout"><div class="dialog-viewer">
+  <div class="dialog-scene" tabindex="0" role="region" aria-label="Effect preview. Use plus and minus to zoom, arrow keys to pan, and zero to reset." aria-describedby="preview-zoom-hint">
+    <div class="dialog-stage" data-effect-host><span class="dialog-target" data-dialog-target>edge.</span></div>
+  </div>
+  <div class="preview-toolbar">
+    <p id="preview-zoom-hint"><span class="hover-zoom-hint">Hover to inspect</span><span class="touch-zoom-hint">Zoom to inspect</span></p>
+    <div class="preview-zoom-controls" role="group" aria-label="Preview zoom">
+      <button data-zoom-out aria-label="Zoom out" title="Zoom out" disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-minus"/></svg></button>
+      <span data-zoom-label aria-live="polite" aria-atomic="true">100%</span>
+      <button data-zoom-in aria-label="Zoom in" title="Zoom in"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-plus"/></svg></button>
+      <button data-zoom-reset aria-label="Reset preview zoom" title="Reset preview zoom">Fit</button>
+    </div>
+  </div>
+</div><div class="dialog-details"><span class="category" data-dialog-category></span><h2 id="dialog-title"></h2><div class="target-options" aria-label="Preview target"><button data-target="text" aria-pressed="true">Text</button><button data-target="shape" aria-pressed="false">Shape</button></div><label class="intensity-label" for="effect-intensity">Intensity <output>70%</output></label><input id="effect-intensity" type="range" min="0" max="100" value="70"/><button class="button pause-button" data-pause><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg><span>Pause animation</span></button><code data-code></code><button class="button silver" data-copy-code>Copy attachment code <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><p class="preview-status" role="status" data-copy-status></p><p class="preview-status" role="status" data-preview-status></p><a class="plain-link" href="/docs/standalone">Read the setup guide <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up-right"/></svg></a></div></div></dialog>
+<SiteSearch/>
+<div class="toast" role="status" hidden></div>
+<script src="../scripts/marketing.ts"></script>
+</body></html>

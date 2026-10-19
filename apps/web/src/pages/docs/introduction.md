@@ -33,7 +33,7 @@ first; the public npm route will be added after verified alpha publication.
 - [GSAP](/docs/gsap): bind a manual attachment to your own timeline. Animate Fire's
   time and intensity alongside the rest of your sequence.
 
-Fire is currently the only effect. [Try the image, SVG and live text examples](/#examples)
+Explore the available effects on image, SVG and live text targets in [the effects gallery](/effects/)
 before attaching it to your own element.
 
 ## Keep the original usable

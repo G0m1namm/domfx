@@ -248,6 +248,7 @@ test('every website link resolves to a native route, anchor or documented reposi
   const titles = new Set<string>();
   for (const path of [
     '/',
+    '/effects/',
     '/docs/introduction',
     '/docs/installation',
     '/docs/standalone',
@@ -335,6 +336,8 @@ test('every website link resolves to a native route, anchor or documented reposi
   expect(external.sort()).toEqual(
     [
       repo,
+      'https://github.com/G0m1namm',
+      'https://www.npmjs.com/package/@domfx/browser',
       `${repo}/blob/main/LICENSE`,
       `${repo}/blob/main/QUICKSTART.md`,
       `${repo}/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md`,
@@ -343,8 +346,6 @@ test('every website link resolves to a native route, anchor or documented reposi
 });
 
 for (const { kind, path } of [
-  { kind: 'standalone', path: '/' },
-  { kind: 'gsap', path: '/' },
   { kind: 'standalone', path: '/docs/standalone' },
   { kind: 'gsap', path: '/docs/gsap' },
 ] as const) {

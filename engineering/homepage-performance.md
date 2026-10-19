@@ -1,4 +1,11 @@
-# Production homepage performance baseline
+# Historical editorial homepage performance baseline
+
+This report and runner describe the retired editorial homepage, not the current
+marketing gallery. To reproduce that implementation, use an isolated checkout at
+`47caf659358eabb97959d7655cc6715313910a25`, install with `pnpm install --frozen-lockfile`,
+and run the commands below there. The runner fails early on the new gallery; its
+selectors and Fire/None comparisons are not valid for the new composition. A fresh
+gallery baseline needs its own representative scenarios.
 
 Issue #86 measures the editorial homepage from #89, including four authored Fire
 targets, the independent GSAP player and the optional Prism WebGL background. Run

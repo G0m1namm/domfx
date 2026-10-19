@@ -74,12 +74,43 @@ const exports = await import(entry);
 if (entry === '@domfx/core') {
   assert.deepEqual(Object.keys(exports).sort(), ['classifyAlpha']);
 } else if (entry === '@domfx/browser') {
-  assert.deepEqual(Object.keys(exports).sort(), ['CaptureError', 'attachFire', 'captureElement']);
+  assert.deepEqual(Object.keys(exports).sort(), [
+    'CaptureError',
+    'attachBrushFringe',
+    'attachBurnedPaper',
+    'attachCircuits',
+    'attachContourEchoes',
+    'attachCrosshatch',
+    'attachDiamonds',
+    'attachDither',
+    'attachElectricity',
+    'attachEngraving',
+    'attachFire',
+    'attachFrost',
+    'attachHalftone',
+    'attachHexagons',
+    'attachInterference',
+    'attachKinetic',
+    'attachScanlines',
+    'attachShards',
+    'attachSlime',
+    'attachStarShimmer',
+    'attachStipple',
+    'attachWovenMesh',
+    'captureElement',
+  ]);
 } else {
   assert.deepEqual(Object.keys(exports).sort(), [
     'AllocationLedger',
     'GpuExperiment',
+    'attachBurnedPaperWithAdapters',
+    'attachDitherWithAdapters',
+    'attachElectricityWithAdapters',
     'attachFireWithAdapters',
+    'attachFrostWithAdapters',
+    'attachKineticWithAdapters',
+    'attachPatternWithAdapters',
+    'attachSlimeWithAdapters',
     'decodeFloat16',
     'estimateFrameMemory',
     'memoryFor',

@@ -8,7 +8,7 @@ for (const width of [360, 1440]) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
-    await expect(page.locator('.home-hero canvas')).toHaveCount(0);
+    await expect(page.locator('.effect-grid canvas')).toHaveCount(0);
     await expect(page).toHaveScreenshot(`home-${width}.png`, { animations: 'disabled' });
   });
 }
@@ -16,16 +16,14 @@ for (const width of [360, 1440]) {
 test('paused fire renders on the website', async ({ page, browser }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.addInitScript(() => {
-    sessionStorage.setItem('domfx-showcase', JSON.stringify({ effect: 'fire', paused: true }));
-  });
   await page.goto('/');
-  await page.getByRole('link', { name: 'Image', exact: true }).click();
-  const layer = page.locator('.sample-image canvas');
+  await page.getByRole('button', { name: 'Try Fire', exact: true }).click();
+  const layer = page.locator('.dialog-stage canvas');
+  await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
   await expect(layer).toHaveCount(1);
-  await expect(layer).toHaveAttribute('aria-hidden', 'true');
-  await expect(page.locator('#effect-play')).toHaveText('Resume');
-  await expect(page.locator('.sample-image')).toHaveScreenshot('fire-image.png', {
+  await page.getByRole('button', { name: 'Pause animation' }).click();
+  await expect(page.getByRole('button', { name: 'Resume animation' })).toBeVisible();
+  await expect(page.locator('.dialog-stage')).toHaveScreenshot('fire-preview.png', {
     animations: 'disabled',
     maxDiffPixelRatio: 0.005,
   });

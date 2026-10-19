@@ -11,6 +11,17 @@ import { chromium } from 'playwright';
 
 const root = resolve(import.meta.dirname, '..');
 const dist = resolve(root, 'apps/web/dist');
+
+// This runner preserves the #86 editorial baseline, not the current gallery.
+const homepageSource = await readFile(resolve(root, 'apps/web/src/pages/index.astro'), 'utf8');
+if (!homepageSource.includes('HomeHero')) {
+  throw new Error(
+    'This historical runner requires the editorial homepage. Reproduce at revision ' +
+      '47caf659358eabb97959d7655cc6715313910a25; see engineering/homepage-performance.md. ' +
+      'It does not measure the current marketing gallery.',
+  );
+}
+
 const output = resolve(
   root,
   '.scratch/homepage-performance',

@@ -1,127 +1,93 @@
 import { expect, test } from '@playwright/test';
 
-test.describe('high-DPR decorative background', () => {
-  test.use({ deviceScaleFactor: 2 });
-
-  test('stays within the one-million-pixel budget', async ({ page }) => {
-    await page.goto('/');
-    await page.locator('.shader-section').scrollIntoViewIfNeeded();
-    const canvas = page.locator('.shader-section canvas');
-    await expect(canvas).toBeVisible();
-    const pixels = await canvas.evaluate((element) => {
-      if (!(element instanceof HTMLCanvasElement)) {
-        throw new Error('Missing background canvas');
+for (const path of ['/', '/effects/']) {
+  test(`${path} has complete content without JavaScript`, async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
+    try {
+      const page = await context.newPage();
+      await page.goto(path);
+      await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible();
+      await expect(page.locator('.effect-grid [data-card]')).toHaveCount(path === '/' ? 5 : 21);
+      await expect(page.getByRole('link', { name: 'Read the setup guide' })).toHaveAttribute(
+        'href',
+        '/docs/standalone',
+      );
+      await expect(page.locator('[data-search-open]')).toBeHidden();
+      await expect(page.locator('noscript p')).toBeVisible();
+      await expect(page.locator('noscript p')).toContainText('Enable JavaScript');
+      if (path === '/') {
+        await page.getByRole('link', { name: 'For agents', exact: true }).click();
+        await expect(page.locator('#agents-panel')).toBeVisible();
+        await expect(page.locator('#agents-panel')).toContainText(
+          'consumer skill is not published',
+        );
       }
-      return element.width * element.height;
-    });
-    expect(pixels).toBeGreaterThan(0);
-    expect(pixels).toBeLessThanOrEqual(1_000_000);
-  });
-});
-
-for (const [width, height] of [
-  [320, 800],
-  [360, 800],
-  [768, 900],
-  [1440, 1000],
-  [1440, 600],
-  [720, 500],
-]) {
-  test(`editorial composition reflows at ${width}x${height}`, async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.setViewportSize({ width, height });
-    await page.goto('/');
-    await expect(page.locator('#hero-title')).toBeVisible();
-    await expect(page.locator('.stage .sample')).toHaveCount(3);
-    await expect(page.locator('#example-svg path')).not.toHaveCount(0);
-    await expect(page.locator('.pin-spacer')).toHaveCount(0);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
-    const hero = await page.locator('.home-hero').boundingBox();
-    if (width > 600 && height > 760) {
-      expect(hero?.y).toBe(44);
-      expect(hero?.height).toBe(height - 44);
+    } finally {
+      await context.close();
     }
-    const stage = await page.locator('.stage').boundingBox();
-    const controls = await page.locator('#playground').boundingBox();
-    if (!stage || !controls) {
-      throw new Error('Examples and their controls must be visible');
-    }
-    if (width > 600) {
-      expect(controls.x).toBeGreaterThanOrEqual(stage.x + stage.width);
-      if (height > 760) {
-        expect(stage.y + stage.height).toBeGreaterThan(height - 32);
-      }
-    } else {
-      expect(controls.y).toBeGreaterThanOrEqual(stage.y + stage.height);
-    }
-    await page.locator('.timeline-player').scrollIntoViewIfNeeded();
-    await expect(page.locator('[data-action="play"]')).toBeDisabled();
-    await expect(page.locator('#player-seek')).toBeEnabled();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
   });
 }
 
-test('GSAP player supports seeking, playback, reverse and repetition independently of GPU', async ({
+for (const width of [320, 360, 768, 1440]) {
+  test(`marketing content reflows at ${width}px`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await expect(page.locator('#hero-title')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    await page.getByRole('tab', { name: 'For agents' }).click();
+    await expect(page.locator('#agents-panel')).toContainText('consumer skill is not published');
+    await expect(page.getByRole('tab', { name: 'For agents' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await page.getByRole('tab', { name: 'For agents' }).press('ArrowLeft');
+    await expect(page.getByRole('tab', { name: 'For humans' })).toBeFocused();
+    await page.locator('.footer-baseline').scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    await expect(page.locator('[data-closing-pause]')).toBeDisabled();
+  });
+}
+
+test('global search opens an unfeatured effect, zooms and restores keyboard focus', async ({
   page,
 }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
   await page.goto('/');
-  await page.locator('.timeline-player').scrollIntoViewIfNeeded();
-  const seek = page.locator('#player-seek');
-  const state = page.locator('[data-player-state]');
-  await expect(page.locator('[data-action="play"]')).toBeEnabled();
-  await seek.fill('2');
-  await expect(state).toHaveText('Paused');
-  await expect(page.locator('.player-time output')).toHaveText('2.0 / 4.0s');
-  await page.locator('[data-action="reverse"]').click();
-  await expect.poll(async () => Number(await seek.inputValue())).toBeLessThan(1.9);
-  await page.locator('[data-action="pause"]').click();
-  const paused = await seek.inputValue();
-  await expect(state).toHaveText('Paused');
-  await seek.press('Home');
-  await expect(seek).toHaveValue('0');
-  await seek.press('ArrowRight');
-  await expect(seek).toHaveValue('0.01');
-  expect(Number(paused)).toBeLessThan(2);
-  await page.locator('.player-options [name="speed"]').selectOption('2');
-  await page.locator('.player-options [name="yoyo"]').check();
-  await expect(page.locator('.player-options [name="repeat"]')).toBeChecked();
-  await seek.fill('3.9');
-  await page.locator('[data-action="play"]').click();
-  await expect.poll(async () => Number(await seek.inputValue())).toBeLessThan(3.5);
-  await page.locator('[data-action="pause"]').click();
-  await page.locator('.player-options [name="repeat"]').uncheck();
-  await expect(page.locator('.player-options [name="yoyo"]')).not.toBeChecked();
-  await seek.fill('4');
-  await page.locator('[data-action="play"]').click();
-  await expect.poll(async () => Number(await seek.inputValue())).toBeLessThan(1);
-  await page.locator('#hero-title').scrollIntoViewIfNeeded();
-  await expect(state).toHaveText('Paused');
-  await page.locator('.timeline-player').scrollIntoViewIfNeeded();
-  await expect(state).toHaveText('Paused');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.locator('[data-action="play"]')).toBeDisabled();
-  await expect(page.locator('[data-action="reverse"]')).toBeDisabled();
-  await expect(seek).toBeEnabled();
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(state).toHaveText('Paused');
+  const trigger = page.getByRole('button', { name: 'Search effects and documentation' });
+  await trigger.click();
+  await page.getByRole('searchbox').fill('circuits');
+  await page.getByRole('searchbox').press('Enter');
+  await expect(page.locator('#dialog-title')).toHaveText('Circuits');
+  await expect(page.locator('#site-search')).not.toBeVisible();
+  await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
+  await expect(page.locator('[data-zoom-label]')).toHaveText('150%');
+  await page.locator('.dialog-scene').press('+');
+  await expect(page.locator('[data-zoom-label]')).toHaveText('200%');
+  await page.locator('.dialog-scene').press('0');
+  await expect(page.locator('[data-zoom-label]')).toHaveText('100%');
+  await page.getByRole('button', { name: 'Close preview' }).click();
+  await expect(trigger).toBeFocused();
+  await trigger.press('ControlOrMeta+k');
+  await page.getByRole('searchbox').fill('reduced motion');
+  await expect(page.locator('[data-search-group="documentation"]')).toBeVisible();
+  await page.getByRole('searchbox').press('Escape');
+  await expect(trigger).toBeFocused();
 });
 
-test('install clipboard confirms only successful writes and offers a manual fallback', async ({
-  page,
-}) => {
+test('copy reports success only after a write and supplies a manual fallback', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(() =>
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
-      value: { writeText: async (text: string) => sessionStorage.setItem('install-copied', text) },
+      value: { writeText: async (text: string) => sessionStorage.setItem('copied', text) },
     }),
   );
   await page.goto('/');
-  await page.getByRole('button', { name: 'Copy install command' }).click();
-  await expect(page.locator('.copy-status')).toHaveText('Install command copied.');
-  expect(await page.evaluate(() => sessionStorage.getItem('install-copied'))).toBe(
-    'npm install @domfx/browser',
+  await page.getByRole('button', { name: 'Copy package install command' }).click();
+  await expect(page.locator('.toast')).toHaveText('Copied to clipboard');
+  expect(await page.evaluate(() => sessionStorage.getItem('copied'))).toBe(
+    'pnpm add @domfx/browser',
   );
   await page.evaluate(() =>
     Object.defineProperty(navigator, 'clipboard', {
@@ -132,40 +98,34 @@ test('install clipboard confirms only successful writes and offers a manual fall
       },
     }),
   );
-  await page.getByRole('button', { name: 'Copy install command' }).click();
-  await expect(page.locator('.copy-status')).toContainText('copy it manually');
+  await page.getByRole('button', { name: 'Copy package install command' }).click();
+  await expect(page.locator('.toast')).toContainText('Copy it manually: pnpm add @domfx/browser');
+  await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
+  await page.getByRole('button', { name: 'Copy attachment code' }).click();
+  const feedback = page.getByRole('dialog').locator('[data-copy-status]');
+  await expect(feedback).toBeVisible();
+  await expect(feedback).toContainText('Select and copy the attachment code above');
 });
 
-test('Prism folds starts still, pauses offscreen and respects reduced motion and context loss', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await page.locator('.shader-section').scrollIntoViewIfNeeded();
-  const button = page.locator('.shader-motion');
-  await expect(button).toBeVisible();
-  await expect(button).toHaveAttribute('aria-pressed', 'false');
-  const pixels = await page.locator('.shader-section canvas').evaluate((canvas) => {
-    if (!(canvas instanceof HTMLCanvasElement)) {
-      throw new Error('Missing background canvas');
+for (const stars of [49, 50]) {
+  test(`GitHub CTA uses the approved label at ${stars} stars`, async ({ page }) => {
+    await page.route('https://api.github.com/repos/G0m1namm/domfx', (route) =>
+      route.fulfill({ json: { stargazers_count: stars } }),
+    );
+    await page.goto('/');
+    await expect(page.locator('[data-star-label]')).toHaveText(
+      stars < 50 ? 'Star on GitHub' : 'Stars',
+    );
+    if (stars >= 50) {
+      await expect(page.locator('[data-star-count]')).toHaveText('50');
+    } else {
+      await expect(page.locator('[data-star-count]')).toBeHidden();
     }
-    return canvas.width * canvas.height;
   });
-  expect(pixels).toBeLessThanOrEqual(1_000_000);
-  await button.click();
-  await expect(button).toHaveAttribute('aria-pressed', 'true');
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(button).toHaveAttribute('aria-pressed', 'false');
-  await page.locator('.shader-section').scrollIntoViewIfNeeded();
-  await expect(button).toHaveAttribute('aria-pressed', 'false');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(button).toBeDisabled();
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(button).toBeEnabled();
-  await expect(button).toHaveAttribute('aria-pressed', 'false');
-  await page.locator('.shader-section canvas').evaluate((canvas) => {
-    canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
-  });
-  await expect(button).toBeDisabled();
-  await expect(page.locator('.shader-section canvas')).toBeHidden();
-  await expect(page.locator('#features-title')).toBeVisible();
+}
+
+test('legacy examples route redirects to the complete gallery', async ({ page }) => {
+  await page.goto('/examples');
+  await expect(page).toHaveURL(/\/effects\/$/);
+  await expect(page.locator('.effect-grid [data-card]')).toHaveCount(21);
 });

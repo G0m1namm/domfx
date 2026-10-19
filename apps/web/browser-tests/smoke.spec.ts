@@ -1,40 +1,35 @@
 import { expect, test } from '@playwright/test';
 
-// Prove the website remains usable on runners without WebGPU. Actual rendering
-// belongs to the explicitly invoked local GPU and visual suites.
+// Exercise real navigation and controls when decorative GPU output is unavailable.
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
 });
 
 for (const width of [360, 1440]) {
-  test(`home and examples remain usable without GPU at ${width}px`, async ({ page }, testInfo) => {
+  test(`home and gallery remain usable without GPU at ${width}px`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await expect(page.locator('#hero-title')).toBeVisible();
-    await expect(page.locator('#effect-status')).toContainText('WebGPU is unavailable');
-    await expect(page.locator('.home-hero canvas')).toHaveCount(0);
+    await expect(page.locator('.effect-grid [data-card]')).toHaveCount(5);
+    await expect(page.locator('[data-filter]')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
-    await testInfo.attach('home.png', { body: await page.screenshot(), contentType: 'image/png' });
-    await page
-      .getByRole('navigation', { name: 'Main navigation' })
-      .getByRole('link', { name: 'Examples', exact: true })
-      .click();
-    await expect(page.locator('#example-image')).toBeInViewport();
-    expect(
-      await page
-        .locator('#example-image')
-        .evaluate(
-          (image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
-        ),
-    ).toBe(true);
-    await page.getByRole('link', { name: 'SVG', exact: true }).click();
-    await expect(page.locator('#example-svg')).toBeInViewport();
-    await testInfo.attach('example.png', {
-      body: await page.screenshot(),
-      contentType: 'image/png',
-    });
+    await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
+    await expect(page.locator('[data-preview-status]')).toContainText('WebGPU is unavailable');
+    await expect(page.locator('.dialog-stage canvas')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Close preview' }).click();
+    await page.getByRole('link', { name: 'Explore all 21 effects' }).click();
+    await expect(page).toHaveURL(/\/effects\/$/);
+    await expect(page.locator('.effect-grid [data-card]')).toHaveCount(21);
+    await page.getByRole('button', { name: 'Material', exact: true }).click();
+    await expect(page.locator('.effect-grid [data-card]:visible')).toHaveCount(3);
+    await expect(page.locator('[data-count]')).toHaveText('3');
+    const sizes = await page
+      .locator('.effect-grid [data-card]:visible .card-art')
+      .evaluateAll((elements) => elements.map((el) => el.getBoundingClientRect().height));
+    expect(new Set(sizes).size).toBe(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     expect(errors).toEqual([]);
   });
 }

@@ -39,11 +39,11 @@ jobs:
       - run: pnpm test:web
       - name: Pack once and test both fresh consumers
         run: xvfb-run -a pnpm release:rehearse
-      - name: Check publication identity and list evidence for approval
+      - name: Check source identity and immutable evidence for approval
         env:
           APPROVED_REVISION: ${{ github.sha }}
         run: |
-          node --input-type=module -e 'import { testedReleaseArtifacts } from "./scripts/check-release-artifacts.mjs"; console.log(JSON.stringify(testedReleaseArtifacts(".scratch/publication", process.env.APPROVED_REVISION), null, 2))' >> "$GITHUB_STEP_SUMMARY"
+          pnpm release:handoff .scratch/publication "$APPROVED_REVISION" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: tested-alpha-${{ github.sha }}
@@ -56,29 +56,3 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
-
-  publish:
-    needs: prepare
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment: npm
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version-file: .nvmrc
-          registry-url: https://registry.npmjs.org
-      - run: npm install --global npm@11.5.1
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: tested-alpha-${{ github.sha }}
-          path: .scratch/publication
-      - name: Publish verified bytes through npm trusted publishing
-        env:
-          APPROVED_REVISION: ${{ github.sha }}
-        run: node scripts/check-release-artifacts.mjs --publish .scratch/publication "$APPROVED_REVISION"

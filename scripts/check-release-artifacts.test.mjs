@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -9,9 +9,16 @@ import { test } from 'node:test';
 import {
   assertReleaseVisibility,
   publishedArtifactMatches,
+  releaseSourceIdentity,
   testedReleaseArtifacts,
   validateArtifact,
 } from './check-release-artifacts.mjs';
+
+const source = {
+  repository: 'github.com/example/domfx',
+  revision: 'approved',
+  tree: 'tree',
+};
 
 const manifest = {
   name: '@domfx/core',
@@ -102,7 +109,7 @@ for (const path of ['.', 'tests/gpu', 'apps/web', 'packages/other']) {
   });
 }
 
-function releaseEvidence(t) {
+function releaseEvidence(t, sourceIdentity = source) {
   const directory = mkdtempSync(join(tmpdir(), 'domfx-tested-artifact-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   mkdirSync(join(directory, 'artifacts'));
@@ -121,11 +128,13 @@ function releaseEvidence(t) {
       tarball,
       manifest,
       sha256: createHash('sha256').update(readFileSync(tarball)).digest('hex'),
+      integrity: `sha512-${createHash('sha512').update(readFileSync(tarball)).digest('base64')}`,
     };
   });
   const report = {
     outcome: 'PASS',
-    revision: 'approved',
+    revision: sourceIdentity.revision,
+    source: sourceIdentity,
     dirty: '',
     finishedAt: new Date().toISOString(),
     artifacts,
@@ -145,7 +154,7 @@ function releaseEvidence(t) {
 
 test('transports the three tested alpha tarballs without repacking', (t) => {
   const { directory } = releaseEvidence(t);
-  const artifacts = testedReleaseArtifacts(directory, 'approved');
+  const artifacts = testedReleaseArtifacts(directory, 'approved', source);
   assert.deepEqual(
     artifacts.map(({ name }) => name),
     ['@domfx/core', '@domfx/browser', '@domfx/gsap'],
@@ -166,6 +175,32 @@ test('transports the three tested alpha tarballs without repacking', (t) => {
     /alpha tag/,
   );
 });
+
+test('read-only handoff rejects source-mismatched evidence without a registry action', (t) => {
+  const { directory } = releaseEvidence(t);
+  const result = spawnSync(
+    process.execPath,
+    ['scripts/check-release-artifacts.mjs', '--handoff', directory, 'approved'],
+    { cwd: process.cwd(), encoding: 'utf8' },
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /source identity differs/);
+});
+
+test('read-only handoff accepts matching source identity without a registry action', (t) => {
+  const sourceIdentity = releaseSourceIdentity(process.cwd());
+  const { directory } = releaseEvidence(t, sourceIdentity);
+  const result = spawnSync(
+    process.execPath,
+    ['scripts/check-release-artifacts.mjs', '--handoff', directory, sourceIdentity.revision],
+    { cwd: process.cwd(), encoding: 'utf8' },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /npm/);
+});
+
 for (const failure of [
   'revision',
   'dirty',
@@ -176,6 +211,8 @@ for (const failure of [
   'private',
   'changed-bytes',
   'missing-tarball',
+  'source',
+  'changed-integrity',
 ]) {
   test(`stops publication with ${failure} evidence`, (t) => {
     const { directory, report, save } = releaseEvidence(t);
@@ -206,7 +243,13 @@ for (const failure of [
     if (failure === 'missing-tarball') {
       rmSync(report.artifacts[0].tarball);
     }
+    if (failure === 'source') {
+      report.source = { ...source, tree: 'other-tree' };
+    }
+    if (failure === 'changed-integrity') {
+      report.artifacts[0].integrity = 'sha512-different';
+    }
     save();
-    assert.throws(() => testedReleaseArtifacts(directory, 'approved'));
+    assert.throws(() => testedReleaseArtifacts(directory, 'approved', source));
   });
 }

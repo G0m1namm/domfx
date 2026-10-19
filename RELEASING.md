@@ -83,8 +83,9 @@ VRAM or replace the fixtures' resource-accounting and lifecycle stress checks.
 
 The printed temporary directory retains `report.json`, tarballs, command logs, installed
 consumers, production builds and per-stage PNGs. The report records artifact SHA-256s,
-actual tar file inventories/manifests, resolved install paths, source revision/dirty
-state, lockfile and production asset hashes, Node/browser/GPU environment and checks.
+SHA-512 registry-integrity values, actual tar file inventories/manifests, resolved install
+paths, credential-free source repository/revision/tree identity, dirty state, lockfile and
+production asset hashes, Node/browser/GPU environment and checks.
 Archive that directory when retaining release evidence; the OS may remove temporary files.
 On a consumer browser failure, retain its `failure.png` and the report's native-selection
 focus, pointer-target and layout observations when the heading check was reached.
@@ -95,6 +96,29 @@ bounded accidental-content check, not a comprehensive secret or Git-history audi
 A passing run covers these Vite/Chromium consumers on the recorded GPU. It does not
 establish broad browser/bundler support, physical device-loss recovery or publication
 readiness. Run `pnpm agent:verify` separately for the full repository gate.
+
+## Exact-artifact handoff
+
+The disabled hosted workflow may upload a passing local-style rehearsal directory, but it
+does not publish, deploy, contact a registry, or receive publication credentials. Before a
+later hosted approval path may act on that directory, check out the approved source revision
+and run:
+
+```sh
+pnpm release:handoff <tested-evidence-directory> <approved-commit>
+```
+
+This is read-only: it compares the evidence's normalized repository identity, commit and
+Git tree to the current checkout, rehashes every retained tarball with SHA-256 and SHA-512,
+and requires both fresh-consumer reports and their GPU/recipe proof. It neither repacks
+tarballs nor turns policy decisions into approval. If it fails, retain the report, tarballs,
+logs and failure screenshots; a source or hash mismatch requires a new rehearsal from the
+approved source, while a transport failure may be recovered only by restoring the unchanged
+archived evidence and rerunning this command.
+
+This technical handoff holds, rather than resolves, release-policy, package-version, license,
+ownership, credential and registry decisions. Those gates require their separate review before
+any publication path is enabled.
 
 For a local version rehearsal, use a disposable checkout and run
 `pnpm changeset version`, followed by `pnpm install --lockfile-only` and

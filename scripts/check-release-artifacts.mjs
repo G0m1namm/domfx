@@ -11,6 +11,30 @@ export const releaseLibraries = {
   'packages/gsap': '@domfx/gsap',
 };
 
+function git(root, args) {
+  return execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+}
+
+function repositoryIdentity(remote) {
+  const normalizedRemote = remote.replace(/^([^@/:]+)@([^:]+):/, 'ssh://$1@$2/');
+  const url = new URL(normalizedRemote);
+  assert.equal(url.password, '', 'source remote must not contain a password');
+  assert.equal(url.search, '', 'source remote must not contain query parameters');
+  assert.equal(url.hash, '', 'source remote must not contain a fragment');
+  const path = url.pathname.replace(/^\/+|\.git$/g, '');
+  assert.ok(path, 'source remote must identify a repository');
+  return `${url.host}/${path}`;
+}
+
+/** A credential-free identity for the checked-out source that produced release evidence. */
+export function releaseSourceIdentity(root = '.') {
+  return {
+    repository: repositoryIdentity(git(root, ['remote', 'get-url', 'origin'])),
+    revision: git(root, ['rev-parse', 'HEAD']),
+    tree: git(root, ['rev-parse', 'HEAD^{tree}']),
+  };
+}
+
 export function assertReleaseVisibility(path, manifest) {
   const name = releaseLibraries[path];
   if (name && manifest.name !== name) {
@@ -89,10 +113,12 @@ export function checkReleaseArtifacts(root = '.') {
 }
 
 /** Validate the exact tested bytes transported from the preparation job. No repacking. */
-export function testedReleaseArtifacts(directory, revision, now = Date.now()) {
+export function testedReleaseArtifacts(directory, revision, source, now = Date.now()) {
   const report = JSON.parse(readFileSync(join(directory, 'report.json'), 'utf8'));
   assert.equal(report.outcome, 'PASS', 'release rehearsal must pass');
   assert.equal(report.revision, revision, 'release evidence must match the approved commit');
+  assert.deepEqual(report.source, source, 'release evidence source identity differs');
+  assert.equal(report.source.revision, report.revision, 'release evidence source revision differs');
   assert.equal(report.dirty, '', 'release evidence requires a clean checkout');
   const age = now - Date.parse(report.finishedAt);
   assert.ok(age >= 0 && age <= 7 * 24 * 60 * 60 * 1000, 'release evidence expired or missing');
@@ -131,6 +157,8 @@ export function testedReleaseArtifacts(directory, revision, now = Date.now()) {
       artifact.sha256,
       'tested tarball hash changed',
     );
+    const integrity = `sha512-${createHash('sha512').update(bytes).digest('base64')}`;
+    assert.equal(artifact.integrity, integrity, 'tested tarball integrity changed');
     const packed = JSON.parse(
       execFileSync('tar', ['-xOf', tarball, 'package/package.json'], { encoding: 'utf8' }),
     );
@@ -139,7 +167,7 @@ export function testedReleaseArtifacts(directory, revision, now = Date.now()) {
       tarball,
       name: manifest.name,
       version: manifest.version,
-      integrity: `sha512-${createHash('sha512').update(bytes).digest('base64')}`,
+      integrity,
     };
   });
 }
@@ -174,7 +202,7 @@ export function publishedArtifactMatches(artifact, metadata) {
 }
 
 function publishTestedRelease(directory, revision) {
-  const artifacts = testedReleaseArtifacts(directory, revision);
+  const artifacts = testedReleaseArtifacts(directory, revision, releaseSourceIdentity());
   for (const artifact of artifacts) {
     const spec = `${artifact.name}@${artifact.version}`;
     const existing = registryMetadata(spec);
@@ -201,7 +229,19 @@ function publishTestedRelease(directory, revision) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
-  if (process.argv[2] === '--publish') {
+  if (process.argv[2] === '--handoff') {
+    assert.ok(
+      process.argv[3] && process.argv[4],
+      'provide tested evidence directory and approved revision',
+    );
+    console.log(
+      JSON.stringify(
+        testedReleaseArtifacts(resolve(process.argv[3]), process.argv[4], releaseSourceIdentity()),
+        null,
+        2,
+      ),
+    );
+  } else if (process.argv[2] === '--publish') {
     assert.ok(
       process.argv[3] && process.argv[4],
       'provide tested evidence directory and approved revision',

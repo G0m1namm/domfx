@@ -257,6 +257,29 @@ test('storage-disabled restoration retains local motion and Pause in memory', as
   await expect(page.locator('#effect-play')).toHaveText('Resume');
 });
 
+test('persisted page recreation retains the paused shared Fire time', async ({ page }) => {
+  await recordAttachments(page);
+  await page.goto('/');
+  await expect.poll(async () => (await latest(page, 'example-image'))?.time).toBeGreaterThan(0.1);
+  await page.locator('#effect-play').click();
+  const retained = (await latest(page, 'example-image'))?.time;
+  if (retained === undefined) {
+    throw new Error('Fire attachment missing before persisted navigation');
+  }
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
+  await expect(page.locator('[data-test-layer]')).toHaveCount(0);
+  await page.evaluate(() =>
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })),
+  );
+  await expect.poll(() => latest(page, 'example-image')).toBeTruthy();
+  expect((await latest(page, 'example-image'))?.time).toBe(retained);
+  await expect(page.locator('#effect-play')).toHaveText('Resume');
+  await page.locator('#effect-play').click();
+  await expect
+    .poll(async () => (await latest(page, 'example-image'))?.time)
+    .toBeGreaterThan(retained);
+});
+
 test('delayed image decoding cannot attach after None is selected', async ({ page }) => {
   await recordAttachments(page);
   await page.addInitScript(() => {

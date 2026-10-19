@@ -60,7 +60,7 @@ publication and deployment remain separate workflows.
 
 ## Shared effect ownership
 
-`src/scripts/site.ts` retains one manual clock and four independent attachments:
+`src/scripts/effect-targets.ts` owns one manual clock and four independent attachments:
 image, SVG, text and installation action. PNG/SVG use bounded 256px local capture
 surfaces with positive proportional scaling. Fonts and relevant image decoding finish
 before attachment. Fire defaults to 70% intensity, 32px flame height, seed 314 and
@@ -80,7 +80,11 @@ instructions when clipboard writes fail.
 
 The installation action retains symmetric viewport intensity mapping:
 `maximum × clamp(1 - abs(cardCenter - H/2) / ((H + cardHeight)/2), 0, 1)`.
-Updates coalesce into animation frames and change public properties without recapture.
+The module owns target visibility, pending preparation, replacement, failure isolation
+and teardown. `site.ts` passes toolbar settings and presents status, focus and prompt
+content. Direct recording/deferred adapter tests cover ordering without bundle URL
+interception. Updates coalesce into animation frames and change public properties
+without recapture.
 
 ## Documentation and artwork
 

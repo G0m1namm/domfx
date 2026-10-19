@@ -35,6 +35,10 @@ export function releaseSourceIdentity(root = '.') {
   };
 }
 
+export function assertCleanReleaseCheckout(root = '.') {
+  assert.equal(git(root, ['status', '--porcelain']), '', 'approved source checkout must be clean');
+}
+
 export function assertReleaseVisibility(path, manifest) {
   const name = releaseLibraries[path];
   if (name && manifest.name !== name) {
@@ -112,7 +116,7 @@ export function checkReleaseArtifacts(root = '.') {
   );
 }
 
-/** Validate the exact tested bytes transported from the preparation job. No repacking. */
+/** Validate transported technical evidence. This does not approve publication metadata. */
 export function testedReleaseArtifacts(directory, revision, source, now = Date.now()) {
   const report = JSON.parse(readFileSync(join(directory, 'report.json'), 'utf8'));
   assert.equal(report.outcome, 'PASS', 'release rehearsal must pass');
@@ -136,20 +140,6 @@ export function testedReleaseArtifacts(directory, revision, source, now = Date.n
   );
   return report.artifacts.map((artifact) => {
     const { manifest } = artifact;
-    assert.notEqual(manifest.private, true, 'approve public library metadata before packing');
-    assert.equal(manifest.publishConfig?.access, 'public');
-    assert.match(
-      manifest.version,
-      /^0\.\d+\.\d+-alpha\.\d+$/,
-      'only experimental alpha publication',
-    );
-    if (manifest.name !== '@domfx/core') {
-      assert.equal(
-        manifest.dependencies?.['@domfx/core'],
-        report.artifacts[0].manifest.version,
-        'packed core dependency must match tested version',
-      );
-    }
     const tarball = join(directory, 'artifacts', basename(artifact.tarball));
     const bytes = readFileSync(tarball);
     assert.equal(
@@ -170,6 +160,30 @@ export function testedReleaseArtifacts(directory, revision, source, now = Date.n
       integrity,
     };
   });
+}
+
+/** Add publication policy only at the registry boundary, after technical evidence passes. */
+export function publishableTestedReleaseArtifacts(directory, revision, source, now = Date.now()) {
+  const artifacts = testedReleaseArtifacts(directory, revision, source, now);
+  const report = JSON.parse(readFileSync(join(directory, 'report.json'), 'utf8'));
+  for (const artifact of report.artifacts) {
+    const { manifest } = artifact;
+    assert.notEqual(manifest.private, true, 'approve public library metadata before packing');
+    assert.equal(manifest.publishConfig?.access, 'public');
+    assert.match(
+      manifest.version,
+      /^0\.\d+\.\d+-alpha\.\d+$/,
+      'only experimental alpha publication',
+    );
+    if (manifest.name !== '@domfx/core') {
+      assert.equal(
+        manifest.dependencies?.['@domfx/core'],
+        report.artifacts[0].manifest.version,
+        'packed core dependency must match tested version',
+      );
+    }
+  }
+  return artifacts;
 }
 
 export function registryMetadata(spec) {
@@ -202,7 +216,8 @@ export function publishedArtifactMatches(artifact, metadata) {
 }
 
 function publishTestedRelease(directory, revision) {
-  const artifacts = testedReleaseArtifacts(directory, revision, releaseSourceIdentity());
+  assertCleanReleaseCheckout();
+  const artifacts = publishableTestedReleaseArtifacts(directory, revision, releaseSourceIdentity());
   for (const artifact of artifacts) {
     const spec = `${artifact.name}@${artifact.version}`;
     const existing = registryMetadata(spec);
@@ -234,6 +249,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
       process.argv[3] && process.argv[4],
       'provide tested evidence directory and approved revision',
     );
+    assertCleanReleaseCheckout();
     console.log(
       JSON.stringify(
         testedReleaseArtifacts(resolve(process.argv[3]), process.argv[4], releaseSourceIdentity()),

@@ -4,7 +4,7 @@ The first alpha uses manual Changesets preparation, a normal reviewed release PR
 and deliberate publication of verified tarballs. Automatic version PRs can wait
 until several releases establish a useful routine; there is no generated-release
 validator. All packages currently remain `private: true`. The dispatch-only
-publication workflow is disabled unless `DOMFX_PUBLISH_ENABLED` is set to `true`.
+publication workflow is disabled and has no hosted preparation or registry job.
 Repository visibility and npm publication are separate maintainer actions.
 
 ## Packages and versions
@@ -99,22 +99,54 @@ readiness. Run `pnpm agent:verify` separately for the full repository gate.
 
 ## Exact-artifact handoff
 
-The disabled hosted workflow may upload a passing local-style rehearsal directory, but it
-does not publish, deploy, contact a registry, or receive publication credentials. Before a
-later hosted approval path may act on that directory, check out the approved source revision
-and run:
+Publication is disabled: `.github/workflows/publish.yml` intentionally has no hosted
+preparation, upload or registry job. A hosted Linux build cannot stand in for the locally
+GPU-verified tarballs. On the WebGPU-capable machine, start from a clean checkout of the
+approved revision, run the local rehearsal, then verify the retained directory before
+transporting it:
 
 ```sh
-pnpm release:handoff <tested-evidence-directory> <approved-commit>
+approved_commit="$(git rev-parse HEAD)"
+evidence_directory=/path/printed/by/release-rehearse
+transport_directory=/path/outside/checkout
+pnpm release:rehearse
+pnpm release:handoff "$evidence_directory" "$approved_commit"
+mkdir -p "$transport_directory"
+tar -C "$(dirname "$evidence_directory")" -czf "$transport_directory/domfx-tested-evidence.tgz" "$(basename "$evidence_directory")"
+(
+  cd "$transport_directory"
+  shasum -a 256 domfx-tested-evidence.tgz > domfx-tested-evidence.tgz.sha256
+)
+```
+
+Transport both archive files through an approved maintainer channel. At the receiving clean
+checkout of the same approved revision, inspect the transport hash, unpack it and recheck the
+unchanged evidence:
+
+```sh
+approved_commit=<approved-commit>
+checkout_directory=/path/to/clean/checkout
+transport_directory=/path/outside/checkout
+(
+  cd "$transport_directory"
+  shasum -a 256 -c domfx-tested-evidence.tgz.sha256
+  tar -xzf domfx-tested-evidence.tgz
+)
+git -C "$checkout_directory" switch --detach "$approved_commit"
+(
+  cd "$checkout_directory"
+  pnpm release:handoff "$transport_directory/domfx-tested-evidence" "$approved_commit"
+)
 ```
 
 This is read-only: it compares the evidence's normalized repository identity, commit and
 Git tree to the current checkout, rehashes every retained tarball with SHA-256 and SHA-512,
-and requires both fresh-consumer reports and their GPU/recipe proof. It neither repacks
-tarballs nor turns policy decisions into approval. If it fails, retain the report, tarballs,
-logs and failure screenshots; a source or hash mismatch requires a new rehearsal from the
-approved source, while a transport failure may be recovered only by restoring the unchanged
-archived evidence and rerunning this command.
+and requires both fresh-consumer reports and their GPU/recipe proof. The rehearsal and
+handoff both require clean source checkouts; the handoff does not repack tarballs or turn
+policy decisions into approval. If it fails, retain the report, tarballs, logs and failure
+screenshots; a source or hash mismatch requires a new rehearsal from the approved source,
+while a transport failure may be recovered only by restoring the unchanged archived evidence
+and rerunning this command.
 
 This technical handoff holds, rather than resolves, release-policy, package-version, license,
 ownership, credential and registry decisions. Those gates require their separate review before
@@ -171,53 +203,16 @@ Measure the complete install → own heading → own timeline → seek/reverse �
 journey only in actual sessions. The 2–5 minute target is a hypothesis, not a CI
 budget or a measured claim. No automated outreach or telemetry is required.
 
-## Approve and publish the exact tested bytes
+## Held publication approval
 
-1. Verify `g0m1namm` can publish `@domfx/core`, `@domfx/browser`, `@domfx/gsap`.
-   Review package access, alpha versions and source history. Obtain explicit approval
-   before making source public; verify anonymous repository, license and support links
-   after changing visibility.
-2. Merge the reviewed release PR with passing `Check / workspace`. Configure GitHub
-   environment `npm` with a required maintainer reviewer and prevention of self-review
-   where feasible. Inspect the available protections for the repository's plan/visibility;
-   do not assume creating the environment itself adds an approval gate.
-3. Configure each npm package's trusted publisher for `G0m1namm/domfx`, workflow
-   filename `publish.yml`, environment `npm`, permitting direct publication. The
-   workflow uses npm 11.5.1 with the repository's Node 22.22.3 on GitHub-hosted runners.
-   For packages that do not yet exist, verify the actual npm bootstrap/setup route
-   before enabling dispatch. If an authenticated first publication is necessary,
-   the maintainer publishes the approved tarballs with MFA; never share credentials
-   in chat or substitute freshly repacked files. Then configure trusted publishing.
-4. Set `DOMFX_PUBLISH_ENABLED=true` only after those approvals/settings. Manually run
-   **Publish experimental alpha** on `main`. Preparation repeats repository/web checks,
-   packs once and tests both consumers, then uploads report, tarballs, logs and PNGs.
-   No publishing token is granted to preparation. Review its commit, package versions,
-   integrity values and GPU report before approving the environment job.
-5. Publication downloads the same run's immutable artifact set and rechecks its clean
-   revision, passing evidence (at most seven days old), identities and tarball hashes.
-   It publishes core → browser → GSAP with `--access public --tag alpha --ignore-scripts`.
-   There is no rebuild/repack in the publishing job. Missing/expired evidence or changed
-   bytes stop it. Registry integrity and the alpha tag are checked after each publish.
-6. If partially published, inspect exact versions, `dist.integrity` and tags first.
-   A rerun retains already published versions only when bytes and alpha tags match;
-   mismatches stop for maintainer inspection. Published versions are immutable.
-   Repair a bad release with new versions; never reuse one for different bytes.
-   Review any tag correction separately rather than silently moving it on retry.
-7. Create per-package tags such as `@domfx/browser@0.1.0-alpha.0` and GitHub release
-   notes for the exact released commit and its changelog/migrations. Document
-   experimental support limits and known failures; no automated tagging is needed.
-
-The local equivalent, **only after approval**, is:
-
-```sh
-node scripts/check-release-artifacts.mjs --publish <tested-evidence-directory> <approved-commit>
-```
-
-This reads `report.json` and `artifacts/`; it does not create package bytes. Download
-and retain that directory from the preparation run. npm authentication/bootstrap and
-GitHub environment protection are execution prerequisites, not proved by local tests.
-Trusted-publisher provenance depends on public repository/package eligibility;
-record actual registry evidence and do not claim provenance before observing it.
+There is no executable publication workflow or approved registry procedure. Do not set
+`DOMFX_PUBLISH_ENABLED`, dispatch the disabled workflow, configure a trusted publisher or
+run `--publish`. #36 must resolve the separate readiness, ownership, package-version,
+license, credential and registry decisions before a new publication path is designed and
+reviewed. That later path must consume the archived evidence above without rebuilding or
+repacking it, verify the same clean revision and hashes, and stop for inspection if a
+partially published version, integrity value or alpha tag differs. Published versions are
+immutable; repair any bad release with a new version.
 
 ## Verify the public installation route
 
@@ -245,6 +240,5 @@ References: [Changesets configuration](https://changesets.dev/guide/config),
 
 GPU checks remain local for routine development. Before a release run
 `pnpm test:gpu:full`, `pnpm test:web`, `pnpm test:visual` and `pnpm release:rehearse`.
-The existing publication workflow is still disabled and still contains GPU-dependent
-preparation. It must be adapted to a verified artifact handoff before enabling it
-on hosted runners; routine website smoke is not publication GPU evidence.
+The publication workflow is disabled and performs no hosted preparation. Routine website
+smoke is not publication GPU evidence.

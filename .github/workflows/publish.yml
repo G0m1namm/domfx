@@ -1,4 +1,4 @@
-name: Publish experimental alpha
+name: Publish experimental alpha (disabled)
 
 on:
   workflow_dispatch:
@@ -11,48 +11,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  prepare:
-    if: github.ref == 'refs/heads/main' && vars.DOMFX_PUBLISH_ENABLED == 'true'
+  disabled:
+    # Locally GPU-verified tarballs must be archived and checked with release:handoff.
+    # Do not add hosted packing, testing, upload, or registry steps without an approved #36 policy.
+    if: ${{ false }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      LEFTHOOK: '0'
-      DOMFX_GPU_BACKEND: swiftshader
-      DOMFX_RELEASE_OUTPUT_DIR: .scratch/publication
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: |
-          pnpm --filter @domfx/gpu-tests exec playwright install --with-deps chromium
-          sudo apt-get install -y libvulkan1 mesa-vulkan-drivers xvfb
-      - run: pnpm agent:verify
-      # Disabled publication preparation retains GPU gates pending a local artifact handoff.
-      - run: pnpm test:gpu:full
-      - run: pnpm test:web
-      - name: Pack once and test both fresh consumers
-        run: xvfb-run -a pnpm release:rehearse
-      - name: Check source identity and immutable evidence for approval
-        env:
-          APPROVED_REVISION: ${{ github.sha }}
-        run: |
-          pnpm release:handoff .scratch/publication "$APPROVED_REVISION" >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: tested-alpha-${{ github.sha }}
-          path: |
-            .scratch/publication/report.json
-            .scratch/publication/artifacts/
-            .scratch/publication/command-*.log
-            .scratch/publication/standalone/*.png
-            .scratch/publication/gsap/*.png
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 7
+      - run: echo 'Publication remains disabled; follow RELEASING.md exact-artifact handoff.'

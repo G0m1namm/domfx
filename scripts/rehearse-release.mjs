@@ -18,6 +18,7 @@ import { chromium } from 'playwright';
 
 import {
   assertReleaseVisibility,
+  assertCleanReleaseCheckout,
   publishedArtifactMatches,
   registryMetadata,
   releaseSourceIdentity,
@@ -28,6 +29,7 @@ import { captureFailureEvidence } from './release-failure-evidence.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const registry = process.argv[2] === '--registry';
+assertCleanReleaseCheckout(root);
 const source = releaseSourceIdentity(root);
 // These same strings are rendered verbatim by Astro and tested by the website suite.
 const { gsapCode, standaloneCode } = await import(

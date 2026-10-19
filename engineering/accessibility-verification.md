@@ -154,3 +154,36 @@ No spoken or captioned VoiceOver output was captured in this follow-up; the
 previous **UNAVAILABLE** status is unchanged. AX control names and states do not
 establish what VoiceOver announces. Real mobile touch and another OS/GPU are also
 still **UNAVAILABLE**.
+
+The native observations and reproduction protocol are recorded in the Orca
+supervised Dispatch `ctx_0d6d7a9e7420` transcript for worktree
+`87-native-mac-evidence` and the ignored local protocol
+`.scratch/native-mac-evidence-87.md`. The independent website run is recorded at
+`.scratch/web/report.json` (124 passed, 0 skipped/failed/flaky); the attempted
+rerun log `.scratch/issue-87-test-web.log` records a port-4322 conflict before
+tests started. Native Safari/Chrome captures were not retained as files, so raw
+pixels are unavailable for review; the local website test screenshots are
+automated Playwright evidence, not native captures.
+
+### Issue #87 native Mac continuation — 2026-10-19 UTC
+
+The native-production-page observations used source
+`c6805fea03845c26ff6993ff83eb513ebc9e1da5`, lockfile SHA-256
+`9fd9ab1136ae32a42690f0ef80763d4a47cf468cc8f2343cab20991d2b1f8b89`, and built
+`apps/web/dist/index.html` SHA-256
+`f68815a55ad7b20cf82a9c7c2b7c1747bcc0e1ec5a0fec73d62f3f77ae2a9658`, served at
+`http://127.0.0.1:4321/`. The host was macOS 26.6.2 (25G83), arm64, MacBook Pro
+Mac17,8, Apple M5 Pro with 24 GB RAM; Safari was 26.6.2 and installed Chrome was
+152.0.7977.76. CSS viewport, DPR, browser adapter, reduced-motion state and page
+visibility were not exposed by the native inspection surface and are **UNTESTED**;
+the host Metal 4 report is not a browser adapter claim.
+
+| Scenario                                                          | Result                                                                                                                                                                                                                                                           | Evidence boundary                                                                                                                                                                                                                        |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Safari original native link and scroll                            | **PASS:** the original `Select the text. Try this link` navigated to `#integration`, moving the native Safari page to the integration section.                                                                                                                   | This was observed with None selected after Safari's Fire view failed visually; it is not active-layer selection evidence.                                                                                                                |
+| Safari original text selection while Fire is selected             | **UNTESTED.**                                                                                                                                                                                                                                                    | The native session did not obtain a qualifying text-selection observation.                                                                                                                                                               |
+| Chrome Fire versus fallback controls at 100%; native 200% zoom    | **PASS, bounded:** native views showed Fire around original content; None left original content visible and disabled Intensity/Pause. Chrome's native zoom control displayed `200%`.                                                                             | User control interrupted before native scroll, selection, links, hide/return or lifecycle checks. Those scenarios are **UNTESTED**.                                                                                                      |
+| Safari Fire-selected visible output                               | **UNTESTED: Fire correctness.** Fire and None native views looked the same, showing the plain image, SVG and text, although the selector accepted Fire. **PASS: fallback controls.** None visibly disabled Intensity and Pause while retaining original content. | The visual observation does not establish effect availability or status, so no rendering pass/fail is assigned. This is not an accessibility-tree or assistive-technology conclusion.                                                    |
+| Hide/return and public refresh/replacement, disposal/reattachment | **UNTESTED.**                                                                                                                                                                                                                                                    | The production page does not expose public lifecycle calls, and no qualifying visibility-return observation was obtained.                                                                                                                |
+| Actual VoiceOver speech, navigation or announcements              | **UNTESTED.**                                                                                                                                                                                                                                                    | VoiceOver was not activated in this continuation and no actual spoken or captioned announcement was observed. Existing historical **UNAVAILABLE** rows remain preserved; neither AX names nor control states substitute for this result. |
+| Real mobile touch, second OS/GPU, other screen readers            | **UNAVAILABLE.**                                                                                                                                                                                                                                                 | No real device, second host GPU/OS, or assistive-technology session was accessible; no emulation is device evidence.                                                                                                                     |

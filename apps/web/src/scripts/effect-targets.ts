@@ -18,12 +18,41 @@ type Attach = (
 ) => Attachment;
 
 type Adapters = {
-  load?: (effect: 'fire' | 'electricity' | 'frost' | 'kinetic' | 'slime') => Promise<Attach>;
+  load?: (
+    effect:
+      | 'fire'
+      | 'electricity'
+      | 'frost'
+      | 'kinetic'
+      | 'slime'
+      | 'burned-paper'
+      | 'dither'
+      | 'halftone'
+      | 'stipple'
+      | 'scanlines'
+      | 'crosshatch'
+      | 'diamonds'
+      | 'contour-echoes',
+  ) => Promise<Attach>;
   prepare?: (element: Element) => Promise<unknown>;
 };
 
 export type EffectSettings = {
-  effect: 'none' | 'fire' | 'electricity' | 'frost' | 'kinetic' | 'slime';
+  effect:
+    | 'none'
+    | 'fire'
+    | 'electricity'
+    | 'frost'
+    | 'kinetic'
+    | 'slime'
+    | 'burned-paper'
+    | 'dither'
+    | 'halftone'
+    | 'stipple'
+    | 'scanlines'
+    | 'crosshatch'
+    | 'diamonds'
+    | 'contour-echoes';
   paused: boolean;
   reduced: boolean;
   needsResume: boolean;
@@ -49,10 +78,36 @@ type Target = {
 };
 
 async function loadEffect(
-  effect: 'fire' | 'electricity' | 'frost' | 'kinetic' | 'slime',
+  effect:
+    | 'fire'
+    | 'electricity'
+    | 'frost'
+    | 'kinetic'
+    | 'slime'
+    | 'burned-paper'
+    | 'dither'
+    | 'halftone'
+    | 'stipple'
+    | 'scanlines'
+    | 'crosshatch'
+    | 'diamonds'
+    | 'contour-echoes',
 ): Promise<Attach> {
-  const { attachFire, attachElectricity, attachFrost, attachKinetic, attachSlime } =
-    await import('@domfx/browser');
+  const {
+    attachFire,
+    attachElectricity,
+    attachFrost,
+    attachKinetic,
+    attachSlime,
+    attachBurnedPaper,
+    attachDither,
+    attachHalftone,
+    attachStipple,
+    attachScanlines,
+    attachCrosshatch,
+    attachDiamonds,
+    attachContourEchoes,
+  } = await import('@domfx/browser');
   return effect === 'fire'
     ? attachFire
     : effect === 'electricity'
@@ -61,7 +116,23 @@ async function loadEffect(
         ? attachFrost
         : effect === 'kinetic'
           ? attachKinetic
-          : attachSlime;
+          : effect === 'slime'
+            ? attachSlime
+            : effect === 'burned-paper'
+              ? attachBurnedPaper
+              : effect === 'dither'
+                ? attachDither
+                : effect === 'halftone'
+                  ? attachHalftone
+                  : effect === 'stipple'
+                    ? attachStipple
+                    : effect === 'scanlines'
+                      ? attachScanlines
+                      : effect === 'crosshatch'
+                        ? attachCrosshatch
+                        : effect === 'diamonds'
+                          ? attachDiamonds
+                          : attachContourEchoes;
 }
 
 async function prepareTarget(element: Element) {

@@ -4,7 +4,15 @@ export type EffectName =
   | 'electricity-edge'
   | 'frost-edge'
   | 'kinetic-edge'
-  | 'slime-edge';
+  | 'slime-edge'
+  | 'burned-paper-edge'
+  | 'dither-edge'
+  | 'halftone-edge'
+  | 'stipple-edge'
+  | 'scanlines-edge'
+  | 'crosshatch-edge'
+  | 'diamonds-edge'
+  | 'contour-echoes-edge';
 
 /** Stable codes for unavailable effects and temporary suspension. */
 export type EffectReason =

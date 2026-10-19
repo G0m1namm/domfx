@@ -1,7 +1,9 @@
 import type { EffectHandle, EffectReason } from '@domfx/core';
 
 import { type captureElementWithReservation, measureCapture } from './browser.js';
+import type { BurnedPaperOptions } from './burned-paper-options.js';
 import { createCaptureRevisions } from './capture-revision.js';
+import type { DitherOptions } from './dither-options.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
 import type { ElectricityOptions } from './electricity-options.js';
 import type { FireOptions } from './fire-options.js';
@@ -9,6 +11,7 @@ import type { FrostOptions } from './frost-options.js';
 import type { RenderEffect } from './gpu.js';
 import type { KineticOptions } from './kinetic-options.js';
 import { memoryFor } from './memory.js';
+import type { PatternEffect, PatternOptions } from './pattern-options.js';
 import {
   assertEffectComposition,
   isPlacementMutation,
@@ -44,7 +47,10 @@ function attachWithAdapters(
     | { effect: 'electricity'; options: ElectricityOptions }
     | { effect: 'frost'; options: FrostOptions }
     | { effect: 'kinetic'; options: KineticOptions }
-    | { effect: 'slime'; options: SlimeOptions },
+    | { effect: 'slime'; options: SlimeOptions }
+    | { effect: 'burned-paper'; options: BurnedPaperOptions }
+    | { effect: 'dither'; options: DitherOptions }
+    | { effect: PatternEffect; options: PatternOptions },
   adapters: AttachmentAdapters,
 ): EffectHandle {
   const { effect, options } = request;
@@ -808,4 +814,29 @@ export function attachSlimeWithAdapters(
   adapters: AttachmentAdapters,
 ): EffectHandle {
   return attachWithAdapters(target, { effect: 'slime', options }, adapters);
+}
+
+export function attachBurnedPaperWithAdapters(
+  target: Element,
+  options: BurnedPaperOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect: 'burned-paper', options }, adapters);
+}
+
+export function attachDitherWithAdapters(
+  target: Element,
+  options: DitherOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect: 'dither', options }, adapters);
+}
+
+export function attachPatternWithAdapters(
+  target: Element,
+  effect: PatternEffect,
+  options: PatternOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
+  return attachWithAdapters(target, { effect, options }, adapters);
 }

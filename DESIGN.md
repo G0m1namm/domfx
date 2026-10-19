@@ -516,3 +516,31 @@ antialiasing is limited to contour coverage. Retain the slow stretching motion
 and remove incandescent cracks and heat shading. The maintainer approved the
 solid green coating and drip motion on 2026-10-19 as the checkpoint before
 exploring gloss and translucency. Tests and full lifecycle verification remain deferred.
+
+The glossy Slime pass was approved on 2026-10-19: rounded wet highlights and
+thickness-based green translucency sit inside the defined coating boundaries.
+Preserve the accepted buildup, pinch-off, falling drops and neck retraction.
+
+### Approved Burned paper direction
+
+The maintainer approved Burned paper on 2026-10-19: a dark charred rim, uneven
+brown scorching and sparse orange-hot seams. Intensity spreads the coating
+inward across the target; the outer material rim stays below one CSS pixel to
+preserve spacing between letters. Keep the original content intact. Tests and
+full lifecycle verification remain deferred until visual exploration is complete.
+
+### Approved Dither direction
+
+The maintainer approved the fine ordered-dot effect on 2026-10-19. Small fixed-grid
+silver-violet dots form an edge coating and rising wisps; intensity increases dot
+density, inward coverage and reach. Keep it free of letters and symbols, with the
+original content intact. Larger halftone variants are not part of this approved
+pass. Tests and full lifecycle verification remain deferred.
+
+### Approved pattern effects
+
+The maintainer approved Halftone, Stipple, Scanlines, Crosshatch, Diamond lattice
+and Contour echoes on 2026-10-19. Preserve their distinct silver-violet marks and
+shared silhouette-following intensity controls alongside the original Dither.
+This approves their visual direction; automated and full lifecycle verification
+remain deferred until the effect exploration is complete.

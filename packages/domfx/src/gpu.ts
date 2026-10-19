@@ -3,13 +3,25 @@ import { d, std, tgpu, type TgpuRoot } from 'typegpu';
 
 import type { CaptureFrame } from '@domfx/core';
 
+import { burnedPaperShader } from './burned-paper-shader.js';
+import { ditherShader } from './dither-shader.js';
 import { EffectError } from './effect-error.js';
 import { electricityShader } from './electricity-shader.js';
 import { frostShader } from './frost-shader.js';
 import { kineticShader } from './kinetic-shader.js';
+import type { PatternEffect } from './pattern-options.js';
+import { createPatternShader } from './pattern-shader.js';
 import { slimeShader } from './slime-shader.js';
 
-export type RenderEffect = 'fire' | 'electricity' | 'frost' | 'kinetic' | 'slime';
+export type RenderEffect =
+  | 'fire'
+  | 'electricity'
+  | 'frost'
+  | 'kinetic'
+  | 'slime'
+  | 'burned-paper'
+  | 'dither'
+  | PatternEffect;
 
 const sourceLayout = tgpu.bindGroupLayout({ source: { texture: d.texture2d() } });
 const classifyMask = (coord: d.v2u) => {
@@ -203,6 +215,14 @@ export class GpuExperiment {
       label: 'domfx deterministic slime drips',
       code: slimeShader,
     });
+    const burnedPaperModule = device.createShaderModule({
+      label: 'domfx deterministic burned paper',
+      code: burnedPaperShader,
+    });
+    const ditherModule = device.createShaderModule({
+      label: 'domfx deterministic dither',
+      code: ditherShader,
+    });
     const pipeline = (name: RenderEffect, module: GPUShaderModule) =>
       device.createRenderPipeline({
         label: `domfx ${name}`,
@@ -215,12 +235,28 @@ export class GpuExperiment {
         },
         primitive: { topology: 'triangle-list' },
       });
+    const patternPipeline = (effect: PatternEffect) =>
+      pipeline(
+        effect,
+        device.createShaderModule({
+          label: `domfx ${effect} exploration`,
+          code: createPatternShader(effect),
+        }),
+      );
     this.pipelines = {
       fire: pipeline('fire', fireModule),
       electricity: pipeline('electricity', electricityModule),
       frost: pipeline('frost', frostModule),
       kinetic: pipeline('kinetic', kineticModule),
       slime: pipeline('slime', slimeModule),
+      'burned-paper': pipeline('burned-paper', burnedPaperModule),
+      dither: pipeline('dither', ditherModule),
+      halftone: patternPipeline('halftone'),
+      stipple: patternPipeline('stipple'),
+      scanlines: patternPipeline('scanlines'),
+      crosshatch: patternPipeline('crosshatch'),
+      diamonds: patternPipeline('diamonds'),
+      'contour-echoes': patternPipeline('contour-echoes'),
     };
   }
 
@@ -362,6 +398,14 @@ export class GpuExperiment {
         frost: bindGroupFor('frost'),
         kinetic: bindGroupFor('kinetic'),
         slime: bindGroupFor('slime'),
+        'burned-paper': bindGroupFor('burned-paper'),
+        dither: bindGroupFor('dither'),
+        halftone: bindGroupFor('halftone'),
+        stipple: bindGroupFor('stipple'),
+        scanlines: bindGroupFor('scanlines'),
+        crosshatch: bindGroupFor('crosshatch'),
+        diamonds: bindGroupFor('diamonds'),
+        'contour-echoes': bindGroupFor('contour-echoes'),
       };
       let disposed = false;
       const prepared: PreparedGpuFrame = {

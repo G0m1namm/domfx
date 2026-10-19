@@ -10,7 +10,21 @@ function required<T extends Element>(selector: string) {
 }
 
 type Preferences = {
-  effect: 'none' | 'fire' | 'electricity' | 'frost' | 'kinetic' | 'slime';
+  effect:
+    | 'none'
+    | 'fire'
+    | 'electricity'
+    | 'frost'
+    | 'kinetic'
+    | 'slime'
+    | 'burned-paper'
+    | 'dither'
+    | 'halftone'
+    | 'stipple'
+    | 'scanlines'
+    | 'crosshatch'
+    | 'diamonds'
+    | 'contour-echoes';
   paused: boolean;
   reduced: boolean;
   needsResume: boolean;
@@ -32,7 +46,15 @@ try {
         saved.effect === 'electricity' ||
         saved.effect === 'frost' ||
         saved.effect === 'kinetic' ||
-        saved.effect === 'slime'
+        saved.effect === 'slime' ||
+        saved.effect === 'burned-paper' ||
+        saved.effect === 'dither' ||
+        saved.effect === 'halftone' ||
+        saved.effect === 'stipple' ||
+        saved.effect === 'scanlines' ||
+        saved.effect === 'crosshatch' ||
+        saved.effect === 'diamonds' ||
+        saved.effect === 'contour-echoes'
           ? saved.effect
           : 'fire',
       paused: 'paused' in saved && saved.paused === true,
@@ -142,7 +164,7 @@ function initializePage() {
     required<HTMLElement>('#prompt-summary').textContent =
       preferences.effect === 'none'
         ? 'None · Keep your HTML undecorated'
-        : `${preferences.effect === 'fire' ? 'Fire' : preferences.effect === 'electricity' ? 'Electricity' : preferences.effect === 'frost' ? 'Frost' : preferences.effect === 'kinetic' ? 'Kinetic bloom' : 'Slime'} · ${Math.round(maximumIntensity * 100)}% · ${preferences.effect === 'fire' ? `${flameHeight}px · ` : ''}${motionSpeed}× · ${motionLoop ? `${rangeStart}–${rangeEnd}s loop` : 'Continuous'} · ${paused ? 'Paused' : 'Animate'}`;
+        : `${preferences.effect === 'fire' ? 'Fire' : preferences.effect === 'electricity' ? 'Electricity' : preferences.effect === 'frost' ? 'Frost' : preferences.effect === 'kinetic' ? 'Kinetic bloom' : preferences.effect === 'slime' ? 'Slime' : preferences.effect === 'burned-paper' ? 'Burned paper' : preferences.effect === 'dither' ? 'Dither dissolve' : preferences.effect === 'halftone' ? 'Halftone' : preferences.effect === 'stipple' ? 'Stipple' : preferences.effect === 'scanlines' ? 'Scanlines' : preferences.effect === 'crosshatch' ? 'Crosshatch' : preferences.effect === 'diamonds' ? 'Diamond lattice' : preferences.effect === 'contour-echoes' ? 'Contour echoes' : 'None'} · ${Math.round(maximumIntensity * 100)}% · ${preferences.effect === 'fire' ? `${flameHeight}px · ` : ''}${motionSpeed}× · ${motionLoop ? `${rangeStart}–${rangeEnd}s loop` : 'Continuous'} · ${paused ? 'Paused' : 'Animate'}`;
     promptContent.textContent = createAgentPrompt({
       target: promptTarget.value.trim() || 'the main hero heading',
       effect: preferences.effect,
@@ -209,7 +231,23 @@ function initializePage() {
               ? 'Kinetic bloom'
               : preferences.effect === 'slime'
                 ? 'Slime'
-                : 'None';
+                : preferences.effect === 'burned-paper'
+                  ? 'Burned paper'
+                  : preferences.effect === 'dither'
+                    ? 'Dither dissolve'
+                    : preferences.effect === 'halftone'
+                      ? 'Halftone'
+                      : preferences.effect === 'stipple'
+                        ? 'Stipple'
+                        : preferences.effect === 'scanlines'
+                          ? 'Scanlines'
+                          : preferences.effect === 'crosshatch'
+                            ? 'Crosshatch'
+                            : preferences.effect === 'diamonds'
+                              ? 'Diamond lattice'
+                              : preferences.effect === 'contour-echoes'
+                                ? 'Contour echoes'
+                                : 'None';
     panelTriggers[0].setAttribute('aria-label', `Effect settings: ${effectLabel}`);
     effectChoice.value = preferences.effect;
     const percent = `${Math.round(maximumIntensity * 100)}%`;
@@ -435,7 +473,15 @@ function initializePage() {
       value === 'electricity' ||
       value === 'frost' ||
       value === 'kinetic' ||
-      value === 'slime'
+      value === 'slime' ||
+      value === 'burned-paper' ||
+      value === 'dither' ||
+      value === 'halftone' ||
+      value === 'stipple' ||
+      value === 'scanlines' ||
+      value === 'crosshatch' ||
+      value === 'diamonds' ||
+      value === 'contour-echoes'
         ? value
         : 'none';
     required<HTMLInputElement>(`input[name="effect"][value="${preferences.effect}"]`).checked =

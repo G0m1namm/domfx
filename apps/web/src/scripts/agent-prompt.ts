@@ -1,6 +1,20 @@
 export function createAgentPrompt(settings: {
   target: string;
-  effect: 'none' | 'fire' | 'electricity' | 'frost' | 'kinetic' | 'slime';
+  effect:
+    | 'none'
+    | 'fire'
+    | 'electricity'
+    | 'frost'
+    | 'kinetic'
+    | 'slime'
+    | 'burned-paper'
+    | 'dither'
+    | 'halftone'
+    | 'stipple'
+    | 'scanlines'
+    | 'crosshatch'
+    | 'diamonds'
+    | 'contour-echoes';
   intensity: number;
   flameHeight: number;
   time: number;
@@ -12,8 +26,10 @@ export function createAgentPrompt(settings: {
   if (settings.effect === 'none') {
     return `Keep ${settings.target} as real, undecorated HTML in this project. Remove only its domfx effect, dispose its attachment and remove its owned listeners/animation work. Preserve other effects and native selection, links, focus, styles and layout. Do not install packages. Follow the project's component lifecycle and run its relevant checks.`;
   }
+  const isDither = settings.effect === 'dither';
   const isFire = settings.effect === 'fire';
   const isFrost = settings.effect === 'frost';
+  const isBurnedPaper = settings.effect === 'burned-paper';
   const isSlime = settings.effect === 'slime';
   const isKinetic = settings.effect === 'kinetic';
   const name = isFire
@@ -24,7 +40,23 @@ export function createAgentPrompt(settings: {
         ? 'Kinetic bloom'
         : isSlime
           ? 'Slime'
-          : 'Electricity';
+          : isBurnedPaper
+            ? 'Burned paper'
+            : isDither
+              ? 'Dither dissolve'
+              : settings.effect === 'halftone'
+                ? 'Halftone'
+                : settings.effect === 'stipple'
+                  ? 'Stipple'
+                  : settings.effect === 'scanlines'
+                    ? 'Scanlines'
+                    : settings.effect === 'crosshatch'
+                      ? 'Crosshatch'
+                      : settings.effect === 'diamonds'
+                        ? 'Diamond lattice'
+                        : settings.effect === 'contour-echoes'
+                          ? 'Contour echoes'
+                          : 'Electricity';
   const api = isFire
     ? 'attachFire'
     : isFrost
@@ -33,7 +65,23 @@ export function createAgentPrompt(settings: {
         ? 'attachKinetic'
         : isSlime
           ? 'attachSlime'
-          : 'attachElectricity';
+          : isBurnedPaper
+            ? 'attachBurnedPaper'
+            : isDither
+              ? 'attachDither'
+              : settings.effect === 'halftone'
+                ? 'attachHalftone'
+                : settings.effect === 'stipple'
+                  ? 'attachStipple'
+                  : settings.effect === 'scanlines'
+                    ? 'attachScanlines'
+                    : settings.effect === 'crosshatch'
+                      ? 'attachCrosshatch'
+                      : settings.effect === 'diamonds'
+                        ? 'attachDiamonds'
+                        : settings.effect === 'contour-echoes'
+                          ? 'attachContourEchoes'
+                          : 'attachElectricity';
   const handle = isFire
     ? 'fire'
     : isFrost
@@ -42,7 +90,23 @@ export function createAgentPrompt(settings: {
         ? 'kinetic'
         : isSlime
           ? 'slime'
-          : 'electricity';
+          : isBurnedPaper
+            ? 'paper'
+            : isDither
+              ? 'dither'
+              : settings.effect === 'halftone'
+                ? 'halftone'
+                : settings.effect === 'stipple'
+                  ? 'stipple'
+                  : settings.effect === 'scanlines'
+                    ? 'scanlines'
+                    : settings.effect === 'crosshatch'
+                      ? 'crosshatch'
+                      : settings.effect === 'diamonds'
+                        ? 'diamonds'
+                        : settings.effect === 'contour-echoes'
+                          ? 'contourEchoes'
+                          : 'electricity';
   const sizeSetting = isFire ? `, flameHeight ${settings.flameHeight} CSS pixels` : '';
   const sizeOption = isFire ? `, flameHeight: ${settings.flameHeight}` : '';
   const manual = settings.loop || settings.speed !== 1;

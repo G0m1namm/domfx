@@ -42,7 +42,8 @@ fn noise(p: vec2f) -> f32 {
 @fragment fn fragment(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   if (params.w <= 0 || params.z <= 0) { return vec4f(0); }
   let p = pos.xy / params.w;
-  let distance = field(p).x;
+  let targetField = field(p);
+  let distance = targetField.x;
   if (distance < -12 || distance > 31) { return vec4f(0); }
   let intensity = clamp(params.z, 0, 1);
   let aa = clamp(.45 / params.w, .15, .65);
@@ -55,6 +56,7 @@ fn noise(p: vec2f) -> f32 {
   let folds = noise(flow);
   let poolWidth = (1.1 + folds * 1.4) * intensity;
   var liquidDistance = distance - poolWidth;
+  var liquidGradient = targetField.yz;
 
   let cell = floor(p / 12);
   // Projection <=7px, droplet support <=30px, probe jitter <=2.4px per axis;
@@ -114,6 +116,11 @@ fn noise(p: vec2f) -> f32 {
       let neckWidth = thickness * pow(1 - along, 2)
                     + mix(.9, .12, pinch) * intensity * recoil;
       let neck = max(abs(dx) - neckWidth, max(-local.y - 2, local.y - neckEnd));
+      var neckGradient = vec2f(sign(dx), 2 * thickness * (1 - along) / max(neckEnd, 1));
+      if (-local.y - 2 > abs(dx) - neckWidth) { neckGradient = vec2f(0, -1); }
+      if (local.y - neckEnd > max(abs(dx) - neckWidth, -local.y - 2)) {
+        neckGradient = vec2f(0, 1);
+      }
       // The bead gathers volume, then keeps its size in flight. A damped
       // stretch relaxes toward a round drop while preserving projected area.
       let radius = (2.4 + detail * .8) * intensity * pow(.08 + .92 * growth, 1.0 / 3.0);
@@ -122,22 +129,44 @@ fn noise(p: vec2f) -> f32 {
       let axis = sqrt(stretch);
       let dropOffset = vec2f((local.x - dropX) * axis, (local.y - dropY) / axis);
       let bulb = length(dropOffset) - radius;
+      let bulbGradient = dropOffset * vec2f(axis, 1 / axis) / max(length(dropOffset), .001);
       let joinWidth = mix(1.8, .2, pinch);
       let unionBlend = clamp(.5 + .5 * (bulb - neck) / joinWidth, 0, 1);
       var shape = mix(bulb, neck, unionBlend) - joinWidth * unionBlend * (1 - unionBlend);
+      let shapeGradient = mix(bulbGradient, neckGradient, unionBlend);
       // Fade only at the padded output boundary, not by shrinking the falling mass.
       shape += smoothstep(27, 30, length(local)) * 8;
       let merge = clamp(.5 + .5 * (shape - liquidDistance) / 2, 0, 1);
       liquidDistance = mix(shape, liquidDistance, merge) - 2 * merge * (1 - merge);
+      liquidGradient = mix(shapeGradient, liquidGradient, merge);
     }
   }
-  // Both sides of the coating have a solid boundary. Intensity changes its
-  // depth and drip reach; only subpixel contour coverage changes opacity.
+  // Coverage keeps both boundaries sharp, independently of gel translucency.
   let depth = (1.5 + intensity * 6) * (.88 + folds * .12);
   let coatingDistance = max(liquidDistance, -distance - depth);
-  let alpha = 1 - smoothstep(-aa, aa, coatingDistance);
-  // A narrow darker lip defines both contours without a glowing halo.
-  let lip = smoothstep(-1, -.15, coatingDistance);
-  let color = mix(vec3f(.38, .82, .055), vec3f(.27, .66, .035), lip * .65);
+  let coverage = 1 - smoothstep(-aa, aa, coatingDistance);
+  var gradient = liquidGradient;
+  if (-distance - depth > liquidDistance) { gradient = -targetField.yz; }
+  gradient /= max(length(gradient), .001);
+
+  // Rounded cross-section inferred from the contour, with analytic gradients
+  // shared by the rim and droplets. No extra texture or screen derivatives.
+  let thickness = clamp(-coatingDistance / max(2.6 * intensity, .5), 0, 1);
+  let slope = 1 - thickness;
+  let bulge = sqrt(max(1 - slope * slope, .001));
+  let ripple = (folds - .5) * .08 * thickness;
+  let normal = normalize(vec3f(gradient * slope + vec2f(ripple, -ripple), bulge));
+  let light = normalize(vec3f(-.4, -.55, .73));
+  let halfLight = normalize(light + vec3f(0, 0, 1));
+  let diffuse = max(dot(normal, light), 0);
+  let specular = pow(max(dot(normal, halfLight), 0), 42);
+  let reflection = pow(max(dot(normal, normalize(vec3f(.55, .2, .81))), 0), 12) * .14;
+  let pigment = mix(vec3f(.42, .85, .075), vec3f(.18, .58, .025), thickness);
+  let color = clamp(pigment * (.65 + diffuse * .4)
+                    + vec3f(.86, 1, .68) * (specular * .85 + reflection), vec3f(0), vec3f(1));
+  // Thin gel reveals the original content but never fades out at its border.
+  // Reflections stay more opaque; output remains premultiplied RGBA.
+  let opacity = clamp(.62 + thickness * .24 + specular * .3, 0, 1);
+  let alpha = coverage * opacity;
   return vec4f(color * alpha, alpha);
 }`;

@@ -132,15 +132,21 @@ on their own. Status always includes text, not color alone.
 
 ## Typography
 
+For CSS units and responsive verification, follow the [UI conventions](engineering/ui-conventions.md).
+Pixel dimensions in this document describe the approved default-scale appearance;
+they do not require pixel units in CSS. Preserve that appearance when choosing relative units.
+
 Cabinet Grotesk supplies the moderate-weight display voice; General Sans keeps
 body copy and controls readable. JetBrains Mono is reserved for source code and
 measurements. Section titles use the display family at 2–3rem, without oversized
 heavy poster lettering. Keep prose near 60–68 characters per line.
 
-The display font-size token records the desktop upper bound. Preserve its responsive
-application as `clamp(2.5rem, 5.3vw, 4.75rem)` in CSS; the Google Labs token schema
+The display font-size token records the desktop upper bound. Current CSS applies it
+as `clamp(2.5rem, 5.3vw, 4.75rem)`; the Google Labs token schema
 accepts a single dimension, not a CSS math expression. This format migration does
 not change the approved type scale or homepage composition.
+The current expression is an existing implementation, not a template for new fluid
+text; future changes must pass the conventions' text-resizing checks.
 
 Sources: [Cabinet Grotesk](https://www.fontshare.com/fonts/cabinet-grotesk),
 [General Sans](https://www.fontshare.com/fonts/general-sans), and

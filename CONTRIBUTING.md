@@ -5,6 +5,8 @@ setup and workspace map in [README.md](README.md).
 
 ## Conventions
 
+- For UI work, follow [DESIGN.md](DESIGN.md) and the
+  [UI conventions](engineering/ui-conventions.md), including the final review checklist.
 - Use pnpm, TypeScript/ES modules, two-space indentation, single quotes and
   semicolons in source. `.editorconfig` defines whitespace rules.
 - Oxfmt owns formatting and import order; do not add Prettier or a second formatter.

@@ -90,19 +90,19 @@ function initializeLab(
         slot.handle.intensity = intensity();
       }
       status.textContent = paused ? 'Paused' : 'Live';
-    } else {
+    } else if (next.reason === 'no-webgpu') {
       status.textContent =
-        next.reason === 'no-webgpu'
-          ? 'Effects are unavailable in this browser. The original content stays visible.'
-          : next.reason === 'reduced-motion'
-            ? reducedMotion.matches
-              ? 'Reduced motion keeps this preview still.'
-              : 'Choose Start effect to restart this preview.'
-            : next.lifecycle === 'initializing'
-              ? 'Preparing the live preview…'
-              : next.lifecycle === 'suspended'
-                ? 'Waiting to enter view.'
-                : 'Preview unavailable. The original content stays visible.';
+        'Effects are unavailable in this browser. The original content stays visible.';
+    } else if (next.reason === 'reduced-motion') {
+      status.textContent = reducedMotion.matches
+        ? 'Reduced motion keeps this preview still.'
+        : 'Choose Start effect to restart this preview.';
+    } else if (next.lifecycle === 'initializing') {
+      status.textContent = 'Preparing the live preview…';
+    } else if (next.lifecycle === 'suspended') {
+      status.textContent = 'Waiting to enter view.';
+    } else {
+      status.textContent = 'Preview unavailable. The original content stays visible.';
     }
     updateToggle();
   }
@@ -113,15 +113,16 @@ function initializeLab(
     controls.disabled = unavailable;
     toggle.disabled = unavailable;
     toggle.setAttribute('aria-pressed', String(paused));
-    const label = !hasGpu
-      ? 'Effects unavailable'
-      : reducedMotion.matches
-        ? 'Reduced motion'
-        : !handle || handle.lifecycle !== 'active'
-          ? 'Start effect'
-          : paused
-            ? 'Resume effect'
-            : 'Pause effect';
+    let label: string;
+    if (!hasGpu) {
+      label = 'Effects unavailable';
+    } else if (reducedMotion.matches) {
+      label = 'Reduced motion';
+    } else if (!handle || handle.lifecycle !== 'active') {
+      label = 'Start effect';
+    } else {
+      label = paused ? 'Resume effect' : 'Pause effect';
+    }
     toggle.setAttribute('aria-label', label);
     toggle.title = label;
     const playing = handle?.lifecycle === 'active' && !paused;

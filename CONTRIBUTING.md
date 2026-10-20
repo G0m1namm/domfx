@@ -5,6 +5,9 @@ setup and workspace map in [README.md](README.md).
 
 ## Conventions
 
+- For JavaScript/TypeScript implementation and review, follow the
+  [code conventions](engineering/code-conventions.md), including conditional choices
+  and the final review checklist.
 - For UI work, follow [DESIGN.md](DESIGN.md) and the
   [UI conventions](engineering/ui-conventions.md), including the final review checklist.
 - Use pnpm, TypeScript/ES modules, two-space indentation, single quotes and

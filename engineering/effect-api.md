@@ -3,7 +3,8 @@
 Each effect has an individual reference page derived from the website effect
 catalog. Shared creation options and instance controls have canonical reusable
 tables; effect pages include them rather than maintaining separate copies.
-The Standalone guide owns the single interactive documentation playground.
+Each effect reference opens with its own live preview; the Standalone guide reuses
+the same preview to tune Fire.
 
 Describe appearance and intensity per effect. Separate creation options, writable
 controls, read-only state and methods. Record types, defaults, units, ranges and

@@ -25,8 +25,9 @@ The browser suite owns ports 4322/4323 and saves reports/screenshots/traces in
 `.scratch/web/`. Actual effect checks require a WebGPU Chromium backend. Routine
 smoke checks explicitly disable WebGPU and prove usability, not rendering.
 See [browser verification](../../engineering/browser-verification.md).
-The [editorial performance baseline](../../engineering/homepage-performance.md)
-is historical; its runner does not measure the current gallery.
+The [gallery performance baseline](../../engineering/gallery-performance.md)
+documents `pnpm measure:homepage`, current workloads and measurement limits.
+The [editorial baseline](../../engineering/homepage-performance.md) is historical.
 
 ## Page composition
 

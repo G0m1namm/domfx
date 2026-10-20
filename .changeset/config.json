@@ -8,6 +8,6 @@
   "updateInternalDependencies": "patch",
   "bumpVersionsWithWorkspaceProtocolOnly": true,
   "privatePackages": { "version": true, "tag": false },
-  "ignore": ["@domfx/gpu-tests", "@domfx/web"],
+  "ignore": ["@domfx/gpu-tests", "@domfx/web", "@domfx/docs", "@domfx/site"],
   "format": "oxfmt"
 }

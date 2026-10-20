@@ -1,1 +1,6 @@
+---
+const { title } = Astro.locals.starlightRoute.entry.data;
+---
 <button popovertarget="starlight__sidebar" class="docs-menu-toggle md:sl-hidden print:hidden"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-list"/></svg>Docs</button>
+
+<span class="docs-mobile-title" aria-hidden="true">{title}</span>

@@ -26,6 +26,8 @@ export default defineConfig({
       components: {
         Header: './src/components/Header.astro',
         PageFrame: './src/components/PageFrame.astro',
+        PageTitle: './src/components/PageTitle.astro',
+        Sidebar: './src/components/Sidebar.astro',
         MobileMenuToggle: './src/components/MobileMenuToggle.astro',
         MarkdownContent: './src/components/MarkdownContent.astro',
         Footer: './src/components/Footer.astro',
@@ -57,6 +59,7 @@ export default defineConfig({
             { label: 'All effects', slug: 'api/effects' },
             ...effectsByCategory.map(({ category, effects }) => ({
               label: category,
+              badge: { text: String(effects.length), class: 'docs-nav-count' },
               collapsed: true,
               items: effects.map((effect) => ({
                 label: effect.name,

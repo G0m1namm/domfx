@@ -4,8 +4,6 @@ import Pagination from '@astrojs/starlight/components/Pagination.astro';
 
 import { repositoryUrl } from '@domfx/site/site-links';
 
-import DocsFooter from './DocsFooter.astro';
-
 const { entry } = Astro.locals.starlightRoute;
 const issue = new URL(`${repositoryUrl}/issues/new`);
 issue.searchParams.set('title', `Docs: ${entry.data.title}`);
@@ -16,4 +14,3 @@ issue.searchParams.set('body', `Page: ${Astro.url.pathname}\n\nWhat needs to cha
   <a href={issue.href}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-bug"/></svg>Report an issue</a>
 </nav>
 <Pagination />
-<DocsFooter />

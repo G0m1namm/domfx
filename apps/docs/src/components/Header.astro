@@ -5,7 +5,7 @@ import SiteNav from '@domfx/site/components/SiteNav.astro';
 import PhosphorIcons from '@domfx/site/components/phosphor-icons.astro';
 ---
 <PhosphorIcons />
-<SiteNav current="docs" as="div"><Search slot="search" /></SiteNav>
+<SiteNav current="docs" as="div"><div class="docs-search" slot="search"><Search /></div></SiteNav>
 
 <script>
   const trigger = document.querySelector<HTMLButtonElement>('button[data-open-modal]');

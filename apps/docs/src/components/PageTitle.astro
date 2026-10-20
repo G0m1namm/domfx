@@ -1,0 +1,18 @@
+---
+import DefaultPageTitle from '@astrojs/starlight/components/PageTitle.astro';
+
+import { effects } from '@domfx/site/effects';
+
+import { documentation } from '../content/documentation';
+
+const slug = Astro.url.pathname.replace(/^\/docs\//, '').replace(/\/$/, '');
+const page = documentation.find((entry) => entry.slug === slug);
+const groupHome = documentation.find((entry) => entry.group === page?.group);
+const effect = effects.find((entry) => slug === `api/effects/${entry.id}`);
+---
+<nav class="docs-breadcrumb" aria-label="Breadcrumb">
+  <a href="/docs/introduction/">Docs</a><span aria-hidden="true">/</span>
+  {groupHome && groupHome !== page ? <a href={`/docs/${groupHome.slug}/`}>{page?.group}</a> : <span>{page?.group}</span>}
+  {effect && <><span aria-hidden="true">/</span><span>{effect.category}</span></>}
+</nav>
+<DefaultPageTitle />

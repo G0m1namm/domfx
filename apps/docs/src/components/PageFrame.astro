@@ -2,10 +2,12 @@
 import DefaultPageFrame from '@astrojs/starlight/components/PageFrame.astro';
 
 import BackToTop from './BackToTop.astro';
+import DocsFooter from './DocsFooter.astro';
 ---
 <DefaultPageFrame>
   <slot name="header" slot="header" />
   <slot name="sidebar" slot="sidebar" />
   <slot />
 </DefaultPageFrame>
+<DocsFooter />
 <BackToTop />

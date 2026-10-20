@@ -96,7 +96,7 @@ export function checkReleaseArtifacts(root = '.') {
   for (const path of ['.', ...libraries, ...directories('apps'), ...directories('tests')]) {
     assertReleaseVisibility(path, manifestAt(path));
   }
-  for (const path of libraries) {
+  for (const path of libraries.filter((path) => Object.hasOwn(releaseLibraries, path))) {
     const manifest = manifestAt(path);
     const packed = JSON.parse(
       execFileSync('pnpm', ['--config.ignore-scripts=true', 'pack', '--dry-run', '--json'], {

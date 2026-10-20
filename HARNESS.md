@@ -43,6 +43,10 @@ listed in [CONTRIBUTING.md](CONTRIBUTING.md).
 CI runs the same routine gates plus release metadata validation. Install Chromium
 using the [browser verification guide](engineering/browser-verification.md).
 
+For the Starlight migration, also run `pnpm test:docs`. It checks the composed
+preview, including docs navigation, live labs, shared search and discovery output.
+The normal harness still checks the existing website until the approved cutover.
+
 `pnpm check:artifacts` rejects tracked local notes, design explorations and visual
 baselines, including force-added files. Browser commands share an ownership lock
 across linked worktrees and clean up their process group; see

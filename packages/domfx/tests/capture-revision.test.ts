@@ -4,6 +4,7 @@ import test from 'node:test';
 import type { CaptureFrame } from '@domfx/core';
 
 import { createCaptureRevisions } from '../src/capture-revision.js';
+import { diagnosticsFor, startEffectDiagnostics } from '../src/diagnostics.js';
 import type { PreparedGpuFrame } from '../src/gpu.js';
 import { AllocationLedger } from '../src/memory.js';
 import type { AttachmentRenderer } from '../src/renderer-service.js';
@@ -28,7 +29,7 @@ async function until(condition: () => boolean) {
   assert.fail('controlled adapter was not entered');
 }
 
-function fixture(target: Element = {} as Element) {
+function fixture(target: Element = {} as Element, initialization?: Promise<void>) {
   const events: string[] = [];
   const captureGates: ReturnType<typeof deferred<CaptureFrame | undefined>>[] = [];
   const prepareGates: ReturnType<typeof deferred<PreparedGpuFrame>>[] = [];
@@ -52,9 +53,11 @@ function fixture(target: Element = {} as Element) {
   let failure: unknown;
   const revisions = createCaptureRevisions({
     target,
+    trace: diagnosticsFor(target, 'fire'),
     memory,
     async createRenderer() {
       rendererAcquisitions += 1;
+      await initialization;
       const deviceLoss = deferred<GPUDeviceLostInfo>();
       deviceLossGates.push(deviceLoss);
       return {
@@ -437,4 +440,73 @@ test('loss from an obsolete device does not stop a restarted revision', async ()
   assert.equal(f.reservationReleases, 2);
   assert.equal(f.rendererReleases, 2);
   assert.equal(f.memory.bytes, 0);
+});
+
+test('trace correlates a superseded preparation and replacement to the same opaque target', async () => {
+  const session = startEffectDiagnostics();
+  const f = fixture();
+  try {
+    const ready = f.revisions.start();
+    await until(() => f.captureGates.length === 1);
+    f.captureGates[0].resolve(f.frame(1));
+    await until(() => f.prepareGates.length === 1);
+    const refreshed = f.revisions.request();
+    f.prepareGates[0].resolve(f.prepared(1));
+    await until(() => f.captureGates.length === 2);
+    f.captureGates[1].resolve(f.frame(2));
+    await until(() => f.prepareGates.length === 2);
+    f.prepareGates[1].resolve(f.prepared(2));
+    await Promise.all([ready, refreshed]);
+    const records = session.records;
+    assert.equal(new Set(records.map((record) => record.target)).size, 1);
+    assert.ok(records.every((record) => record.effect === 'fire'));
+    assert.ok(records.some((record) => record.revision === 1 && record.phase === 'drop'));
+    assert.ok(!records.some((record) => record.revision === 1 && record.phase === 'commit'));
+    assert.ok(records.some((record) => record.revision === 2 && record.phase === 'commit'));
+    for (const revision of [1, 2]) {
+      for (const stage of ['capture', 'prepare']) {
+        const stages = records.filter(
+          (record) => record.revision === revision && record.stage === stage,
+        );
+        assert.deepEqual(
+          stages.map((record) => record.phase),
+          ['start', 'end'],
+        );
+        assert.ok(stages[1].at >= stages[0].at);
+      }
+    }
+  } finally {
+    f.revisions.stop(new Error('effect-disposed'));
+    await f.revisions.drain();
+    session.dispose();
+  }
+});
+
+test('renderer failure retains its initiating revision after a pending refresh', async () => {
+  const session = startEffectDiagnostics();
+  const initialization = deferred<void>();
+  const f = fixture({} as Element, initialization.promise);
+  try {
+    const ready = f.revisions.start();
+    await until(() => f.rendererAcquisitions === 1);
+    const failure = new Error('initialization failed');
+    const refreshed = f.revisions.request().catch((error: unknown) => error);
+    initialization.reject(failure);
+    assert.equal(await refreshed, failure);
+    await ready;
+    assert.equal(f.failure, failure);
+    assert.deepEqual(
+      session.records
+        .filter((record) => record.stage === 'renderer')
+        .map(({ revision, phase }) => ({ revision, phase })),
+      [
+        { revision: 1, phase: 'start' },
+        { revision: 1, phase: 'error' },
+      ],
+    );
+  } finally {
+    f.revisions.stop(new Error('effect-disposed'));
+    await f.revisions.drain();
+    session.dispose();
+  }
 });

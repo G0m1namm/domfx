@@ -79,7 +79,7 @@ Create `index.html`:
 ```
 
 The host must be connected, positioned, and contain the target as a strict
-descendant in the same document. Leave space for Fire and choose a stacking order
+descendant in the same document. Leave space for the effect and choose a stacking order
 that lets its appended canvas overlap the target.
 
 Continue with [GSAP](/docs/gsap) for your own timeline, or [Standalone](/docs/standalone) to create `main.ts`.
@@ -88,16 +88,26 @@ Open the printed loopback URL in a measured WebGPU-capable browser.
 
 ## Add the optional GSAP binding
 
-For the GSAP walkthrough, also add these dependencies to `package.json`:
+For native property tweens, add only `gsap` to your app. The `@domfx/gsap`
+artifact is needed only for the optional lifecycle-aware snapshot helpers.
+
+For the GSAP walkthrough, add this dependency to `package.json`:
 
 ```json
-"@domfx/gsap": "file:./artifacts/domfx-gsap-0.0.0.tgz",
 "gsap": "3.15.0"
+```
+
+If you choose the [optional snapshot helpers](/docs/api/gsap#snapshot-bindings),
+also add their artifact:
+
+```json
+"@domfx/gsap": "file:./artifacts/domfx-gsap-0.0.0.tgz"
 ```
 
 Run `pnpm install --ignore-scripts` again. GSAP is an explicit peer supplied by
 your app; the standalone browser package does not install it.
 
-The examples use `flameHeight`, which requires compatible current experimental
-artifacts. Older pinned quickstart sources can lack that option. Do not mix their
-declarations with a newer example; obtain matching artifacts first.
+The guides use Fire as a worked example. The API reference lists
+[all attachment functions](/docs/api#available-effects) and their shared options.
+`flameHeight` is a Fire-only creation option. Use matching current artifacts for
+the documented exports; do not mix older declarations with newer examples.

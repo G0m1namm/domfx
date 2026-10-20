@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import type { gsap } from 'gsap';
@@ -5,7 +7,10 @@ import sharp from 'sharp';
 import { build } from 'vite';
 
 import type { EffectHandle } from '@domfx/browser';
+import * as browserEffects from '@domfx/browser';
 import type { FireBinding } from '@domfx/gsap';
+
+import { effects } from '../src/content/effects';
 
 type TestGpu = {
   requestAdapter(options?: unknown): Promise<{
@@ -34,7 +39,7 @@ declare global {
 }
 
 const disclosures = {
-  standalone: 'Standalone ambient attachment example',
+  standalone: 'Standalone automatic animation example',
   gsap: 'Full manual attachment and GSAP lifecycle example',
 };
 
@@ -59,14 +64,28 @@ test('documentation is readable and navigable without JavaScript at mobile and d
       ['standalone', 'Standalone'],
       ['gsap', 'GSAP'],
       ['upgrading', 'Upgrading'],
-      ['api', 'API essentials'],
+      ['api', 'API reference'],
       ['support', 'Browser support'],
       ['troubleshooting', 'Troubleshooting'],
     ]) {
       await page.goto(`/docs/${slug}`);
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
+      if (slug === 'api') {
+        const documented = await page
+          .getByRole('table', { name: 'Attachment functions', exact: true })
+          .locator('code')
+          .allTextContents();
+        expect(documented.sort()).toEqual(
+          Object.keys(browserEffects)
+            .filter((name) => name.startsWith('attach'))
+            .sort(),
+        );
+      }
+      if (slug === 'standalone' || slug === 'gsap') {
+        await expect(page.locator('[data-docs-lab]')).toHaveCount(slug === 'standalone' ? 1 : 0);
+      }
       if (width <= 900) {
-        await page.getByText('Browse documentation', { exact: false }).click();
+        await page.getByRole('button', { name: 'Docs', exact: true }).click();
       }
       await expect(
         page
@@ -77,6 +96,7 @@ test('documentation is readable and navigable without JavaScript at mobile and d
         true,
       );
       await expect(page.locator('canvas, #playground')).toHaveCount(0);
+      await expect(page.locator('[data-search-open]')).toBeHidden();
     }
     expect(
       requests.filter((url) =>
@@ -91,10 +111,55 @@ test('documentation is readable and navigable without JavaScript at mobile and d
   }
 });
 
+test('all effect references work without JavaScript, with canonical controls and exact exports', async ({
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(90_000);
+  for (const width of [360, 768, 1440]) {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      baseURL,
+      viewport: { width, height: 900 },
+    });
+    const page = await context.newPage();
+    for (const effect of effects) {
+      await page.goto(`/docs/api/effects/${effect.id}`);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(effect.name);
+      await expect(
+        page.getByRole('region', { name: `${effect.name} usage`, exact: true }),
+      ).toContainText(`import { ${effect.exportName} } from '@domfx/browser'`);
+      await expect(
+        page.getByRole('table', { name: 'Shared creation options', exact: true }),
+      ).toContainText("'manual' | 'auto' | 'ambient'");
+      await expect(
+        page.getByRole('table', { name: 'Writable effect controls', exact: true }),
+      ).toContainText('intensity');
+      const lab = page.locator('[data-docs-lab]');
+      await expect(lab).toHaveCount(1);
+      await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
+      await expect(lab.getByRole('slider', { name: `${effect.name} intensity` })).toBeDisabled();
+      await expect(page.locator('canvas')).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      if (width <= 900) {
+        await page.getByRole('button', { name: 'Docs', exact: true }).click();
+      }
+      await expect(
+        page
+          .getByRole('navigation', { name: 'Documentation', exact: true })
+          .getByRole('link', { name: effect.name, exact: true }),
+      ).toHaveAttribute('aria-current', 'page');
+    }
+    await context.close();
+  }
+});
+
 test('documentation keyboard navigation reaches guides and scrolls code', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto('/docs/introduction');
-  await page.getByText('Browse documentation', { exact: false }).focus();
+  await page.getByRole('button', { name: 'Docs', exact: true }).focus();
   await page.keyboard.press('Enter');
   const link = page
     .getByRole('navigation', { name: 'Documentation', exact: true })
@@ -107,54 +172,250 @@ test('documentation keyboard navigation reaches guides and scrolls code', async 
   await page.keyboard.press('ArrowRight');
   await expect.poll(() => code.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
   await expect(page.locator('canvas')).toHaveCount(0);
+
+  await page.goto('/docs/api/shared');
+  const options = page.getByRole('region', { name: 'Shared creation options', exact: true });
+  await options.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => options.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('the Fire lab preserves its source content when WebGPU is unavailable', async ({ page }) => {
+test('documentation search opens by click and shortcut and links effect references', async ({
+  page,
+}) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
-  await page.goto('/docs/standalone');
-  const lab = page.locator('[data-docs-fire-lab]');
-  await lab.scrollIntoViewIfNeeded();
-  await expect(lab).toHaveAttribute('data-status', 'unavailable');
-  await expect(lab.getByText('domfx', { exact: true })).toBeVisible();
-  await expect(lab.locator('canvas')).toHaveCount(0);
-  await expect(lab.getByRole('button', { name: 'Effects unavailable' })).toBeDisabled();
+  await page.goto('/docs/installation');
+  const trigger = page
+    .getByRole('banner')
+    .getByRole('button', { name: 'Search effects and documentation', exact: true });
+  await expect(trigger).toHaveAttribute('title', 'Search effects and docs (⌘K / Ctrl+K)');
+  expect(await trigger.evaluate((element) => element.getBoundingClientRect().width)).toBe(44);
+  const search = page.getByRole('dialog', { name: 'Search domfx' });
+  const input = search.getByRole('searchbox');
+
+  await trigger.click();
+  await expect(input).toBeFocused();
+  await input.fill('reduced motion');
+  await expect(search.locator('[data-search-group="documentation"]')).toBeVisible();
+  await input.press('ArrowDown');
+  await expect(search.locator('li:not([hidden]) > a').first()).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(search).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await page.keyboard.press('ControlOrMeta+k');
+  await expect(input).toBeFocused();
+  await input.fill('frost');
+  await expect(
+    search.locator('[data-search-group="effects"]').getByRole('link', { name: /^Frost/ }),
+  ).toHaveAttribute('href', '/docs/api/effects/frost');
+  await expect(search.locator('[data-search-effect]')).toHaveCount(0);
+  await input.press('Enter');
+  await expect(page).toHaveURL(/\/docs\/api\/effects\/frost\/?$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Frost');
+  await expect(search).toBeHidden();
+
+  await page.keyboard.press('ControlOrMeta+k');
+  await input.fill('troubleshooting');
+  await search
+    .getByRole('link', { name: /^Troubleshooting/ })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/docs\/troubleshooting\/?$/);
 });
 
-test('the Fire lab attaches, updates and disposes one real effect', async ({ page }) => {
+test('page sections follow the headings as a rail, a dropdown and a drawer', async ({ page }) => {
   await page.goto('/docs/standalone');
-  const lab = page.locator('[data-docs-fire-lab]');
-  await lab.scrollIntoViewIfNeeded();
-  const supportsGpu = await page.evaluate(() => 'gpu' in navigator && Boolean(navigator.gpu));
-  test.skip(!supportsGpu, 'WebGPU is unavailable in this browser');
-  await expect(lab).toHaveAttribute('data-status', 'active');
-  const canvas = lab.locator('canvas');
-  await expect(canvas).toHaveCount(1);
-  await expect(canvas).toHaveAttribute('aria-hidden', 'true');
-  await expect(canvas).toHaveCSS('pointer-events', 'none');
-  expect(
-    await lab.locator('[data-docs-fire-host]').evaluate((host) => getComputedStyle(host).overflow),
-  ).toBe('visible');
+  const headings = await page.locator('.docs-content h2[id]').allTextContents();
+  expect(headings.length).toBeGreaterThan(2);
+  const rail = page.locator('.docs-toc');
+  await expect(rail).toBeVisible();
+  expect(await rail.locator('[data-toc-link]').allTextContents()).toEqual(headings);
+  await page.evaluate(() => document.getElementById('refresh-and-cleanup')?.scrollIntoView());
+  await expect(rail.locator('[data-active]')).toHaveText('Refresh and cleanup');
 
-  const intensity = lab.locator('[data-docs-intensity]');
-  await intensity.fill('45');
-  await expect(lab.locator('[data-docs-intensity-code]')).toHaveText('0.45');
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await page.evaluate(() => scrollTo(0, 0));
+  await expect(rail).toBeHidden();
+  await page.getByRole('button', { name: 'On this page', exact: true }).click();
+  const sections = page.locator('#docs-toc-menu');
+  await expect(sections).toBeVisible();
+  await sections.getByRole('link', { name: 'Unavailable output', exact: true }).click();
+  await expect(sections).toBeHidden();
+  await expect(page).toHaveURL(/#unavailable-output$/);
+  const top = await page
+    .locator('#unavailable-output')
+    .evaluate((heading) => heading.getBoundingClientRect().top);
+  const chrome = await page
+    .locator('.docs-subbar')
+    .evaluate((bar) => bar.getBoundingClientRect().bottom);
+  expect(top).toBeGreaterThanOrEqual(chrome);
 
-  const height = lab.locator('[data-docs-height]');
-  await height.fill('44');
-  await height.press('Tab');
-  await expect(lab).toHaveAttribute('data-status', 'active');
-  await expect(canvas).toHaveCount(1);
-
-  const toggle = lab.locator('[data-docs-fire-toggle]');
-  await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await expect(lab).toHaveAttribute('data-status', 'paused');
-  await toggle.click();
-  await expect(lab).toHaveAttribute('data-status', 'active');
-
-  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
-  await expect(canvas).toHaveCount(0);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.getByRole('button', { name: 'Docs', exact: true }).click();
+  const drawer = page.locator('#docs-menu');
+  await expect(drawer.getByRole('link', { name: 'Standalone', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await page.keyboard.press('Escape');
+  await expect(drawer).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('back to top appears after scrolling and returns focus to the content', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/docs/troubleshooting');
+  const button = page.getByRole('link', { name: 'Back to top', exact: true });
+  await expect(button).toBeHidden();
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await expect(button).toBeVisible();
+  await button.click();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  await expect(page.locator('#main')).toBeFocused();
+});
+
+test('the site menu reaches Docs from Home on phones without JavaScript', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    baseURL,
+    viewport: { width: 360, height: 800 },
+  });
+  const page = await context.newPage();
+  await page.goto('/');
+  await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden();
+  await page.getByRole('button', { name: 'Open site menu' }).click();
+  const menu = page.getByRole('navigation', { name: 'Site' });
+  await menu.getByRole('link', { name: 'Docs', exact: true }).click();
+  await expect(page).toHaveURL(/\/docs\/introduction\/?$/);
+  await page.getByRole('button', { name: 'Docs', exact: true }).click();
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Documentation', exact: true })
+      .getByRole('link', { name: 'Introduction', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
+  await context.close();
+});
+
+test('docs pages end with page feedback, pagination and the site footer', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    baseURL,
+    viewport: { width: 360, height: 800 },
+  });
+  const page = await context.newPage();
+  await page.goto('/docs/api/effects/frost');
+  const feedback = page.getByRole('navigation', { name: 'Page feedback' });
+  await expect(feedback.getByRole('link', { name: 'Edit this page on GitHub' })).toHaveAttribute(
+    'href',
+    'https://github.com/G0m1namm/domfx/edit/main/apps/web/src/pages/docs/api/effects/%5Beffect%5D.astro',
+  );
+  const issue = new URL(
+    (await feedback.getByRole('link', { name: 'Report an issue' }).getAttribute('href')) ?? '',
+  );
+  expect(issue.searchParams.get('title')).toBe('Docs: Frost');
+  expect(issue.searchParams.get('body')).toContain('Page: /docs/api/effects/frost');
+  const order = await page.evaluate(() =>
+    ['.docs-content', '.docs-page-actions', '.docs-pagination', '.docs-site-footer'].map(
+      (selector) => document.querySelector(selector)?.getBoundingClientRect().top ?? -1,
+    ),
+  );
+  expect(order).toEqual([...order].sort((a, b) => a - b));
+  const footer = page.getByRole('contentinfo');
+  for (const [group, link] of [
+    ['Build', 'API reference'],
+    ['Explore', 'All effects'],
+    ['domfx', 'npm'],
+  ] as const) {
+    await expect(
+      footer.getByRole('navigation', { name: `Footer ${group}` }).getByRole('link', { name: link }),
+    ).toBeVisible();
+  }
+  const targets = await footer
+    .getByRole('link')
+    .evaluateAll((links) => links.map((link) => link.getBoundingClientRect().height));
+  expect(Math.min(...targets)).toBeGreaterThanOrEqual(44);
+  await context.close();
+});
+
+const labPages = [
+  { path: '/docs/standalone', effect: 'Fire', text: true },
+  { path: '/docs/api/effects/frost', effect: 'Frost', text: false },
+] as const;
+
+for (const { path, effect, text } of labPages) {
+  test(`${path} preview preserves its source content when WebGPU is unavailable`, async ({
+    page,
+  }) => {
+    await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
+    await page.goto(path);
+    const lab = page.locator('[data-docs-lab]');
+    await lab.scrollIntoViewIfNeeded();
+    await expect(lab).toHaveAttribute('data-status', 'unavailable');
+    if (text) {
+      await expect(lab.getByText('domfx', { exact: true })).toBeVisible();
+    }
+    await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
+    await expect(lab.locator('canvas')).toHaveCount(0);
+    await expect(lab.getByRole('button', { name: 'Effects unavailable' })).toBeDisabled();
+    await expect(lab.getByRole('slider', { name: `${effect} intensity` })).toBeDisabled();
+  });
+
+  test(`${path} preview attaches, updates and disposes one real effect`, async ({ page }) => {
+    await page.goto(path);
+    const lab = page.locator('[data-docs-lab]');
+    await lab.scrollIntoViewIfNeeded();
+    const supportsGpu = await page.evaluate(() => 'gpu' in navigator && Boolean(navigator.gpu));
+    test.skip(!supportsGpu, 'WebGPU is unavailable in this browser');
+    await expect(lab).toHaveAttribute('data-status', 'active');
+    const canvas = lab.locator('canvas');
+    await expect(canvas).toHaveCount(1);
+    await expect(canvas).toHaveAttribute('aria-hidden', 'true');
+    await expect(canvas).toHaveCSS('pointer-events', 'none');
+    expect(
+      await lab.locator('[data-docs-lab-host]').evaluate((host) => getComputedStyle(host).overflow),
+    ).toBe('visible');
+
+    const intensity = lab.locator('[data-docs-lab-intensity]');
+    await intensity.fill('45');
+    await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+    await expect(lab.locator('[data-docs-lab-intensity-output]')).toHaveText('45%');
+
+    if (effect === 'Fire') {
+      const height = lab.locator('[data-docs-lab-height]');
+      await height.fill('44');
+      await height.press('Tab');
+      await expect(lab.locator('[data-docs-lab-height-code]')).toHaveText('44');
+      await expect(lab).toHaveAttribute('data-status', 'active');
+      await expect(canvas).toHaveCount(1);
+    }
+
+    for (const subject of ['SVG', 'Image', 'Text']) {
+      await lab.getByRole('radio', { name: subject, exact: true }).check();
+      await expect(lab).toHaveAttribute('data-status', 'active');
+      await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
+      await expect(canvas).toHaveCount(1);
+    }
+
+    const toggle = lab.locator('[data-docs-lab-toggle]');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(toggle).toHaveAccessibleName('Resume effect');
+    await expect(lab).toHaveAttribute('data-status', 'paused');
+    await toggle.click();
+    await expect(lab).toHaveAttribute('data-status', 'active');
+
+    await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
+    await expect(canvas).toHaveCount(0);
+  });
+}
 
 // Bundle the rendered code verbatim with only its caller-provided DOM and exports.
 // No copied example, package alias, capture mock or renderer transform is involved.
@@ -184,7 +445,7 @@ async function loadDisclosure(page: Page, kind: keyof typeof disclosures, path: 
           return `const host = document.getElementById('disclosure-host');
 const target = document.getElementById('disclosure-target');
 ${source}
-export { fire${kind === 'gsap' ? ', timeline, binding, cleanup' : ''} };`;
+export { fire${kind === 'gsap' ? ', timeline, cleanup' : ''} };`;
         },
       },
     ],
@@ -289,6 +550,7 @@ test('every website link resolves to a native route, anchor or documented reposi
   page,
   request,
 }) => {
+  test.setTimeout(90_000);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const links = new Set<string>();
   const resources = new Set<string>();
@@ -302,6 +564,11 @@ test('every website link resolves to a native route, anchor or documented reposi
     '/docs/gsap',
     '/docs/upgrading',
     '/docs/api',
+    '/docs/api/shared',
+    '/docs/api/effect-handle',
+    '/docs/api/effects',
+    '/docs/api/gsap',
+    ...effects.map((effect) => `/docs/api/effects/${effect.id}`),
     '/docs/support',
     '/docs/troubleshooting',
   ]) {
@@ -380,13 +647,24 @@ test('every website link resolves to a native route, anchor or documented reposi
   }
   expect(local.has('/docs/standalone')).toBe(true);
   const repo = 'https://github.com/G0m1namm/domfx';
-  expect(external.sort()).toEqual(
+  const edits = external.filter((href) => href.startsWith(`${repo}/edit/main/`));
+  const issues = external.filter((href) => href.startsWith(`${repo}/issues/new?`));
+  expect(edits.length).toBeGreaterThan(0);
+  for (const href of edits) {
+    const source = decodeURI(href.slice(`${repo}/edit/main/`.length));
+    expect(existsSync(new URL(`../../../${source}`, import.meta.url)), href).toBe(true);
+  }
+  for (const href of issues) {
+    const query = new URL(href).searchParams;
+    expect(query.get('title'), href).toMatch(/^Docs: \S/);
+    expect(query.get('body'), href).toMatch(/^Page: \/docs\/\S/);
+  }
+  expect(external.filter((href) => !edits.includes(href) && !issues.includes(href)).sort()).toEqual(
     [
       repo,
       'https://github.com/G0m1namm',
       'https://www.npmjs.com/package/@domfx/browser',
       `${repo}/blob/main/LICENSE`,
-      `${repo}/blob/main/QUICKSTART.md`,
       `${repo}/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md`,
     ].sort(),
   );

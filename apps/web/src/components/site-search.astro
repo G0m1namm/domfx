@@ -1,13 +1,19 @@
 ---
+import { effectReference } from '../content/effect-reference';
 import { documentation } from '../content/documentation';
 import { effects } from '../content/effects';
-const sources = import.meta.glob('../pages/docs/*.{md,astro}', { query: '?raw', import: 'default', eager: true });
+import '../styles/site-search.css';
+interface Props { effectResults?: 'preview' | 'reference' }
+// Preview results need the gallery's effect dialog; reference results are plain links.
+const { effectResults = 'preview' } = Astro.props;
+const sources = import.meta.glob('../pages/docs/**/*.{md,astro}', { query: '?raw', import: 'default', eager: true });
 const plain = (source: string) => source.replace(/^---[\s\S]*?---/, '').replace(/<[^>]*>/g, ' ').replace(/[`*#]/g, '').replace(/\s+/g, ' ').trim();
 const entries = documentation.flatMap((doc) => {
-  const source = String(sources[`../pages/docs/${doc.slug}.md`] ?? sources[`../pages/docs/${doc.slug}.astro`] ?? '');
+  const effect = effects.find((effect) => doc.slug === `api/effects/${effect.id}`);
+  const source = String(sources[`../pages/docs/${doc.slug}.md`] ?? sources[`../pages/docs/${doc.slug}.astro`] ?? (effect ? `${effect.exportName} ${effectReference[effect.id].intensity} time intensity options` : ''));
   const description = doc.slug === 'installation' ? 'Install domfx and the optional GSAP binding.' : doc.description;
   const sections = [...source.matchAll(/^## (.+)$|<h2 id="([^"]+)">(.*?)<\/h2>/gm)];
-  return [{ title: doc.title, detail: description, href: `/docs/${doc.slug}`, keywords: `${doc.title} ${description} ${plain(source)}`, starter: true }, ...sections.map((section, index) => {
+  return [{ title: doc.title, detail: description, href: `/docs/${doc.slug}`, keywords: `${doc.title} ${description} ${plain(source)}`, starter: doc.group !== 'Effects' }, ...sections.map((section, index) => {
     const title = section[1] ?? section[3];
     const slug = section[2] ?? title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
     const content = source.slice(section.index, sections[index + 1]?.index ?? source.length);
@@ -22,7 +28,10 @@ const entries = documentation.flatMap((doc) => {
   <div id="site-search-results" class="site-search-results">
     <section data-search-group="effects" aria-labelledby="search-effects-heading">
       <h3 id="search-effects-heading">Effects</h3>
-      <ul>{effects.map(({id, name, category}, index) => <li data-search-item data-search-kind="effects" data-title={name.toLowerCase()} data-keywords={`${name} ${category} effect`.toLowerCase()} data-starter={index < 4 ? 'true' : undefined}><button data-search-effect={id} data-id={id} data-name={name} data-category={category}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-sparkle"/></svg><span><strong>{name}</strong><small>{category}</small></span><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></button></li>)}</ul>
+      <ul>{effects.map(({id, name, category}, index) => {
+        const label = <><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-sparkle"/></svg><span><strong>{name}</strong><small>{category}</small></span><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></>;
+        return <li data-search-item data-search-kind="effects" data-title={name.toLowerCase()} data-keywords={`${name} ${category} effect`.toLowerCase()} data-starter={index < 4 ? 'true' : undefined}>{effectResults === 'reference' ? <a href={`/docs/api/effects/${id}`}>{label}</a> : <button data-search-effect={id} data-id={id} data-name={name} data-category={category}>{label}</button>}</li>;
+      })}</ul>
     </section>
     <section data-search-group="documentation" aria-labelledby="search-docs-heading">
       <h3 id="search-docs-heading">Documentation</h3>

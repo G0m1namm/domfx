@@ -42,7 +42,7 @@ export type EffectReason =
   | 'target-not-visible'
   | 'stale-raster';
 
-/** Readable controls shared by manual and ambient attachments. */
+/** Controls and state shared by every effect instance. */
 export interface ManualEffectHandle {
   /** Settles after initialization or cleanup of a cancelled initialization. */
   readonly ready: Promise<void>;
@@ -68,15 +68,16 @@ export interface ManualEffectHandle {
   dispose(): void;
 }
 
-export type ClockMode = 'manual' | 'ambient';
+/** External time control, automatic animation, or its legacy automatic spelling. */
+export type ClockMode = 'manual' | 'auto' | 'ambient';
 
 export interface EffectHandle extends ManualEffectHandle {
   readonly clock: ClockMode;
   /** Manual mode is always paused. Independent of lifecycle suspension. */
   readonly paused: boolean;
-  /** Freeze ambient time at the last committed frame; retain pending control writes. */
+  /** Freeze automatic animation at the last committed frame; retain pending control writes. */
   pause(): void;
-  /** Continue ambient time without changing seed. No-op in manual mode. */
+  /** Continue automatic animation without changing seed. No-op in manual mode. */
   resume(): void;
 }
 

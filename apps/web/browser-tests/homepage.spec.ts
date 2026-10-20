@@ -1,5 +1,34 @@
 import { expect, test } from '@playwright/test';
 
+import { effects } from '../src/content/effects.js';
+
+test('every catalog entry opens the matching preview and generates its named public import', async ({
+  page,
+}) => {
+  const browserImports: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/packages/domfx/dist/')) {
+      browserImports.push(request.url());
+    }
+  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/effects/');
+  for (const effect of effects) {
+    await page.getByRole('button', { name: `Try ${effect.name}`, exact: true }).click();
+    await expect(page.locator('#dialog-title')).toHaveText(effect.name);
+    await expect(page.locator('[data-code]')).toContainText(
+      `import { ${effect.exportName} } from '@domfx/browser'`,
+    );
+    await expect(page.locator('[data-code]')).not.toContainText('undefined');
+    await expect(page.getByRole('link', { name: 'Read the effect reference' })).toHaveAttribute(
+      'href',
+      `/docs/api/effects/${effect.id}`,
+    );
+    await page.getByRole('button', { name: 'Close preview' }).click();
+  }
+  expect(browserImports).toEqual([]);
+});
+
 for (const path of ['/', '/effects/']) {
   test(`${path} has complete content without JavaScript`, async ({ browser, baseURL }) => {
     const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
@@ -57,6 +86,9 @@ test('global search opens an unfeatured effect, zooms and restores keyboard focu
   const trigger = page.getByRole('button', { name: 'Search effects and documentation' });
   await trigger.click();
   await page.getByRole('searchbox').fill('circuits');
+  await expect(
+    page.locator('[data-search-group="documentation"] a[href="/docs/api/effects/circuits"]'),
+  ).toBeVisible();
   await page.getByRole('searchbox').press('Enter');
   await expect(page.locator('#dialog-title')).toHaveText('Circuits');
   await expect(page.locator('#site-search')).not.toBeVisible();

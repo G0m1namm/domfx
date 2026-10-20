@@ -1,31 +1,19 @@
+import {
+  rasterDistance,
+  effectBindings,
+  fullscreenVertex,
+  scalarHash,
+} from './shader-primitives.js';
+
 /** Premultiplied electricity overlay over the captured silhouette's signed distance field. */
 export const electricityShader = `
-@group(0) @binding(0) var distances: texture_2d<f32>;
-// Absolute seconds, seed, intensity, and raster pixels per CSS pixel.
-@group(0) @binding(1) var<uniform> params: vec4f;
+${effectBindings}
 
-@vertex fn vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
-  let positions = array<vec2f, 3>(vec2f(-1, -1), vec2f(3, -1), vec2f(-1, 3));
-  return vec4f(positions[index], 0, 1);
-}
+${fullscreenVertex}
 
-fn field(p: vec2f) -> f32 {
-  let size = vec2i(textureDimensions(distances));
-  let q = p - .5;
-  let base = vec2i(floor(q));
-  let blend = fract(q);
-  let a = textureLoad(distances, clamp(base, vec2i(0), size - 1), 0).r;
-  let b = textureLoad(distances, clamp(base + vec2i(1, 0), vec2i(0), size - 1), 0).r;
-  let c = textureLoad(distances, clamp(base + vec2i(0, 1), vec2i(0), size - 1), 0).r;
-  let e = textureLoad(distances, clamp(base + vec2i(1, 1), vec2i(0), size - 1), 0).r;
-  return mix(mix(a, b, blend.x), mix(c, e, blend.x), blend.y) / params.w;
-}
+${rasterDistance}
 
-fn hash(p: vec2f) -> f32 {
-  var q = fract(vec3f(p.x, p.y, p.x) * vec3f(.1031, .1030, .0973));
-  q += dot(q, q.yzx + 19.19);
-  return fract((q.x + q.y) * q.z);
-}
+${scalarHash}
 
 @fragment fn fragment(@builtin(position) pos: vec4f) -> @location(0) vec4f {
   let time = params.x;

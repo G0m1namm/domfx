@@ -219,12 +219,78 @@ normal scrolling; it does not pin or intercept scroll input.
 The user approved in-site documentation on 2026-09-30, using ultrastorage.dev and
 Fancy Components' introduction as layout references. Keep the graphite palette,
 Cabinet Grotesk headings, General Sans reading text and JetBrains Mono code. Group
-a sticky desktop sidebar into Getting started, Guides and Reference; pair it with
+a sticky desktop sidebar into Getting started, Guides, Effects, Reference and Help; pair it with
 a clear reading column, quiet breadcrumbs, ruled section headings and readable
 code. On mobile, use native collapsible navigation and internally scrollable code.
 Documentation stays complete without JavaScript or GPU output. Introduction,
 installation, standalone, GSAP, API, support and troubleshooting are local routes;
 repository links remain secondary source evidence.
+
+The documentation header shares the marketing search: the same icon-only 44px
+button, accessible label, shortcut tooltip, Cmd/Ctrl+K and grouped dialog. Docs have
+no gallery preview, so effect results link to their reference pages. The button
+appears only once its script runs; without JavaScript the sidebar remains the index.
+
+On 2026-10-19, the maintainer requested API presentation informed by Canvas UI and
+shadcn/ui documentation. Lead with usage, then use consistent semantic tables for
+creation options, writable controls, read-only state, methods and GSAP options.
+Keep property explanations beside their types and defaults, mark required values,
+and provide native section links. Retain the existing fonts and graphite tokens;
+wide tables scroll inside keyboard-focusable regions on mobile. All effects are
+covered by the shared API reference.
+
+The effect references have individual addressable pages under a native collapsible
+Effects navigation group. Reuse the canonical options and controls tables on each
+page; keep effect-specific settings separate. Link references from gallery previews
+and include them in documentation search. Preserve the existing API section anchors
+as links to the expanded references.
+
+Later on 2026-10-19, the maintainer requested a stronger documentation architecture
+and a live preview on every effect reference. The sidebar follows the reading path:
+Getting started, Guides, Effects, Reference and Help (Upgrading, Browser support,
+Troubleshooting). Effects starts with an All effects overview grouped by category;
+the sidebar groups the 21 references into native Energy, Material and Pattern
+disclosures, opening only the current category. Pagination follows the same order.
+
+Each effect reference opens with one live preview directly below its description,
+followed by a facts strip (category, function, options type, package), section links,
+the reference tables and same-category links. The Standalone guide uses the same
+preview for Fire. The preview follows the toolbar control language: aligned rows
+with a label column, a Text/SVG/Image segmented subject switch, thin silver sliders
+with numeric readouts, Fire's flame height marked as a creation option, a text status
+indicator and a 44px Pause/Resume icon button with an accessible name. A live settings
+snippet mirrors the controls and offers Copy with a manual-selection fallback. Previews
+attach only while visible, release on pagehide, respect reduced motion, never clip
+the host's output and leave the original subject and disabled controls in place
+without JavaScript or WebGPU. They are demonstrations, not verification evidence.
+
+Documentation uses the same fixed site header component as the marketing pages
+(wordmark, Effects and Docs links, search and the GitHub link) without the animated
+pattern line or its pause control. Content edges align with the header. The sticky
+sidebar fits the viewport below the header, contains its own scrolling and opens
+scrolled to the current page.
+
+Navigation on smaller screens follows shadcn/ui, Payload, Sanity and GSAP: at phone
+widths the shared header keeps search, a compact GitHub star icon (with its count from
+50 stars) and a 44px Menu button for Home, Effects, Docs and Star on GitHub, so primary
+navigation outranks the GitHub call to action. Below 1180px, docs add a sticky sub-bar
+under the header with a Docs drawer (when the sidebar is hidden) and an On this page
+dropdown. From 1180px, On this page is a sticky right rail. Its links are generated
+from each page's h2/h3 headings on the server and mark the current section while
+scrolling. Menus, drawers and dropdowns are native popovers, so they work without
+JavaScript. A 44px back-to-top link appears after one viewport of scrolling and returns
+focus to the content.
+
+Docs pages end the way the same references do: page actions, then Previous/Next, then
+a site footer. The page actions are muted, underlined links to edit the page's source
+on GitHub and to open an issue prefilled with the page title and path. They stand in
+for a "Was this helpful?" widget, which would need a backend. The footer spans the
+docs shell below the sidebar, content and rail. It uses the homepage's brand block,
+Build/Explore/domfx groups (from one shared list) and a copyright, MIT and credit
+strip. Docs leave out the Afterglow CTA, the animated wordmark, the gradient edge and
+the text Back to top link; the floating button already covers that. Footer links keep
+44px targets. On phones, Build and Explore share a row and GitHub and npm share the
+next one. The last row stays clear of the floating button.
 
 ### Examples and toolbar
 

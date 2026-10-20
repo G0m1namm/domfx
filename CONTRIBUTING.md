@@ -86,6 +86,19 @@ fixture when a failure/lifecycle case cannot be exercised there.
 
 ## Verification
 
+For shader/library iteration, run `pnpm dev` from the root. It builds the packages
+first, watches core and GSAP JavaScript/declarations, watches the browser's Vite
+build and declarations, then starts Astro. Consumers continue to use built package
+exports, including the TypeGPU transform and patched SDF executor. A package edit
+reloads the website; this is full-page reload, not retained animation state.
+Build/type errors remain visible in the terminal; correct them to resume output.
+Stop the command with Ctrl+C to release its watcher/server processes. This command
+uses process groups on macOS/Linux. `pnpm demo` and production builds remain available.
+Pass Astro flags directly, for example `pnpm dev --port 4335`.
+
+Experimental tracing and pipeline preparation decisions are described in
+[effect program preparation](engineering/adr/0001-effect-program-preparation.md).
+
 The [development harness](HARNESS.md) provides a task brief (`pnpm agent:brief`) and
 one verification command (`pnpm agent:verify`) that runs repository checks and records
 outcomes locally. Human contributors can run the same checks directly (`pnpm check` and

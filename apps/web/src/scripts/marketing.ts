@@ -1,8 +1,9 @@
 import type * as BrowserEffects from '@domfx/browser';
 import type { EffectHandle } from '@domfx/browser';
 
-import type { effects } from '../content/effects';
-import { findEffect, patternEffects } from '../content/effects';
+import type { Effect } from '../content/effects';
+import { effects, findEffect, patternEffects } from '../content/effects';
+import { initializeSiteSearch } from './site-search';
 
 const savedPattern = { index: 0, elapsed: 0, time: 3.2, paused: false };
 
@@ -30,9 +31,14 @@ function initializeMarketing() {
   const main = required<HTMLElement>('main');
   const isLibrary = document.body.dataset.surface === 'library';
   const dialog = required<HTMLDialogElement>('.effect-dialog');
-  const searchDialog = required<HTMLDialogElement>('#site-search');
-  const searchInput = required<HTMLInputElement>('[data-global-search]', searchDialog);
-  const searchTrigger = required<HTMLButtonElement>('[data-search-open]');
+  // Search includes every effect, including those outside the homepage selection.
+  const { dialog: searchDialog, trigger: searchTrigger } = initializeSiteSearch({
+    signal: lifetime.signal,
+    isBlocked: () => dialog.open,
+    onOpen: () => clearCards(),
+    onClose: () => observeCards(),
+    openEffect: (result) => openPreview(result),
+  });
   const intensity = required<HTMLInputElement>('#effect-intensity');
   const dialogScene = required<HTMLElement>('.dialog-scene', dialog);
   const dialogStage = required<HTMLElement>('.dialog-stage', dialog);
@@ -49,9 +55,7 @@ function initializeMarketing() {
     document.querySelector<HTMLElement>('[data-filter][aria-pressed="true"]')?.dataset.filter ??
     'All';
   let previewRevision = 0;
-  let selectedId = 'electricity';
-  let selectedName = 'Electricity';
-  let selectedCategory = 'Energy';
+  let selectedEffect: Effect = effects[0];
   let targetKind = 'text';
   let paused = false;
   let previewTime = 2.4;
@@ -62,7 +66,7 @@ function initializeMarketing() {
   const pending = new Map<Element, number>();
   let nextCardRequest = 0;
   let browserModule: Promise<typeof BrowserEffects> | undefined;
-  async function loadEffect(effect: (typeof effects)[number]) {
+  async function loadEffect(effect: Effect) {
     browserModule ??= import('@domfx/browser');
     const module = await browserModule;
     return module[effect.exportName];
@@ -344,108 +348,6 @@ function initializeMarketing() {
     observeCards();
   }
 
-  // Search includes every effect, including those outside the homepage selection.
-  const searchItems = Array.from(searchDialog.querySelectorAll<HTMLElement>('[data-search-item]'));
-  function updateSearchResults() {
-    const query = searchInput.value.trim().toLowerCase();
-    const terms = query.split(/\s+/).filter(Boolean);
-    const matches = searchItems.filter((item) =>
-      query
-        ? terms.every((term) => item.dataset.keywords?.includes(term))
-        : item.dataset.starter === 'true',
-    );
-    matches.sort((a, b) => {
-      const rank = (item: HTMLElement) =>
-        item.dataset.title === query
-          ? 3
-          : item.dataset.title?.startsWith(query)
-            ? 2
-            : item.dataset.title?.includes(query)
-              ? 1
-              : 0;
-      return query ? rank(b) - rank(a) : 0;
-    });
-    const visible = matches.slice(0, 10);
-    for (const item of searchItems) {
-      item.hidden = !visible.includes(item);
-    }
-    for (const group of searchDialog.querySelectorAll<HTMLElement>('[data-search-group]')) {
-      const items = visible.filter((item) => item.dataset.searchKind === group.dataset.searchGroup);
-      group.hidden = items.length === 0;
-      const list = required('ul', group);
-      for (const item of items) {
-        list.append(item);
-      }
-    }
-    required<HTMLElement>('.site-search-empty', searchDialog).hidden = visible.length > 0;
-    required<HTMLElement>('.site-search-status', searchDialog).textContent = query
-      ? `${matches.length} result${matches.length === 1 ? '' : 's'}${matches.length > 10 ? ' · showing the first 10' : ''}`
-      : 'Effects and documentation';
-  }
-  function openSearch() {
-    if (dialog.open) {
-      return;
-    }
-    clearCards();
-    searchInput.value = '';
-    updateSearchResults();
-    searchDialog.showModal();
-    searchInput.focus();
-  }
-  on(searchTrigger, 'click', openSearch);
-  on(searchInput, 'input', updateSearchResults);
-  on(required('[data-search-close]', searchDialog), 'click', () => searchDialog.close());
-  on(searchDialog, 'close', () => {
-    if (!dialog.open && !searchDialog.open) {
-      searchTrigger.focus();
-      observeCards();
-    }
-  });
-  on(searchDialog, 'click', (event) => {
-    if (!(event.target instanceof Element)) {
-      return;
-    }
-    const effect = event.target.closest<HTMLElement>('[data-search-effect]');
-    if (effect) {
-      searchDialog.close();
-      openPreview(effect);
-    } else if (event.target.closest('a')) {
-      searchDialog.close();
-    }
-  });
-  on(searchDialog, 'keydown', (event) => {
-    const results = Array.from(
-      searchDialog.querySelectorAll<HTMLElement>('li:not([hidden]) > a, li:not([hidden]) > button'),
-    );
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      searchDialog.close();
-    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      const current = results.findIndex((result) => result === document.activeElement);
-      const next =
-        current === -1
-          ? event.key === 'ArrowDown'
-            ? 0
-            : results.length - 1
-          : (current + (event.key === 'ArrowDown' ? 1 : -1) + results.length) % results.length;
-      results[next]?.focus();
-    } else if (event.key === 'Enter' && event.target === searchInput) {
-      event.preventDefault();
-      results[0]?.click();
-    }
-  });
-  on(document, 'keydown', (event) => {
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-      event.preventDefault();
-      if (searchDialog.open) {
-        searchDialog.close();
-      } else {
-        openSearch();
-      }
-    }
-  });
-
   function selectAudience(audience: 'humans' | 'agents') {
     for (const tab of main.querySelectorAll<HTMLElement>('[data-audience]')) {
       const selected = tab.dataset.audience === audience;
@@ -657,8 +559,8 @@ function initializeMarketing() {
   }
 
   function attachmentCode() {
-    const effect = findEffect(selectedId);
-    return `import { ${effect?.exportName} } from '@domfx/browser';\n\nconst effect = ${effect?.exportName}(element, { host, clock: 'ambient', intensity: ${(Number(intensity.value) / 100).toFixed(2)} });\n\n// On unmount: effect.dispose();`;
+    const effect = selectedEffect;
+    return `import { ${effect.exportName} } from '@domfx/browser';\n\nconst effect = ${effect.exportName}(element, { host, clock: 'ambient', intensity: ${(Number(intensity.value) / 100).toFixed(2)} });\n\n// On unmount: effect.dispose();`;
   }
 
   // Scale the source and its attached canvas together; zoom never changes intensity.
@@ -769,15 +671,17 @@ function initializeMarketing() {
       targetKind === 'text'
         ? '<span class="dialog-target" data-dialog-target>edge.</span>'
         : '<span class="dialog-target" data-dialog-target><svg width="170" height="170" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg></span>';
-    required('#dialog-title', dialog).textContent = selectedName;
-    required('[data-dialog-category]', dialog).textContent = selectedCategory;
+    required('#dialog-title', dialog).textContent = selectedEffect.name;
+    required<HTMLAnchorElement>('[data-effect-reference]', dialog).href =
+      `/docs/api/effects/${selectedEffect.id}`;
+    required('[data-dialog-category]', dialog).textContent = selectedEffect.category;
     required('[data-code]', dialog).textContent = attachmentCode();
     required('[data-preview-status]', dialog).textContent = 'Preparing the live preview…';
     for (const button of dialog.querySelectorAll<HTMLElement>('[data-target]')) {
       button.setAttribute('aria-pressed', String(button.dataset.target === targetKind));
     }
-    const effect = findEffect(selectedId);
-    if (!effect || disposed || document.hidden) {
+    const effect = selectedEffect;
+    if (disposed || document.hidden) {
       return;
     }
     updatePreviewPlayback();
@@ -831,9 +735,11 @@ function initializeMarketing() {
   }
 
   function openPreview(trigger: HTMLElement) {
-    selectedId = trigger.dataset.id ?? 'electricity';
-    selectedName = trigger.dataset.name ?? 'Electricity';
-    selectedCategory = trigger.dataset.category ?? 'Energy';
+    const effect = findEffect(trigger.dataset.id);
+    if (!effect) {
+      throw new Error(`Unknown effect: ${trigger.dataset.id}`);
+    }
+    selectedEffect = effect;
     clearCards();
     paused = reducedMotion.matches;
     previewNeedsResume = reducedMotion.matches;

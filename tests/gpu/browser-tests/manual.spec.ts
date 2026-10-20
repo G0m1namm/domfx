@@ -527,7 +527,7 @@ for (const mode of [
       expect(await page.evaluate(() => window.manual.effect.reasonDetail)).toBe(
         mode === 'capture-failed'
           ? 'capture-decode-failed: snapshot: injected capture decode failure'
-          : 'injected renderer construction failure',
+          : 'fire pipeline failed: injected renderer construction failure',
       );
     }
     await page.evaluate(() => document.dispatchEvent(new Event('inspect-failure')));
@@ -611,6 +611,9 @@ test('programmer errors never register a target', async ({ page }) => {
     ];
     for (const parameter of ['seed', 'time', 'intensity', 'flameHeight']) {
       for (const value of [NaN, Infinity, -Infinity, Number.MAX_VALUE, null, '1']) {
+        if (parameter === 'flameHeight' && value === null) {
+          continue;
+        }
         cases.push([target, { host, [parameter]: value }, 'invalid-fire-parameter']);
       }
     }
@@ -630,6 +633,11 @@ test('programmer errors never register a target', async ({ page }) => {
       valid.dispose();
       await valid.ready;
     }
+    // Preserve the accepted runtime nullish default without widening the public type.
+    const defaulted = Reflect.apply(attach, undefined, [target, { host, flameHeight: null }]);
+    await defaulted.ready;
+    results.push(defaulted.lifecycle === 'active');
+    defaulted.dispose();
     // A disconnected host and its descendant also reject before registration.
     host.remove();
     try {

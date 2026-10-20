@@ -3,25 +3,10 @@ import { d, std, tgpu, type TgpuRoot } from 'typegpu';
 
 import type { CaptureFrame } from '@domfx/core';
 
-import { burnedPaperShader } from './burned-paper-shader.js';
-import { ditherShader } from './dither-shader.js';
 import { EffectError } from './effect-error.js';
-import { electricityShader } from './electricity-shader.js';
-import { frostShader } from './frost-shader.js';
-import { kineticShader } from './kinetic-shader.js';
-import type { PatternEffect } from './pattern-options.js';
-import { createPatternShader } from './pattern-shader.js';
-import { slimeShader } from './slime-shader.js';
+import { EffectPrograms, type RenderEffect } from './effect-programs.js';
 
-export type RenderEffect =
-  | 'fire'
-  | 'electricity'
-  | 'frost'
-  | 'kinetic'
-  | 'slime'
-  | 'burned-paper'
-  | 'dither'
-  | PatternEffect;
+export type { RenderEffect } from './effect-programs.js';
 
 const sourceLayout = tgpu.bindGroupLayout({ source: { texture: d.texture2d() } });
 const classifyMask = (coord: d.v2u) => {
@@ -36,117 +21,6 @@ const copyNearestColor = (_coord: d.v2u, _size: d.v2u, _distance: number, inside
   'use gpu';
   return std.textureLoad(sourceLayout.$.source, insidePx, 0);
 };
-
-const fireShader = `
-@group(0) @binding(0) var distances: texture_2d<f32>;
-// time, seed, intensity, raster pixels per flame unit (24 units = flameHeight CSS px).
-@group(0) @binding(1) var<uniform> params: vec4f;
-@vertex fn vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
-  let positions = array<vec2f, 3>(vec2f(-1, -1), vec2f(3, -1), vec2f(-1, 3));
-  return vec4f(positions[index], 0, 1);
-}
-fn field(p: vec2f) -> f32 {
-  let size = vec2i(textureDimensions(distances));
-  let q = p - .5;
-  let base = vec2i(floor(q));
-  let blend = fract(q);
-  let a = textureLoad(distances, clamp(base, vec2i(0), size - 1), 0).r;
-  let b = textureLoad(distances, clamp(base + vec2i(1, 0), vec2i(0), size - 1), 0).r;
-  let c = textureLoad(distances, clamp(base + vec2i(0, 1), vec2i(0), size - 1), 0).r;
-  let e = textureLoad(distances, clamp(base + vec2i(1, 1), vec2i(0), size - 1), 0).r;
-  return mix(mix(a, b, blend.x), mix(c, e, blend.x), blend.y) / params.w;
-}
-fn hash(p: vec2f) -> f32 {
-  var q = fract(vec3f(p.x, p.y, p.x) * vec3f(.1031, .1030, .0973));
-  q += dot(q, q.yzx + 19.19);
-  return fract((q.x + q.y) * q.z);
-}
-fn gradient(p: vec2f) -> vec2f {
-  let direction = u32(hash(p) * 8);
-  var g = vec2f(1, .5);
-  if ((direction & 1u) != 0u) { g = g.yx; }
-  g *= vec2f(select(1.0, -1.0, (direction & 2u) != 0u),
-             select(1.0, -1.0, (direction & 4u) != 0u));
-  return g * .8944272;
-}
-fn noise(p: vec2f) -> f32 {
-  let cell = floor(p);
-  let f = fract(p);
-  let u = f * f * f * (f * (f * 6 - 15) + 10);
-  let a = dot(gradient(cell), f);
-  let b = dot(gradient(cell + vec2f(1, 0)), f - vec2f(1, 0));
-  let c = dot(gradient(cell + vec2f(0, 1)), f - vec2f(0, 1));
-  let e = dot(gradient(cell + vec2f(1, 1)), f - vec2f(1, 1));
-  return .5 + mix(mix(a, b, u.x), mix(c, e, u.x), u.y) * .8;
-}
-fn rootHeight(p: vec2f, bend: f32) -> f32 {
-  var height = 0.0;
-  // Trace down to an actual emitter instead of drawing a displaced copy of the shape.
-  for (var step = 0; step < 7; step++) {
-    let sample = p + vec2f(bend * height / 28, height) * params.w;
-    let distance = field(sample);
-    if (distance <= .75) { return height; }
-    height += max(distance, .75);
-    if (height > 28) { return -1; }
-  }
-  return -1;
-}
-@fragment fn fragment(@builtin(position) pos: vec4f) -> @location(0) vec4f {
-  let p = pos.xy / params.w;
-  let time = params.x;
-  let seed = params.y;
-  let intensity = params.z;
-  let distance = textureLoad(distances, vec2i(pos.xy), 0).r / params.w;
-  if (intensity == 0 || distance <= -3 || distance > 30) { return vec4f(0); }
-  // Upward advection and nested noise give the wisps a soft, curling interior.
-  var flow = p * vec2f(.18, .025) + vec2f(sin(seed) * 17, cos(seed) * 23 + time * .8);
-  let warp = noise(flow * .6 + vec2f(3.7, time * .2));
-  flow.x += (warp - .5) * 1.6;
-  let turbulence = noise(flow) * .5
-                 + noise(flow * 2.03 + vec2f(8.3, time * .3)) * .25
-                 + noise(flow * 4.07 + vec2f(2.8, time * .6)) * .15
-                 + noise(flow * 8.13) * .1;
-  let height = rootHeight(pos.xy, (warp - .5) * 7 * intensity);
-  let reach = 28 * intensity;
-  var density = -1.0;
-  let rise = clamp(height / reach, 0, 1);
-  if (height >= 0) { density = turbulence * 1.4 - .1 - rise * .8; }
-  let body = smoothstep(0, .5, density) * pow(1 - rise, .55);
-  let rim = exp(-abs(distance) * 1.6) * .28;
-  let glow = exp(-abs(distance) * .45) * .07;
-  let exterior = smoothstep(-.75, .75, distance);
-  let alpha = clamp((rim + glow + body * exterior * .94) * sqrt(intensity), 0, .95)
-              * smoothstep(-3, -.5, distance);
-  let heat = clamp(exp(-max(height, 0) * .24) * .85 + max(density, 0) * .25, 0, 1);
-  let orange = mix(vec3f(1, .09, .005), vec3f(1, .55, .025), smoothstep(.1, .65, heat));
-  let color = mix(orange, vec3f(1, .96, .64), smoothstep(.65, 1, heat));
-
-  // Each column emits occasional embers from an upward-facing silhouette edge.
-  // Absolute-time lifetimes preserve seeking, reverse playback and seed determinism.
-  var ember = 0.0;
-  let column = floor(p.x / 12);
-  for (var neighbor = -1; neighbor <= 1; neighbor++) {
-    let id = column + f32(neighbor);
-    let random = hash(vec2f(id, seed + 53));
-    if (random > intensity * .6) { continue; }
-    let age = fract(time * .65 + hash(vec2f(id + 17, seed)));
-    let emitterX = (id + hash(vec2f(id, seed + 9))) * 12;
-    let drift = sin(age * 5 + random * 6) * age * 2;
-    let dx = p.x - emitterX - drift;
-    if (abs(dx) > 2) { continue; }
-    let source = vec2f(emitterX, p.y + age * 28) * params.w;
-    let dy = field(source);
-    let facing = field(source - vec2f(0, params.w)) - field(source + vec2f(0, params.w));
-    let radius = .35 + random * .4;
-    let spark = exp(-dx * dx / (radius * radius) - dy * dy / .7);
-    ember = max(ember, spark * smoothstep(.5, 1.5, facing)
-                * smoothstep(0, .12, age) * (1 - smoothstep(.65, 1, age)));
-  }
-  ember *= exterior * intensity;
-  let emberAlpha = min(ember, .9);
-  return vec4f(vec3f(1, .78, .28) * emberAlpha + color * alpha * (1 - emberAlpha),
-               emberAlpha + alpha * (1 - emberAlpha));
-}`;
 
 export function decodeFloat16(bits: number): number {
   const sign = bits & 0x8000 ? -1 : 1;
@@ -185,87 +59,23 @@ export interface PreparedGpuFrame {
  */
 export class GpuExperiment {
   private readonly prepared = new Set<PreparedGpuFrame>();
-  private readonly pipelines: Record<RenderEffect, GPURenderPipeline>;
+  private readonly programs: EffectPrograms;
   private preparation: Promise<void> = Promise.resolve();
   private destroyed = false;
   readonly errors: string[] = [];
   private constructor(
     readonly root: TgpuRoot,
     readonly adapterInfo: GPUAdapterInfo,
+    programs: EffectPrograms,
   ) {
     const device = root.device;
-    device.addEventListener('uncapturederror', (event) => this.errors.push(event.error.message));
-    const fireModule = device.createShaderModule({
-      label: 'domfx deterministic fire',
-      code: fireShader,
+    device.addEventListener('uncapturederror', (event) => {
+      this.errors.push(event.error.message.slice(0, 2000));
+      if (this.errors.length > 32) {
+        this.errors.shift();
+      }
     });
-    const electricityModule = device.createShaderModule({
-      label: 'domfx deterministic electricity',
-      code: electricityShader,
-    });
-    const frostModule = device.createShaderModule({
-      label: 'domfx deterministic frost',
-      code: frostShader,
-    });
-    const kineticModule = device.createShaderModule({
-      label: 'domfx deterministic kinetic bloom',
-      code: kineticShader,
-    });
-    const slimeModule = device.createShaderModule({
-      label: 'domfx deterministic slime drips',
-      code: slimeShader,
-    });
-    const burnedPaperModule = device.createShaderModule({
-      label: 'domfx deterministic burned paper',
-      code: burnedPaperShader,
-    });
-    const ditherModule = device.createShaderModule({
-      label: 'domfx deterministic dither',
-      code: ditherShader,
-    });
-    const pipeline = (name: RenderEffect, module: GPUShaderModule) =>
-      device.createRenderPipeline({
-        label: `domfx ${name}`,
-        layout: 'auto',
-        vertex: { module, entryPoint: 'vertex' },
-        fragment: {
-          module,
-          entryPoint: 'fragment',
-          targets: [{ format: 'rgba8unorm' }],
-        },
-        primitive: { topology: 'triangle-list' },
-      });
-    const patternPipeline = (effect: PatternEffect) =>
-      pipeline(
-        effect,
-        device.createShaderModule({
-          label: `domfx ${effect} exploration`,
-          code: createPatternShader(effect),
-        }),
-      );
-    this.pipelines = {
-      fire: pipeline('fire', fireModule),
-      electricity: pipeline('electricity', electricityModule),
-      frost: pipeline('frost', frostModule),
-      kinetic: pipeline('kinetic', kineticModule),
-      slime: pipeline('slime', slimeModule),
-      'burned-paper': pipeline('burned-paper', burnedPaperModule),
-      dither: pipeline('dither', ditherModule),
-      halftone: patternPipeline('halftone'),
-      stipple: patternPipeline('stipple'),
-      scanlines: patternPipeline('scanlines'),
-      crosshatch: patternPipeline('crosshatch'),
-      diamonds: patternPipeline('diamonds'),
-      'contour-echoes': patternPipeline('contour-echoes'),
-      engraving: patternPipeline('engraving'),
-      'woven-mesh': patternPipeline('woven-mesh'),
-      hexagons: patternPipeline('hexagons'),
-      interference: patternPipeline('interference'),
-      shards: patternPipeline('shards'),
-      circuits: patternPipeline('circuits'),
-      'star-shimmer': patternPipeline('star-shimmer'),
-      'brush-fringe': patternPipeline('brush-fringe'),
-    };
+    this.programs = programs;
   }
 
   static async create(
@@ -286,7 +96,8 @@ export class GpuExperiment {
     let root: TgpuRoot | undefined;
     try {
       root = tgpu.initFromDevice({ device });
-      return new GpuExperiment(root, adapter.info);
+      const programs = await EffectPrograms.create(device);
+      return new GpuExperiment(root, adapter.info, programs);
     } catch (error) {
       root?.destroy();
       device.destroy();
@@ -392,37 +203,7 @@ export class GpuExperiment {
       });
       const outputTexture = output;
       const parameters = uniform;
-      const bindGroupFor = (effect: RenderEffect) =>
-        device.createBindGroup({
-          layout: this.pipelines[effect].getBindGroupLayout(0),
-          entries: [
-            { binding: 0, resource: sdfTexture.createView() },
-            { binding: 1, resource: { buffer: parameters } },
-          ],
-        });
-      const bindGroups = {
-        fire: bindGroupFor('fire'),
-        electricity: bindGroupFor('electricity'),
-        frost: bindGroupFor('frost'),
-        kinetic: bindGroupFor('kinetic'),
-        slime: bindGroupFor('slime'),
-        'burned-paper': bindGroupFor('burned-paper'),
-        dither: bindGroupFor('dither'),
-        halftone: bindGroupFor('halftone'),
-        stipple: bindGroupFor('stipple'),
-        scanlines: bindGroupFor('scanlines'),
-        crosshatch: bindGroupFor('crosshatch'),
-        diamonds: bindGroupFor('diamonds'),
-        'contour-echoes': bindGroupFor('contour-echoes'),
-        engraving: bindGroupFor('engraving'),
-        'woven-mesh': bindGroupFor('woven-mesh'),
-        hexagons: bindGroupFor('hexagons'),
-        interference: bindGroupFor('interference'),
-        shards: bindGroupFor('shards'),
-        circuits: bindGroupFor('circuits'),
-        'star-shimmer': bindGroupFor('star-shimmer'),
-        'brush-fringe': bindGroupFor('brush-fringe'),
-      };
+      const bindings = this.programs.bind(sdfTexture, parameters);
       let disposed = false;
       const prepared: PreparedGpuFrame = {
         width,
@@ -480,8 +261,8 @@ export class GpuExperiment {
               },
             ],
           });
-          pass.setPipeline(this.pipelines[effect]);
-          pass.setBindGroup(0, bindGroups[effect]);
+          pass.setPipeline(this.programs.pipeline(effect));
+          pass.setBindGroup(0, bindings);
           pass.draw(3);
           pass.end();
           device.queue.submit([encoder.finish()]);

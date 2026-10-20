@@ -3,10 +3,10 @@ import { startFire } from './quickstart.js';
 
 void rehearse((target, host) => {
   const demo = startFire(target, host);
-  const { effect, timeline, binding } = demo;
+  const { effect, timeline, tween } = demo;
   const sibling = { value: 0 };
   timeline.to(sibling, { value: 4, duration: 4, ease: 'none' }, 0);
-  check(timeline.getChildren().length === 2, 'binding and caller-owned sibling');
+  check(timeline.getChildren().length === 2, 'tween and caller-owned sibling');
   return {
     effect,
     dispose: demo.dispose,
@@ -22,15 +22,15 @@ void rehearse((target, host) => {
         }
       },
       dispose() {
-        binding.dispose();
+        tween.kill();
       },
       verifyCleanup() {
-        check(timeline.getChildren().length === 1, 'binding cleanup must preserve sibling');
+        check(timeline.getChildren().length === 1, 'tween cleanup must preserve sibling');
         const time = effect.time;
         timeline.seek(3);
         check(
           sibling.value === 3 && effect.time === time,
-          'sibling remains usable after binding disposal',
+          'sibling remains usable after tween disposal',
         );
       },
     },

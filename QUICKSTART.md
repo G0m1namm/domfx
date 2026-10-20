@@ -1,6 +1,6 @@
 # Consumer quickstart
 
-Attach decorative fire to one element's captured silhouette while keeping the original
+Attach decorative effects to an element's visible shape while keeping the original
 DOM as the content and interaction surface. The API is experimental and the packages
 are private. This guide uses **local release tarballs**, not a registry installation.
 There is no supported `pnpm add @domfx/browser` registry command yet; names and the
@@ -101,10 +101,20 @@ card captures its combined paint, not separate effects for each child. Captured 
 at or above 128/255 is inside; holes and disconnected shapes can remain. Attachment
 capture has 32 CSS pixels of padding, so larger overflow/shadows can be clipped.
 
+## Choose an effect
+
+The browser package includes 21 effects: Electricity, Frost, Fire, Kinetic bloom,
+Slime, Burned paper, Dither and 14 additional patterns. See the
+[complete function list](packages/domfx/README.md#available-effect-functions).
+Every function accepts shared `AttachmentOptions` and returns an effect instance
+(`EffectHandle`). Fire is the worked example here; replace its function and omit
+`flameHeight` to use another effect. Color, gradients and particle counts are not
+currently public controls.
+
 ## Standalone walkthrough
 
 Copy [standalone.ts](examples/quickstart/standalone.ts) into your app as `quickstart.ts`.
-It imports only `attachFire`, supplies the explicit host and uses a manual clock with
+It imports only `attachFire`, supplies the explicit host and uses external time control with
 seed 314, time 0 and intensity 0.8. Create `main.ts`:
 
 ```ts
@@ -136,13 +146,13 @@ effect.intensity = 0.8;
 ```
 
 Writes update readable controls immediately and batch into a render on the next frame.
-They reuse the raster; time changes do not recapture. If you want automatic time,
-change the example's `clock` to `'ambient'`. `effect.pause()` freezes it;
+They reuse the captured image; time changes do not recapture. If you want automatic time,
+change the example's `clock` to `'auto'` (`'ambient'` is a compatible older spelling). `effect.pause()` freezes it;
 `effect.resume()` continues without catching up the paused/hidden interval. Manual
 mode is always paused and `resume()` does not advance it. Do not add your own frame
-loop for ambient mode.
+loop for automatic animation.
 
-After changing captured paint, an async event handler can await a fresh silhouette:
+After changing the target appearance, an async event handler can capture it again:
 
 ```ts
 target.style.borderRadius = '35px';
@@ -153,20 +163,20 @@ try {
 }
 ```
 
-Refresh hides stale output immediately and resolves when this revision or a newer one
-commits. Observed target mutations, resize and asset signals can refresh automatically;
+Refresh hides out-of-date output immediately and resolves when this or a newer requested
+capture is accepted. It does not wait for completed GPU execution or screen presentation. Observed target mutations, resize and asset signals can refresh automatically;
 ancestor/stylesheet paint, hover/focus and canvas drawing still need explicit refresh
 when no observed signal occurs. This is snapshot capture, not continuous video capture.
 
 On page/component teardown, call `effect.dispose()` and remove your own event listeners.
 Disposal is safe before `ready` and on repeated calls. Remove/reinsert of an observed
-target/host is terminal; create a new attachment after remounting.
+target/host permanently disposes the effect; create a new attachment after remounting.
 
 ## GSAP walkthrough
 
-In the same independent app, add `"@domfx/gsap": "file:./artifacts/domfx-gsap-0.0.0.tgz"`
-and `"gsap": "3.15.0"` to `dependencies`, then run `pnpm install --ignore-scripts` again.
-GSAP is an explicit peer; the browser package alone does not install it.
+In the same independent app, add `"gsap": "3.15.0"` to `dependencies`, then run `pnpm install --ignore-scripts` again.
+GSAP is supplied by your app; the browser package alone does not install it.
+The optional `@domfx/gsap` artifact is needed only for snapshot lifecycle helpers.
 
 Replace `quickstart.ts` with [gsap.ts](examples/quickstart/gsap.ts). Keep the same HTML
 and element lookup; replace `const effect = startFire(target, host)` in `main.ts` with:
@@ -176,25 +186,25 @@ const demo = startFire(target, host);
 const { effect, timeline } = demo;
 ```
 
-The example creates a caller-owned paused timeline and binds manual time 0 → 4 and
-intensity 0.8 → 0.4 over four seconds. Binding before `ready` is supported. Call
+The example creates a caller-owned paused timeline and animates externally controlled effect time 0 → 4 and
+intensity 0.8 → 0.4 over four seconds. Tweening before `ready` is supported. Call
 `timeline.play()` to animate, `timeline.seek(2.5)` or `timeline.seek(1.5)` to seek in
 either direction, and `timeline.reverse()` to reverse playback. Default
-callback-suppressed seeks also update the controls. Use one owner for the controls
-at a time: direct writes do not redefine the binding's captured starting values.
+callback-suppressed seeks also update the controls. Use one driver per property. Chained native `.to()` calls resolve their starts
+from preceding destinations; `.fromTo()` can specify explicit starts.
 
 Refresh and unavailable handling use the same `effect` methods as standalone.
-`await effect.retry()` retains the binding and controls; do not create another binding
-after retry. On teardown call `demo.dispose()`: it disposes the binding, kills this
-example's owned timeline and disposes the attachment. `binding.dispose()` alone only
-removes its tween, preserving caller-owned siblings and the last control values.
+`await effect.retry()` retains the controls and existing tweens; do not create another tween
+after retry. On teardown call `demo.dispose()`: it kills this
+example's owned timeline and disposes the effect. `tween.kill()` alone only
+removes that tween, preserving caller-owned siblings and the last control values.
 For a borrowed timeline, leave timeline cleanup with its owner. For context ownership
 and asynchronous setup see the [GSAP reference](packages/gsap/README.md).
 
 ## Unavailable output and reduced motion
 
 `ready` and `retry()` resolve after an attempt, including environmental failure and
-cleanup. Always inspect `lifecycle`, `raster`, and the typed `EffectReason` in `reason`;
+cleanup. Always inspect `lifecycle`, `raster`, and the `EffectReason` code in `reason`;
 use `reasonDetail` for diagnostics, not program logic. Invalid options, host relationships
 and conflicting target ownership throw synchronously. An unavailable effect preserves
 the original DOM; no visual fallback or automatic retry loop is installed.
@@ -215,7 +225,7 @@ The default `motion: 'respect'` suppresses output under reduced motion. Startup 
 GPU initialization; a runtime preference change hides output and releases resources.
 Changing the preference back does not restart it: explicit `retry()` is required.
 Opt into `motion: 'static'` at attachment creation for a decoration rendered at time zero
-under either preference. It remains paused even with an ambient clock or GSAP time writes;
+under either preference. It remains paused even with automatic animation or GSAP time writes;
 intensity and refresh still work. There is no animated override for reduced motion.
 
 | Typed reason(s)                                        | What to check                                                                                                        |
@@ -226,24 +236,28 @@ intensity and refresh still work. There is no animated override for reduced moti
 | `empty-mask`, `missing-exterior`                       | Target paint needs classified opaque pixels and transparent exterior within capture padding.                         |
 | `unsupported-placement`, `unsupported-composition`     | Host, transforms, clipping and group effects below. Fix CSS before retry.                                            |
 | `renderer-failed`, `device-lost`                       | Underlying GPU/shader diagnostics; explicit retry can attempt recreation but is not guaranteed recovery.             |
-| `effect-target-owned`                                  | Another live attachment owns this target or an overlapping subtree when retry runs.                                  |
+| `effect-target-owned`                                  | Another live effect uses this target, its ancestor or a descendant.                                                  |
 | `reduced-motion`                                       | Respect the preference; use static opt-in or retry only after the condition changes.                                 |
 | `target-not-visible`, `stale-raster`                   | Inspect suspended/raster state. Fresh pixels can resume on visibility; stale paint needs refresh/retry when visible. |
 
 ## Minimal API reference
 
-| Public surface                              | Contract                                                                                                                                                                                                               |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `attachFire(target, options): EffectHandle` | Required `host`; optional `clock` (`manual` default / `ambient`), `motion` (`respect` default / `static`), `seed` (0), `time` (0), `intensity` (1). Numeric inputs must be valid finite values; time must fit float32. |
-| `ready: Promise<void>`                      | Original initialization/cleanup promise; does not reject for environmental unavailability.                                                                                                                             |
-| `lifecycle`, `raster`                       | `active / suspended / unavailable / disposed`; `fresh / refreshing / stale`.                                                                                                                                           |
-| `reason`, `reasonDetail`                    | `EffectReason \| undefined`; diagnostic string or undefined.                                                                                                                                                           |
-| `time`, `intensity`, `seed`                 | Writable seconds and intensity; immutable seed.                                                                                                                                                                        |
-| `clock`, `paused`, `pause()`, `resume()`    | Immutable clock; ambient pause control, independent of lifecycle suspension.                                                                                                                                           |
-| `refresh()`, `retry()`                      | Capture new paint versus tear down/reinitialize with retained controls. Both return promises; see failure semantics above.                                                                                             |
-| `dispose()`, `onDispose(callback)`          | Idempotent cleanup; callback runs once (immediately if already disposed), returns unsubscribe.                                                                                                                         |
-| `bindFire(effect, timeline, options)`       | Manual handle only; required destination `time`, `intensity`, nonnegative `duration`; optional GSAP `position` and `disposeEffect` (false). Returns `{ dispose() }`.                                                   |
-| `bindFireAsync(promise, timeline, options)` | Requires `disposeEffect: true`; immediately exposes `dispose()` and `ready`. Disposes late results after cancellation/context revert.                                                                                  |
+| Public surface                                | Contract                                                                                                                                                                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `attachFire(target, options): EffectHandle`   | Required `host`; optional `clock` (`manual` default / `auto`, legacy `ambient`), `motion` (`respect` default / `static`), `seed` (0), `time` (0), `intensity` (1). Numeric creation inputs must be finite and float32-representable. |
+| `ready: Promise<void>`                        | Original initialization/cleanup promise; does not reject for environmental unavailability.                                                                                                                                           |
+| `lifecycle`, `raster`                         | `active / suspended / unavailable / disposed`; `fresh / refreshing / stale`.                                                                                                                                                         |
+| `reason`, `reasonDetail`                      | `EffectReason \| undefined`; diagnostic string or undefined.                                                                                                                                                                         |
+| `time`, `intensity`, `seed`                   | Writable seconds and intensity; immutable seed.                                                                                                                                                                                      |
+| `clock`, `paused`, `pause()`, `resume()`      | Immutable animation control; automatic-animation pause, independent of lifecycle suspension.                                                                                                                                         |
+| `refresh()`, `retry()`                        | Capture new paint versus tear down/reinitialize with retained controls. Both return promises; see failure semantics above.                                                                                                           |
+| `dispose()`, `onDispose(callback)`            | Safe repeated cleanup; callback runs once (immediately if already disposed), returns unsubscribe.                                                                                                                                    |
+| `bindEffect(effect, timeline, options)`       | Manual handle only; required destination `time`, `intensity`, nonnegative `duration`; optional GSAP `position` and `disposeEffect` (false). Returns `{ dispose() }`.                                                                 |
+| `bindEffectAsync(promise, timeline, options)` | Requires `disposeEffect: true`; immediately exposes `dispose()` and `ready`. Disposes late results after cancellation/context revert.                                                                                                |
+
+The compatible Fire-named binding exports retain the same snapshot behavior.
+Native GSAP tweens need neither helper; they use the effect instance as their actual
+target, supporting normal overwrite and `killTweensOf` behavior.
 
 Imports are SSR-safe, but attachment/capture calls require browser DOM elements.
 Lower-level capture and its owned `CaptureFrame.release()` are documented in the

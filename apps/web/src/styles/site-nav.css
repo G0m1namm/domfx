@@ -1,0 +1,299 @@
+/* Fixed site header shared by marketing and documentation layouts.
+   Font and color fallbacks cover both pages' token and @font-face names. */
+:root {
+  --header-height: 80px;
+}
+.site-nav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  height: var(--header-height);
+  margin: auto;
+  padding: 0;
+  border-bottom: 1px solid #45475480;
+  background: var(--bg, #14151b);
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 1320px;
+  height: 100%;
+  margin: auto;
+  padding: 0 36px;
+}
+.site-nav .wordmark {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: Cabinet, 'Cabinet Grotesk', sans-serif;
+  font-size: 31px;
+  font-weight: 500;
+  letter-spacing: -1.5px;
+}
+.site-nav .wordmark > .ui-icon {
+  width: 23px;
+  height: 23px;
+  color: var(--silver);
+}
+.site-nav nav {
+  display: flex;
+  gap: 24px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.site-nav nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--text, #e8eaf3);
+  text-decoration: underline;
+  text-decoration-color: #8e91a880;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+  transition:
+    color 0.15s,
+    text-decoration-color 0.15s;
+}
+.site-nav nav a:hover,
+.site-nav nav a:focus-visible {
+  color: #fff;
+  text-decoration-color: currentColor;
+}
+.site-nav nav a[aria-current] {
+  color: var(--text, #e8eaf3);
+  text-decoration-color: var(--silver);
+}
+.nav-inner > .header-search {
+  margin-left: auto;
+}
+.nav-cta {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border: 1px solid #454754b0;
+  border-radius: 7px;
+  background: #1d1f2770;
+  box-shadow: inset 0 1px #e8eaf305;
+  font-size: 13px;
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.nav-cta:hover {
+  border-color: #8e91a8;
+  background: var(--raised);
+}
+.star-cta {
+  gap: 8px;
+  min-height: 44px;
+  color: var(--text, #e8eaf3);
+}
+.star-cta .ui-icon {
+  width: 18px;
+  height: 18px;
+}
+.star-count {
+  padding-left: 8px;
+  border-left: 1px solid #45475480;
+  font:
+    11px 'Lab Mono',
+    'JetBrains Mono',
+    monospace;
+}
+.star-count[hidden] {
+  display: none;
+}
+.header-playback {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+}
+.header-playback:hover {
+  background: var(--raised);
+  color: var(--text, #e8eaf3);
+}
+.header-effect-host {
+  position: absolute;
+  top: calc(100% - 1px);
+  right: 0;
+  left: 0;
+  height: 180px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.header-effect-line {
+  position: absolute;
+  top: -3px;
+  right: 0;
+  left: 0;
+  display: block;
+  height: 4px;
+  background: #2c2e37;
+}
+.header-effect-host > canvas {
+  transform: translateY(-1px) scaleY(-1.5);
+  transform-origin: center;
+}
+@media (max-width: 1000px) {
+  .nav-inner,
+  .site-nav nav {
+    gap: 16px;
+  }
+}
+@media (max-width: 700px) {
+  :root {
+    --header-height: 68px;
+  }
+  .nav-inner {
+    gap: 10px;
+    padding-inline: 20px;
+  }
+  .site-nav nav {
+    display: none;
+  }
+  .site-nav .wordmark {
+    font-size: 27px;
+  }
+  .site-nav .wordmark > .ui-icon {
+    width: 20px;
+    height: 20px;
+  }
+  .star-cta {
+    gap: 7px;
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+  .star-cta .ui-icon {
+    width: 15px;
+    height: 15px;
+  }
+  .star-count {
+    padding-left: 6px;
+    font-size: 10px;
+  }
+}
+@media (max-width: 380px) {
+  .nav-inner {
+    gap: 6px;
+    padding-inline: 12px;
+  }
+  .star-cta {
+    padding-inline: 7px;
+  }
+}
+
+/* Site menu: replaces the hidden nav links on phones. A native popover, so it
+   opens, light-dismisses and closes on Escape without JavaScript. */
+.nav-menu-button {
+  display: none;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text, #e8eaf3);
+}
+.nav-menu-button:hover {
+  background: var(--raised);
+}
+.site-menu {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0 20px 32px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  background: var(--bg, #14151b);
+  color: var(--text, #e8eaf3);
+}
+.site-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  margin-bottom: 8px;
+  border-bottom: 1px solid #45475480;
+  color: var(--muted);
+  font-size: 13px;
+}
+.site-menu-head button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+.site-menu nav {
+  display: grid;
+}
+.site-menu nav a {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  border-bottom: 1px solid #2c2e38;
+  font-family: Cabinet, 'Cabinet Grotesk', sans-serif;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+.site-menu nav a[aria-current] {
+  text-decoration: underline;
+  text-decoration-color: var(--silver);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 8px;
+}
+.site-menu-star {
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-top: 24px;
+}
+@media (max-width: 700px) {
+  .nav-menu-button {
+    display: flex;
+  }
+  /* Navigation takes priority; the GitHub link keeps its icon and any count. */
+  .star-cta [data-star-label] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .star-cta {
+    min-width: 44px;
+    justify-content: center;
+  }
+}
+@media (min-width: 701px) {
+  .site-menu {
+    display: none;
+  }
+}

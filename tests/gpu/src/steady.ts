@@ -1,6 +1,8 @@
 import { captureElement } from '@domfx/browser';
 import { GpuExperiment, type PreparedGpuFrame } from '@domfx/browser/experimental';
 
+import { measurementEffect } from './effect-selection.js';
+
 interface Trial {
   durationMs: number;
   rafMs: number[];
@@ -13,6 +15,7 @@ interface Trial {
 }
 
 interface SteadyReport {
+  effect?: string;
   outcome: 'running' | 'complete' | 'failed' | 'unavailable';
   targets: number;
   timestampQuery: boolean;
@@ -71,6 +74,8 @@ async function measure() {
   };
   document.addEventListener('visibilitychange', visibility);
   try {
+    const effect = measurementEffect();
+    report.effect = effect;
     if (![0, 1, 2].includes(targets)) {
       throw new Error('invalid target count');
     }
@@ -156,6 +161,8 @@ async function measure() {
                 endOfPassWriteIndex: offset + i * 2 + 1,
               }
             : undefined,
+          24,
+          effect,
         );
         frame.present(contexts[i]!.getCurrentTexture());
       });

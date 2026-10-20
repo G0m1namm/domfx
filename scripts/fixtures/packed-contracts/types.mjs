@@ -14,6 +14,7 @@ const coreExports = [
 ];
 const browserExports = [
   ...coreExports.filter((name) => name !== 'classifyAlpha'),
+  'AttachmentOptions',
   'CaptureError',
   'CaptureErrorCode',
   'BurnedPaperOptions',

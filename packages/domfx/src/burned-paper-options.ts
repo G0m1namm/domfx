@@ -1,4 +1,4 @@
-import type { FireOptions } from './fire-options.js';
+import type { AttachmentOptions } from './attachment-options.js';
 
 /** Burned paper uses shared controls; flame height belongs only to Fire. */
-export type BurnedPaperOptions = Omit<FireOptions, 'flameHeight'>;
+export type BurnedPaperOptions = AttachmentOptions;

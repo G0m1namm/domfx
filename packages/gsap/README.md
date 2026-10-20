@@ -8,6 +8,57 @@ GSAP 3.15 timeline. The package name is provisional; nothing is published to npm
 GSAP is a peer dependency supplied by the consumer. Core and browser imports remain
 GSAP-free. This adapter imports only core types and GSAP, with no browser/GPU internals.
 
+## Native GSAP tweens
+
+For ordinary animation, GSAP can tween every effect instance directly. No domfx
+plugin registration or `@domfx/gsap` runtime is needed for numeric controls:
+
+```ts
+import { gsap } from 'gsap';
+import { attachFrost } from '@domfx/browser';
+
+const effect = attachFrost(target, { host, clock: 'manual', intensity: 0.8 });
+const timeline = gsap.timeline({ paused: true });
+timeline.to(effect, { time: 4, intensity: 0.4, duration: 4, ease: 'none' });
+timeline.to(effect, { time: 8, intensity: 0.8, duration: 4, ease: 'none' });
+const unsubscribe = effect.onDispose(() => timeline.kill());
+function cleanup() {
+  unsubscribe();
+  timeline.kill();
+  effect.dispose();
+}
+window.addEventListener('pagehide', cleanup, { once: true });
+// Also call cleanup on component unmount, including before ready settles.
+await effect.ready;
+if (effect.lifecycle === 'active') timeline.play();
+```
+
+Native `.to()`, `.from()` and `.fromTo()` use standard GSAP start-value and
+immediate-render behavior. Easing, suppressed seeks, reverse, repeat/yoyo,
+`overwrite` and partial property kill work through the public setters.
+`gsap.killTweensOf(effect, 'intensity')` stops only that property; it does not
+release the effect. Use manual time and one driver per property. Keep interpolated
+values finite and float32-representable; intensity clamps per write to 0–1.
+
+A tween does not own its target's resources. Kill your animations and dispose your
+effect on teardown, or return that resource cleanup from a synchronous
+`gsap.context()` callback and call `context.revert()`. Register cleanup before
+asynchronous setup settles. A context does not automatically capture arbitrary
+future promise continuations. Keep the original content usable if setup is unavailable.
+
+## Optional snapshot bindings
+
+`bindEffect`, `bindEffectAsync`, `EffectBindingOptions`, `EffectBinding` and
+`AsyncEffectBinding` are generic aliases of the existing Fire-named exports.
+Both names accept every effect and retain identical snapshot and cleanup behavior.
+The examples below retain the compatible names for existing consumers.
+
+These helpers animate private proxy targets. `gsap.killTweensOf(effect)` and native
+cross-binding overwrite do not identify those proxy children. Several bindings
+created together capture the same initial values; they do not inherit preceding
+segments' destinations. Prefer native `.to()` calls for normal chained sequencing.
+Use a binding only when its fixed starts or scoped cleanup behavior are wanted.
+
 ```ts
 import { gsap } from 'gsap';
 
@@ -41,8 +92,8 @@ must be finite and nonnegative; zero applies the destination at the insertion po
 appending to the timeline. Ambient attachments, including paused ambient attachments,
 throw before any animation is created. Invalid numerical options also throw synchronously.
 
-The binding creates a paused child tween, adds it to the host, and unpauses the child.
-The host retains its playback state, callbacks and siblings. Default callback-suppressed
+The binding creates a paused child tween, adds it to the timeline, and unpauses the child.
+The timeline retains its playback state, callbacks and siblings. Default callback-suppressed
 `seek()`, backward seeking, playback and reverse all write the attachment's public
 setters. The attachment's existing scheduler batches writes on the next frame and
 reuses its raster; the adapter adds no ticker listener, animation-frame loop or capture.
@@ -91,9 +142,12 @@ owned result. The helper adds no cancellation to the caller's underlying operati
 Use `context.revert()` for cleanup: GSAP's bare `context.kill()` does not run custom
 cleanup callbacks.
 
+Killing the caller's timeline alone does not remove the binding's disposal subscription.
+Call `binding.dispose()` too.
+
 Run `pnpm --filter @domfx/gpu-tests exec vite --host 127.0.0.1` and open `/gsap.html` for the built-export consumer and its Play,
-Seek, Reverse and separate disposal controls. `pnpm agent:verify` exercises it in
+Seek, Reverse and separate disposal controls. The focused GSAP browser suite exercises it in
 development and production, including real GPU output, scheduler batching, rejection
-and cleanup. This is local Vite/Chromium coverage, not a broad bundler/browser guarantee.
+and cleanup. The default `pnpm agent:verify` harness is GPU-independent. This is local Vite/Chromium coverage, not a broad bundler/browser guarantee.
 
 MIT licensed; GSAP retains its own license and is not relicensed by this package.

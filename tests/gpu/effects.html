@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Effect regression fixture</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { margin: 40px; }
+      #text { display: inline-block; font: 300 40px/1.2 sans-serif; }
+      #svg, #image { display: block; width: 96px; height: 64px; }
+    </style>
+  </head>
+  <body>
+    <span id="text">i B8O</span>
+    <svg id="svg" viewBox="0 0 96 64">
+      <path fill="#c2c5db" fill-rule="evenodd" d="M4 4H52V60H4ZM12 12V52H44V12Z M64 8H88V56H64Z" />
+    </svg>
+    <img id="image" src="/examples/silver-ring.png" alt="Transparent ring" />
+    <script type="module" src="/src/effects.ts"></script>
+  </body>
+</html>

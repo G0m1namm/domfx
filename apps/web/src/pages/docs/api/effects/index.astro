@@ -1,0 +1,20 @@
+---
+import DocsEffectLinks from '../../../../components/docs-effect-links.astro';
+import { effectsByCategory } from '../../../../content/documentation';
+import Documentation from '../../../../layouts/Documentation.astro';
+
+const summaries = {
+  Energy: 'Light and heat that move outward from the shape: lightning, flames and a travelling pulse.',
+  Material: 'Coatings that cling to the edge and spread inward: ice, slime and scorched paper.',
+  Pattern: 'Silver-violet marks that trace the silhouette, from ordered dots to woven strands.',
+} as const;
+---
+<Documentation>
+  <p>Every effect is an attachment function from <code>@domfx/browser</code> with the same <a href="/docs/api/shared">options and controls</a>. Each reference opens with a live preview you can tune, followed by its exact options.</p>
+  {effectsByCategory.map(({ category, effects }) => <>
+    <h2 id={category.toLowerCase()}>{category}</h2>
+    <p>{summaries[category]}</p>
+    <DocsEffectLinks effects={effects} />
+  </>)}
+  <p>The <a href="/docs/api#available-effects">API reference</a> lists every import name in one table, and the <a href="/effects/">gallery</a> compares the effects side by side.</p>
+</Documentation>

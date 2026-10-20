@@ -19,7 +19,8 @@ for (const targets of [1, 2]) {
         errors.push(message.text());
       }
     });
-    await page.goto(`/performance.html?targets=${targets}&warm`);
+    const effect = targets === 1 ? 'fire' : 'frost';
+    await page.goto(`/performance.html?targets=${targets}&warm&effect=${effect}`);
     await page.waitForFunction(() => window.domfxPerformance.outcome !== 'running');
     const report = await page.evaluate(() => window.domfxPerformance);
     await info.attach('measurements.json', {
@@ -27,6 +28,11 @@ for (const targets of [1, 2]) {
       contentType: 'application/json',
     });
     expect(report.outcome).toBe('complete');
+    expect(report.effect).toBe(effect);
+    expect(report.firstRender?.cpuSubmitMs).toBeGreaterThanOrEqual(0);
+    expect(report.firstRender?.queueCompleteMs).toBeGreaterThanOrEqual(
+      report.firstRender!.cpuSubmitMs,
+    );
     expect(errors).toEqual([]);
     expect(report.assets?.urls).toHaveLength(targets);
     expect(report.initialization?.totalMs).toBeGreaterThan(0);

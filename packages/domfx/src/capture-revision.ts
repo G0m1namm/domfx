@@ -1,5 +1,6 @@
 import type { CaptureFrame, EffectHandle } from '@domfx/core';
 
+import type { DiagnosticTrace } from './diagnostics.js';
 import { EffectError } from './effect-error.js';
 import type { PreparedGpuFrame } from './gpu.js';
 import {
@@ -14,6 +15,7 @@ import type { AttachmentRenderer } from './renderer-service.js';
 const captures = new WeakMap<Element, Promise<void>>();
 
 interface RevisionAdapters {
+  trace?: DiagnosticTrace;
   target: Element;
   memory: AllocationLedger;
   createRenderer(): Promise<AttachmentRenderer>;
@@ -131,9 +133,12 @@ export function createCaptureRevisions(adapters: RevisionAdapters) {
   }
 
   async function refreshLoop() {
+    const initializationRevision = revision;
     try {
       if (!renderer && enabled) {
+        adapters.trace?.(initializationRevision, 'renderer', 'start');
         const acquired = await adapters.createRenderer();
+        adapters.trace?.(initializationRevision, 'renderer', 'end');
         if (!enabled) {
           acquired.destroy();
           return;
@@ -169,11 +174,14 @@ export function createCaptureRevisions(adapters: RevisionAdapters) {
           }
         };
         let failureReason: 'capture-failed' | 'renderer-failed' = 'capture-failed';
+        let committed = false;
         try {
           if (!current(requestedRevision, requestedGeneration)) {
             continue;
           }
+          adapters.trace?.(requestedRevision, 'capture', 'start');
           nextFrame = await captureRevision(requestedRevision, requestedGeneration, reserve);
+          adapters.trace?.(requestedRevision, 'capture', 'end');
           if (!nextFrame) {
             if (isRefreshing(requestedRevision, requestedGeneration)) {
               invalidate(new Error('refresh-invalidated'));
@@ -188,7 +196,9 @@ export function createCaptureRevisions(adapters: RevisionAdapters) {
             throw new Error('invalid-frame');
           }
           failureReason = 'renderer-failed';
+          adapters.trace?.(requestedRevision, 'prepare', 'start');
           nextPrepared = await renderer.prepare(nextFrame);
+          adapters.trace?.(requestedRevision, 'prepare', 'end');
           if (!current(requestedRevision, requestedGeneration)) {
             continue;
           }
@@ -216,10 +226,17 @@ export function createCaptureRevisions(adapters: RevisionAdapters) {
             previousMemory?.release();
           }
           if (raster === 'fresh' && enabled) {
+            committed = true;
+            adapters.trace?.(requestedRevision, 'revision', 'commit');
             settle();
             adapters.committed();
           }
         } catch (error) {
+          adapters.trace?.(
+            requestedRevision,
+            failureReason === 'capture-failed' ? 'capture' : 'prepare',
+            'error',
+          );
           // A superseded failure cannot reject requests for a newer revision.
           if (
             enabled &&
@@ -231,6 +248,9 @@ export function createCaptureRevisions(adapters: RevisionAdapters) {
             adapters.failed(error, failureReason);
           }
         } finally {
+          if (!committed) {
+            adapters.trace?.(requestedRevision, 'revision', 'drop');
+          }
           nextPrepared?.destroy();
           nextFrame?.release();
           if (frame && nextFrame === frame && prepared && retainedMemory) {
@@ -244,6 +264,7 @@ export function createCaptureRevisions(adapters: RevisionAdapters) {
         }
       }
     } catch (error) {
+      adapters.trace?.(initializationRevision, 'renderer', 'error');
       if (enabled) {
         stop(error);
         adapters.failed(error, 'renderer-failed');
@@ -283,6 +304,9 @@ export function createCaptureRevisions(adapters: RevisionAdapters) {
   }
 
   return {
+    get revision() {
+      return revision;
+    },
     get raster() {
       return raster;
     },

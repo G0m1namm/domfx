@@ -59,7 +59,9 @@ function observeServices() {
   let maxScopes = 0;
   const createPipeline = GPUDevice.prototype.createRenderPipeline;
   GPUDevice.prototype.createRenderPipeline = function (descriptor) {
-    firePipelines += 1;
+    if (descriptor.label === 'domfx fire') {
+      firePipelines += 1;
+    }
     return createPipeline.call(this, descriptor);
   };
   GpuExperiment.create = async (gpu) => {

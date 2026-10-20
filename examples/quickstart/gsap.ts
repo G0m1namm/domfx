@@ -1,23 +1,28 @@
 import { gsap } from 'gsap';
 
 import { attachFire } from '@domfx/browser';
-import { bindFire } from '@domfx/gsap';
 
 export function startFire(target: Element, host: HTMLElement) {
   const effect = attachFire(target, { host, clock: 'manual', time: 0, intensity: 0.8, seed: 314 });
   const timeline = gsap.timeline({ paused: true });
-  const binding = bindFire(effect, timeline, {
+  const tween = gsap.to(effect, {
     time: 4,
     intensity: 0.4,
     duration: 4,
-    position: 0,
+    ease: 'none',
+    paused: true,
   });
 
+  timeline.add(tween, 0);
+  tween.paused(false);
+  const unsubscribe = effect.onDispose(() => tween.kill());
+
   function dispose() {
-    binding.dispose();
+    unsubscribe();
+    tween.kill();
     timeline.kill();
     effect.dispose();
   }
 
-  return { effect, timeline, binding, dispose };
+  return { effect, timeline, tween, dispose };
 }

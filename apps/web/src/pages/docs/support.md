@@ -6,6 +6,12 @@ This summary uses **support record v1, 2026-09-16 UTC**. A pass applies to its
 named environment, fixtures and source snapshot. It does not establish a minimum
 browser version, browser-family support or release approval.
 
+All [available effects](/docs/api#available-effects) share the browser capture,
+placement and composition limits below. The historical record includes Fire
+fixtures; it does not establish the same visual or performance coverage for every
+effect. The Standalone guide uses Fire as one example of the shared API, and the
+live previews on effect references are demonstrations, not verification evidence.
+
 ## Measured environments
 
 - **Chromium 153.0.8010.12**, macOS 26.6.2 on the measured Apple M5 Pro, native
@@ -58,7 +64,7 @@ fidelity from the measured fixtures.
 ## When an effect is unavailable
 
 The original DOM remains the content and interaction surface. Reduced motion
-suppresses animated output by default. Check the typed reason and use
+suppresses animated output by default. Check the reason code and use
 [explicit recovery](/docs/troubleshooting) after correcting the condition.
 
 The [versioned browser/device record](https://github.com/G0m1namm/domfx/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md)

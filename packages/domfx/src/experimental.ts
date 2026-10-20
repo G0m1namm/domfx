@@ -12,3 +12,4 @@ export {
   type AttachmentAdapters,
 } from './attachment.js';
 export { AllocationLedger, estimateFrameMemory, memoryFor } from './memory.js';
+export { startEffectDiagnostics, type EffectDiagnostic } from './diagnostics.js';

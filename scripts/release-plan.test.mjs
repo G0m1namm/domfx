@@ -40,6 +40,8 @@ function workspace(t) {
     'packages/gsap/package.json',
     'tests/gpu/package.json',
     'apps/web/package.json',
+    'apps/docs/package.json',
+    'packages/site/package.json',
     '.changeset/config.json',
   ]) {
     write(path, readFileSync(join(repo, path)));
@@ -86,6 +88,12 @@ test('Changesets checks detached PRs and rehearses private library versions with
   run('git', ['checkout', '--detach']);
   run('git', ['branch', '-D', 'main']);
   const changeset = join(repo, 'node_modules/.bin/changeset');
+  for (const path of ['apps/docs', 'packages/site']) {
+    write(`${path}/src/change.ts`, 'export const changed = true;');
+  }
+  run('git', ['add', '.']);
+  run(changeset, ['status', '--since', 'origin/main', '--output', join(root, 'plan.json')]);
+  assert.deepEqual(readJson(join(root, 'plan.json')).releases, []);
   write('packages/core/src/change.ts', 'export const changed = true;');
   run('git', ['add', 'packages/core/src/change.ts']);
   assert.throws(
@@ -110,7 +118,7 @@ test('Changesets checks detached PRs and rehearses private library versions with
       ['@domfx/gsap', '0.0.1'],
     ],
   );
-  for (const app of ['@domfx/gpu-tests', '@domfx/web']) {
+  for (const app of ['@domfx/gpu-tests', '@domfx/web', '@domfx/docs', '@domfx/site']) {
     assert.ok(!plan.releases.some(({ name, type }) => name === app && type !== 'none'));
   }
   try {
@@ -126,6 +134,8 @@ test('Changesets checks detached PRs and rehearses private library versions with
   }
   assert.equal(readJson(join(root, 'tests/gpu/package.json')).version, '0.0.0');
   assert.equal(readJson(join(root, 'apps/web/package.json')).version, '0.0.0');
+  assert.equal(readJson(join(root, 'apps/docs/package.json')).version, '0.0.0');
+  assert.equal(readJson(join(root, 'packages/site/package.json')).version, '0.0.0');
   assert.equal(readJson(join(root, 'package.json')).version, '0.0.0');
   assert.equal(run('git', ['tag']).trim(), '');
   assert.equal(run('git', ['rev-list', '--count', 'HEAD']).trim(), '1');
@@ -219,6 +229,8 @@ for (const path of [
   'packages/gsap/package.json',
   'tests/gpu/package.json',
   'apps/web/package.json',
+  'apps/docs/package.json',
+  'packages/site/package.json',
 ]) {
   test(`artifact check blocks publication enablement in ${path}`, (t) => {
     const { root, write } = workspace(t);

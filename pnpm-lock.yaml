@@ -50,6 +50,9 @@ importers:
       '@domfx/browser':
         specifier: workspace:*
         version: link:../../packages/domfx
+      '@domfx/site':
+        specifier: workspace:*
+        version: link:../../packages/site
       astro:
         specifier: 7.3.3
         version: 7.3.3(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(jiti@2.6.1)(yaml@2.9.0)
@@ -128,6 +131,12 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  packages/site:
+    dependencies:
+      '@domfx/browser':
+        specifier: workspace:*
+        version: link:../domfx
 
   tests/gpu:
     dependencies:

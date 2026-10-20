@@ -88,11 +88,11 @@ fixture when a failure/lifecycle case cannot be exercised there.
 
 ## Verification
 
-The Starlight migration (#125) has a separate preview until maintainer visual
-approval (#133). Run `pnpm build:docs:preview`, then `pnpm preview:docs` to view the
-composed site at `http://127.0.0.1:4347`; `pnpm test:docs` builds and checks it.
-The normal website commands keep serving the current docs. Write migrated docs
-in `apps/docs/src/content/docs`; effect references come from the shared catalog.
+`pnpm build:web` builds the marketing site and Starlight docs into `apps/web/dist`;
+`pnpm preview:web` serves that combined output. `pnpm test:docs` checks docs
+navigation, live labs, shared search and discovery on the composed site.
+Write docs in `apps/docs/src/content/docs`; effect references come from the shared
+catalog. The maintainer approved the migrated layout in #133; `DESIGN.md` records it.
 
 Docs discovery output uses `DOMFX_SITE_URL` as its origin. Set
 `DOMFX_SITE_PRODUCTION=true` to require that value for a production build.

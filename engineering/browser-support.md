@@ -5,6 +5,104 @@ This is evidence for human release review, not a release approval. Packages rema
 private and experimental. A pass applies only to the named environment, fixtures and
 source snapshot; it does not establish a minimum browser version or an entire browser family.
 
+## Current-site verification — 2026-10-20 UTC
+
+[Issue #87](https://github.com/G0m1namm/domfx/issues/87) checks the current gallery,
+marketing site and Starlight docs. Runtime source is
+[`fcf753206814a77d16f3709e3eacd13165c765ea`](https://github.com/G0m1namm/domfx/commit/fcf753206814a77d16f3709e3eacd13165c765ea);
+application code was unchanged during these checks. These observations extend the
+record; they do not approve a release or a broader support claim. Earlier sections
+below retain their original revisions and retired-layout observations.
+
+The host was macOS 26.6.2 (25G83), Darwin 25.6.0 arm64, MacBook Pro Mac17,8,
+Apple M5 Pro, 24 GB RAM; Node 22.22.3, Playwright 1.63.0. Power mode and display
+refresh were unknown. Installed Chrome was **155.0.8059.85**, installed Safari
+**26.6.2**; bundled Chromium was **153.0.8010.12**. Installed Chrome's fixture and
+fresh-profile visibility runs reported adapter vendor `apple`, architecture
+`metal-3`, empty device/description. Routine website/docs reports do not retain
+their own adapter fields; the fixture identity is not substituted for them.
+
+| Check                                                        | Result and boundary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bundled Chromium, website development/production             | **Initial FAIL, subsequent full PASS:** first run 58 passed, 1 failed, 3 expected metadata skips; full rerun 59 passed, 3 expected skips. The initial development reduced-motion check saw zero canvases but an enabled artwork playback button; production passed. Ten focused repetitions also passed. Cause unresolved: [#144](https://github.com/G0m1namm/domfx/issues/144); later passes do not erase the failure.                                                                                                                                                                                                         |
+| Bundled Chromium, composed docs production                   | **PASS: 30/30**, including native HTML/no-JavaScript navigation, keyboard code/table scrolling, search, real lab output, unavailable output, preference recovery and actual BFCache restoration.                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Bundled Chromium, package-private GPU production smoke       | **PASS: 13/13**, including actual rendering/readbacks, refresh, disposal, reduced motion, unavailable inputs and responsive capture. This is the smoke subset, not a new full GPU-suite pass.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Installed headed Chrome, website development/production      | **PASS: 59**, 3 expected metadata skips. Existing website scenarios ran with `channel: 'chrome'`, no WebGPU launch flag and BFCache enabled. Configured viewport 1440×1000, default context DPR 1; individual responsive/DPR tests use their declared overrides.                                                                                                                                                                                                                                                                                                                                                                |
+| Installed headed Chrome, composed docs production            | **PASS: 30/30** with the same installed-engine override, covering navigation, search, live labs, cleanup, reduced-motion recovery and actual BFCache restoration.                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Installed headed Chrome, private production evidence fixture | **PASS:** capture/SDF/Fire pixels, GSAP controls, original-button activation and disposal; 1280×720, DPR 2, visible, reduced motion off, no extra WebGPU flag, no uncaught errors. This bounded fixture is separate from website results.                                                                                                                                                                                                                                                                                                                                                                                       |
+| Installed Chrome, browser-generated tab hide/return          | **PASS: 12 cycles**, three each on `/`, `/effects/`, `/docs/standalone/`, `/docs/api/effects/frost/`. Fresh default profile over CDP with `noDefaults: true`; no focus, visibility, viewport or motion emulation. Actual 1200×863, DPR 2, reduced motion off. Each cycle recorded trusted hidden/visible events, zero canvases after 500ms hidden and output on return. Both docs labs returned `active` with one canvas and their explicit pause preserved. Marketing checks require output to return, not an identical count of visible cards. No internal resource/GPU-memory destruction claim follows from canvas removal. |
+| Native Chrome zoom, selection and original content           | **PASS, bounded:** native menu confirmed 200%; viewport changed from 1672×1003 at DPR 2 to 836×473 at DPR 4. Gallery preview controls remained reachable through panel scrolling; focus returned to Try Frost after close. An Image preview reported `capture-budget` and retained original content. Docs retained content and controls without page-wide overflow. After restoring 100%, native pointer drag selected `domfx` through an active Fire lab, with selection text and visible highlight observed. These are agent-driven observations, not a human keyboard/AT audit.                                              |
+| Browser default fonts                                        | **PASS: sampled reflow/controls; FAIL: text preference response.** Isolated installed-Chrome profiles used actual defaults of 16px and 24px at 360/768/1440×900, DPR 2, visible, reduced motion explicitly off. All 24 route/width/settings checks fit; sampled body paragraphs kept fixed sizes despite root growth. [#143](https://github.com/G0m1namm/domfx/issues/143) owns the correction; this is not a text-resizing pass.                                                                                                                                                                                               |
+| Installed Safari, current-site native UI                     | **PASS, bounded fallback/navigation:** Frost original text, SVG target choice, Pause→Resume, and the original effect-reference link to Starlight remained usable. Frost showed `Static content · target-not-visible`, so active rendering correctness is **UNTESTED**. The page menu confirmed 200% then 100%; full zoomed scrolling/keyboard usability is **UNTESTED** because native scrolling returned `noWindowsAvailable`. Browser adapter, CSS viewport/DPR, motion and actual document visibility were not exposed by this native surface and remain **UNTESTED**.                                                       |
+
+Actual VoiceOver speech/captions, complete native Safari rendering/lifecycle and
+manual keyboard coverage remain open. See the
+[current accessibility observations](accessibility-verification.md#current-site-observations--2026-10-20-utc)
+for individual results and the remaining human protocol. Physical mobile and a
+second OS/GPU are **UNAVAILABLE** for this run; the maintainer must supply access
+before those rows can be executed. Desktop emulation is not real-device evidence.
+Linux/SwiftShader is explicitly **held**, with no new run or support pass claimed;
+preserve [failed run 36828639144](https://github.com/G0m1namm/domfx/actions/runs/36828639144).
+[#41](https://github.com/G0m1namm/domfx/issues/41) and
+[#91](https://github.com/G0m1namm/domfx/issues/91) own release reliance on that result.
+
+### Current source, build and evidence identities
+
+- Lockfile SHA-256: `c52ead1ee72369986e624127d6f8c0a14dd0dfaf47b4498f9e3932f8b734eb1b`.
+- Composed website build SHA-256: `7b5028bc28a81fe4f5d8fa380f4512fbb4abd5527d928a331b66ed09a713dbf8`.
+  Method: sort relative output file paths, map each to its content SHA-256, hash
+  `JSON.stringify(map)`. The map is retained in the local identity report below.
+- Private fixture build SHA-256: `d7fcaaadac5c038735e7ef9e1ec88d7129eb0b861b5a70563fb1b84b68ba65e1`;
+  its existing evidence runner records its own build-digest method and environment.
+- Raw current-site evidence: ignored `.scratch/browser-accessibility-87/`.
+  `identity.json` pins source/host/output; `web-baseline/` preserves the initial
+  failure, screenshot and trace; `motion-repeat/` preserves the separate 10-pass
+  repetition; `web-rerun/` preserves the separate 59-pass full rerun;
+  `docs-baseline/`, `gpu-smoke/`, `chrome-website/`, `chrome-docs/`
+  retain their suite reports. Matching `.log` files record command outcomes.
+  `default-font.json`, `large-font.json` and their PNGs preserve preference/reflow
+  checks; `native-visibility.json` preserves all 12 cycles and owned-process exit.
+- Installed-Chrome fixture report and 42 PNG artifacts:
+  `.scratch/browser-regression/2026-10-20T21-54-37-327Z/report.json`.
+  Native CUA zoom, selection, Safari and VoiceOver attempts are recorded in the #87
+  implementation conversation; their screenshots were shown there, not saved as
+  local PNGs. No passing screen-reader result is inferred from those screenshots.
+- Local probe SHA-256: visibility `15d04acb4f38002ff3dc93b179a20d17c547cc0b261d7bfe05f2a15ca942e44f`;
+  24px preference `6501c6cabf1c71060521c017b24843bb84da253f5b9e9abdeead6bd9386b138c`;
+  16px preference `3010addd3aa67ad78c3252220e9829d2c5ed0cc8de29058c976e05c7e640113b`.
+
+### Reproduce the current cohort
+
+Use `pnpm test:web`, `pnpm test:docs`, `pnpm test:gpu` and the existing installed
+Chrome fixture command under E2 below. Preserve failures before rerunning because
+the routine output directories are reused. For website/docs installed-engine
+checks, make a temporary copy of each Playwright config: select `channel: 'chrome'`,
+`headless: false`, remove the WebGPU launch flag, retain
+`ignoreDefaultArgs: ['--disable-back-forward-cache']`, and use absolute test/output
+paths and the original app directory as `webServer.cwd`. Run those configs through
+`pnpm browser:run`; these overrides do not change the checked-in default cohort.
+
+For default-font checks, use separate fresh Chrome profiles with browser default
+font sizes 16px and 24px, page zoom 100%, then compare the four routes in the
+visibility row at all three widths. Confirm computed root sizes before judging
+paragraph growth; an authored `html.style.fontSize` change is a different test.
+The local probes seed Chromium's
+[`webkit.webprefs.default_font_size` preference](https://chromium.googlesource.com/chromium/src/+/5e4d44b457590340133551e618cd6fecc6e87578/chrome/common/pref_names.h)
+and verify the computed root rather than assuming the preference applied.
+
+For visibility checks, reuse the fresh-process/default-context CDP method from
+[`measure-homepage.mjs`](../scripts/measure-homepage.mjs)'s native mode, with the
+four current routes above and three cycles per route. Bring the docs lab into view,
+wait for `active`, pause it, then switch to a blank cover tab. Register
+`visibilitychange` observations before switching; require trusted hidden/visible
+pairs, zero canvases after 500ms hidden, restored output, and active paused docs
+labs with one canvas on return. Record actual viewport/DPR/motion and adapter.
+The browser-extension session kept the docs visible during a cover-tab attempt,
+so that attempt supplied no hide/return pass; the fresh-profile run above is the
+qualifying evidence. Serialize browser sessions and clean only owned resources.
+
+## Historical support scope — September 2026
+
 **Proposed scope:** experimental desktop Chromium 153.0.8010.12 on the measured Apple M5 Pro,
 with native WebGPU available, within the existing
 [capture, placement and composition contract](../packages/domfx/README.md#manual-fire-attachment).
@@ -19,7 +117,7 @@ the [release gates](../RELEASING.md#enable-later-through-a-reviewed-change) rema
 runtime result, which can be the expected result of a passing negative check.
 `UNTESTED` means no qualifying observation; it is neither a pass nor an incompatibility finding.
 
-Current runs use runtime source
+The original record used runtime source
 [`6d5b28e42e1a5d89493fae96ace639d0ca4b40ec`](https://github.com/G0m1namm/domfx/commit/6d5b28e42e1a5d89493fae96ace639d0ca4b40ec),
 Node 22.22.3 and Playwright 1.63.0. This change adds documentation only.
 The local machine is macOS 26.6.2 (25G83), Darwin 25.6.0 arm64, MacBook Pro
@@ -131,7 +229,7 @@ downloads. Preserve the full run directories when handing evidence to a reviewer
 Do not replace an older row with a new pass without its browser/adapter identity,
 source/build/lockfile hashes, fixture scope, negative results and separate timing status.
 
-- **E1 — current native Chromium suite:** `pnpm test:browser`; detailed report at
+- **E1 — September native Chromium suite:** `pnpm test:browser`; detailed report at
   `.scratch/browser/report.json` (started `2026-09-16T05:33:33.128Z`, 386 passed, 0 skipped/failed/flaky, 456.6 s). Final `pnpm agent:verify` writes an immutable-per-run
   source digest, command results and browser attachments under `.scratch/agent/run-*/`.
   The suite includes actual shader readbacks; missing-WebGPU/no-adapter tests inject

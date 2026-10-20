@@ -5,6 +5,64 @@ DOM remains the source of content and input. This is a bounded fixture audit,
 not a certification of a host application's accessibility or universal assistive
 technology support.
 
+## Current-site observations — 2026-10-20 UTC
+
+For [#87](https://github.com/G0m1namm/domfx/issues/87), the current site was checked
+on unchanged runtime source `fcf753206814a77d16f3709e3eacd13165c765ea`. The
+[support record](browser-support.md#current-site-verification--2026-10-20-utc)
+pins host, browser versions, build/lock identities, automated outcomes and local
+evidence paths. Earlier observations below belong to their original layouts and
+revisions; they are not current-site passes.
+
+| Scenario                                                            | Current result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Original text through an active effect                              | **PASS, bounded:** installed Chrome 155, 100% native page zoom, actual 1672×947 CSS viewport, DPR 2, visible, reduced motion off. Pointer drag selected the original standalone lab's `domfx` text while its Fire lab reported `active` with one canvas; both selected text and its native highlight were observed. This is agent-driven pointer evidence, not VoiceOver or touch evidence.                                                                                                                                                                                                    |
+| Native page zoom                                                    | **PASS, bounded Chrome controls/reflow:** the native View menu/zoom control confirmed 200%; gallery preview and docs were checked at actual 836×473, DPR 4. Target replacement, Pause/Resume and lower preview controls remained reachable; closing returned focus to Try Frost. The Image target's `capture-budget` fallback retained its original content. Safari's page menu likewise confirmed 200%, but scrolling failed at the tool boundary, so its complete zoomed usability is **UNTESTED**. Both browsers were restored to 100%.                                                     |
+| Larger browser default text                                         | **FAIL: sampled body text does not grow.** Fresh Chrome profiles confirmed computed roots 16px and 24px, but sampled paragraphs stayed 13px on narrow home, 15px in the gallery and 18px in the two docs routes. All sampled pages/controls fit at 360/768/1440×900, DPR 2; this reflow observation does not establish text resizing. [#143](https://github.com/G0m1namm/domfx/issues/143) records scope, exact reproduction and acceptance.                                                                                                                                                   |
+| Browser-generated docs hide/return                                  | **PASS: six cycles**, three each in standalone and Frost docs, in fresh installed Chrome over CDP with `noDefaults: true`; actual 1200×863, DPR 2, reduced motion off. Each lab changed active→suspended→active, one→zero→one canvases, trusted hidden/visible event pair, with explicit pause preserved. Native OS minimization remains **UNTESTED**.                                                                                                                                                                                                                                         |
+| Website/docs keyboard, fallback, no-JavaScript and history behavior | Existing suites ran on bundled Chromium and installed headed Chrome; see the support record for exact results. Docs drawer/Escape, code/table keyboard scrolling, search results/focus return, rendered standalone/GSAP examples, lab target/setting changes and BFCache checks passed in their declared automated scenarios. These are automated keyboard checks, not a complete native human keyboard audit. The bundled-Chromium website run had one unresolved reduced-motion control failure: [#144](https://github.com/G0m1namm/domfx/issues/144); later focused passes do not erase it. |
+| Installed Safari original UI                                        | **PASS, bounded fallback/navigation:** Text→SVG selected state, Pause→Resume and the original reference link to `/docs/api/effects/frost/` worked while the preview reported `Static content · target-not-visible`. This does not prove an active effect, rendered effect target replacement, native lifecycle restoration, mobile drawer behavior or actual spoken announcements.                                                                                                                                                                                                             |
+| Actual VoiceOver announcements and navigation                       | **UNAVAILABLE through this tool connection; scenarios UNTESTED.** VoiceOver 10 was started with Safari 26.6.2 available; System Settings showed VoiceOver on, its process ran, and VoiceOver Utility showed the caption panel enabled. Native inspection of the VoiceOver app timed out, so no actual speech/caption, rotor navigation or dialog/status announcement was observed. The attempted browser/AT pairing is not a pass. VoiceOver was turned off after the attempt; no new control/automation permission was enabled.                                                               |
+| Physical mobile, another OS/GPU and other screen readers            | **UNAVAILABLE** for this run. The maintainer must provide a real device/session and a named operator before held checks can run. Desktop viewport/DPR emulation does not fill these rows.                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+The native Safari scroll attempt returned `noWindowsAvailable`. Its page content
+and native zoom controls were inspectable, but CSS viewport, DPR, browser adapter,
+motion and document visibility could not be read through that surface. Keep those
+identities **UNTESTED**, rather than deriving them from screenshot dimensions or
+the host GPU. Native screenshots were shown in the implementation conversation;
+they were not retained as files. Local automated PNGs belong to their separately
+identified profiles, not Safari or VoiceOver.
+
+### Remaining human verification for #87
+
+Keep #87 open until missing evidence is supplied or its owner explicitly changes
+the acceptance scope. Use a named operator and a named browser/AT pairing, recording
+the runtime/build, OS/device/browser/AT versions, actual viewport/DPR, native zoom,
+motion preference and visibility. Record individual PASS/FAIL/UNAVAILABLE/UNTESTED
+results; do not mark the environment passed from a subset of controls.
+
+1. On current `/` and `/effects/`, check actual headings/links, filters, search and
+   preview dialogs, Text/SVG/Image selected states, intensity and Pause/Resume.
+   Read actual spoken or captioned announcements, including unavailable status;
+   verify decorative canvases add no duplicate reading or focus stop.
+2. On `/docs/standalone/` and `/docs/api/effects/frost/`, check navigation/TOC,
+   narrow drawer focus/Escape, code/API-table scrolling, shared search/focus return,
+   and live-lab subject, intensity, Pause/Resume/Start and status announcements.
+3. Exercise native keyboard order, visible focus, original links/input/selection,
+   reduced-motion recovery with explicit Resume/Start, native hide/return and
+   history restoration. Separate actual native preference transitions from
+   automation's synthetic events and emulated media. Check refresh/disposal and
+   reattachment in the existing rendered examples/private fixtures where needed.
+4. Check native 200% page zoom, larger default fonts and narrow reflow under the
+   [UI conventions](ui-conventions.md). Preview zoom is a separate feature.
+   Report #143's text-preference defect and any new reproducible failure separately.
+   Execute touch/pan/selection only on real hardware; hold missing hardware rows.
+
+Retain raw recordings/captions/screenshots locally, and publish the exact observed
+announcements, scenario results and limitations in this record. An accessibility
+tree, a running VoiceOver process or an enabled caption preference is not speech
+evidence.
+
 ## Reproduce
 
 Run `pnpm --filter @domfx/gpu-tests exec vite --host 127.0.0.1` and open

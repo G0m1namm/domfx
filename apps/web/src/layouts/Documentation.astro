@@ -1,9 +1,11 @@
 ---
+import DocsFooter from '../components/DocsFooter.astro';
 import DocsNavigation from '../components/DocsNavigation.astro';
 import DocsToc from '../components/DocsToc.astro';
 import PhosphorIcons from '../components/phosphor-icons.astro';
 import SiteNav from '../components/SiteNav.astro';
 import SiteSearch from '../components/site-search.astro';
+import { docsEditUrl, docsIssueUrl } from '../content/docs-source';
 import { documentation } from '../content/documentation';
 import { effects } from '../content/effects';
 import { tableOfContents } from '../content/table-of-contents';
@@ -59,14 +61,18 @@ const headings = tableOfContents(content);
           <h1>{page.title}</h1>
           <p class="docs-description">{page.description}</p>
           <article class="docs-content"><Fragment set:html={content} /></article>
+          <nav class="docs-page-actions" aria-label="Page feedback">
+            <a href={docsEditUrl(page.slug)}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pencil-simple"/></svg>Edit this page on GitHub</a>
+            <a href={docsIssueUrl(page.slug, page.title)}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-bug"/></svg>Report an issue</a>
+          </nav>
           <nav class="docs-pagination" aria-label="Documentation pages">
             {previous ? <a href={`/docs/${previous.slug}`}><span>Previous</span><strong><span aria-hidden="true">←</span> {previous.title}</strong></a> : <span />}
             {next && <a href={`/docs/${next.slug}`}><span>Next</span><strong>{next.title} <span aria-hidden="true">→</span></strong></a>}
           </nav>
-          <footer class="docs-footer"><a href="https://github.com/G0m1namm/domfx/blob/main/QUICKSTART.md">Repository quickstart ↗</a><a href="https://github.com/G0m1namm/domfx/blob/main/LICENSE">MIT licensed ↗</a></footer>
         </main>
         {headings.length > 0 && <aside class="docs-toc"><p class="docs-toc-title" aria-hidden="true">On this page</p><DocsToc headings={headings} /></aside>}
       </div>
+      <DocsFooter />
     </div>
     <a class="docs-back-to-top" href="#top" data-back-to-top aria-label="Back to top" title="Back to top"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up"/></svg></a>
     <SiteSearch effectResults="reference" />

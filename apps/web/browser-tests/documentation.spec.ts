@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import type { gsap } from 'gsap';
@@ -296,6 +298,50 @@ test('the site menu reaches Docs from Home on phones without JavaScript', async 
       .getByRole('navigation', { name: 'Documentation', exact: true })
       .getByRole('link', { name: 'Introduction', exact: true }),
   ).toHaveAttribute('aria-current', 'page');
+  await context.close();
+});
+
+test('docs pages end with page feedback, pagination and the site footer', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    baseURL,
+    viewport: { width: 360, height: 800 },
+  });
+  const page = await context.newPage();
+  await page.goto('/docs/api/effects/frost');
+  const feedback = page.getByRole('navigation', { name: 'Page feedback' });
+  await expect(feedback.getByRole('link', { name: 'Edit this page on GitHub' })).toHaveAttribute(
+    'href',
+    'https://github.com/G0m1namm/domfx/edit/main/apps/web/src/pages/docs/api/effects/%5Beffect%5D.astro',
+  );
+  const issue = new URL(
+    (await feedback.getByRole('link', { name: 'Report an issue' }).getAttribute('href')) ?? '',
+  );
+  expect(issue.searchParams.get('title')).toBe('Docs: Frost');
+  expect(issue.searchParams.get('body')).toContain('Page: /docs/api/effects/frost');
+  const order = await page.evaluate(() =>
+    ['.docs-content', '.docs-page-actions', '.docs-pagination', '.docs-site-footer'].map(
+      (selector) => document.querySelector(selector)?.getBoundingClientRect().top ?? -1,
+    ),
+  );
+  expect(order).toEqual([...order].sort((a, b) => a - b));
+  const footer = page.getByRole('contentinfo');
+  for (const [group, link] of [
+    ['Build', 'API reference'],
+    ['Explore', 'All effects'],
+    ['domfx', 'npm'],
+  ] as const) {
+    await expect(
+      footer.getByRole('navigation', { name: `Footer ${group}` }).getByRole('link', { name: link }),
+    ).toBeVisible();
+  }
+  const targets = await footer
+    .getByRole('link')
+    .evaluateAll((links) => links.map((link) => link.getBoundingClientRect().height));
+  expect(Math.min(...targets)).toBeGreaterThanOrEqual(44);
   await context.close();
 });
 
@@ -601,13 +647,24 @@ test('every website link resolves to a native route, anchor or documented reposi
   }
   expect(local.has('/docs/standalone')).toBe(true);
   const repo = 'https://github.com/G0m1namm/domfx';
-  expect(external.sort()).toEqual(
+  const edits = external.filter((href) => href.startsWith(`${repo}/edit/main/`));
+  const issues = external.filter((href) => href.startsWith(`${repo}/issues/new?`));
+  expect(edits.length).toBeGreaterThan(0);
+  for (const href of edits) {
+    const source = decodeURI(href.slice(`${repo}/edit/main/`.length));
+    expect(existsSync(new URL(`../../../${source}`, import.meta.url)), href).toBe(true);
+  }
+  for (const href of issues) {
+    const query = new URL(href).searchParams;
+    expect(query.get('title'), href).toMatch(/^Docs: \S/);
+    expect(query.get('body'), href).toMatch(/^Page: \/docs\/\S/);
+  }
+  expect(external.filter((href) => !edits.includes(href) && !issues.includes(href)).sort()).toEqual(
     [
       repo,
       'https://github.com/G0m1namm',
       'https://www.npmjs.com/package/@domfx/browser',
       `${repo}/blob/main/LICENSE`,
-      `${repo}/blob/main/QUICKSTART.md`,
       `${repo}/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md`,
     ].sort(),
   );

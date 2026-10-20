@@ -281,6 +281,17 @@ scrolling. Menus, drawers and dropdowns are native popovers, so they work withou
 JavaScript. A 44px back-to-top link appears after one viewport of scrolling and returns
 focus to the content.
 
+Docs pages end the way the same references do: page actions, then Previous/Next, then
+a site footer. The page actions are muted, underlined links to edit the page's source
+on GitHub and to open an issue prefilled with the page title and path. They stand in
+for a "Was this helpful?" widget, which would need a backend. The footer spans the
+docs shell below the sidebar, content and rail. It uses the homepage's brand block,
+Build/Explore/domfx groups (from one shared list) and a copyright, MIT and credit
+strip. Docs leave out the Afterglow CTA, the animated wordmark, the gradient edge and
+the text Back to top link; the floating button already covers that. Footer links keep
+44px targets. On phones, Build and Explore share a row and GitHub and npm share the
+next one. The last row stays clear of the floating button.
+
 ### Examples and toolbar
 
 The editorial homepage places the shared controls in its silver side panel:

@@ -1,9 +1,6 @@
 ---
-const links = [
-  { title: 'Build', items: [['Your first effect', '/docs/standalone'], ['GSAP integration', '/docs/gsap'], ['API reference', '/docs/api']] },
-  { title: 'Explore', items: [['All effects', '/effects/'], ['Documentation', '/docs/introduction'], ['Browser support', '/docs/support']] },
-  { title: 'domfx', items: [['GitHub', 'https://github.com/G0m1namm/domfx'], ['npm', 'https://www.npmjs.com/package/@domfx/browser']] },
-];
+import { footerLinkGroups } from '../content/site-links';
+
 const year = new Date().getFullYear();
 ---
 <div class="closing-design afterglow">
@@ -14,7 +11,7 @@ const year = new Date().getFullYear();
     <div class="closing-actions"><button class="button silver" data-copy="pnpm add @domfx/browser"><code>pnpm add @domfx/browser</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><a class="closing-link" href="/docs/standalone">Read the setup guide <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
   </section>
   <footer class="closing-footer wrap">
-    <div class="footer-navigation"><div class="footer-intro"><a class="wordmark" href="/">domfx<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-asterisk-simple"/></svg></a><p>Effects for your HTML.</p><button class="closing-playback" data-closing-pause data-js-control hidden aria-label="Pause header and wordmark effects" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg><span>Pause effects</span></button></div>{links.map(group=><nav aria-label={`Footer ${group.title}`}><h3>{group.title}</h3>{group.items.map(([label, href])=><a href={href}>{label}{href.startsWith('https://') && <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up-right"/></svg>}</a>)}</nav>)}</div>
+    <div class="footer-navigation"><div class="footer-intro"><a class="wordmark" href="/">domfx<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-asterisk-simple"/></svg></a><p>Effects for your HTML.</p><button class="closing-playback" data-closing-pause data-js-control hidden aria-label="Pause header and wordmark effects" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg><span>Pause effects</span></button></div>{footerLinkGroups.map(group=><nav aria-label={`Footer ${group.title}`}><h3>{group.title}</h3>{group.items.map(([label, href])=><a href={href}>{label}{href.startsWith('https://') && <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up-right"/></svg>}</a>)}</nav>)}</div>
 
     <div class="footer-baseline"><span>© {year} domfx</span><span class="footer-credit">Made by <a href="https://github.com/G0m1namm">Jherson Martelo Medina</a></span><a href="#">Back to top <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up"/></svg></a></div>
   </footer>

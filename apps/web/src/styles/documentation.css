@@ -114,8 +114,7 @@ html {
 .docs-content li {
   margin-block: 8px;
 }
-.docs-content a,
-.docs-footer a {
+.docs-content a {
   color: var(--silver);
   text-decoration: underline;
   text-underline-offset: 4px;
@@ -218,9 +217,7 @@ html {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  margin-top: 64px;
-  padding-top: 32px;
-  border-top: 1px solid var(--border);
+  margin-top: 16px;
 }
 .docs-pagination a {
   display: grid;
@@ -248,17 +245,152 @@ html {
 .docs-pagination strong {
   font-weight: 500;
 }
-.docs-footer {
+/* Page actions, then pagination, then the site footer: the order shadcn/ui,
+   Payload, Sanity and GSAP use at the end of a docs page. */
+.docs-page-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
-  margin-top: 48px;
+  gap: 0 24px;
+  margin-top: 64px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
   font-size: 14px;
 }
-.docs-footer a {
+.docs-page-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 150ms ease-out;
+}
+.docs-page-actions a:hover {
+  color: #e8eaf3;
+}
+.docs-page-actions .ui-icon {
+  width: 16px;
+  height: 16px;
+}
+.docs-site-footer {
+  padding: 32px var(--docs-gutter) 0;
+}
+.docs-site-footer-navigation {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  padding-block: 32px;
+  border-top: 1px solid var(--border);
+}
+.docs-site-footer-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font:
+    500 26px/1 Cabinet,
+    'Cabinet Grotesk',
+    sans-serif;
+  letter-spacing: -1.2px;
+}
+.docs-site-footer-wordmark .ui-icon {
+  width: 19px;
+  height: 19px;
+  color: var(--silver);
+}
+.docs-site-footer-intro p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.docs-site-footer nav {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 14px;
+}
+.docs-site-footer h2 {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font:
+    400 11px/1.6 'Lab Mono',
+    'JetBrains Mono',
+    monospace;
+  letter-spacing: normal;
+}
+.docs-site-footer nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  transition: color 150ms ease-out;
+}
+.docs-site-footer nav a:hover {
+  color: var(--silver);
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.docs-site-footer nav .ui-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+}
+.docs-site-footer-baseline {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0 24px;
+  padding-block: 8px 16px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font:
+    11px 'Lab Mono',
+    'JetBrains Mono',
+    monospace;
+}
+.docs-site-footer-baseline a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  color: #e8eaf3;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+/* Keep the last row clear of the fixed back-to-top button until the shell's own
+   margin is wide enough. */
+@media (max-width: 1439px) {
+  .docs-site-footer-baseline {
+    padding-right: 56px;
+  }
+}
+@media (max-width: 900px) {
+  .docs-site-footer-navigation {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .docs-site-footer-intro {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 600px) {
+  .docs-site-footer-navigation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* Build and Explore share a row; the two repository links share the next. */
+  .docs-site-footer nav:last-child {
+    grid-column: 1 / -1;
+    flex-flow: row wrap;
+    column-gap: 24px;
+  }
+  .docs-site-footer nav:last-child h2 {
+    flex-basis: 100%;
+  }
+  .docs-site-footer-baseline {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 @media (max-width: 900px) {
   .docs-layout {

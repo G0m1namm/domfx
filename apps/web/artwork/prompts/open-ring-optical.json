@@ -1,0 +1,22 @@
+{
+  "tool": "Built-in GPT image generation",
+  "modelVersion": "Not exposed",
+  "prompt": "Use case: style-transfer. One original isolated domfx 3D illustration, transparent PNG.\nImage 1 is ONLY the exact geometry blueprint. Image 2 is the USER-SELECTED material and lighting anchor (Nested optical proof on graphite). Copy Image 2's thin optical material, finish, reflection softness, light direction and palette faithfully, but use ONLY Image 1's subject geometry.\nSUBJECT: One broad annular optical sheet with a quarter sector removed. Preserve the missing quarter, two cut ends, orientation and central opening.\nMaterial: very thin smoothly curved optical sheet, smoked blue-grey glass-like body with a silver dielectric coating, partly translucent faces, subtle internal refractive depth. Broad satin-gloss silver-to-graphite reflections and fine silver edge reflections, restrained lavender/violet with tiny pale-yellow and magenta glints in a few natural highlights. Same delicate surface and thinness as Image 2. Gentle continuous curvature in the broad faces, subtle rounded lips. Not solid chrome, thick cast metal, a puffy torus, a shiny plastic slab, or chunky beveled hardware.\nGeometry: preserve Image 1's silhouette, count, rotation, near-orthographic three-quarter view, relative positions, holes, gaps and cutouts. Its dark seam is merely a blueprint cue, NOT a black stripe to paint into the render. Reduce apparent body thickness to the delicate optical-sheet character of Image 2. Use pristine smooth curves and straight cuts. No new grooves, doubled contours, wobbly bevels, extra arms, distorted cutouts, surface noise or detached specks.\nStaging: one complete centered assembly, generous transparent margin on all sides, readable at 160\u2013240px, soft upper-left studio light matching Image 2. Actual transparent alpha outside the object and through all empty holes and gaps. The graphite background of Image 2 must NOT be included in output.\nAvoid bright continuous neon outlines, forced rainbows, orange heat bands, brushed texture, grain, glitter, scratches, ragged fringes, haloes, floor, cast shadow, background rectangles, checkerboard, text, watermark, sparks or extra objects. High-quality coherent physical optical rendering.",
+  "transparent_background": true,
+  "references": [
+    {
+      "role": "Geometry blueprint",
+      "description": "Flat open-ring washer-family geometry study. Shape, rotation, cutouts and view only.",
+      "sha256": "a7a28d3c1f491d5f887634868ec3b331fbf290f11f1d32956aa9d9c9f4dec005",
+      "width": 768,
+      "height": 768
+    },
+    {
+      "role": "Material and lighting anchor",
+      "description": "Maintainer-selected optical material proof: thin smoked blue-grey surface, soft silver reflections and restrained spectral glints; graphite background excluded.",
+      "sha256": "d44e217bc3cc328a202e2a5e963054b438a1ae6483abf93f6455ebd2aa1ff823",
+      "width": 1254,
+      "height": 1254
+    }
+  ]
+}

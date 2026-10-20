@@ -88,20 +88,20 @@ with metal concentrated in controls, narrow lines and background accents.
 developers. `apps/web` is its Astro marketing site and examples playground;
 `tests/gpu` contains private regression fixtures; the website is the sole demo surface. This document defines the approved
 visual target, not a claim that implementation or GPU verification is complete.
+The Gallery/Setup and optical silver sections below define the current marketing
+site. Earlier dated layouts remain historical context and do not override them.
 
-**Mode per surface:** Home persuades through a working demonstration and is also the examples canvas.
-Example links navigate to authored elements on that page. Code and setup support reading. Private fixtures support inspection and diagnosis.
+**Mode per surface:** Home introduces the library through five live effect cards
+and setup guidance; `/effects/` is the complete gallery. Documentation supports
+reading and interactive API exploration. Private fixtures support diagnosis.
 
-**Reference sites:** [Squark](https://squark.cloud/) is the primary composition
-reference, approved by the user after reviewing home and examples mockups.
-[ShaderGradient](https://shadergradient.co/customize) informs attached panels, clear control groups, and label/value/slider rows. [Magic UI](https://magicui.design/) informs clarity; [React Spring](https://www.react-spring.dev/)
-informs the emphasis on interaction. Use original domfx content, assets and brand.
-The 2026-10-03 editorial homepage supersedes these earlier composition references; its approved layout is specified under Home. The annular story remains historical context.
+**References:** The approved Gallery/Setup composition below follows the
+maintainer's Aceternity, Pencil and Canvas UI references, with original domfx copy,
+assets and behavior. Earlier editorial and annular explorations are superseded.
 
-- A centered, moderate-weight headline leads into one large working demonstration.
-- An open graphite hero, partially cropped silver rings and generous space establish structure.
-- Silver controls and narrow colored accents give the dark shell a material identity.
-- The interface is complete and understandable before effects start.
+- An open graphite hero and generous spacing establish structure.
+- Silver controls and narrow colored accents support expressive live effects.
+- The interface remains understandable before effects start.
 - No decorative eyebrows or announcement pills above headings.
 
 ## Colors
@@ -155,64 +155,25 @@ through a global heading or button selector.
 
 ## Layout
 
-Use one marketing header, type system and neutral palette on `/`. The legacy
-`/examples` route redirects to the homepage examples. Keep a centered content width around 1200px with 24–40px desktop
-and 16px mobile gutters. The framed shell may extend beyond the inner content.
-Use the spacing scale for related controls and 64–96px between major sections.
-The home hero is centered; supporting sections are left-aligned. Do not center every section.
-
-Keep the hero free of rails and decorative junctions. Crop the ring arrangement at the viewport edges rather than shrinking all five illustrations onto narrow screens. Avoid dense
-background grids and repeated boxes around every paragraph. At smaller widths,
-wrap navigation and toolbars in reading order, stack preview/control panes, and
-preserve meaningful labels. No page-wide horizontal overflow at 360px.
+Use one fixed site header, type system and neutral palette across marketing and
+documentation. `/examples` redirects to `/effects/`. Keep responsive gutters,
+centered content and ordinary document scrolling. Stack preview/control panes and
+preserve meaningful labels on narrow screens; no page-wide horizontal overflow
+at 320px.
 
 ### Home
 
-The approved 2026-10-03 editorial homepage supersedes the annular pinned story.
-Keep the existing graphite palette, self-hosted fonts and original annulus artwork.
+The approved [Gallery/Setup composition](#marketing-gallery-exploration) and
+[optical silver brand direction](#approved-optical-silver-brand-direction) define
+the current homepage and complete gallery. They replace the editorial first
+viewport, three-example Fire showcase, floating toolbar and annular scroll story.
+The hero uses a left-aligned headline and Humans/Agents setup panel, followed by
+five effect cards, setup, GSAP, native HTML, FAQ and Afterglow. Effect controls live
+in preview dialogs and documentation, rather than a shared homepage toolbar.
 
-1. **Header and first viewport:** one 44px header and a hero that together occupy
-   100dvh on desktop/tablet. Use ordinary document flow below 600px width or in
-   windows shorter than 760px. Native Examples, Docs and View source remain available.
-2. **Editorial hero:** a 26% install column and 74% statement column above a 74%
-   examples panel and 26% silver controls panel. Preserve the approved display copy
-   and text sizes. The install panel says “Use domfx on its own or with GSAP.” above
-   a selectable `npm install @domfx/browser` command and clipboard button. Copy
-   confirms success or provides manual-copy instructions.
-3. **Three live examples:** image, genuine inline SVG and native selectable text
-   appear together in descending large/medium/small proportions. Labels sit above
-   the examples. All three use actual Fire output through the existing shared
-   controller, with independent visible-target lifetimes. PNG/SVG capture surfaces
-   remain 256px wide and scale positively and proportionally within their panels.
-4. **Controls:** bottom-align the shared Effect, Intensity, Pause/Resume and settings
-   controls in the silver panel. Stack the primary controls on desktop and wrap them
-   on mobile. Use solid ink labels and a graphite playback button for contrast.
-   The examples use the height previously occupied by the inline controls.
-5. **Audience introduction:** centered “For creative developers.” with the portfolio,
-   launch page and interactive story use cases, standalone/GSAP copy and an
-   “Explore the docs” CTA. Keep MIT wording in the footer. Original Prism folds preset 10 is a
-   decorative WebGL background, distinct from domfx effects. A still thumbnail is
-   always available. Load below the fold, cap rendering to one million pixels,
-   DPR 1.5 and 30fps; animation requires explicit opt-in, pauses offscreen/hidden,
-   and respects system and local reduced motion. Context loss returns to the still.
-6. **Integration features:** three generous alternating rows informed by
-   save.design's features layout: text remains graphite, while the timeline diagram
-   sits on silver, binding code on violet and interactive player on pale yellow.
-   Desktop uses approximately 35% copy and 65% visual space. Mobile stacks copy
-   before the visual. Keep gradient lines only where they clarify the cue/code.
-7. **Player:** a real, initially paused GSAP sequence with Play, Pause, Reverse,
-   seek, speed, Repeat and Yoyo. Scrubbing pauses. Offscreen/hidden pages pause;
-   reduced motion disables continuous playback and preserves still-frame seeking.
-   This is a GSAP controls demonstration, not another library effect.
-8. **Setup and footer:** “Start with one element.”, installation/support links and
-   complete native GSAP/standalone disclosures. The editorial footer has grouped
-   navigation, a large static domfx signature, MIT and Back to top.
-
-Homepage marketing describes the selected npm packages as available, as explicitly
-requested by the user. Library release metadata and publication gates remain owned
-by the release workflow. Fire is the first effect; do not invent additional available
-library effects. The new homepage preserves the public attachment contracts and
-normal scrolling; it does not pin or intercept scroll input.
+Marketing uses the approved public-launch copy. Release metadata, package
+publication and deployment remain separate workflows. Only implemented catalog
+effects appear; native scrolling is never pinned or intercepted.
 
 ### Documentation
 
@@ -266,13 +227,12 @@ without JavaScript or WebGPU. They are demonstrations, not verification evidence
 
 Documentation uses the same fixed site header component as the marketing pages
 (wordmark, Effects and Docs links, search and the GitHub link) without the animated
-pattern line or its pause control. Content edges align with the header. The sticky
+pattern line. Content edges align with the header. The sticky
 sidebar fits the viewport below the header, contains its own scrolling and opens
 scrolled to the current page.
 
 Navigation on smaller screens follows shadcn/ui, Payload, Sanity and GSAP: at phone
-widths the shared header keeps search, a compact GitHub star icon (with its count from
-50 stars) and a 44px Menu button for Home, Effects, Docs and Star on GitHub, so primary
+widths the shared header keeps search and a 44px Menu button for Home, Effects, Docs and Star on GitHub, so primary
 navigation outranks the GitHub call to action. Below 1180px, docs add a sticky sub-bar
 under the header with a Docs drawer (when the sidebar is hidden) and an On this page
 dropdown. From 1180px, On this page is a sticky right rail. Its links are generated
@@ -287,70 +247,25 @@ on GitHub and to open an issue prefilled with the page title and path. They stan
 for a "Was this helpful?" widget, which would need a backend. The footer spans the
 docs shell below the sidebar, content and rail. It uses the homepage's brand block,
 Build/Explore/domfx groups (from one shared list) and a copyright, MIT and credit
-strip. Docs leave out the Afterglow CTA, the animated wordmark, the gradient edge and
+strip. Docs leave out the Afterglow CTA, the animated closing artwork, the gradient edge and
 the text Back to top link; the floating button already covers that. Footer links keep
 44px targets. On phones, Build and Explore share a row and GitHub and npm share the
 next one. The last row stays clear of the floating button.
 
-### Examples and toolbar
+### Effect previews
 
-The editorial homepage places the shared controls in its silver side panel:
-a labeled native Effect selector, a visible Intensity slider and percentage,
-and a graphite Pause/Resume button with its text retained on mobile.
-A narrow brand gradient marks only the top edge. Quieter Effect settings, Motion
-and Prompt controls sit underneath; their panels open above the bar, right-aligned
-and bounded to 560px and the viewport gutters. This supersedes the inline and historical floating toolbar geometry
-below while preserving its settings, lifecycle and accessibility behavior.
+The gallery's preview dialog preserves the selected card's subject and offers
+Text, SVG and Image targets, intensity and playback controls, attachment code and
+zoom inspection. The full interaction and accessibility contract is recorded in
+[Gallery/Setup](#marketing-gallery-exploration). The documentation preview follows
+the labeled-row control language described above. Do not restore the retired
+homepage toolbar or its None/Fire-only selector.
 
-Native anchors address showcase elements. `/examples` still redirects to `/#examples`.
-Only implemented effects appear; Fire is currently the sole effect. The shared
-settings default to Fire, maximum intensity 70%, flame height 32px, seed 314, 1× speed, continuous motion and
-an initial time of 0 seconds. Selecting Fire preserves Pause and reduced-motion preferences.
-
-The fixed toolbar closely follows ShaderGradient's customize toolbar structure, adapted to
-our graphite/silver palette and General Sans. A single 560px-wide shell (bounded by viewport
-gutters) retains the same width when opened or closed. The bottom row has plain 18px text tabs:
-Effect (accessible name includes the selection), Motion and Prompt. The active tab uses brighter, medium-weight
-text rather than a filled tile. The effect choices wrap into additional rows as needed. A separate Pause/Resume
-button sits at the right edge with an icon and visible label at viewport widths of 440px or more;
-narrower screens use a 44px icon button with an accessible name and tooltip. The toolbar's 16px outer corners are an approved reference-specific
-exception to the default 10px surface radius. The panel uses surface graphite, and the tab row uses raised graphite.
-
-One nonmodal panel attaches directly above the tab row. Selecting another tab replaces it;
-selecting the active tab closes it. Escape closes and restores trigger focus; outside clicks
-close without stealing focus. Opening focuses the first control. Closing panels immediately
-become inert. Repeated panel headings, visible close buttons and helper paragraphs are omitted;
-region names, native controls, descriptions and focus states remain accessible.
-
-Effect and Motion use aligned 44px rows: a 160px desktop label column (96px on mobile),
-a numeric value and a thin slider, or an On/Off segmented switch. Effect has None/Fire,
-maximum intensity (0–100%, 5% increments) and flame height (8–64px). Motion has speed
-(0.1–2×), an optional repeat range, a paired start/end time slider with numeric fields,
-and page reduced motion. Range controls remain visible and disabled when repeat is off,
-like the reference. Start/end use 0.05-second increments with end strictly greater than start.
-The preview and copied prompt share these authored settings; running Fire never rewrites the
-prompt. Range changes restart at the selected start without changing playback state.
-System reduced motion remains authoritative and is described accessibly, with a visible notice when active.
-
-Prompt has an editable element target, settings summary, a 144px internally scrollable prompt
-at 14px, Copy prompt and quickstart. Copy confirms only after success and offers manual selection
-on failure. None requests removal without installation. Fire concisely links to installation
-and standalone docs and uses the approved npm installation wording while preserving all
-selected settings. Prompt never loads the GPU package.
-
-Reserve clearance for the approximately 54px collapsed toolbar and safe area. Expanded panels
-overlay without moving page content and scroll internally on short viewports. Panels enter with
-a 320ms expo-like ease-out and exit in 160ms; reduced motion suppresses both transitions.
-At narrow widths and zoom, wrapping and measured clearance take priority over a fixed height.
-
-Visible attachments use one manual clock. Offscreen or hidden-page targets dispose
-independently and return at retained settings. One failed target leaves the others
-working and its original content usable. Async work must not revive replaced layers.
-Session navigation/reloads preserve playback and the local motion preference, with
-an in-memory fallback. Local or system reduced motion suppresses effect output and
-introduced CSS transitions. The system preference is authoritative; ending reduction
-requires explicit Resume. Load GPU code only when rendering is permitted and await
-fonts and relevant decoded images before attaching.
+Load GPU code only when rendering is permitted; wait for fonts and relevant
+images. Visible attachments have independent lifetimes. Offscreen and hidden-page
+output is released, failures leave original content usable and obsolete async work
+must not revive replaced layers. Reduced motion suppresses automatic output;
+ending reduction requires explicit Resume on marketing pages.
 
 ## Elevation & Depth
 
@@ -368,24 +283,16 @@ rounded overflow; the decorative frame must respect the capture contract.
 
 ### Approved illustration family
 
-Use the original split shell, layer relay and open junction PNGs in
-`apps/web/src/assets/illustrations/`. Their material is thin smoothly bent sheet with
-smoky dark optical depth, soft silver reflections and precise bright edges, informed
-by [Vivid Motion's 3D Illustration System](https://dribbble.com/shots/27532349-3D-Illustration-System).
-Cool blue-grey reflections and small violet/magenta/pale-yellow glints belong to the
-approved artwork, not new UI color tokens. Avoid thick bright chrome, matte origami,
-forced rainbow bands and glowing card surfaces. Preserve the original files and the
-[exact prompts and reusable brief](apps/web/artwork/README.md) for future variants.
+The current family is defined by [Approved optical silver brand direction](#approved-optical-silver-brand-direction).
+Active transparent PNGs and generation provenance are documented in
+[the artwork guide](apps/web/artwork/README.md). The earlier annulus, split shell,
+layer relay and open junction family is retired and removed; Git history preserves
+its sources. Keep genuine inline SVG examples as vectors, letterforms flat and
+artwork static. Test image alpha and live effect output after changing a target.
 
-The approved sphere-free annulus is the hero and PNG effect target; its traced SVG preserves the same outer contour and opening. Split shell is retained as supporting artwork; the family also supplies static
-resource-card art. Keep the SVG example as genuine inline vector geometry. Artwork
-stays static. The quickstart link also serves as the existing scroll-intensity target; other supporting cards remain undecorated. Test image
-alpha and actual Fire output after changing an effect target.
-
-The footer has a brand block, Explore and Resources link groups, and a quieter MIT /
-Back to top row. A 4px static silver–violet–magenta–pale-yellow gradient spans the inner
-content width at its upper edge. Text and focus indicators remain solid. On mobile,
-stack the brand above the two link groups and retain 44px links plus dock clearance.
+The current footer uses Afterglow, grouped links and a compact credit strip as
+specified in the Gallery/Setup section below. Do not restore the former gradient
+edge or prototype dock.
 
 ## Components
 
@@ -417,9 +324,9 @@ stack the brand above the two link groups and retain 44px links plus dock cleara
 
 ## Motion
 
-**Approach:** Expressive Fire on bounded targets; functional motion elsewhere.
-**The authored showcase:** Visible authored targets share Fire time and settings,
-and retain native selection and activation with a nearby pause control.
+**Approach:** Expressive catalog effects on bounded targets; functional motion elsewhere.
+The header and closing artwork share one cycle. Gallery and dialog targets retain
+independent lifetimes, original content and accessible preview controls.
 Use ease-out for entry, ease-in for exit and ease-in-out for movement. Hover/focus
 transitions are roughly 120–180ms; disclosures 200–300ms. Preserve reduced-motion
 behavior and avoid scroll hijacking or animating target paint every frame.
@@ -459,26 +366,25 @@ even if marketing shows one example at a time.
 
 | Element or interaction       | Intended treatment                                        | Current boundary                                                                                         |
 | ---------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Short hero title             | Autoplay while visible, with visitor-controlled pause     | Public `attachFire`; retain the real heading and readable letter interiors                               |
+| Short hero title             | Autoplay while visible, with visitor-controlled pause     | Public effect functions; retain the real heading and readable letter interiors                           |
 | SVG or transparent image     | Edge effect reveals holes and silhouette                  | Use bounded, decoded assets and a supported host; keep image alternatives                                |
 | Ordinary rectangular photo   | Edge effect around the photo's outer shape                | An opaque photo produces a rectangle; isolating the pictured subject requires an asset with transparency |
 | Example button or card       | Demonstrate that the original control remains usable      | Effect layer stays decorative and pointer-transparent; required navigation stays plain                   |
 | Scrolling target             | Effect follows its source while time stays fixed or plays | Supported placement tracking handles bounded rectangular scrolling hosts                                 |
-| Scroll-driven intensity/time | Scrub one manual effect through a short section           | Homepage maps card position to public intensity; this is app-owned, not a built-in scroll API            |
+| Scroll-driven intensity/time | Scrub one manual effect through a short section           | App-owned public controls; not a built-in scroll API                                                     |
 
 ### Motion and ownership
 
-- Marketing uses four authored targets with one shared clock and Pause/Resume.
-  Attach only visible targets; respect pause and off choices on return. Verify grouped
-  rendering on the actual GPU; individual-preview evidence does not establish its cost.
+- Marketing attaches only visible targets. The header and closing artwork share
+  time and playback; cards and dialogs own independent attachments. Verify actual
+  GPU output; individual-preview evidence does not establish grouped rendering cost.
 - Keep CSS responsible for ordinary UI transitions: roughly 120–180ms for hover/focus
   and 200–300ms for small disclosures. Do not attach GPU effects to every hover state.
 - Animate effect time/intensity through public controls. A manual attachment can use
   the optional GSAP binding and a caller-owned timeline. Keep one owner for those
   controls; direct input and scroll playback must not compete.
-- Preserve native scrolling. For the scrolling card, map viewport position to public intensity;
-  scrolling backward must reproduce the earlier intensity. Provide an equivalent seek control for keyboard and touch users.
-  The approved homepage uses ordinary scrolling and native example anchors; never intercept wheel/touch scrolling.
+- Preserve native scrolling and links; never intercept wheel/touch scrolling.
+  Any future scroll-driven control needs equivalent keyboard and touch access.
 - Leave source content visible before initialization and after failure. Use the
   library's default reduced-motion policy; ordinary CSS motion must respect it too.
   Static decoration is an explicit `motion: 'static'` choice, not an animated override.
@@ -503,9 +409,9 @@ live target, and a canvas requires an explicit refresh for each desired snapshot
 Avoid animating the target's paint every frame: animate effect controls or supported
 placement instead. Theme changes and unobserved hover/focus paint changes require
 explicit refresh. The metallic face and colored rim can start as CSS or artwork;
-the current fire API does not expose this palette. Animated Vyse-inspired contours,
-custom fire colors, glow, distortion or particles need separate library work and
-verification. Keep those prospective effects distinct from working demonstrations.
+the effect APIs do not expose the brand palette. New controls or effects need
+separate library work and verification; keep proposals distinct from implemented
+catalog effects.
 
 Implementation contracts live in the [browser package](packages/domfx/README.md),
 [GSAP adapter](packages/gsap/README.md) and [domain glossary](GLOSSARY.md).
@@ -518,10 +424,9 @@ Implementation contracts live in the [browser package](packages/domfx/README.md)
 - Home effects autoplay only while visible and respect explicit Pause/Off choices,
   including scrolling away/back and navigation restoration. Reduced motion must not
   silently restart when the preference changes back.
-- Homepage examples use one effect controller and independent attachment lifetimes; a separate GSAP context owns only the interactive timeline player.
-  None/Fire, intensity, seek, flame height, Pause/Resume, local/system reduced motion,
-  Prompt and cleanup work on real content. None and Pause persist through scrolling
-  and navigation restoration; native anchors do not select targets.
+- Card selection preserves its authored subject; Text/SVG/Image, intensity,
+  playback, zoom, copied code and cleanup work on real content. Header and closing
+  artwork stay synchronized without sharing attachment lifetimes.
 - Verify 360, 768 and 1440px layouts, 200% browser zoom, and actual DPR 1/2 output.
   Content and controls must stay usable even when capture budgets force static fallback.
 - Static metallic accents remain visually distinct from actual warm Fire output.
@@ -536,7 +441,7 @@ Implementation contracts live in the [browser package](packages/domfx/README.md)
 On 2026-10-02, the user selected **editorial direction B** for
 [homepage #89](https://github.com/G0m1namm/domfx/issues/89): a creative ruled layout
 with image, SVG and text examples together in the hero, carried through the sections
-below the fold. The approved production contract is recorded above; exploration
+below the fold. This historical composition is superseded by Gallery/Setup below; exploration
 prototypes and screenshots remain local and are not repository deliverables.
 The user authorized Astro implementation of this direction and the later feature refinements.
 The selected integration background is **10 — Prism folds**. On 2026-10-03,
@@ -563,15 +468,14 @@ Frost uses a mostly white, pale-blue granular coating that spreads inward across
 image, SVG and text contours as intensity rises. Higher intensity also increases
 white smoke height and brightness. Smoke has fine irregular wisps, accompanied by
 small diamond-shaped white ice grains. The original content remains visible and
-interactive. The maintainer approved this direction on 2026-10-18; automated and
-full lifecycle verification remain deferred until the visual exploration is complete.
+interactive. The maintainer approved this visual direction on 2026-10-18.
 
 ### Approved Kinetic bloom direction
 
 One silver-violet light pulse sweeps clockwise around the target and sheds small
 geometric fragments. Intensity increases the pulse width, brightness, violet wake,
 and fragment size and reach. Keep one Kinetic bloom option. The maintainer approved
-this direction on 2026-10-18; tests and full lifecycle verification remain deferred.
+this visual direction on 2026-10-18.
 
 ### Slime exploration direction
 
@@ -581,7 +485,7 @@ the inward fade with a solid coating and defined inner and outer boundaries;
 antialiasing is limited to contour coverage. Retain the slow stretching motion
 and remove incandescent cracks and heat shading. The maintainer approved the
 solid green coating and drip motion on 2026-10-19 as the checkpoint before
-exploring gloss and translucency. Tests and full lifecycle verification remain deferred.
+exploring gloss and translucency.
 
 The glossy Slime pass was approved on 2026-10-19: rounded wet highlights and
 thickness-based green translucency sit inside the defined coating boundaries.
@@ -592,8 +496,7 @@ Preserve the accepted buildup, pinch-off, falling drops and neck retraction.
 The maintainer approved Burned paper on 2026-10-19: a dark charred rim, uneven
 brown scorching and sparse orange-hot seams. Intensity spreads the coating
 inward across the target; the outer material rim stays below one CSS pixel to
-preserve spacing between letters. Keep the original content intact. Tests and
-full lifecycle verification remain deferred until visual exploration is complete.
+preserve spacing between letters. Keep the original content intact.
 
 ### Approved Dither direction
 
@@ -601,22 +504,22 @@ The maintainer approved the fine ordered-dot effect on 2026-10-19. Small fixed-g
 silver-violet dots form an edge coating and rising wisps; intensity increases dot
 density, inward coverage and reach. Keep it free of letters and symbols, with the
 original content intact. Larger halftone variants are not part of this approved
-pass. Tests and full lifecycle verification remain deferred.
+pass.
 
 ### Approved pattern effects
 
 The maintainer approved Halftone, Stipple, Scanlines, Crosshatch, Diamond lattice
 and Contour echoes on 2026-10-19. Preserve their distinct silver-violet marks and
 shared silhouette-following intensity controls alongside the original Dither.
-This approves their visual direction; automated and full lifecycle verification
-remain deferred until the effect exploration is complete.
+These are visual approvals; current verification requirements live in
+CONTRIBUTING.md and HARNESS.md.
 
 ### Marketing gallery exploration
 
 On 2026-10-19, the maintainer selected Gallery as the marketing prototype direction,
 with Spotlight's alternating two-wide and three-across card arrangement. Keep card
 metadata focused on effect names and categories; remove the promotional taglines.
-Phosphor icons, cleaner control primitives and Lab Mono are being evaluated locally.
+Use official Phosphor icons, cleaner controls and Lab Mono labels.
 The next local refinement uses a fixed full-width header with the same subtle 1px
 border as cards and inputs, downward effect output below the divider, and more
 space above the hero title and between the hero and collection filters. Remove
@@ -641,7 +544,7 @@ visitors to a local-only preview workflow. Browser and capture limits still appl
 This composition is approved for the production homepage and full effects gallery.
 
 The maintainer selected Afterglow for the closing section. Keep its existing background
-glow and animated domfx wordmark, placed above the closing headline and installation
+glow and animated silver Asterisk, placed above the closing headline and installation
 actions. Follow with grouped footer links and a compact credit/copyright strip naming
 Jherson Martelo Medina, plus Back to top. Use official Phosphor assets for interface
 icons, with consistent sizing and accessible labels. Text links need visible resting
@@ -658,9 +561,16 @@ alternating large/small composition for the complete gallery; category-filtered
 results use equal-size tiles at each breakpoint, including a consistent scale for
 matching preview types. Retire the card comparison toolbar.
 
+Opening a card preserves its text, SVG or illustration in the preview. Offer Text,
+SVG and Image as three labeled target options, matching the documentation controls.
+Keep card artwork within its available space on phones; balance narrow category
+filters across two columns and let the dialog scroll on short screens.
+
 The next refinement reduces hero height with a two-column desktop composition:
 headline and supporting copy on the left, Humans/Agents setup tabs on the right.
-Stack these on mobile. Humans offers the package install command and gallery link.
+Stack these on mobile. Give the hero 128px of top padding on desktop and 112px
+from tablet down, plus 16px of bottom padding before the collection’s own spacing.
+Humans offers the package install command and gallery link.
 Agents previews `pnpm dlx skills add G0m1namm/domfx --skill domfx`, explicitly labeled
 as a preview because the consumer skill is not published yet, alongside the API guide.
 Publishing that skill remains separate work.
@@ -673,9 +583,11 @@ results navigate to the matching page or section. Keep category filters above th
 full effects gallery. The header GitHub CTA says “Star on GitHub” below 50 stars
 and “Stars” with a count from 50 onward. Fetch public repository statistics and
 retain the plain GitHub link if counts are unavailable; do not invent a count or
-expose credentials for a private repository.
+expose credentials for a private repository. On phones, hide the header GitHub CTA and
+show it beside “Find your effect” in the Humans hero panel, with the same star
+label and count behavior. Keep the GitHub link in the mobile menu.
 
-The next local preview refinement gives the effect subject a larger default size
+The approved preview gives the effect subject a larger default size
 and a wider inspection pane. Magnify the original subject and its live decorative
 layer together, independently of intensity. Desktop hover temporarily inspects at
 2× with pointer-directed panning; explicit controls provide 100–300% zoom and Fit
@@ -692,11 +604,12 @@ Effects links lead there. Both pages share search and the zoomable effect previe
 homepage search can open every effect, including those beyond the five featured cards.
 Keep setup, GSAP, native HTML and FAQ content on the marketing homepage.
 
-The header and large Afterglow domfx wordmark use the same pattern sequence and
+The header and Afterglow Asterisk use the same pattern sequence and
 one shared time and intensity cycle, including fade-out, effect switch and fade-in.
-The wordmark joins the current phase when it enters view; release its attachment
-when offscreen without restarting the header. Either playback control pauses or
-resumes both decorations. Respect reduced motion and retain the paused state when
+The Asterisk joins the current phase when it enters view; release its attachment
+when offscreen without restarting the header. The closing artwork playback control pauses or
+resumes both decorations. The header has no playback button. Use a compact shared
+header: 64px on desktop and 56px on phones, retaining 44px control targets. Respect reduced motion and retain the paused state when
 that preference changes back.
 
 On 2026-10-19, the maintainer approved integrating the selected marketing design
@@ -705,3 +618,28 @@ into the official website. `/` contains the five featured effects and Setup stor
 Afterglow, Lab Mono labels, Phosphor icons, shared search and zoomable previews.
 Render content on the server so the site remains readable without JavaScript.
 Keep prototype sources and rejected variants outside the production build.
+
+### Approved optical silver brand direction
+
+On 2026-10-20, the maintainer selected the silver material preview, superseding the
+older illustration placements and the proposed burnt-metal artwork direction.
+Use thin smoked blue-grey optical surfaces, soft silver reflections, clean rims,
+and restrained violet, magenta and pale-yellow glints. Avoid opaque chrome and
+irregular generated edges. Retain five shapes: Washer, Split, Open ring, Asterisk
+and Pierced ring. Exclude Nested, Stack and the rejected replacement studies.
+
+Use Washer for image cards, Split for Fire, Open ring for Slime and Pierced ring
+for the docs Image subject. Replace the large closing domfx wordmark above the
+footer with the silver Asterisk; do not add it to the GSAP timeline illustration.
+Keep the header and closing Asterisk on the same pattern and time cycle, with a
+stronger closing effect: multiply its intensity ramp by 1.6, capped at 1, and
+brighten only its decorative canvas by 1.5. The header retains its existing intensity.
+
+Keep the preview's subtle heat floors and Afterglow background. The GSAP timeline's
+Ignite bar retains its original violet gradient, `linear-gradient(100deg, #6153b778,
+#6153b730)`, instead of the proposed warm heat gradient. Keep text and controls in
+the existing UI palette, genuine inline SVG examples intact, and original artwork
+and generation provenance recorded. On the maintainer's subsequent cleanup request,
+remove superseded visual files, including rejected shapes and unused illustrations,
+favicons and social art; Git history preserves the old sources. This direction is
+implemented in the marketing site and docs Image preview.

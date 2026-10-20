@@ -1,7 +1,7 @@
 Use case: stylized-concept.
 Create ONE original isolated 3D illustration for domfx.
 
-REFERENCE ROLES: Attach an approved domfx illustration from src/assets/illustrations as the material and lighting anchor. If available, also attach the Vivid Motion 3D Illustration System as a secondary material reference. Copy the finish and lighting, not the reference geometry. For an adjustment, designate the existing domfx image as the edit target and preserve every property except the requested change.
+REFERENCE ROLES: Attach an approved domfx illustration from src/assets/brand as the material and lighting anchor. If available, also attach the Vivid Motion 3D Illustration System as a secondary material reference. Copy the finish and lighting, not the reference geometry. For an adjustment, designate the existing domfx image as the edit target and preserve every property except the requested change.
 
 SUBJECT: [Describe the new geometry and what it communicates. Include generous readable open spaces, thin broad surfaces and a compact silhouette.]
 PLACEMENT: [Main effect target or supporting static card; expected display size.]

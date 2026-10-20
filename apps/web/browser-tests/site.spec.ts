@@ -44,7 +44,7 @@ test('visibility recovery replaces invalidated captures and preserves preview pa
   }
 });
 
-test('header and wordmark share transitions, pause and offscreen re-entry', async ({ page }) => {
+test('header and closing artwork share timing with a stronger closing effect', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
@@ -63,22 +63,27 @@ test('header and wordmark share transitions, pause and offscreen re-entry', asyn
       };
     });
   let state = await snapshot();
-  expect(state.closing).toEqual(state.header);
+  expect(state.closing.slice(0, 2)).toEqual(state.header.slice(0, 2));
+  expect(Number(state.closing[2])).toBeGreaterThanOrEqual(Number(state.header[2]));
+  await expect.poll(async () => Number((await snapshot()).closing[2])).toBe(1);
+  state = await snapshot();
+  expect(Number(state.header[2])).toBeLessThan(1);
   const first = state.header[0];
   await expect.poll(async () => (await snapshot()).header[0], { timeout: 16000 }).not.toBe(first);
   await page.locator('[data-closing-pause]').click();
-  await expect(page.locator('[data-header-pause]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-closing-pause]')).toHaveAttribute('aria-pressed', 'true');
   state = await snapshot();
   await page.locator('#hero-title').scrollIntoViewIfNeeded();
   await expect(closing.locator('canvas')).toHaveCount(0);
   await page.locator('[data-closing-target]').scrollIntoViewIfNeeded();
   await expect(closing.locator('canvas')).toHaveCount(1);
   expect(await snapshot()).toEqual(state);
-  await page.locator('[data-header-pause]').click();
+  await page.locator('[data-closing-pause]').click();
   await expect(page.locator('[data-closing-pause]')).toHaveAttribute('aria-pressed', 'false');
   await expect.poll(async () => (await snapshot()).header[1]).not.toBe(state.header[1]);
   state = await snapshot();
-  expect(state.closing).toEqual(state.header);
+  expect(state.closing.slice(0, 2)).toEqual(state.header.slice(0, 2));
+  expect(Number(state.closing[2])).toBeGreaterThanOrEqual(Number(state.header[2]));
   expect(errors).toEqual([]);
 });
 
@@ -89,11 +94,11 @@ test('reduced motion removes output and requires explicit resume after recovery'
   await expect(page.locator('.header-effect-host canvas')).toHaveCount(1);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('canvas')).toHaveCount(0);
-  await expect(page.locator('[data-header-pause]')).toBeDisabled();
+  await expect(page.locator('[data-closing-pause]')).toBeDisabled();
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(page.locator('[data-header-pause]')).toBeEnabled();
+  await expect(page.locator('[data-closing-pause]')).toBeEnabled();
   await expect(page.locator('canvas')).toHaveCount(0);
-  await page.locator('[data-header-pause]').click();
+  await page.locator('[data-closing-pause]').click();
   await expect(page.locator('.header-effect-host canvas')).toHaveCount(1);
   await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
   await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
@@ -127,8 +132,11 @@ for (const dpr of [1, 2]) {
       await page.goto('/effects/');
       await page.getByRole('button', { name: 'Try Dither', exact: true }).click();
       await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
-      await page.getByRole('button', { name: 'Shape', exact: true }).click();
-      await expect(page.locator('.dialog-stage canvas')).toHaveCount(1);
+      for (const name of ['SVG', 'Image', 'Text']) {
+        await page.getByRole('button', { name, exact: true }).click();
+        await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
+        await expect(page.locator('.dialog-stage canvas')).toHaveCount(1);
+      }
       await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
       await expect(page.locator('[data-zoom-label]')).toHaveText('150%');
       await expect(page.locator('.dialog-stage canvas')).toHaveCount(1);

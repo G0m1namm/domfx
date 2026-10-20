@@ -1,7 +1,7 @@
 /* Fixed site header shared by marketing and documentation layouts.
    Font and color fallbacks cover both pages' token and @font-face names. */
 :root {
-  --header-height: 80px;
+  --header-height: 64px;
 }
 .site-nav {
   position: fixed;
@@ -18,12 +18,12 @@
 .nav-inner {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
   width: 100%;
   max-width: 1320px;
   height: 100%;
   margin: auto;
-  padding: 0 36px;
+  padding: 0 32px;
 }
 .site-nav .wordmark {
   display: flex;
@@ -34,14 +34,9 @@
   font-weight: 500;
   letter-spacing: -1.5px;
 }
-.site-nav .wordmark > .ui-icon {
-  width: 23px;
-  height: 23px;
-  color: var(--silver);
-}
 .site-nav nav {
   display: flex;
-  gap: 24px;
+  gap: 16px;
   margin: 0;
   color: var(--muted);
   font-size: 13px;
@@ -110,22 +105,6 @@
 .star-count[hidden] {
   display: none;
 }
-.header-playback {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-}
-.header-playback:hover {
-  background: var(--raised);
-  color: var(--text, #e8eaf3);
-}
 .header-effect-host {
   position: absolute;
   top: calc(100% - 1px);
@@ -156,7 +135,7 @@
 }
 @media (max-width: 700px) {
   :root {
-    --header-height: 68px;
+    --header-height: 56px;
   }
   .nav-inner {
     gap: 10px;
@@ -168,31 +147,14 @@
   .site-nav .wordmark {
     font-size: 27px;
   }
-  .site-nav .wordmark > .ui-icon {
-    width: 20px;
-    height: 20px;
-  }
-  .star-cta {
-    gap: 7px;
-    padding: 8px 10px;
-    font-size: 10px;
-  }
-  .star-cta .ui-icon {
-    width: 15px;
-    height: 15px;
-  }
-  .star-count {
-    padding-left: 6px;
-    font-size: 10px;
+  .site-nav .star-cta {
+    display: none;
   }
 }
 @media (max-width: 380px) {
   .nav-inner {
     gap: 6px;
     padding-inline: 12px;
-  }
-  .star-cta {
-    padding-inline: 7px;
   }
 }
 
@@ -277,19 +239,6 @@
 @media (max-width: 700px) {
   .nav-menu-button {
     display: flex;
-  }
-  /* Navigation takes priority; the GitHub link keeps its icon and any count. */
-  .star-cta [data-star-label] {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  .star-cta {
-    min-width: 44px;
-    justify-content: center;
   }
 }
 @media (min-width: 701px) {

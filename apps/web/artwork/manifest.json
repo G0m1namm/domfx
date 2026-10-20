@@ -1,41 +1,47 @@
 {
-  "approved": "2026-09-29",
-  "generator": "Built-in image generation tool; model and seed not exposed",
-  "reference": "https://dribbble.com/shots/27532349-3D-Illustration-System",
-  "referenceCredit": "Vivid Motion, 3D Illustration System for ThreatPoint",
+  "approved": "2026-10-20",
+  "generator": "Built-in GPT image generation; model version and seed not exposed",
+  "material": "Thin smoked blue-grey optical surfaces, soft silver reflections and restrained spectral glints",
   "assets": [
     {
-      "name": "split-shell",
-      "source": "../src/assets/illustrations/split-shell.png",
-      "prompt": "prompts/split-shell.txt",
+      "name": "washer",
+      "source": "../src/assets/brand/washer.png",
+      "prompt": "prompts/washer-optical.json",
       "width": 1254,
       "height": 1254,
-      "sha256": "ea96c014b6d3f30c332cf8d688ed55867e19def8b05b453a41da143f2928b570"
+      "sha256": "1cbf68bd520ca5e4d72b9958610a8af32aec04399d676973bd51be4bc27cb2e4"
     },
     {
-      "name": "layer-relay",
-      "source": "../src/assets/illustrations/layer-relay.png",
-      "prompt": "prompts/layer-relay.txt",
+      "name": "split",
+      "source": "../src/assets/brand/split.png",
+      "prompt": "prompts/split-optical.json",
       "width": 1254,
       "height": 1254,
-      "sha256": "23e1ff4f8827e5f939edf5521444c17476346b362f701534156bf7053637c728"
+      "sha256": "dbf53c192abcdd71b8d26e0f3f32ddc6b5ac18874bf5306ae892c49e4da7878a"
     },
     {
-      "name": "open-junction",
-      "source": "../src/assets/illustrations/open-junction.png",
-      "prompt": "prompts/open-junction.txt",
-      "width": 1374,
-      "height": 1145,
-      "sha256": "0f9672acc00593274e51a83ad7cd06a1b9b154f93e7669b57c0bd0d448eab5e1"
+      "name": "open-ring",
+      "source": "../src/assets/brand/open-ring.png",
+      "prompt": "prompts/open-ring-optical.json",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "a080d8c4ee71ed40f83ebcb928f03d88f63ff8397a3fda8dc8c55338a159dd4b"
     },
     {
-      "name": "annulus",
-      "source": "../src/assets/illustrations/annulus.png",
-      "prompt": "prompts/annulus.json",
-      "width": 1448,
-      "height": 1086,
-      "sha256": "2039d9e8abbe94dce25828085edeedbf20a17c883cdd04be523eb406455fc60b",
-      "reference": "User-supplied optical-metal annulus screenshot; sphere removed and reflections adapted to the approved palette."
+      "name": "asterisk",
+      "source": "../src/assets/brand/asterisk.png",
+      "prompt": "prompts/asterisk-optical.json",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "ae583e7b75acc2b4265164439f7e6ed05058e4cc612a0d44bb6dbda3c45bb168"
+    },
+    {
+      "name": "pierced-ring",
+      "source": "../src/assets/brand/pierced-ring.png",
+      "prompt": "prompts/pierced-ring-optical.json",
+      "width": 1254,
+      "height": 1254,
+      "sha256": "bb42705ff1b52f74167445781c5325557e9e23a820d91355fbcfd00e9f0f45a4"
     }
   ]
 }

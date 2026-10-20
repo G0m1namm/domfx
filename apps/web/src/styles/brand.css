@@ -26,21 +26,12 @@
     radial-gradient(ellipse 70% 40% at 50% 100%, rgb(61 71 230 / 0.16), transparent 70%),
     radial-gradient(ellipse at 50% 82%, rgb(76 46 184 / 0.18), transparent 63%),
     linear-gradient(180deg, #14151b 20%, #1a1726 100%);
-  --edge-heat: linear-gradient(
-    90deg,
-    #80b2ff,
-    #3d47e6,
-    #4c2eb8,
-    #b21a5c,
-    #eb3838,
-    #f57a29,
-    #ebd666,
-    #c2c4d1
-  );
-  --bar-fire: linear-gradient(
-    100deg,
-    rgb(235 56 56 / 0.5),
-    rgb(245 122 41 / 0.32) 45%,
-    rgb(235 214 102 / 0.14)
-  );
+}
+
+.brand-mark {
+  display: block;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
 }

@@ -46,6 +46,15 @@ preserve [failed run 36828639144](https://github.com/G0m1namm/domfx/actions/runs
 [#41](https://github.com/G0m1namm/domfx/issues/41) and
 [#91](https://github.com/G0m1namm/domfx/issues/91) own release reliance on that result.
 
+A [later native Safari continuation](accessibility-verification.md#native-safari-continuation--2026-10-20-utc)
+on the same runtime/build recovered Page Down scrolling, visible Frost output on
+Text/SVG/Image, preview control transitions and close-focus return. At confirmed
+native 200% zoom, Frost docs reflow, drawer open/Escape, shared search results/focus
+return and keyboard table-of-contents expansion were observed. These bounded
+results extend the earlier fallback-only Safari row; they do not complete Safari
+rendering, keyboard, lifecycle or VoiceOver acceptance. Safari environment fields
+listed as unmeasured above remain **UNTESTED**.
+
 ### Current source, build and evidence identities
 
 - Lockfile SHA-256: `c52ead1ee72369986e624127d6f8c0a14dd0dfaf47b4498f9e3932f8b734eb1b`.

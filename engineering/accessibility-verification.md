@@ -33,6 +33,41 @@ the host GPU. Native screenshots were shown in the implementation conversation;
 they were not retained as files. Local automated PNGs belong to their separately
 identified profiles, not Safari or VoiceOver.
 
+### Native Safari continuation — 2026-10-20 UTC
+
+An agent used installed Safari 26.6.2 on the same Mac and unchanged runtime/build
+identified above, served at `http://127.0.0.1:4387/`. These observations extend only
+the named scenarios; Safari's CSS viewport, DPR, adapter, motion preference and
+document visibility remain **UNTESTED**.
+
+- **PASS, bounded rendering and controls:** Page Down visibly scrolled the home
+  page. Opening Try Frost showed a visible frost edge around Text, then around
+  the replacement SVG; both reported `Live preview · WebGPU`. Pointer interaction
+  changed intensity from 70% to 50%. Pause→Resume→Pause labels changed, preview
+  zoom changed 100%→150%, and Escape closed the preview with focus on Try Frost.
+  The Image target also showed a visible frost edge, and its original reference
+  link opened the Frost documentation. These are native UI observations, not a
+  complete keyboard, placement or lifecycle pass.
+- **PASS, bounded native 200% docs zoom:** Safari's own page menu confirmed 200%
+  on the Frost reference. Its layout visibly reflowed to the Docs drawer and
+  collapsed table of contents. Page Down reached the original lab content and
+  subject controls; the drawer opened and Escape closed it. Shared search
+  accepted native input `frost`, returned nine results, and Escape returned focus
+  to its trigger. Tab reached On this page and Return expanded it. Full drawer
+  focus order, code/table keyboard scrolling and lab playback at this zoom remain
+  **UNTESTED**. Safari's page menu confirmed restoration to 100%.
+- **VoiceOver speech remains UNTESTED:** a startup welcome prompt was found and
+  dismissed with Use VoiceOver; the actual VoiceOver process then ran. The native
+  copy-last-phrase shortcut still inserted U+0003 into a focused input, and native
+  paste returned the prior test URL rather than speech. App inspection timed out.
+  Browser-tool clipboard reads were separately shown to be session-local, so they
+  cannot supply native speech evidence. VoiceOver was turned off afterward;
+  AppleScript control remained disabled. A prepared scripting probe was not run.
+
+Local method notes are in `.scratch/browser-accessibility-87/native-continuation.md`;
+native screenshots were shown in the task conversation, not retained as files.
+Physical mobile, a second OS/GPU and the held Linux checks remain unchanged.
+
 ### Remaining human verification for #87
 
 Keep #87 open until missing evidence is supplied or its owner explicitly changes

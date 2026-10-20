@@ -21,9 +21,9 @@ timeline.to(effect, {
 
 // On unmount: kill your tweens and dispose the effect.`;
 const questions = [
-  ['Do I need GSAP?', 'No. Automatic animation runs on its own. Use native GSAP tweens to sequence time and intensity.', '/docs/standalone', 'Standalone guide'],
-  ['Do I need a particular framework?', 'The browser API takes a DOM element. Attach after mount and dispose on unmount in the framework you use.', '/docs/api', 'Explore the API'],
-  ['What happens without WebGPU?', 'The original HTML stays available. Effects require WebGPU and supported capture conditions; reduced motion suppresses animated output by default.', '/docs/support', 'Check browser support'],
+  ['Do I need GSAP?', 'No. Automatic animation runs on its own. Use native GSAP tweens to sequence time and intensity.', '/docs/standalone/', 'Standalone guide'],
+  ['Do I need a particular framework?', 'The browser API takes a DOM element. Attach after mount and dispose on unmount in the framework you use.', '/docs/api/', 'Explore the API'],
+  ['What happens without WebGPU?', 'The original HTML stays available. Effects require WebGPU and supported capture conditions; reduced motion suppresses animated output by default.', '/docs/support/', 'Check browser support'],
   ['How do I install it?', 'Install @domfx/browser from npm. For timeline control, add gsap. The @domfx/gsap lifecycle helpers are optional.', 'https://www.npmjs.com/package/@domfx/browser', 'View the package on npm'],
 ];
 ---
@@ -34,13 +34,13 @@ const questions = [
       <ol class="setup-steps">
         <li><h3>Install domfx.</h3><p>Add the browser package to your project.</p><button class="install story-install" data-copy="pnpm add @domfx/browser" aria-label="Copy install command"><code>pnpm add @domfx/browser</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button></li>
         <li><h3>Attach the effect.</h3><p>Choose text, an inline SVG or an image. Attach an effect to follow its visible shape.</p></li>
-        <li><h3>Choose how it moves.</h3><p>Let it animate on its own, or control its time and intensity with GSAP.</p><a class="story-link" href="/docs/standalone">Attach your first effect <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></li>
+        <li><h3>Choose how it moves.</h3><p>Let it animate on its own, or control its time and intensity with GSAP.</p><a class="story-link" href="/docs/standalone/">Attach your first effect <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></li>
       </ol>
-      <div class="story-code"><div class="code-heading"><span>Standalone</span><span>TypeScript</span></div><Code code={standalone} lang="ts" theme={codeTheme}/><a href="/docs/standalone">See the full example <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
+      <div class="story-code"><div class="code-heading"><span>Standalone</span><span>TypeScript</span></div><Code code={standalone} lang="ts" theme={codeTheme}/><a href="/docs/standalone/">See the full example <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
     </div>
   </section>
   <section class="story-section motion-feature">
-    <div class="story-heading"><h2 class="gsap-effect-heading" data-effect-host>Your <span class="gsap-effect-word" data-preview="fire">GSAP</span> timeline.<br/>A new layer.</h2><p>Sequence effects alongside your existing animation. Control their time and intensity with the GSAP timeline you already use.</p><a class="story-link" href="/docs/gsap">Build with GSAP <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
+    <div class="story-heading"><h2 class="gsap-effect-heading" data-effect-host>Your <span class="gsap-effect-word" data-preview="fire">GSAP</span> timeline.<br/>A new layer.</h2><p>Sequence effects alongside your existing animation. Control their time and intensity with the GSAP timeline you already use.</p><a class="story-link" href="/docs/gsap/">Build with GSAP <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
     <div class="sequence-composition">
       <div class="sequence-score" role="img" aria-label="Illustrative timeline: entrance from zero to half a second, then Fire from half a second to four and a half seconds.">
         <div class="score-ruler"><span>0s</span><span>0.5s</span><span>2.5s</span><span>4.5s</span></div>
@@ -53,8 +53,8 @@ const questions = [
     <dl class="motion-methods"><div><dt><code>play() / pause()</code></dt><dd>Run the sequence or hold a moment.</dd></div><div><dt><code>seek() / reverse()</code></dt><dd>Move through the effect in either direction.</dd></div><div><dt><code>timeScale()</code></dt><dd>Set the pace with the controls you know.</dd></div></dl>
   </section>
   <section class="native-proof story-section">
-    <div class="proof-stage" data-effect-host><a data-preview="dither" href="/docs/introduction">Still HTML.</a><span>Select the text. Follow the link.</span></div>
-    <div class="story-copy"><h2>Your HTML stays<br/>interactive.</h2><p>Text stays selectable. Links keep working. domfx adds a decorative layer alongside your element, leaving the original HTML in place.</p><a class="story-link" href="/docs/introduction">How domfx works <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
+    <div class="proof-stage" data-effect-host><a data-preview="dither" href="/docs/introduction/">Still HTML.</a><span>Select the text. Follow the link.</span></div>
+    <div class="story-copy"><h2>Your HTML stays<br/>interactive.</h2><p>Text stays selectable. Links keep working. domfx adds a decorative layer alongside your element, leaving the original HTML in place.</p><a class="story-link" href="/docs/introduction/">How domfx works <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
   </section>
 <section class="story-section story-faq"><div><h2>Before you build.</h2></div><div class="faq-list">{questions.map(([question, answer, href, label]) => <details><summary>{question}<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-plus"/></svg></summary><p>{answer}</p><a class="story-link" href={href}>{label} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href={href.startsWith('https://') ? '#ph-arrow-up-right' : '#ph-arrow-right'}/></svg></a></details>)}</div></section>
 </div>

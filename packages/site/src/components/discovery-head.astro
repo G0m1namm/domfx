@@ -1,0 +1,7 @@
+---
+import { siteConfig } from '../config';
+import { renderMetadata, type PageMetadata } from '../metadata';
+interface Props { page: PageMetadata }
+const config = siteConfig(process.env);
+---
+<Fragment set:html={renderMetadata(Astro.props.page, config)} />

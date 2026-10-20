@@ -2,11 +2,18 @@ import { resolve } from 'node:path';
 
 import { defineConfig } from 'astro/config';
 
+import { siteConfig } from '@domfx/site/config';
 import { sitePublicDir } from '@domfx/site/public-path';
 
+import { marketingDiscovery } from './src/integrations/discovery.mjs';
+
+const { site } = siteConfig(process.env);
 const packages = resolve(import.meta.dirname, '../../packages');
 
 export default defineConfig({
+  site,
+  trailingSlash: 'always',
+  integrations: [marketingDiscovery()],
   output: 'static',
   publicDir: sitePublicDir,
   devToolbar: { enabled: false },

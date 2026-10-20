@@ -38,3 +38,15 @@ small-size cut in [`public/favicon.svg`](../public/favicon.svg). Surface colors 
 in [`packages/site/src/styles/brand.css`](../../../packages/site/src/styles/brand.css). The
 [selected design](../../../DESIGN.md#approved-optical-silver-brand-direction)
 governs placement and the stronger closing effect.
+
+## Site-wide share card
+
+The maintainer approved the [1200×630 share card](../../../packages/site/public/share-card.png)
+on 2026-10-20 for #124. It combines the retained Washer, flat mark, local Cabinet
+Grotesk/General Sans fonts and existing homepage copy on the graphite background.
+The Frost rim is a real Chromium/WebGPU capture using `attachFrost`, with manual
+time `3.2`, intensity `0.85`, seed `182` and device pixel ratio `1`; no shader or
+source image was modified. The image is a static marketing asset, not a browser
+support claim. Rejected previews and capture scripts remain local.
+
+SHA-256: `d2cca42e5249afd696bc11c4ca41773460cfef0d403835f71340fd8b966d3f2a`.

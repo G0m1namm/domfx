@@ -657,3 +657,11 @@ and generation provenance recorded. On the maintainer's subsequent cleanup reque
 remove superseded visual files, including rejected shapes and unused illustrations,
 favicons and social art; Git history preserves the old sources. This direction is
 implemented in the marketing site and docs Image preview.
+
+### Approved site-wide share card
+
+On 2026-10-20, the maintainer approved the 1200×630 Frost share card for #124.
+Use the existing graphite background, Cabinet Grotesk heading, General Sans body,
+flat domfx/washer mark and approved homepage copy. The illustration is the optical
+silver Washer with a real Frost effect capture. Use this one static image across
+marketing and docs; each page supplies its own social title.

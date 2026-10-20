@@ -99,13 +99,20 @@ Pagefind is generated during builds; use the built preview to verify docs search
 and discovery. Development serves live docs content through the website's `/docs/`
 proxy; the internal docs server starts and stops with the website.
 
-Docs discovery output uses `DOMFX_SITE_URL` as its origin. Set
+Site discovery output uses `DOMFX_SITE_URL` as its origin. Set
 `DOMFX_SITE_PRODUCTION=true` to require that value for a production build.
 `DOMFX_INDEXING=true` enables indexing; the default is off, and
 `DOMFX_SITE_PREVIEW=true` always keeps it off. `pnpm build:docs:preview` builds an
 isolated preview with a loopback origin and indexing disabled; `pnpm preview:docs`
 serves it on port 4347. Enabling public indexing remains a launch action
-after #91; marketing discovery work belongs to #124.
+after #91. Every composed website build validates the emitted HTML, canonical
+links, social metadata, share-card dimensions, structured data, sitemaps, robots
+and docs Markdown outputs. Missing or inconsistent discovery data fails the build.
+Run `pnpm test:discovery` to verify the built files and their HTTP output through
+Astro preview with indexing on, the preview override, and default indexing off.
+It also checks that a production build requires an origin, and leaves the final
+output in the default, unindexed state. CI uses `pnpm test:discovery:built` after
+building library packages once. These checks do not enable public indexing.
 
 For shader/library iteration, run `pnpm dev` from the root. It builds the packages
 first, watches core and GSAP JavaScript/declarations, watches the browser's Vite

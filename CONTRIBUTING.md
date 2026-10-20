@@ -100,14 +100,16 @@ proxy; the internal docs server starts and stops with the website.
 Docs discovery output uses `DOMFX_SITE_URL` as its origin. Set
 `DOMFX_SITE_PRODUCTION=true` to require that value for a production build.
 `DOMFX_INDEXING=true` enables indexing; the default is off, and
-`DOMFX_SITE_PREVIEW=true` always keeps it off. The preview build sets its loopback
-origin and disables indexing. Enabling public indexing remains a launch action
+`DOMFX_SITE_PREVIEW=true` always keeps it off. `pnpm build:docs:preview` builds an
+isolated preview with a loopback origin and indexing disabled; `pnpm preview:docs`
+serves it on port 4347. Enabling public indexing remains a launch action
 after #91; marketing discovery work belongs to #124.
 
 For shader/library iteration, run `pnpm dev` from the root. It builds the packages
 first, watches core and GSAP JavaScript/declarations, watches the browser's Vite
-build and declarations, then starts both Astro apps on one public origin. Consumers continue to use built package
-exports, including the TypeGPU transform and patched SDF executor. A package edit
+build and declarations, then starts both Astro apps on one public origin. Consumers
+continue to use built package exports, including the TypeGPU transform and patched
+SDF executor. A package edit
 reloads the website; this is full-page reload, not retained animation state.
 Build/type errors remain visible in the terminal; correct them to resume output.
 Stop the command with Ctrl+C to release its watcher/server processes. This command

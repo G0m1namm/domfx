@@ -2,6 +2,8 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { validateBuiltSite } from './check-site-contract.mjs';
+
 export function composeSite({ web, docs, output }) {
   const { site, indexable, sitemap } = JSON.parse(
     readFileSync(join(docs, 'site-contract.json'), 'utf8'),
@@ -37,17 +39,20 @@ export function composeSite({ web, docs, output }) {
       ? `User-agent: *\nAllow: /\nSitemap: ${new URL('/sitemap-index.xml', site).href}\n`
       : 'User-agent: *\nDisallow: /\n',
   );
+  return { site, indexable };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = fileURLToPath(new URL('..', import.meta.url));
-  composeSite({
+  const output = process.argv.includes('--preview')
+    ? join(root, '.scratch/docs-preview')
+    : join(root, 'apps/web/dist');
+  const policy = composeSite({
     web: join(root, 'apps/web/dist'),
     docs: join(root, 'apps/docs/dist'),
-    output: process.argv.includes('--preview')
-      ? join(root, '.scratch/docs-preview')
-      : join(root, 'apps/web/dist'),
+    output,
   });
+  await validateBuiltSite({ output, ...policy });
   console.log(
     process.argv.includes('--preview')
       ? 'Composed docs preview: .scratch/docs-preview'

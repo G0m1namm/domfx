@@ -47,7 +47,8 @@ jobs:
         if: github.event_name == 'push'
         run: git log -1 --format=%B | pnpm exec commitlint
       - run: pnpm check
-      - run: pnpm build:web:built
+      - name: Site discovery (indexing on, preview override and default off)
+        run: pnpm test:discovery:built
       - run: pnpm --filter @domfx/web exec playwright install --with-deps chromium
       - name: Website smoke (no GPU required)
         run: pnpm test:web:smoke:built

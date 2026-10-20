@@ -42,6 +42,9 @@ listed in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 CI runs the same routine gates plus release metadata validation. Install Chromium
 using the [browser verification guide](engineering/browser-verification.md).
+CI also runs `pnpm test:discovery:built`: file and Astro preview checks for indexing
+on, the preview override and default off, plus the required production origin.
+Use `pnpm test:discovery` to include the initial library build locally.
 
 For documentation changes, also run `pnpm test:docs`. It checks the composed
 site, including docs navigation, live labs, shared search and discovery output.

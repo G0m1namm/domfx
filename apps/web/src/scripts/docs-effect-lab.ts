@@ -1,7 +1,6 @@
 import type * as BrowserEffects from '@domfx/browser';
 import type { AttachmentOptions, EffectHandle } from '@domfx/browser';
-
-import { findEffect, type Effect } from '../content/effects';
+import { findEffect, type Effect } from '@domfx/site/effects';
 
 type Factory = (target: Element, options: AttachmentOptions) => EffectHandle;
 

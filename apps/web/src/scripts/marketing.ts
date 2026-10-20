@@ -1,8 +1,8 @@
 import type * as BrowserEffects from '@domfx/browser';
 import type { EffectHandle } from '@domfx/browser';
+import type { Effect } from '@domfx/site/effects';
+import { effects, findEffect, patternEffects } from '@domfx/site/effects';
 
-import type { Effect } from '../content/effects';
-import { effects, findEffect, patternEffects } from '../content/effects';
 import { initializeSiteSearch } from './site-search';
 
 const savedPattern = { index: 0, elapsed: 0, time: 3.2, paused: false };

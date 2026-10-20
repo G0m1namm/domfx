@@ -9,8 +9,7 @@ import { build } from 'vite';
 import type { EffectHandle } from '@domfx/browser';
 import * as browserEffects from '@domfx/browser';
 import type { FireBinding } from '@domfx/gsap';
-
-import { effects } from '../src/content/effects';
+import { effects } from '@domfx/site/effects';
 
 type TestGpu = {
   requestAdapter(options?: unknown): Promise<{

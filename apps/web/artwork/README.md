@@ -34,6 +34,6 @@ alternative text; effect lifetimes belong to the website controllers.
 
 The flat washer mark is [`public/brand-mark.svg`](../public/brand-mark.svg), with a
 small-size cut in [`public/favicon.svg`](../public/favicon.svg). Surface colors are
-in [`src/styles/brand.css`](../src/styles/brand.css). The
+in [`packages/site/src/styles/brand.css`](../../../packages/site/src/styles/brand.css). The
 [selected design](../../../DESIGN.md#approved-optical-silver-brand-direction)
 governs placement and the stronger closing effect.

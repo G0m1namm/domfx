@@ -32,7 +32,7 @@ is historical; its runner does not measure the current gallery.
 
 `src/layouts/Marketing.astro` renders both `/` and `/effects/`. The homepage shows
 five selected effects followed by setup, GSAP, native HTML, FAQ and closing content.
-The gallery shows every entry in `src/content/effects.ts`, with category filters.
+The gallery shows every entry in `@domfx/site/effects`, with category filters.
 Filtered cards share a uniform size. `/examples` redirects to `/effects/`.
 Content and documentation links remain available without JavaScript. The Agents
 command is explicitly a preview of an unpublished consumer skill.

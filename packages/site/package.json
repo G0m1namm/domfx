@@ -1,0 +1,19 @@
+{
+  "name": "@domfx/site",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared private site content, chrome and design resources.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./effects": "./src/effects.ts",
+    "./effect-reference": "./src/effect-reference.ts",
+    "./site-links": "./src/site-links.ts",
+    "./components/*.astro": "./src/components/*.astro",
+    "./styles/*.css": "./src/styles/*.css",
+    "./public-path": "./src/public-path.mjs"
+  },
+  "dependencies": {
+    "@domfx/browser": "workspace:*"
+  }
+}

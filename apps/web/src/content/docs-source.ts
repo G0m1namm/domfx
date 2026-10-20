@@ -1,4 +1,4 @@
-import { repositoryUrl } from './site-links';
+import { repositoryUrl } from '@domfx/site/site-links';
 
 const PAGES = 'apps/web/src/pages/docs';
 // Pages written in Markdown; every other docs page is an Astro component.

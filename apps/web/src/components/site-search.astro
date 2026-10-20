@@ -1,8 +1,8 @@
 ---
-import { effectReference } from '../content/effect-reference';
+import { effectReference } from '@domfx/site/effect-reference';
 import { documentation } from '../content/documentation';
-import { effects } from '../content/effects';
-import '../styles/site-search.css';
+import { effects } from '@domfx/site/effects';
+import '@domfx/site/styles/site-search.css';
 interface Props { effectResults?: 'preview' | 'reference' }
 // Preview results need the gallery's effect dialog; reference results are plain links.
 const { effectResults = 'preview' } = Astro.props;

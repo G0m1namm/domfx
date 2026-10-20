@@ -6,9 +6,10 @@ import '@domfx/site/styles/site-search.css';
 interface Props { effectResults?: 'preview' | 'reference' }
 // Preview results need the gallery's effect dialog; reference results are plain links.
 const { effectResults = 'preview' } = Astro.props;
+const usePagefind = import.meta.env.DOMFX_SITE_PREVIEW === 'true';
 const sources = import.meta.glob('../pages/docs/**/*.{md,astro}', { query: '?raw', import: 'default', eager: true });
 const plain = (source: string) => source.replace(/^---[\s\S]*?---/, '').replace(/<[^>]*>/g, ' ').replace(/[`*#]/g, '').replace(/\s+/g, ' ').trim();
-const entries = documentation.flatMap((doc) => {
+const entries = usePagefind ? [] : documentation.flatMap((doc) => {
   const effect = effects.find((effect) => doc.slug === `api/effects/${effect.id}`);
   const source = String(sources[`../pages/docs/${doc.slug}.md`] ?? sources[`../pages/docs/${doc.slug}.astro`] ?? (effect ? `${effect.exportName} ${effectReference[effect.id].intensity} time intensity options` : ''));
   const description = doc.slug === 'installation' ? 'Install domfx and the optional GSAP binding.' : doc.description;
@@ -21,7 +22,7 @@ const entries = documentation.flatMap((doc) => {
   })];
 });
 ---
-<dialog id="site-search" class="site-search-dialog" aria-labelledby="site-search-title">
+<dialog id="site-search" class="site-search-dialog" aria-labelledby="site-search-title" data-docs-pagefind={usePagefind ? "/docs/pagefind/pagefind.js" : undefined}>
   <div class="site-search-heading"><h2 id="site-search-title">Search domfx</h2><button data-search-close aria-label="Close search"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div>
   <label class="site-search-field"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-magnifying-glass"/></svg><input type="search" data-global-search aria-label="Search effects and documentation" placeholder="Try frost, GSAP, or reduced motion" aria-controls="site-search-results" autocomplete="off" autofocus/></label>
   <p class="site-search-status" role="status" aria-live="polite">Effects and documentation</p>

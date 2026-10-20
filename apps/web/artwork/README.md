@@ -12,6 +12,9 @@ Keep these source files intact; Astro generates the smaller page PNGs at build t
 | Layer relay   | Quickstart card                                  | [Prompt](prompts/layer-relay.txt)   |
 | Open junction | Diagnostic lab card                              | [Prompt](prompts/open-junction.txt) |
 
+A burnt-metal replacement family (Stack, Split, Open ring and Nested) is proposed
+in [`brand`](brand/README.md). Until it is approved, this family stays in use.
+
 ## Generate consistently
 
 1. Read the [shared material template](material-template.txt) and the closest exact

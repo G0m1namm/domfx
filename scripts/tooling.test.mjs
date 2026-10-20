@@ -92,6 +92,19 @@ test('declared package exports are allowed', (t) => {
   assert.equal(result.status, 0, result.output);
 });
 
+test('Astro content virtual imports are allowed without hiding unknown modules', (t) => {
+  const f = fixture(t);
+  f.put(
+    'apps/web/src/content.config.ts',
+    "import { defineCollection } from 'astro:content';\nexport const docs = defineCollection({});\n",
+  );
+  assert.equal(f.cruise().status, 0);
+  f.put('apps/web/src/content.config.ts', "import 'astro:unknown';\n");
+  const result = f.cruise();
+  assert.notEqual(result.status, 0);
+  assert.match(result.output, /no-unresolved-imports/);
+});
+
 for (const [name, path, source, expected] of [
   [
     'library-to-fixture',

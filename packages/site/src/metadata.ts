@@ -41,12 +41,12 @@ export function renderMetadata(page: PageMetadata, config: DiscoveryConfig): str
     `<meta property="og:image" content="${image}">` +
     `<meta property="og:image:width" content="1200">` +
     `<meta property="og:image:height" content="630">` +
-    `<meta property="og:image:alt" content="domfx — Effects for your HTML">` +
+    `<meta property="og:image:alt" content="domfx — Effects for your HTML. Optical silver washer with the Frost effect.">` +
     `<meta name="twitter:card" content="summary_large_image">` +
     `<meta name="twitter:title" content="${title}">` +
     `<meta name="twitter:description" content="${description}">` +
     `<meta name="twitter:image" content="${image}">` +
-    `<meta name="twitter:image:alt" content="domfx — Effects for your HTML">` +
+    `<meta name="twitter:image:alt" content="domfx — Effects for your HTML. Optical silver washer with the Frost effect.">` +
     (page.markdownPath
       ? `<link rel="alternate" type="text/markdown" href="${escapeHtml(new URL(page.markdownPath, config.site).href)}">`
       : '') +

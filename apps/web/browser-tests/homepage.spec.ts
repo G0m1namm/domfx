@@ -59,7 +59,7 @@ test('every catalog entry opens the matching preview and generates its named pub
     await expect(page.locator('[data-code]')).not.toContainText('undefined');
     await expect(page.getByRole('link', { name: 'Read the effect reference' })).toHaveAttribute(
       'href',
-      `/docs/api/effects/${effect.id}`,
+      `/docs/api/effects/${effect.id}/`,
     );
     await page.getByRole('button', { name: 'Close preview' }).click();
   }
@@ -76,7 +76,7 @@ for (const path of ['/', '/effects/']) {
       await expect(page.locator('.effect-grid [data-card]')).toHaveCount(path === '/' ? 5 : 21);
       await expect(page.getByRole('link', { name: 'Read the setup guide' })).toHaveAttribute(
         'href',
-        '/docs/standalone',
+        '/docs/standalone/',
       );
       await expect(page.locator('[data-search-open]')).toBeHidden();
       await expect(page.locator('noscript p')).toBeVisible();
@@ -246,7 +246,7 @@ for (const stars of [49, 50]) {
 }
 
 test('legacy examples route redirects to the complete gallery', async ({ page }) => {
-  await page.goto('/examples');
+  await page.goto('/examples/');
   await expect(page).toHaveURL(/\/effects\/$/);
   await expect(page.locator('.effect-grid [data-card]')).toHaveCount(21);
 });

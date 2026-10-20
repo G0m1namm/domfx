@@ -34,7 +34,7 @@ for (const width of [360, 1440]) {
   });
 }
 
-for (const path of ['/docs/installation', '/docs/standalone', '/docs/gsap']) {
+for (const path of ['/docs/installation/', '/docs/standalone/', '/docs/gsap/']) {
   test(`${path} is readable without GPU`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));

@@ -294,8 +294,8 @@ test('@smoke back to top appears after scrolling and returns focus to the title'
 });
 
 const labPages = [
-  { path: '/docs/standalone', effect: 'Fire', text: true },
-  { path: '/docs/api/effects/frost', effect: 'Frost', text: false },
+  { path: '/docs/standalone/', effect: 'Fire', text: true },
+  { path: '/docs/api/effects/frost/', effect: 'Frost', text: false },
 ] as const;
 
 for (const { path, effect, text } of labPages) {
@@ -453,7 +453,7 @@ export { fire${kind === 'gsap' ? ', timeline, cleanup' : ''} };`;
       host.append(target);
       document.body.prepend(host);
     },
-    kind === 'gsap' && path === '/docs/gsap',
+    kind === 'gsap' && path === '/docs/gsap/',
   );
   await test.info().attach(`${kind}-rendered-source`, {
     body: source ?? '',
@@ -506,19 +506,19 @@ test('every website link resolves to a native route, anchor or documented reposi
   for (const path of [
     '/',
     '/effects/',
-    '/docs/introduction',
-    '/docs/installation',
-    '/docs/standalone',
-    '/docs/gsap',
-    '/docs/upgrading',
-    '/docs/api',
-    '/docs/api/shared',
-    '/docs/api/effect-handle',
-    '/docs/api/effects',
-    '/docs/api/gsap',
-    ...effects.map((effect) => `/docs/api/effects/${effect.id}`),
-    '/docs/support',
-    '/docs/troubleshooting',
+    '/docs/introduction/',
+    '/docs/installation/',
+    '/docs/standalone/',
+    '/docs/gsap/',
+    '/docs/upgrading/',
+    '/docs/api/',
+    '/docs/api/shared/',
+    '/docs/api/effect-handle/',
+    '/docs/api/effects/',
+    '/docs/api/gsap/',
+    ...effects.map((effect) => `/docs/api/effects/${effect.id}/`),
+    '/docs/support/',
+    '/docs/troubleshooting/',
   ]) {
     await page.goto(path);
     const title = await page.title();
@@ -593,7 +593,7 @@ test('every website link resolves to a native route, anchor or documented reposi
       }
     }
   }
-  expect(local.has('/docs/standalone')).toBe(true);
+  expect(local.has('/docs/standalone/')).toBe(true);
   const repo = 'https://github.com/G0m1namm/domfx';
   const edits = external.filter((href) => href.startsWith(`${repo}/edit/main/`));
   const issues = external.filter((href) => href.startsWith(`${repo}/issues/new?`));
@@ -619,8 +619,8 @@ test('every website link resolves to a native route, anchor or documented reposi
 });
 
 for (const { kind, path } of [
-  { kind: 'standalone', path: '/docs/standalone' },
-  { kind: 'gsap', path: '/docs/gsap' },
+  { kind: 'standalone', path: '/docs/standalone/' },
+  { kind: 'gsap', path: '/docs/gsap/' },
 ] as const) {
   test(`${path} ${kind} rendered disclosure runs on real GPU output and cleans up`, async ({
     page,
@@ -684,7 +684,7 @@ for (const { kind, path } of [
         return pixels.some((value, index) => Math.abs(value - baseline[index]) > 2);
       })
       .toBe(true);
-    await assertNativeTarget(page, kind === 'gsap' && path === '/docs/gsap');
+    await assertNativeTarget(page, kind === 'gsap' && path === '/docs/gsap/');
     await test.info().attach(`${kind}-environment`, {
       contentType: 'application/json',
       body: JSON.stringify({
@@ -725,7 +725,7 @@ for (const { kind, path } of [
       await page.evaluate(() => window.disclosureReady);
       expect(await page.evaluate(() => window.disclosure.fire.reason)).toBe(unavailable);
       await expect(page.locator('#disclosure-host canvas')).toHaveCount(0);
-      await assertNativeTarget(page, kind === 'gsap' && path === '/docs/gsap');
+      await assertNativeTarget(page, kind === 'gsap' && path === '/docs/gsap/');
       if (kind === 'gsap') {
         expect(await page.evaluate(() => window.disclosure.timeline?.paused())).toBe(true);
       }

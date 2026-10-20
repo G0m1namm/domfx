@@ -1,7 +1,8 @@
 # Optical silver artwork
 
 Approved on 2026-10-20 for the marketing site and documentation Image preview.
-The five transparent PNGs live in [`src/assets/brand`](../src/assets/brand).
+The four marketing PNGs live in [`src/assets/brand`](../src/assets/brand);
+[Pierced ring](../../docs/src/assets/brand/pierced-ring.png) belongs to the docs app.
 
 | Shape        | Placement                                 | Generation prompt                           |
 | ------------ | ----------------------------------------- | ------------------------------------------- |

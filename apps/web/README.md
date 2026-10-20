@@ -73,19 +73,23 @@ Package publication and website deployment remain separate workflows.
 
 ## Documentation and artwork
 
-`/docs` redirects to `/docs/introduction`. Static guides cover installation,
-standalone/GSAP use, API, support and troubleshooting. They retain native navigation,
-keyboard-scrollable code and source evidence, and do not load marketing animation
-code. `src/content/examples.ts` supplies complete public API examples.
-`documentation.spec.ts` executes the rendered standalone/GSAP examples against
-public built exports in development and production. Link checks crawl native
-routes, fragments and repository destinations.
+[`apps/docs`](../docs) owns the Starlight documentation under `/docs/`;
+`/docs` redirects to `/docs/introduction/`. `pnpm build:web` combines both apps in
+`apps/web/dist`, and `pnpm web` serves both through the website's development origin.
+Docs retain native navigation, keyboard-scrollable code and source evidence without
+loading marketing animation code. `src/content/examples.ts` supplies complete public
+API examples.
 
-The selected optical silver PNGs live in `src/assets/brand/`; gallery cards use
-Washer, Split and Open ring, the closing section uses Asterisk, and the docs Image
-preview uses Pierced ring. [artwork/README.md](artwork/README.md) records prompts,
-provenance and source hashes. Superseded visual files are removed; preserve active
-sources during future iteration.
+Run `pnpm test:docs` for the docs app's production browser suite, including rendered
+standalone/GSAP examples, live effects, shared Pagefind search and native route,
+fragment and repository-link checks. Website smoke checks keep docs routes readable
+in development and production; the remaining website suite covers marketing behavior.
+
+The selected marketing optical silver PNGs live in `src/assets/brand/`; gallery
+cards use Washer, Split and Open ring, and the closing section uses Asterisk.
+The docs Image preview uses [Pierced ring](../docs/src/assets/brand/pierced-ring.png).
+[artwork/README.md](artwork/README.md) records prompts, provenance and source hashes.
+Superseded visual files are removed; preserve active sources during future iteration.
 
 Browser checks cover responsive/no-JavaScript content, keyboard search and zoom,
 clipboard feedback, filter layout, font readiness, shared pattern timing, reduced

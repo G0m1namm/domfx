@@ -21,10 +21,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
-    "@domfx/gsap": "workspace:*",
     "@playwright/test": "1.63.0",
     "@types/node": "^24.5.2",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.6"
+    "typescript": "^5.9.3"
   }
 }

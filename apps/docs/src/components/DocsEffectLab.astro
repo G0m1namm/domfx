@@ -1,0 +1,72 @@
+---
+import piercedRing from '../assets/brand/pierced-ring.png';
+import { effects, type Effect } from '@domfx/site/effects';
+
+type Subject = 'text' | 'svg' | 'image';
+interface Props {
+  effect: Effect;
+  subject?: Subject;
+  heading?: string;
+  description?: string;
+}
+
+const subjects = [
+  { value: 'text', label: 'Text' },
+  { value: 'svg', label: 'SVG' },
+  { value: 'image', label: 'Image' },
+] as const satisfies readonly { value: Subject; label: string }[];
+// Match the gallery card subject so a reference opens on the shape visitors saw.
+const gallerySubjects: Subject[] = ['image', 'text', 'svg', 'text', 'svg'];
+
+const { effect, heading, description } = Astro.props;
+const subject = Astro.props.subject ?? (effect.id === 'fire' || effect.id === 'slime' ? 'image' : gallerySubjects[effects.indexOf(effect) % gallerySubjects.length]);
+const id = `docs-lab-${effect.id}`;
+const hasHeight = effect.id === 'fire';
+// Spread so SVG accepts the global hidden attribute, which its typings omit.
+const visibility = (kind: Subject) => (kind === subject ? {} : { hidden: true });
+const intensity = 80;
+const height = 32;
+---
+
+<section class="docs-lab" data-docs-lab data-effect={effect.id} data-category={effect.category} data-status="idle" aria-labelledby={heading ? `${id}-title` : undefined} aria-label={heading ? undefined : `${effect.name} live preview`}>
+  {heading && <div class="docs-lab-heading"><h3 id={`${id}-title`}>{heading}</h3>{description && <p>{description}</p>}</div>}
+  <div class="docs-lab-stage">
+    <div class="docs-lab-host" data-docs-lab-host>
+      <span class="docs-lab-subject docs-lab-text" data-docs-lab-target="text" {...visibility('text')}>domfx</span>
+      <svg class="docs-lab-subject docs-lab-svg" data-docs-lab-target="svg" {...visibility('svg')} width="132" height="132" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg>
+      <img class="docs-lab-subject docs-lab-image" data-docs-lab-target="image" {...visibility('image')} src={piercedRing.src} width="200" height="150" alt="" decoding="async" />
+    </div>
+    <div class="docs-lab-overlay">
+      <p class="docs-lab-status" aria-live="polite"><span class="docs-lab-dot" aria-hidden="true"></span><span data-docs-lab-status>Live preview needs JavaScript and WebGPU.</span></p>
+      <button type="button" class="docs-lab-toggle" data-docs-lab-toggle aria-pressed="false" aria-label="Start effect" title="Start effect" disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-play"/></svg></button>
+    </div>
+  </div>
+  <fieldset class="docs-lab-controls" data-docs-lab-controls disabled>
+    <legend class="visually-hidden">{effect.name} preview settings</legend>
+    <div class="docs-lab-row">
+      <span class="docs-lab-label" id={`${id}-subject`}>Subject</span>
+      <div class="docs-lab-segments" role="radiogroup" aria-labelledby={`${id}-subject`}>
+        {subjects.map((option) => <label><input type="radio" name={`${id}-subject`} value={option.value} checked={option.value === subject} data-docs-lab-subject /><span>{option.label}</span></label>)}
+      </div>
+    </div>
+    <label class="docs-lab-row">
+      <span class="docs-lab-label">Intensity</span>
+      <input type="range" min="0" max="100" step="1" value={intensity} style={`--fill:${intensity}%`} data-docs-lab-intensity aria-label={`${effect.name} intensity`} />
+      <output data-docs-lab-intensity-output>{intensity}%</output>
+    </label>
+    {hasHeight && <label class="docs-lab-row">
+      <span class="docs-lab-label">Flame height</span>
+      <input type="range" min="8" max="64" step="1" value={height} style={`--fill:${((height - 8) / 56) * 100}%`} data-docs-lab-height aria-label={`${effect.name} flame height`} aria-describedby={`${id}-height-note`} />
+      <output data-docs-lab-height-output>{height}px</output>
+      <small id={`${id}-height-note`} class="docs-lab-note">Creation option. Changing it recreates the effect.</small>
+    </label>}
+  </fieldset>
+  <div class="docs-lab-code">
+    <div class="docs-lab-code-bar"><span>Current settings</span><button type="button" class="docs-lab-copy" data-docs-lab-copy><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg><span data-docs-lab-copy-label>Copy</span></button></div>
+    <pre tabindex="0" aria-label={`Live ${effect.name} settings`}><code data-docs-lab-code>{`const effect = ${effect.exportName}(target, {
+  host, clock: 'auto', motion: 'respect',
+  intensity: `}<output data-docs-lab-intensity-code>{intensity / 100}</output>{`,${hasHeight ? '\n  flameHeight: ' : ''}`}{hasHeight && <output data-docs-lab-height-code>{height}</output>}{`${hasHeight ? ',' : ''}
+  seed: 314,
+});`}</code></pre>
+  </div>
+</section>

@@ -1,0 +1,81 @@
+---
+import { Code } from 'astro:components';
+import DocsApiTable from '../../../components/DocsApiTable.astro';
+import DocsEffectLab from '../../../components/DocsEffectLab.astro';
+import DocsEffectLinks from '../../../components/docs-effect-links.astro';
+import DocsEffectControls from '../../../components/docs-effect-controls.astro';
+import DocsSharedOptions from '../../../components/docs-shared-options.astro';
+import { effectReference } from '@domfx/site/effect-reference';
+import { effects, type Effect } from '@domfx/site/effects';
+import { codeTheme } from '../../../content/examples';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { repositoryUrl } from '@domfx/site/site-links';
+
+export function getStaticPaths() {
+  return effects.map((effect) => ({ params: { effect: effect.id }, props: { effect } }));
+}
+interface Props { effect: Effect; }
+const { effect } = Astro.props;
+const reference = effectReference[effect.id];
+const related = effects.filter((entry) => entry.category === effect.category && entry.id !== effect.id);
+const optionsType = effect.category === 'Pattern' && effect.id !== 'dither'
+  ? 'PatternOptions'
+  : `${effect.exportName.slice('attach'.length)}Options`;
+const code = `import { ${effect.exportName} } from '@domfx/browser';
+import type { ${optionsType} } from '@domfx/browser';
+
+// Run after mount; host contains target and has position: relative.
+const options: ${optionsType} = {
+  host, clock: 'auto', intensity: 0.8,${effect.id === 'fire' ? '\n  flameHeight: 32,' : ''}
+};
+const effect = ${effect.exportName}(target, options);
+// Also call effect.dispose() on component unmount.
+window.addEventListener('pagehide', () => effect.dispose(), { once: true });
+await effect.ready;
+if (effect.lifecycle !== 'active') {
+  console.info(effect.reason, effect.reasonDetail);
+}`;
+---
+<StarlightPage
+  frontmatter={{ title: effect.name, description: reference.description, editUrl: `${repositoryUrl}/edit/main/apps/docs/src/pages/api/effects/%5Beffect%5D.astro` }}
+  headings={[
+    { depth: 2, slug: 'usage', text: 'Usage' },
+    { depth: 2, slug: 'effect-options', text: 'Effect options' },
+    { depth: 2, slug: 'shared-options', text: 'Shared options' },
+    { depth: 2, slug: 'controls', text: 'Controls' },
+    { depth: 2, slug: 'limits', text: 'Limits' },
+    { depth: 2, slug: 'related', text: `More ${effect.category.toLowerCase()} effects` },
+  ]}
+>
+  <DocsEffectLab effect={effect} />
+  <dl class="docs-effect-facts">
+    <div><dt>Category</dt><dd><a href={`/docs/api/effects#${effect.category.toLowerCase()}`}>{effect.category}</a></dd></div>
+    <div><dt>Function</dt><dd><code>{effect.exportName}</code></dd></div>
+    <div><dt>Options</dt><dd><code>{optionsType}</code></dd></div>
+    <div><dt>Package</dt><dd><code>@domfx/browser</code></dd></div>
+  </dl>
+  <h2 id="usage">Usage</h2>
+  <p><code>{`${effect.exportName}(target: Element, options: ${optionsType}): EffectHandle`}</code></p>
+  <p>Returns an effect instance immediately. Imports are safe during server rendering; call the function in the browser after the elements are mounted. The <a href="/docs/standalone">Standalone guide</a> includes the required HTML and CSS.</p>
+  <div class="docs-code-scroll" tabindex="0" role="region" aria-label={`${effect.name} usage`}><Code code={code} lang="ts" theme={codeTheme} /></div>
+  <h2 id="effect-options">Effect options</h2>
+  {effect.id === 'fire' ? <>
+    <p><code>FireOptions</code> extends <code>AttachmentOptions</code> with the following creation option.</p>
+    <DocsApiTable label="Fire-specific creation options">
+      <thead><tr><th scope="col">Property</th><th scope="col">Type</th><th scope="col">Default</th></tr></thead>
+      <tbody><tr><th scope="row"><code>flameHeight</code><p>Flame scale in target-local CSS pixels, from 8 to 64. This is an artistic scale, not a guaranteed maximum pixel extent. Set at creation; changing it requires a new effect instance.</p></th><td><code>number</code></td><td><code>24</code></td></tr></tbody>
+    </DocsApiTable>
+  </> : <p><code>{optionsType}</code> currently accepts only the shared creation options below. This effect has no additional public settings.</p>}
+  <h2 id="shared-options">Shared options</h2>
+  <DocsSharedOptions />
+  <h2 id="controls">Controls</h2>
+  <p>{reference.intensity}</p>
+  <DocsEffectControls />
+  <p>See <a href="/docs/api/shared#animation-control">automatic animation and external control</a> and the <a href="/docs/gsap">GSAP guide</a>. The <a href="/docs/api/effect-handle">effect instance reference</a> documents state, capture updates and cleanup.</p>
+  <h2 id="limits">Limits</h2>
+  <p>The effect follows the captured visible shape, including holes and disconnected regions. An opaque image has a rectangular shape. The original content remains intact; this is a decorative layer, not a change to the source image or text.</p>
+  <p>Colors, gradients, particle counts and whole-element processing are not public controls. Only the options listed here are supported. WebGPU, capture and composition limits apply; keep the original content usable when output is unavailable. See <a href="/docs/support">browser support</a> and <a href="/docs/troubleshooting">troubleshooting</a>.</p>
+  <h2 id="related">More {effect.category.toLowerCase()} effects</h2>
+  <DocsEffectLinks effects={related} />
+  <p>Compare every effect side by side in the <a href={`/effects/#${effect.id}`}>gallery</a>.</p>
+</StarlightPage>

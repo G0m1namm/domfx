@@ -51,9 +51,7 @@ jobs:
       - run: pnpm --filter @domfx/web exec playwright install --with-deps chromium
       - name: Website smoke (no GPU required)
         run: pnpm test:web:smoke:built
-      - name: Build composed Starlight preview
-        run: pnpm build:docs:preview:built
-      - name: Docs preview smoke (no GPU required)
+      - name: Docs smoke (no GPU required)
         run: pnpm test:docs:smoke:built
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
@@ -65,7 +63,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
-          name: docs-preview
+          name: docs-smoke
           path: .scratch/docs/report.json
           include-hidden-files: true
           retention-days: 7

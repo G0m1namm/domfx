@@ -6,9 +6,11 @@ export function composeSite({ web, docs, output }) {
   const { site, indexable, sitemap } = JSON.parse(
     readFileSync(join(docs, 'site-contract.json'), 'utf8'),
   );
-  rmSync(output, { recursive: true, force: true });
-  mkdirSync(output, { recursive: true });
-  cpSync(web, output, { recursive: true });
+  if (resolve(output) !== resolve(web)) {
+    rmSync(output, { recursive: true, force: true });
+    mkdirSync(output, { recursive: true });
+    cpSync(web, output, { recursive: true });
+  }
   rmSync(join(output, 'docs'), { recursive: true, force: true });
   cpSync(docs, join(output, 'docs'), { recursive: true });
   for (const name of ['llms.txt', 'llms-full.txt']) {
@@ -36,7 +38,13 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   composeSite({
     web: join(root, 'apps/web/dist'),
     docs: join(root, 'apps/docs/dist'),
-    output: join(root, '.scratch/docs-preview'),
+    output: process.argv.includes('--preview')
+      ? join(root, '.scratch/docs-preview')
+      : join(root, 'apps/web/dist'),
   });
-  console.log('Composed docs preview: .scratch/docs-preview');
+  console.log(
+    process.argv.includes('--preview')
+      ? 'Composed docs preview: .scratch/docs-preview'
+      : 'Composed website: apps/web/dist',
+  );
 }

@@ -36,7 +36,7 @@ export default defineConfig({
   },
   projects: [{ name: 'production' }],
   webServer: {
-    command: 'pnpm --dir ../.. preview:docs --ignore-lock',
+    command: 'pnpm --dir ../web preview --ignore-lock --port 4347',
     url: 'http://127.0.0.1:4347/docs/introduction/',
     reuseExistingServer: false,
   },

@@ -102,6 +102,13 @@ function cleanContent(node, canonical) {
     cleanContent(child, canonical);
     return [child];
   });
+  if (node.tagName === 'td' || node.tagName === 'th') {
+    node.children = node.children.flatMap((child) =>
+      child.type === 'element' && child.tagName === 'p'
+        ? [{ type: 'text', value: ' ' }, ...child.children]
+        : [child],
+    );
+  }
 }
 
 function breadcrumbs(tree, path, canonical, title, site) {

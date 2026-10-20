@@ -62,6 +62,17 @@ export async function captureElementWithReservation(
           if (!clone) {
             return;
           }
+          // The clone has a different containing block. Freeze the live border
+          // box so percentage min/max sizes cannot resize its captured paint.
+          const scale = scaleToViewport(element);
+          const rect = element.getBoundingClientRect();
+          clone.style.setProperty('box-sizing', 'border-box', 'important');
+          clone.style.setProperty('width', `${rect.width / scale.x}px`, 'important');
+          clone.style.setProperty('height', `${rect.height / scale.y}px`, 'important');
+          for (const dimension of ['width', 'height']) {
+            clone.style.setProperty(`min-${dimension}`, '0', 'important');
+            clone.style.setProperty(`max-${dimension}`, 'none', 'important');
+          }
           for (const property of ['transform', 'translate', 'rotate', 'scale']) {
             clone.style.setProperty(property, 'none', 'important');
           }

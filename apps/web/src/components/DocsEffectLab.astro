@@ -1,5 +1,5 @@
 ---
-import annulus from '../assets/illustrations/annulus.png';
+import piercedRing from '../assets/brand/pierced-ring.png';
 import { effects, type Effect } from '../content/effects';
 
 type Subject = 'text' | 'svg' | 'image';
@@ -19,7 +19,7 @@ const subjects = [
 const gallerySubjects: Subject[] = ['image', 'text', 'svg', 'text', 'svg'];
 
 const { effect, heading, description } = Astro.props;
-const subject = Astro.props.subject ?? gallerySubjects[effects.indexOf(effect) % gallerySubjects.length];
+const subject = Astro.props.subject ?? (effect.id === 'fire' || effect.id === 'slime' ? 'image' : gallerySubjects[effects.indexOf(effect) % gallerySubjects.length]);
 const id = `docs-lab-${effect.id}`;
 const hasHeight = effect.id === 'fire';
 // Spread so SVG accepts the global hidden attribute, which its typings omit.
@@ -34,7 +34,7 @@ const height = 32;
     <div class="docs-lab-host" data-docs-lab-host>
       <span class="docs-lab-subject docs-lab-text" data-docs-lab-target="text" {...visibility('text')}>domfx</span>
       <svg class="docs-lab-subject docs-lab-svg" data-docs-lab-target="svg" {...visibility('svg')} width="132" height="132" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg>
-      <img class="docs-lab-subject docs-lab-image" data-docs-lab-target="image" {...visibility('image')} src={annulus.src} width="200" height="150" alt="" decoding="async" />
+      <img class="docs-lab-subject docs-lab-image" data-docs-lab-target="image" {...visibility('image')} src={piercedRing.src} width="200" height="150" alt="" decoding="async" />
     </div>
     <div class="docs-lab-overlay">
       <p class="docs-lab-status" aria-live="polite"><span class="docs-lab-dot" aria-hidden="true"></span><span data-docs-lab-status>Live preview needs JavaScript and WebGPU.</span></p>

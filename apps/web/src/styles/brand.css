@@ -1,0 +1,37 @@
+/* domfx heat ramp: hottest (bottom of the burn) to clean metal */
+:root {
+  --heat-0: #80b2ff; /* ice */
+  --heat-1: #3d47e6; /* cobalt */
+  --heat-2: #4c2eb8; /* violet */
+  --heat-3: #38124c; /* plum */
+  --heat-4: #b21a5c; /* crimson, new */
+  --heat-5: #eb3838; /* red, new */
+  --heat-6: #f57a29; /* orange, new */
+  --heat-7: #ebd666; /* straw */
+  --heat-8: #dbd9b2; /* pale */
+  --heat-9: #c7c9d1; /* cool metal */
+  --heat-10: #c2c4d1; /* clean metal */
+
+  /* Heat floors: a short slice of the ramp rising from the bottom edge */
+  --floor-energy:
+    radial-gradient(ellipse 62% 42% at 50% 104%, rgb(61 71 230 / 0.22), transparent 70%),
+    radial-gradient(ellipse at 50% 110%, rgb(76 46 184 / 0.16), transparent 75%);
+  --floor-fire:
+    radial-gradient(ellipse 62% 42% at 50% 104%, rgb(235 56 56 / 0.18), transparent 70%),
+    radial-gradient(ellipse at 50% 110%, rgb(245 122 41 / 0.12), transparent 75%);
+  --floor-frost:
+    radial-gradient(ellipse 62% 42% at 50% 104%, rgb(128 178 255 / 0.2), transparent 70%),
+    radial-gradient(ellipse at 50% 110%, rgb(199 201 209 / 0.1), transparent 75%);
+  --floor-afterglow:
+    radial-gradient(ellipse 70% 40% at 50% 100%, rgb(61 71 230 / 0.16), transparent 70%),
+    radial-gradient(ellipse at 50% 82%, rgb(76 46 184 / 0.18), transparent 63%),
+    linear-gradient(180deg, #14151b 20%, #1a1726 100%);
+}
+
+.brand-mark {
+  display: block;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}

@@ -294,11 +294,6 @@ html {
     sans-serif;
   letter-spacing: -1.2px;
 }
-.docs-site-footer-wordmark .ui-icon {
-  width: 19px;
-  height: 19px;
-  color: var(--silver);
-}
 .docs-site-footer-intro p {
   margin: 4px 0 0;
   color: var(--muted);
@@ -544,6 +539,15 @@ html {
   place-items: center;
   border-radius: 9px 9px 0 0;
   background: radial-gradient(ellipse at 50% 115%, var(--lab-tint), transparent 70%), #111218;
+}
+.docs-lab[data-category='Energy'] .docs-lab-stage {
+  background: var(--floor-energy), #111218;
+}
+.docs-lab[data-effect='fire'] .docs-lab-stage {
+  background: var(--floor-fire), #111218;
+}
+.docs-lab[data-effect='frost'] .docs-lab-stage {
+  background: var(--floor-frost), #111218;
 }
 .docs-lab-heading + .docs-lab-stage {
   border-radius: 0;

@@ -1,14 +1,17 @@
 ---
-import annulus from '../assets/illustrations/annulus.png';
+import openRing from '../assets/brand/open-ring.png';
+import split from '../assets/brand/split.png';
+import washer from '../assets/brand/washer.png';
 import type { Effect } from '../content/effects';
 interface Props { effect: Effect; index: number }
 const { effect, index } = Astro.props;
 const { id, name, category } = effect;
 const sample = index % 5;
+const image = id === 'fire' ? split : id === 'slime' ? openRing : sample === 0 ? washer : undefined;
 ---
 <button class="effect-card" id={id} data-card data-id={id} data-name={name} data-category={category} aria-label={`Try ${name}`}>
   <div class="card-art" data-effect-host style={`--card-index:${index}`}>
-    {sample === 0 ? <img class="effect-subject ring" data-preview={id} src={annulus.src} width="180" height="135" alt="" /> : sample === 1 ? <span class="effect-subject letter" data-preview={id}>Aa</span> : sample === 2 ? <svg class="effect-subject symbol" data-preview={id} width="130" height="130" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg> : sample === 3 ? <span class="effect-subject word" data-preview={id}>flow.</span> : <svg class="effect-subject symbol" data-preview={id} width="150" height="150" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" fill-rule="evenodd" d="M80 8A72 72 0 1 1 79.99 8ZM80 44A36 36 0 1 0 80.01 44Z"/><path fill="#E8EAF3" d="M73 0H87V160H73Z"/></svg>}
+    {image ? <img class="effect-subject ring brand-illustration" data-preview={id} src={image.src} width="240" height="180" alt="" /> : sample === 1 ? <span class="effect-subject letter" data-preview={id}>Aa</span> : sample === 2 ? <svg class="effect-subject symbol" data-preview={id} width="130" height="130" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg> : sample === 3 ? <span class="effect-subject word" data-preview={id}>flow.</span> : <svg class="effect-subject symbol" data-preview={id} width="150" height="150" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" fill-rule="evenodd" d="M80 8A72 72 0 1 1 79.99 8ZM80 44A36 36 0 1 0 80.01 44Z"/><path fill="#E8EAF3" d="M73 0H87V160H73Z"/></svg>}
   </div>
   <div class="card-info"><h3>{name}</h3><div class="card-meta"><span class="category">{category}</span></div></div>
   <span class="card-open"><span>Preview</span><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></span>

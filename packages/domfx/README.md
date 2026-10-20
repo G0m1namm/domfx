@@ -93,6 +93,10 @@ instructions. MIT licensed; dependencies retain their own licenses.
 
 ## Padded capture fidelity
 
+The capture clone freezes the target’s measured border-box size in local CSS pixels.
+Responsive percentage and min/max constraints therefore cannot resize its paint in
+the capture sandbox. This leaves the live element and its styles unchanged.
+
 `captureElement` returns untransformed target-local straight RGBA8. The content bounds
 are the selected root's border box; padding is in CSS pixels. Raster pixel centers map
 through `pixelToLocal`: `(a * (x + 0.5) + e, d * (y + 0.5) + f)`. Placement applies root

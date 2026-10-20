@@ -2,6 +2,43 @@ import { expect, test } from '@playwright/test';
 
 import { effects } from '../src/content/effects.js';
 
+test('a card opens its own artwork and offers text, SVG and image previews', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/effects/');
+  for (const [name, kind] of [
+    ['Electricity', 'image'],
+    ['Frost', 'text'],
+    ['Halftone', 'svg'],
+  ] as const) {
+    const card = page.getByRole('button', { name: `Try ${name}`, exact: true });
+    const subject = card.locator('[data-preview]');
+    const expected =
+      kind === 'image'
+        ? await subject.getAttribute('src')
+        : kind === 'svg'
+          ? await subject.innerHTML()
+          : await subject.textContent();
+    await card.click();
+    const target = page.locator('[data-dialog-target]');
+    if (kind === 'image') {
+      await expect(target.locator('img')).toHaveAttribute('src', expected ?? '');
+    } else if (kind === 'svg') {
+      expect(await target.locator('svg').innerHTML()).toBe(expected);
+    } else {
+      await expect(target).toHaveText(expected ?? '');
+    }
+    for (const label of ['Text', 'SVG', 'Image']) {
+      const button = page.getByRole('button', { name: label, exact: true });
+      await button.click();
+      await expect(button).toHaveAttribute('aria-pressed', 'true');
+      if (label !== 'Text') {
+        await expect(target.locator(label === 'SVG' ? 'svg' : 'img')).toBeVisible();
+      }
+    }
+    await page.getByRole('button', { name: 'Close preview' }).click();
+  }
+});
+
 test('every catalog entry opens the matching preview and generates its named public import', async ({
   page,
 }) => {
@@ -78,6 +115,59 @@ for (const width of [320, 360, 768, 1440]) {
   });
 }
 
+for (const viewport of [
+  { width: 320, height: 568 },
+  { width: 667, height: 375 },
+  { width: 768, height: 900 },
+]) {
+  test(`gallery and preview fit ${viewport.width}×${viewport.height}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize(viewport);
+    await page.goto('/effects/');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
+    // Authored subjects must remain inside their cards, including short image cards.
+    expect(
+      await page.locator('[data-preview]').evaluateAll((subjects) =>
+        subjects.every((subject) => {
+          const art = subject.closest('.card-art')?.getBoundingClientRect();
+          const rect = subject.getBoundingClientRect();
+          return (
+            art !== undefined &&
+            rect.left >= art.left &&
+            rect.right <= art.right &&
+            rect.top >= art.top &&
+            rect.bottom <= art.bottom
+          );
+        }),
+      ),
+    ).toBe(true);
+    await page.getByRole('button', { name: 'Patterns', exact: true }).click();
+    await page.getByRole('button', { name: 'Try Dither', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Dither', exact: true });
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    );
+    for (const name of ['Text', 'SVG', 'Image']) {
+      const button = dialog.getByRole('button', { name, exact: true });
+      await button.click();
+      await expect(button).toHaveAttribute('aria-pressed', 'true');
+      await dialog.locator('[data-dialog-target]').scrollIntoViewIfNeeded();
+      await expect(dialog.locator('[data-dialog-target]')).toBeInViewport();
+    }
+    const zoom = page.getByRole('button', { name: 'Zoom in', exact: true });
+    await zoom.click();
+    await expect(page.locator('[data-zoom-label]')).toHaveText('150%');
+    await page
+      .getByRole('link', { name: 'Read the effect reference', exact: true })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      page.getByRole('link', { name: 'Read the effect reference', exact: true }),
+    ).toBeInViewport();
+    await page.getByRole('button', { name: 'Close preview' }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
+  });
+}
+
 test('global search opens an unfeatured effect, zooms and restores keyboard focus', async ({
   page,
 }) => {
@@ -146,12 +236,14 @@ for (const stars of [49, 50]) {
     );
     await page.goto('/');
     await expect(page.locator('[data-star-label]')).toHaveText(
-      stars < 50 ? 'Star on GitHub' : 'Stars',
+      Array(2).fill(stars < 50 ? 'Star on GitHub' : 'Stars'),
     );
     if (stars >= 50) {
-      await expect(page.locator('[data-star-count]')).toHaveText('50');
+      await expect(page.locator('[data-star-count]')).toHaveText(['50', '50']);
     } else {
-      await expect(page.locator('[data-star-count]')).toBeHidden();
+      for (const badge of await page.locator('[data-star-count]').all()) {
+        await expect(badge).toBeHidden();
+      }
     }
   });
 }

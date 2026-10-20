@@ -49,20 +49,25 @@ attachments and one manual animation frame loop. Cards attach on visibility and
 release their output offscreen or while a dialog is open. Fonts and relevant image
 decoding finish before capture; revision/request guards discard obsolete work.
 
-The header and closing wordmark share one pattern sequence, time and intensity
-ramp. Either playback control pauses both. Offscreen wordmark output is disposed;
+The header and closing Asterisk share one pattern sequence, time and intensity
+ramp. The closing playback control pauses both; the header has no playback button.
+Offscreen Asterisk output is disposed;
 re-entry joins the current cycle. Hidden pages release attachments and recreate
 visible output on return without advancing the shared cycle. Reduced motion
 removes output and requires explicit Resume after the preference clears.
 
 Global search includes every effect and documentation sections. Preview dialogs
-support target selection, intensity, pause, attachment code, hover inspection,
+preserve the selected card’s subject and offer Text, SVG and Image targets,
+intensity, pause, attachment code, hover inspection,
 keyboard zoom/pan and touch dragging. Zoom transforms the captured target and its
 canvas together. Dialog-local clipboard status supplies a manual-copy fallback.
 Missing WebGPU or failed capture leaves the original content usable. Page teardown
 releases owned resources; back/forward cache restoration initializes a fresh owner.
 
 The GitHub action reads the public repository star count with a static fallback.
+On phones it moves from the compact header to the Humans hero panel, beside
+“Find your effect.” The hero has 128px top padding on desktop and 112px from tablet
+down, plus 16px before the collection’s own spacing.
 The consumer skill preview is not a claim that the skill has been published.
 Package publication and website deployment remain separate workflows.
 
@@ -76,9 +81,11 @@ code. `src/content/examples.ts` supplies complete public API examples.
 public built exports in development and production. Link checks crawl native
 routes, fragments and repository destinations.
 
-Original approved PNGs remain in `src/assets/illustrations/`; the annulus is used
-by gallery cards. [artwork/README.md](artwork/README.md) preserves prompts, provenance
-and source hashes. Do not overwrite original artwork during future iteration.
+The selected optical silver PNGs live in `src/assets/brand/`; gallery cards use
+Washer, Split and Open ring, the closing section uses Asterisk, and the docs Image
+preview uses Pierced ring. [artwork/README.md](artwork/README.md) records prompts,
+provenance and source hashes. Superseded visual files are removed; preserve active
+sources during future iteration.
 
 Browser checks cover responsive/no-JavaScript content, keyboard search and zoom,
 clipboard feedback, filter layout, font readiness, shared pattern timing, reduced

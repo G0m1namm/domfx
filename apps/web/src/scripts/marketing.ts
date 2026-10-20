@@ -56,7 +56,8 @@ function initializeMarketing() {
     'All';
   let previewRevision = 0;
   let selectedEffect: Effect = effects[0];
-  let targetKind = 'text';
+  let targetKind: 'text' | 'svg' | 'image' = 'text';
+  let previewSubject: Element | undefined;
   let paused = false;
   let previewTime = 2.4;
   let previewNeedsResume = false;
@@ -75,8 +76,7 @@ function initializeMarketing() {
   // Reflect only this decorative output canvas; captured geometry stays axis-aligned.
   const headerHost = required<HTMLElement>('.header-effect-host');
   const headerLine = required<HTMLElement>('.header-effect-line', headerHost);
-  const headerPlayback = required<HTMLButtonElement>('[data-header-pause]');
-  // The header and closing wordmark share one cycle, with independent attachments.
+  // The header and closing artwork share one cycle, with independent attachments.
   const patternRamp = 1.2;
   const patternHold = 6;
   const patternPeak = 0.85;
@@ -92,16 +92,14 @@ function initializeMarketing() {
 
   function updatePatternPlayback() {
     const paused = patternsPaused || reducedMotion.matches;
-    for (const button of document.querySelectorAll<HTMLButtonElement>(
-      '[data-header-pause], [data-closing-pause]',
-    )) {
+    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-closing-pause]')) {
       button.disabled = reducedMotion.matches || !hasGpu;
       button.setAttribute('aria-pressed', String(paused));
       button.setAttribute(
         'aria-label',
         reducedMotion.matches
           ? 'Effects paused for reduced motion'
-          : `${paused ? 'Resume' : 'Pause'} header and wordmark effects`,
+          : `${paused ? 'Resume' : 'Pause'} header and artwork effects`,
       );
       const label = !hasGpu
         ? 'Effects unavailable'
@@ -110,7 +108,7 @@ function initializeMarketing() {
           : paused
             ? 'Resume effects'
             : 'Pause effects';
-      button.innerHTML = `<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-${paused ? 'play' : 'pause'}"/></svg>${button.hasAttribute('data-closing-pause') ? `<span>${label}</span>` : ''}`;
+      button.innerHTML = `<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-${paused ? 'play' : 'pause'}"/></svg><span>${label}</span>`;
     }
   }
 
@@ -128,6 +126,10 @@ function initializeMarketing() {
     return patternPeak * ramp * ramp * (3 - 2 * ramp);
   }
 
+  function closingIntensity() {
+    return Math.min(1, patternIntensity() * 1.6);
+  }
+
   function syncPatternEffects() {
     const intensity = patternIntensity();
     if (headerHandle) {
@@ -136,7 +138,7 @@ function initializeMarketing() {
     }
     for (const handle of closingHandles) {
       handle.time = patternTime;
-      handle.intensity = intensity;
+      handle.intensity = closingIntensity();
     }
     for (const host of [headerHost, closingHost]) {
       if (!host) {
@@ -144,7 +146,7 @@ function initializeMarketing() {
       }
       host.dataset.effect = patternEffects[patternIndex].id;
       host.dataset.time = patternTime.toFixed(3);
-      host.dataset.intensity = intensity.toFixed(3);
+      host.dataset.intensity = (host === closingHost ? closingIntensity() : intensity).toFixed(3);
       host.dataset.phase =
         patternElapsed < patternRamp
           ? 'rising'
@@ -205,7 +207,6 @@ function initializeMarketing() {
     }
     updatePatternPlayback();
   }
-  headerPlayback.addEventListener('click', togglePatterns, { signal: lifetime.signal });
   on(reducedMotion, 'change', () => {
     if (reducedMotion.matches) {
       patternsPaused = true;
@@ -417,26 +418,27 @@ function initializeMarketing() {
         return;
       }
       const count = data.stargazers_count;
-      const cta = required<HTMLAnchorElement>('[data-repo-stars]');
-      required('[data-star-label]', cta).textContent = count >= 50 ? 'Stars' : 'Star on GitHub';
-      const badge = required<HTMLElement>('[data-star-count]', cta);
-      badge.hidden = count < 50;
-      badge.textContent = new Intl.NumberFormat('en', {
-        notation: 'compact',
-        maximumFractionDigits: 1,
-      }).format(count);
-      cta.setAttribute(
-        'aria-label',
-        `${count.toLocaleString('en')} GitHub stars. Star domfx on GitHub`,
-      );
-      cta.title = `${count.toLocaleString('en')} GitHub stars`;
+      for (const cta of document.querySelectorAll<HTMLAnchorElement>('[data-repo-stars]')) {
+        required('[data-star-label]', cta).textContent = count >= 50 ? 'Stars' : 'Star on GitHub';
+        const badge = required<HTMLElement>('[data-star-count]', cta);
+        badge.hidden = count < 50;
+        badge.textContent = new Intl.NumberFormat('en', {
+          notation: 'compact',
+          maximumFractionDigits: 1,
+        }).format(count);
+        cta.setAttribute(
+          'aria-label',
+          `${count.toLocaleString('en')} GitHub stars. Star domfx on GitHub`,
+        );
+        cta.title = `${count.toLocaleString('en')} GitHub stars`;
+      }
     } catch {
       /* The native GitHub link remains usable when public stats are unavailable. */
     }
   }
   void loadRepositoryStars();
 
-  // Release the wordmark offscreen; rejoining never resets the shared cycle.
+  // Release the closing artwork offscreen; rejoining never resets the shared cycle.
   let closingHandles: EffectHandle[] = [];
   let closingHost: HTMLElement | undefined;
   let closingRevision = 0;
@@ -461,16 +463,20 @@ function initializeMarketing() {
     const revision = closingRevision;
     try {
       const effect = patternEffects[patternIndex];
-      const [factory] = await Promise.all([loadEffect(effect), document.fonts.ready]);
+      const target = required<HTMLImageElement>('[data-closing-target]', closingHost);
+      const [factory] = await Promise.all([
+        loadEffect(effect),
+        document.fonts.ready,
+        target.decode(),
+      ]);
       if (revision !== closingRevision || !closingVisible || disposed) {
         return;
       }
-      const target = required<HTMLElement>('[data-closing-target]', closingHost);
       target.dataset.effect = effect.id;
       const handle = factory(target, {
         host: required<HTMLElement>('[data-closing-host]', closingHost),
         clock: 'manual',
-        intensity: patternIntensity(),
+        intensity: closingIntensity(),
         time: patternTime,
         seed: 182,
       });
@@ -667,14 +673,33 @@ function initializeMarketing() {
     const revision = ++previewRevision;
     dialogHandle?.dispose();
     dialogHandle = undefined;
-    dialogStage.innerHTML =
-      targetKind === 'text'
-        ? '<span class="dialog-target" data-dialog-target>edge.</span>'
-        : '<span class="dialog-target" data-dialog-target><svg width="170" height="170" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg></span>';
+    const target = document.createElement('span');
+    target.className = 'dialog-target';
+    target.dataset.dialogTarget = '';
+    target.dataset.kind = targetKind;
+    if (targetKind === 'text') {
+      target.textContent = previewSubject?.matches('span') ? previewSubject.textContent : 'edge.';
+    } else {
+      const selector = targetKind === 'image' ? 'img' : 'svg';
+      const template = required<HTMLTemplateElement>(`[data-preview-${targetKind}]`, dialog);
+      const source = previewSubject?.matches(selector)
+        ? previewSubject
+        : required(selector, template.content);
+      const content = source.cloneNode(true);
+      if (content instanceof Element) {
+        content.removeAttribute('class');
+        content.removeAttribute('style');
+        content.removeAttribute('data-preview');
+      }
+      target.append(content);
+    }
+    dialogStage.replaceChildren(target);
     required('#dialog-title', dialog).textContent = selectedEffect.name;
     required<HTMLAnchorElement>('[data-effect-reference]', dialog).href =
       `/docs/api/effects/${selectedEffect.id}`;
     required('[data-dialog-category]', dialog).textContent = selectedEffect.category;
+    dialogScene.dataset.effect = selectedEffect.id;
+    dialogScene.dataset.category = selectedEffect.category;
     required('[data-code]', dialog).textContent = attachmentCode();
     required('[data-preview-status]', dialog).textContent = 'Preparing the live preview…';
     for (const button of dialog.querySelectorAll<HTMLElement>('[data-target]')) {
@@ -693,12 +718,15 @@ function initializeMarketing() {
       return;
     }
     try {
-      const [factory] = await Promise.all([loadEffect(effect), document.fonts.ready]);
+      const [factory] = await Promise.all([
+        loadEffect(effect),
+        document.fonts.ready,
+        target.querySelector('img')?.decode(),
+      ]);
       if (!dialog.open || revision !== previewRevision || disposed) {
         return;
       }
       setPreviewZoom(previewZoom);
-      const target = required<HTMLElement>('[data-dialog-target]', dialog);
       const handle = factory(target, {
         host: dialogStage,
         clock: 'manual',
@@ -741,6 +769,14 @@ function initializeMarketing() {
     }
     selectedEffect = effect;
     clearCards();
+    previewSubject =
+      document.querySelector(`[data-card][data-id="${effect.id}"] [data-preview]`) ?? undefined;
+    targetKind =
+      previewSubject instanceof HTMLImageElement
+        ? 'image'
+        : previewSubject instanceof SVGElement
+          ? 'svg'
+          : 'text';
     paused = reducedMotion.matches;
     previewNeedsResume = reducedMotion.matches;
     previewTime = 2.4;
@@ -771,7 +807,11 @@ function initializeMarketing() {
       openPreview(element);
     } else if (element.hasAttribute('data-close')) {
       dialog.close();
-    } else if (element.dataset.target) {
+    } else if (
+      element.dataset.target === 'text' ||
+      element.dataset.target === 'svg' ||
+      element.dataset.target === 'image'
+    ) {
       targetKind = element.dataset.target;
       void showDialogEffect();
     } else if (element.hasAttribute('data-pause')) {

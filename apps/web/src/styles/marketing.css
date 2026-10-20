@@ -314,16 +314,16 @@ code {
   margin-top: 5px;
 }
 .effect-card[data-category='Energy'] .card-art {
-  background-image: radial-gradient(ellipse at 50% 100%, #6153b72c, transparent 75%);
+  background-image: var(--floor-energy);
 }
 .effect-card[data-id='fire'] .card-art {
-  background-image: radial-gradient(ellipse at 50% 100%, #bd6d3020, transparent 75%);
+  background-image: var(--floor-fire);
 }
 .effect-card[data-id='slime'] .card-art {
   background-image: radial-gradient(ellipse at 50% 100%, #718d3320, transparent 75%);
 }
 .effect-card[data-id='frost'] .card-art {
-  background-image: radial-gradient(ellipse at 50% 100%, #84a6c32b, transparent 75%);
+  background-image: var(--floor-frost);
 }
 .empty {
   padding: 48px;
@@ -809,6 +809,9 @@ footer nav a {
   flex: 1;
   border-color: transparent;
   border-radius: 4px;
+  min-width: 0;
+  min-height: 44px;
+  padding-inline: 12px;
 }
 .target-options button[aria-pressed='true'] {
   border-color: #454754;
@@ -1161,6 +1164,11 @@ footer {
   gap: 24px;
 }
 .sequence-score {
+  background: radial-gradient(
+    ellipse at 20% 0,
+    color-mix(in srgb, var(--heat-2) 11%, transparent),
+    transparent 80%
+  );
   padding: 42px 28px;
   border: 1px solid #45475480;
   border-radius: 9px;
@@ -1578,9 +1586,7 @@ body {
 }
 .afterglow {
   border-top: 1px solid #45475480;
-  background:
-    radial-gradient(ellipse at 50% 82%, #6153b72c, transparent 63%),
-    linear-gradient(180deg, #14151b 20%, #1b1b29 100%);
+  background: var(--floor-afterglow);
 }
 .afterglow-cta {
   padding-top: 88px;
@@ -1593,13 +1599,14 @@ body {
   justify-content: center;
   padding: 72px 0 20px;
 }
-.closing-word {
+.closing-artwork {
   display: block;
-  font:
-    500 clamp(90px, 18vw, 240px)/1 Cabinet,
-    sans-serif;
-  letter-spacing: -0.07em;
-  color: #686b82;
+  width: clamp(240px, 30vw, 380px);
+  height: clamp(180px, 22.5vw, 285px);
+  object-fit: contain;
+}
+.closing-word-stage > canvas {
+  filter: brightness(1.5);
 }
 @media (max-width: 1000px) {
   .footer-navigation {
@@ -1659,9 +1666,6 @@ body {
   .closing-word-stage {
     padding: 64px 0 28px;
   }
-  .closing-word {
-    font-size: clamp(100px, 28vw, 180px);
-  }
   .footer-baseline {
     font-size: 9px;
     gap: 12px;
@@ -1705,11 +1709,6 @@ body {
 .afterglow .footer-baseline a {
   min-height: 44px;
   gap: 6px;
-}
-.wordmark > .ui-icon {
-  width: 23px;
-  height: 23px;
-  color: var(--silver);
 }
 .site-nav nav a,
 .story-link,
@@ -2086,8 +2085,8 @@ body.marketing-page {
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: 64px;
   align-items: center;
-  padding-top: 88px;
-  padding-bottom: 0;
+  padding-top: 128px;
+  padding-bottom: 16px;
 }
 .gallery-hero h1 {
   font-size: clamp(42px, 4.2vw, 64px);
@@ -2140,8 +2139,15 @@ body.marketing-page {
 .hero-command .ui-icon {
   flex-shrink: 0;
 }
-.hero-action {
+.hero-actions {
+  display: flex;
+  gap: 8px;
   margin-top: 18px;
+}
+.hero-star {
+  display: none;
+}
+.hero-action {
   font-size: 13px;
   min-height: 44px;
   padding: 10px 16px;
@@ -2165,7 +2171,7 @@ body.marketing-page {
 @media (max-width: 1000px) {
   .gallery-hero {
     gap: 40px;
-    padding-top: 80px;
+    padding-top: 112px;
     grid-template-columns: 1.1fr 1fr;
   }
   .gallery-hero h1 {
@@ -2215,10 +2221,15 @@ body.marketing-page {
   font-size: 150px;
   letter-spacing: -7px;
   flex: none;
+  max-width: calc(100% - 64px);
 }
-.dialog-target svg {
+.dialog-target svg,
+.dialog-target img {
+  display: block;
   width: 260px;
   height: 260px;
+  max-width: 100%;
+  object-fit: contain;
 }
 .preview-toolbar {
   display: flex;
@@ -2309,7 +2320,8 @@ body.marketing-page {
   .dialog-target {
     font-size: 120px;
   }
-  .dialog-target svg {
+  .dialog-target svg,
+  .dialog-target img {
     width: 230px;
     height: 230px;
   }
@@ -2327,13 +2339,14 @@ body.marketing-page {
     display: block;
   }
   .dialog-scene {
-    min-height: 320px;
+    min-height: clamp(220px, 45dvh, 320px);
   }
   .dialog-target {
     font-size: 100px;
     letter-spacing: -5px;
   }
-  .dialog-target svg {
+  .dialog-target svg,
+  .dialog-target img {
     width: 200px;
     height: 200px;
   }
@@ -2361,7 +2374,7 @@ body.marketing-page {
   .gallery-hero {
     grid-template-columns: 1fr;
     gap: 24px;
-    padding-top: 64px;
+    padding-top: 112px;
   }
   .gallery-hero h1 {
     font-size: clamp(38px, 9.5vw, 52px);
@@ -2387,10 +2400,19 @@ body.marketing-page {
     min-height: 48px;
     font-size: 11px;
   }
-  .hero-action {
+  .hero-actions {
     margin-top: 14px;
+  }
+  .hero-action,
+  .hero-star {
+    gap: 8px;
+    padding: 10px 12px;
     font-size: 12px;
-    min-height: 42px;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+  .hero-star {
+    display: inline-flex;
   }
 }
 /* Production affordances and fallbacks. */
@@ -2457,5 +2479,47 @@ button:disabled {
   }
   .gallery-collection.library-collection .collection-top {
     margin-bottom: 24px;
+  }
+}
+
+body.marketing-page .gallery-grid .effect-card .brand-illustration {
+  width: min(78%, 250px);
+  height: 188px;
+}
+body.marketing-page .gallery-grid .effect-card:nth-child(-n + 2) .brand-illustration {
+  width: min(78%, 320px);
+  height: 240px;
+}
+body.marketing-page .gallery-grid[data-filtered='true'] .effect-card .brand-illustration {
+  width: min(78%, 250px);
+  height: 188px;
+}
+@media (max-width: 700px) {
+  body.marketing-page .gallery-grid .effect-card .brand-illustration,
+  body.marketing-page .gallery-grid .effect-card:nth-child(-n + 2) .brand-illustration {
+    width: min(76%, 250px);
+    height: auto;
+    max-height: calc(100% - 24px);
+  }
+}
+.dialog-scene {
+  background: radial-gradient(ellipse at 50% 100%, #c2c5db0c, transparent 75%);
+}
+.dialog-scene[data-category='Energy'] {
+  background: var(--floor-energy);
+}
+.dialog-scene[data-effect='fire'] {
+  background: var(--floor-fire);
+}
+.dialog-scene[data-effect='frost'] {
+  background: var(--floor-frost);
+}
+.dialog-scene[data-effect='slime'] {
+  background: radial-gradient(ellipse at 50% 100%, #718d3320, transparent 75%);
+}
+@media (max-width: 380px) {
+  .collection-tools .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

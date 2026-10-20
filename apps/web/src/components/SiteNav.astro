@@ -1,5 +1,6 @@
 ---
 import SiteSearchTrigger from './site-search-trigger.astro';
+import '../styles/brand.css';
 import '../styles/site-nav.css';
 
 interface Props {
@@ -11,11 +12,10 @@ interface Props {
 const { current, decorated = false } = Astro.props;
 ---
 <header class="site-nav"><div class="nav-inner">
-  <a class="wordmark" href="/" aria-label="domfx home">domfx<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-asterisk-simple"/></svg></a>
+  <a class="wordmark" href="/" aria-label="domfx home">domfx<img class="brand-mark" src="/brand-mark.svg" width="30" height="30" alt="" aria-hidden="true" /></a>
   <nav aria-label="Main"><a href="/effects/" aria-current={current === 'effects' ? 'page' : undefined}>Effects</a><a href="/docs/introduction" aria-current={current === 'docs' ? 'true' : undefined}>Docs</a></nav>
   <SiteSearchTrigger/>
   <a class="nav-cta star-cta" href="https://github.com/G0m1namm/domfx" aria-label="Star domfx on GitHub" title="Star domfx on GitHub" data-repo-stars><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg><span data-star-label>Star on GitHub</span><span class="star-count" data-star-count hidden></span></a>
-  {decorated && <button class="header-playback" data-header-pause data-js-control hidden aria-label="Pause header and wordmark effects" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg></button>}
   <button class="nav-menu-button" popovertarget="site-menu" aria-label="Open site menu" title="Menu"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-list"/></svg></button>
 </div>{decorated && <div class="header-effect-host" aria-hidden="true"><span class="header-effect-line"></span></div>}</header>
 <div id="site-menu" class="site-menu" popover>

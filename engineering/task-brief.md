@@ -7,6 +7,7 @@ For a small fix, a few sentences covering these points are sufficient.
 
 - Request or issue:
 - Observable result and explicit non-goals:
+- Approved direction and current optimization priority, if applicable:
 - Owning module/package and existing implementation/test to follow:
 - Inputs, outputs, invariants, compatibility, and public API impact:
 - Resource ownership, disposal, async ordering, and expected failures (if relevant):
@@ -37,8 +38,9 @@ behavior checks before and after. Include boundary/failure cases where relevant.
 
 Only mark a check as passed after observing it. Keep secrets out of briefs and reports.
 
-## Continuation (only for interrupted work)
+## Continuation (interruption, milestone or task switch)
 
-Record the current source revision/diff, completed acceptance checks and evidence,
-unresolved decisions or blockers, and the next concrete action. On resuming, compare
-the current worktree with that record before relying on earlier verification.
+Update the contract when scope changes. Record the branch/worktree and source
+revision/diff, completed checks and evidence paths, unresolved decisions or blockers,
+and the next concrete action. Link existing issues and artifacts instead of copying
+them. On resuming, compare the worktree with this record before reusing evidence.

@@ -35,7 +35,7 @@ setup and workspace map in [README.md](README.md).
 - Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
   `chore`, `style`, `revert`. Commitlint enforces the conventional preset and scopes.
 
-`pnpm install` installs Lefthook hooks. `pre-commit` checks formatting and lint
+`pnpm install` installs Lefthook hooks. `pre-commit` checks tracked artifacts, formatting and lint
 across the working tree (including unstaged edits); `commit-msg` checks the message;
 `pre-push` runs `pnpm check` and builds the production website without rebuilding the libraries.
 Use `DOMFX_FULL_VERIFY=1 git push` to opt into website smoke and the full local GPU suite in the hook. Reinstall with
@@ -132,6 +132,12 @@ CI runs `pnpm check`, the production website build, a GPU-independent website sm
 suite and release metadata validation. Expensive GPU, soak and performance runs are
 local opt-in checks. The publication workflow remains disabled; its existing GPU
 preparation must be revised before enabling publication on hosted runners.
+
+Browser test and measurement commands reserve one session across linked worktrees
+and clean up their process group on exit (macOS/Linux). A busy session reports its
+owner; wait and retry. Wrap direct browser CLI checks with
+`pnpm browser:run <command> [args...]`. See [coordination ownership](engineering/agents/coordination.md)
+for manual browser windows, retained previews and interrupted-owner recovery.
 
 ## Publication and working artifacts
 

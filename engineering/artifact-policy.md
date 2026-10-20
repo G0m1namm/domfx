@@ -3,6 +3,11 @@
 This policy defines publication boundaries, artifact durability, document formats,
 and the evaluation of vendored skills for domfx.
 
+`pnpm check:artifacts` checks Git's index, including force-added and already tracked
+files, for local notes, design explorations and visual baselines. It runs in the
+pre-commit hook and `pnpm check` (including CI). Production artwork remains allowed;
+review still decides whether artifacts outside the prohibited paths belong in source.
+
 ## Publication boundaries
 
 1. **Durable contributor knowledge vs. local operational state:**

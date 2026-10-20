@@ -43,6 +43,11 @@ listed in [CONTRIBUTING.md](CONTRIBUTING.md).
 CI runs the same routine gates plus release metadata validation. Install Chromium
 using the [browser verification guide](engineering/browser-verification.md).
 
+`pnpm check:artifacts` rejects tracked local notes, design explorations and visual
+baselines, including force-added files. Browser commands share an ownership lock
+across linked worktrees and clean up their process group; see
+[coordination ownership](engineering/agents/coordination.md) for contention and recovery.
+
 | Gate                                                    | Enforcement                                                                                           |
 | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Formatting and import style                             | Oxfmt                                                                                                 |

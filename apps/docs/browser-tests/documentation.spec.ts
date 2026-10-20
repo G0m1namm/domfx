@@ -42,7 +42,7 @@ const disclosures = {
   gsap: 'Full manual attachment and GSAP lifecycle example',
 };
 
-test('documentation is readable and navigable without JavaScript at mobile and desktop widths', async ({
+test('@smoke documentation is readable and navigable without JavaScript at mobile and desktop widths', async ({
   browser,
   baseURL,
 }) => {
@@ -95,7 +95,7 @@ test('documentation is readable and navigable without JavaScript at mobile and d
   }
 });
 
-test('all catalog references retain their public options and usable source content without JavaScript', async ({
+test('@smoke all catalog references retain their public options and usable source content without JavaScript', async ({
   browser,
   baseURL,
 }) => {
@@ -131,7 +131,7 @@ test('all catalog references retain their public options and usable source conte
   }
 });
 
-test('keyboard users can scroll code and API tables, and follow page sections', async ({
+test('@smoke keyboard users can scroll code and API tables, and follow page sections', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 900 });
@@ -155,7 +155,7 @@ test('keyboard users can scroll code and API tables, and follow page sections', 
   await expect(page).toHaveURL(/#refresh-and-cleanup$/);
 });
 
-test('docs retain edit, issue, pagination and shared footer actions', async ({ page }) => {
+test('@smoke docs retain edit, issue, pagination and shared footer actions', async ({ page }) => {
   await page.goto('/docs/api/effects/frost/');
   const feedback = page.getByRole('navigation', { name: 'Page feedback' });
   await expect(feedback.getByRole('link', { name: 'Edit page' })).toHaveAttribute(
@@ -181,13 +181,63 @@ test('docs retain edit, issue, pagination and shared footer actions', async ({ p
   }
 });
 
+test('@smoke docs search uses Pagefind from the shared header and opens an effect reference', async ({
+  page,
+}) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
+  await page.goto('/docs/installation/');
+  const trigger = page.getByRole('button', {
+    name: 'Search effects and documentation',
+    exact: true,
+  });
+  await expect(trigger).toHaveAttribute('title', 'Search effects and docs (⌘K / Ctrl+K)');
+  expect(await trigger.evaluate((element) => element.getBoundingClientRect().width)).toBe(44);
+  await trigger.click();
+  const search = page.getByRole('dialog', { name: 'Search effects and documentation' });
+  const input = search.getByRole('searchbox');
+  await expect(input).toBeVisible();
+  await input.fill('frost');
+  await search.getByRole('link', { name: 'Frost', exact: true }).click();
+  await expect(page).toHaveURL(/\/docs\/api\/effects\/frost\/$/);
+  await page.keyboard.press('ControlOrMeta+k');
+  await expect(
+    page.getByRole('dialog', { name: 'Search effects and documentation' }),
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('button', { name: 'Search effects and documentation', exact: true }),
+  ).toBeFocused();
+});
+
+test('@smoke component API sections appear in the page table of contents', async ({ page }) => {
+  await page.goto('/docs/api/effect-handle/');
+  const toc = page.getByRole('navigation', { name: 'On this page', exact: true });
+  await toc.getByRole('link', { name: 'Methods', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Methods', exact: true })).toBeInViewport();
+  await expect(page.getByRole('table', { name: 'Effect methods', exact: true })).toBeVisible();
+});
+
+test('@smoke back to top appears after scrolling and returns focus to the title', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/docs/troubleshooting/');
+  const button = page.getByRole('link', { name: 'Back to top', exact: true });
+  await expect(button).toBeHidden();
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await expect(button).toBeVisible();
+  await button.click();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+});
+
 const labPages = [
   { path: '/docs/standalone', effect: 'Fire', text: true },
   { path: '/docs/api/effects/frost', effect: 'Frost', text: false },
 ] as const;
 
 for (const { path, effect, text } of labPages) {
-  test(`${path} preview preserves its source content when WebGPU is unavailable`, async ({
+  test(`@smoke ${path} preview preserves its source content when WebGPU is unavailable`, async ({
     page,
   }) => {
     await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));

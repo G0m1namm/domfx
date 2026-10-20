@@ -6,3 +6,7 @@ import PhosphorIcons from '@domfx/site/components/phosphor-icons.astro';
 ---
 <PhosphorIcons />
 <SiteNav current="docs"><Search slot="search" /></SiteNav>
+
+<script>
+  document.querySelector('button[data-open-modal]')?.setAttribute('title', 'Search effects and docs (⌘K / Ctrl+K)');
+</script>

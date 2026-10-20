@@ -16,17 +16,3 @@ import DocsApiTable from './DocsApiTable.astro';
     </tbody>
   </DocsApiTable>
   <p class="docs-api-note">Readiness does not guarantee visible output or completed GPU execution. Inspect <code>lifecycle</code> and <code>reason</code>; keep the original content usable when decoration is unavailable.</p>
-
-  <h2 id="refresh-retry-and-dispose">Methods</h2>
-  <DocsApiTable label="Effect methods">
-    <thead><tr><th scope="col">Method</th><th scope="col">Returns</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>pause()</code><p>Pause automatic animation while retaining the attachment and pending control writes.</p></th><td><code>void</code></td></tr>
-      <tr><th scope="row"><code>resume()</code><p>Resume automatic animation without catching up time spent paused or hidden. Does not advance externally controlled time or a still effect.</p></th><td><code>void</code></td></tr>
-      <tr><th scope="row"><code>refresh()</code><p>Hide out-of-date output and capture again. Resolves when this or a newer requested capture is accepted; it does not wait for screen presentation. It rejects on failure, invalidation, disposal or an unavailable handle.</p></th><td><code>Promise&lt;void&gt;</code></td></tr>
-      <tr><th scope="row"><code>retry()</code><p>Reinitialize with retained controls. Concurrent retries share one attempt. Rejects if disposed; otherwise inspect effect state after it settles.</p></th><td><code>Promise&lt;void&gt;</code></td></tr>
-      <tr><th scope="row"><code>dispose()</code><p>Release resources. Safe to call more than once and before setup finishes.</p></th><td><code>void</code></td></tr>
-      <tr><th scope="row"><code>onDispose(callback)</code><p>Register a <code>() =&gt; void</code> callback that runs once, immediately if already disposed. Returns an unsubscribe function.</p></th><td><code>() =&gt; void</code></td></tr>
-    </tbody>
-  </DocsApiTable>
-  <p>Refresh and control writes cannot recover an unavailable handle. Correct the condition before calling <code>retry()</code>. Call <code>dispose()</code> on component unmount and handle rejected refresh/retry promises within the component's lifetime.</p>

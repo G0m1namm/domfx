@@ -88,23 +88,28 @@ fixture when a failure/lifecycle case cannot be exercised there.
 
 ## Verification
 
-The Starlight migration (#125) has a separate preview until maintainer visual
-approval (#133). Run `pnpm build:docs:preview`, then `pnpm preview:docs` to view the
-composed site at `http://127.0.0.1:4347`; `pnpm test:docs` builds and checks it.
-The normal website commands keep serving the current docs. Write migrated docs
-in `apps/docs/src/content/docs`; effect references come from the shared catalog.
+`pnpm build:web` builds the marketing site and Starlight docs into `apps/web/dist`;
+`pnpm preview:web` serves that combined output. `pnpm test:docs` checks docs
+navigation, live labs, shared search and discovery on the composed site.
+Write docs in `apps/docs/src/content/docs`; effect references come from the shared
+catalog. The maintainer approved the migrated layout in #133; `DESIGN.md` records it.
+Pagefind is generated during builds; use the built preview to verify docs search
+and discovery. Development serves live docs content through the website's `/docs/`
+proxy; the internal docs server starts and stops with the website.
 
 Docs discovery output uses `DOMFX_SITE_URL` as its origin. Set
 `DOMFX_SITE_PRODUCTION=true` to require that value for a production build.
 `DOMFX_INDEXING=true` enables indexing; the default is off, and
-`DOMFX_SITE_PREVIEW=true` always keeps it off. The preview build sets its loopback
-origin and disables indexing. Enabling public indexing remains a launch action
+`DOMFX_SITE_PREVIEW=true` always keeps it off. `pnpm build:docs:preview` builds an
+isolated preview with a loopback origin and indexing disabled; `pnpm preview:docs`
+serves it on port 4347. Enabling public indexing remains a launch action
 after #91; marketing discovery work belongs to #124.
 
 For shader/library iteration, run `pnpm dev` from the root. It builds the packages
 first, watches core and GSAP JavaScript/declarations, watches the browser's Vite
-build and declarations, then starts Astro. Consumers continue to use built package
-exports, including the TypeGPU transform and patched SDF executor. A package edit
+build and declarations, then starts both Astro apps on one public origin. Consumers
+continue to use built package exports, including the TypeGPU transform and patched
+SDF executor. A package edit
 reloads the website; this is full-page reload, not retained animation state.
 Build/type errors remain visible in the terminal; correct them to resume output.
 Stop the command with Ctrl+C to release its watcher/server processes. This command

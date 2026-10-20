@@ -187,10 +187,18 @@ Documentation stays complete without JavaScript or GPU output. Introduction,
 installation, standalone, GSAP, API, support and troubleshooting are local routes;
 repository links remain secondary source evidence.
 
-The documentation header shares the marketing search: the same icon-only 44px
-button, accessible label, shortcut tooltip, Cmd/Ctrl+K and grouped dialog. Docs have
-no gallery preview, so effect results link to their reference pages. The button
-appears only once its script runs; without JavaScript the sidebar remains the index.
+The documentation header uses Starlight's Pagefind search, styled as the same
+icon-only 44px button with an accessible label, shortcut tooltip and Cmd/Ctrl+K.
+The marketing dialog keeps grouped effect and docs results, using the same
+Pagefind docs index, including generated effect references. Without JavaScript,
+the docs sidebar remains the index.
+
+On 2026-10-20, the maintainer approved the Starlight migration after a desktop/mobile
+comparison and a revision to preserve the previous look. Retain the centered
+1320px shell, 240px sidebar, reading column, quiet breadcrumbs, ruled headings,
+17px reading text, right-aligned header actions and full-width footer. Starlight
+supplies the sidebar disclosures, table of contents and previous/next navigation;
+restyle these with the existing fonts and graphite tokens.
 
 On 2026-10-19, the maintainer requested API presentation informed by Canvas UI and
 shadcn/ui documentation. Lead with usage, then use consistent semantic tables for
@@ -233,13 +241,13 @@ scrolled to the current page.
 
 Navigation on smaller screens follows shadcn/ui, Payload, Sanity and GSAP: at phone
 widths the shared header keeps search and a 44px Menu button for Home, Effects, Docs and Star on GitHub, so primary
-navigation outranks the GitHub call to action. Below 1180px, docs add a sticky sub-bar
-under the header with a Docs drawer (when the sidebar is hidden) and an On this page
-dropdown. From 1180px, On this page is a sticky right rail. Its links are generated
+navigation outranks the GitHub call to action. Below 1152px, docs add a sticky sub-bar
+under the header with a Docs drawer below 800px and an On this page
+dropdown. From 1152px, On this page is a sticky right rail. Its links are generated
 from each page's h2/h3 headings on the server and mark the current section while
-scrolling. Menus, drawers and dropdowns are native popovers, so they work without
-JavaScript. A 44px back-to-top link appears after one viewport of scrolling and returns
-focus to the content.
+scrolling. Header menus and the Docs drawer use native popovers; On this page uses
+a native disclosure. All remain usable without JavaScript. A 44px back-to-top link
+appears after one viewport of scrolling and returns focus to the content.
 
 Docs pages end the way the same references do: page actions, then Previous/Next, then
 a site footer. The page actions are muted, underlined links to edit the page's source

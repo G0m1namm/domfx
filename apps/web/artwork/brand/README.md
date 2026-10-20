@@ -2,10 +2,13 @@
 
 The domfx brand material is burnt metal: grainy foil silver, with heat rising from
 the lower edge. These files are its source assets. The rollout plan is in
+[#126](https://github.com/G0m1namm/domfx/issues/126), with the original brief in
 [the brand material spec](../../../../engineering/drafts/brand-material-spec.md).
 
 Status: proposed on 2026-10-19. Crimson, red and orange in the heat ramp still need
-approval before they are added to `DESIGN.md`.
+approval before they are added to `DESIGN.md`. On 2026-10-20, the maintainer
+requested a local preview before approving the ramp; production assets and design
+rules remain unchanged until that decision.
 
 ## Files
 

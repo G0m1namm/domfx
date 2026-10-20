@@ -1,6 +1,6 @@
 # feat(web): adopt the burnt-metal brand material
 
-> Spec draft for G0m1namm/domfx. Labels: `spec`, `enhancement`. Not yet filed.
+> Canonical spec: [#126](https://github.com/G0m1namm/domfx/issues/126). Labels: `spec`, `enhancement`.
 > Agreed with the maintainer on 2026-10-19. The logo was approved; the rest of the material is proposed.
 > Source assets: [`apps/web/artwork/brand`](../../apps/web/artwork/brand/README.md).
 > Visual reference: [domfx brand material](https://claude.ai/artifact/LDwXcHaYbwPMHtHyrtfXBq) (private).
@@ -46,10 +46,11 @@ A new illustration family is cut from the logo's washer: **Stack**, **Split**,
 
 ## Implementation decisions
 
-### Gate: approval first
+### Gate: preview before approval
 
 Crimson `#B21A5C`, red `#EB3838` and orange `#F57A29` are new to the palette.
-DESIGN.md says not to deviate without explicit approval. No slice below ships until
+DESIGN.md says not to deviate without explicit approval. On 2026-10-20 the maintainer
+selected a local preview before approving this ramp. No slice below ships until
 the maintainer approves the ramp and DESIGN.md records it.
 
 ### Heat tokens
@@ -214,5 +215,5 @@ Each slice is independently shippable after the approval gate:
 
 - The SVG assets are renderings, generated from a local script during the logo
   exploration. The 3D renders become the source of truth once approved.
-- No skill in the repo or the user's catalog covers branding. A Design System artifact,
-  or Figma's design-library tooling, could hold these tokens later for agents.
+- Use the installed AI Hero spec, implementation and review workflow. The artwork
+  recipe governs material fidelity; general design skills do not override it.

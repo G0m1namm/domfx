@@ -1,6 +1,6 @@
 # refactor(web): concentrate effect instance lifetime in one shared effect slot
 
-> Issue draft for G0m1namm/domfx. Labels: `enhancement`, `ready-for-agent`, `blocked`. Not yet filed. Agreed with the maintainer on 2026-10-19 (architecture review, candidate 01).
+> Canonical issue: [#127](https://github.com/G0m1namm/domfx/issues/127). Labels: `enhancement`, `ready-for-agent`, `blocked`. Agreed with the maintainer on 2026-10-19 (architecture review, candidate 01).
 
 ## Problem
 

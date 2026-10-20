@@ -8,7 +8,8 @@ internals (#121, ADR-0001), capture-revision ownership (#84) and typed error cod
 ## Selected
 
 **01 · Concentrate effect instance lifetime in one shared effect slot** (Strong, ports & adapters).
-Decisions and acceptance checks are in [effect-slot-issue.md](effect-slot-issue.md).
+Decisions and acceptance checks are in [#127](https://github.com/G0m1namm/domfx/issues/127)
+and the [original design](effect-slot-issue.md). The issue retains this complete survey.
 It is blocked by #125's shared-site-package and content-migration slices.
 
 ## Not yet explored

@@ -36,6 +36,8 @@ Open the website in a WebGPU-enabled browser. `apps/web` is the Astro developmen
 Key development commands:
 
 - `pnpm demo` / `pnpm web` — build packages and start the Astro website
+- `pnpm build:web` / `pnpm preview:web` — build and serve the website with Starlight docs
+- `pnpm test:docs` — check composed docs, live labs, search and discovery
 - `pnpm check` — formatting, lint, boundaries, builds, types, unit and packed-contract tests
 - `pnpm test:web:smoke` — development/production website smoke suite with WebGPU unavailable
 - `pnpm agent:verify` — repository checks, production website build, and smoke verification

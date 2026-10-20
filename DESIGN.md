@@ -226,6 +226,11 @@ Documentation stays complete without JavaScript or GPU output. Introduction,
 installation, standalone, GSAP, API, support and troubleshooting are local routes;
 repository links remain secondary source evidence.
 
+The documentation header shares the marketing search: the same icon-only 44px
+button, accessible label, shortcut tooltip, Cmd/Ctrl+K and grouped dialog. Docs have
+no gallery preview, so effect results link to their reference pages. The button
+appears only once its script runs; without JavaScript the sidebar remains the index.
+
 On 2026-10-19, the maintainer requested API presentation informed by Canvas UI and
 shadcn/ui documentation. Lead with usage, then use consistent semantic tables for
 creation options, writable controls, read-only state, methods and GSAP options.

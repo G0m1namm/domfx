@@ -2,6 +2,7 @@
 import DocsNavigation from '../components/DocsNavigation.astro';
 import PhosphorIcons from '../components/phosphor-icons.astro';
 import SiteHeader from '../components/SiteHeader.astro';
+import SiteSearch from '../components/site-search.astro';
 import { documentation } from '../content/documentation';
 import { effects } from '../content/effects';
 import '../styles/documentation.css';
@@ -49,6 +50,8 @@ const effect = effects.find((entry) => page.slug === `api/effects/${entry.id}`);
         </main>
       </div>
     </div>
+    <SiteSearch effectResults="reference" />
     <script src="../scripts/docs-effect-lab.ts"></script>
+    <script src="../scripts/docs-search.ts"></script>
   </body>
 </html>

@@ -4,6 +4,7 @@ import MarketingStory from '../components/marketing-story.astro';
 import EffectCard from '../components/effect-card.astro';
 import PhosphorIcons from '../components/phosphor-icons.astro';
 import SiteSearch from '../components/site-search.astro';
+import SiteSearchTrigger from '../components/site-search-trigger.astro';
 import { effects } from '../content/effects';
 import '../styles/marketing.css';
 interface Props { surface?: 'marketing' | 'library' }
@@ -20,7 +21,7 @@ const isLibrary = surface === 'library';
 <header class="site-nav"><div class="nav-inner">
   <a class="wordmark" href="/" aria-label="domfx home">domfx<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-asterisk-simple"/></svg></a>
   <nav aria-label="Main"><a href="/effects/" aria-current={isLibrary ? 'page' : undefined}>Effects</a><a href="/docs/introduction">Docs</a></nav>
-  <button class="header-search" data-search-open data-js-control hidden aria-label="Search effects and documentation" title="Search effects and docs (⌘K / Ctrl+K)" aria-keyshortcuts="Meta+K Control+K" aria-haspopup="dialog" aria-controls="site-search"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-magnifying-glass"/></svg></button>
+  <SiteSearchTrigger/>
   <a class="nav-cta star-cta" href="https://github.com/G0m1namm/domfx" aria-label="Star domfx on GitHub" title="Star domfx on GitHub" data-repo-stars><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg><span data-star-label>Star on GitHub</span><span class="star-count" data-star-count hidden></span></a>
   <button class="header-playback" data-header-pause data-js-control hidden aria-label="Pause header and wordmark effects" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg></button>
 </div><div class="header-effect-host" aria-hidden="true"><span class="header-effect-line"></span></div></header>

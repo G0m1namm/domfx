@@ -94,6 +94,7 @@ test('documentation is readable and navigable without JavaScript at mobile and d
         true,
       );
       await expect(page.locator('canvas, #playground')).toHaveCount(0);
+      await expect(page.locator('[data-search-open]')).toBeHidden();
     }
     expect(
       requests.filter((url) =>
@@ -176,6 +177,50 @@ test('documentation keyboard navigation reaches guides and scrolls code', async 
   await page.keyboard.press('ArrowRight');
   await expect.poll(() => options.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('documentation search opens by click and shortcut and links effect references', async ({
+  page,
+}) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
+  await page.goto('/docs/installation');
+  const trigger = page
+    .getByRole('banner')
+    .getByRole('button', { name: 'Search effects and documentation', exact: true });
+  await expect(trigger).toHaveAttribute('title', 'Search effects and docs (⌘K / Ctrl+K)');
+  expect(await trigger.evaluate((element) => element.getBoundingClientRect().width)).toBe(44);
+  const search = page.getByRole('dialog', { name: 'Search domfx' });
+  const input = search.getByRole('searchbox');
+
+  await trigger.click();
+  await expect(input).toBeFocused();
+  await input.fill('reduced motion');
+  await expect(search.locator('[data-search-group="documentation"]')).toBeVisible();
+  await input.press('ArrowDown');
+  await expect(search.locator('li:not([hidden]) > a').first()).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(search).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await page.keyboard.press('ControlOrMeta+k');
+  await expect(input).toBeFocused();
+  await input.fill('frost');
+  await expect(
+    search.locator('[data-search-group="effects"]').getByRole('link', { name: /^Frost/ }),
+  ).toHaveAttribute('href', '/docs/api/effects/frost');
+  await expect(search.locator('[data-search-effect]')).toHaveCount(0);
+  await input.press('Enter');
+  await expect(page).toHaveURL(/\/docs\/api\/effects\/frost\/?$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Frost');
+  await expect(search).toBeHidden();
+
+  await page.keyboard.press('ControlOrMeta+k');
+  await input.fill('troubleshooting');
+  await search
+    .getByRole('link', { name: /^Troubleshooting/ })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/docs\/troubleshooting\/?$/);
 });
 
 const labPages = [

@@ -3,6 +3,7 @@ import type { EffectHandle } from '@domfx/browser';
 
 import type { Effect } from '../content/effects';
 import { effects, findEffect, patternEffects } from '../content/effects';
+import { initializeSiteSearch } from './site-search';
 
 const savedPattern = { index: 0, elapsed: 0, time: 3.2, paused: false };
 
@@ -30,9 +31,14 @@ function initializeMarketing() {
   const main = required<HTMLElement>('main');
   const isLibrary = document.body.dataset.surface === 'library';
   const dialog = required<HTMLDialogElement>('.effect-dialog');
-  const searchDialog = required<HTMLDialogElement>('#site-search');
-  const searchInput = required<HTMLInputElement>('[data-global-search]', searchDialog);
-  const searchTrigger = required<HTMLButtonElement>('[data-search-open]');
+  // Search includes every effect, including those outside the homepage selection.
+  const { dialog: searchDialog, trigger: searchTrigger } = initializeSiteSearch({
+    signal: lifetime.signal,
+    isBlocked: () => dialog.open,
+    onOpen: () => clearCards(),
+    onClose: () => observeCards(),
+    openEffect: (result) => openPreview(result),
+  });
   const intensity = required<HTMLInputElement>('#effect-intensity');
   const dialogScene = required<HTMLElement>('.dialog-scene', dialog);
   const dialogStage = required<HTMLElement>('.dialog-stage', dialog);
@@ -341,108 +347,6 @@ function initializeMarketing() {
     }
     observeCards();
   }
-
-  // Search includes every effect, including those outside the homepage selection.
-  const searchItems = Array.from(searchDialog.querySelectorAll<HTMLElement>('[data-search-item]'));
-  function updateSearchResults() {
-    const query = searchInput.value.trim().toLowerCase();
-    const terms = query.split(/\s+/).filter(Boolean);
-    const matches = searchItems.filter((item) =>
-      query
-        ? terms.every((term) => item.dataset.keywords?.includes(term))
-        : item.dataset.starter === 'true',
-    );
-    matches.sort((a, b) => {
-      const rank = (item: HTMLElement) =>
-        item.dataset.title === query
-          ? 3
-          : item.dataset.title?.startsWith(query)
-            ? 2
-            : item.dataset.title?.includes(query)
-              ? 1
-              : 0;
-      return query ? rank(b) - rank(a) : 0;
-    });
-    const visible = matches.slice(0, 10);
-    for (const item of searchItems) {
-      item.hidden = !visible.includes(item);
-    }
-    for (const group of searchDialog.querySelectorAll<HTMLElement>('[data-search-group]')) {
-      const items = visible.filter((item) => item.dataset.searchKind === group.dataset.searchGroup);
-      group.hidden = items.length === 0;
-      const list = required('ul', group);
-      for (const item of items) {
-        list.append(item);
-      }
-    }
-    required<HTMLElement>('.site-search-empty', searchDialog).hidden = visible.length > 0;
-    required<HTMLElement>('.site-search-status', searchDialog).textContent = query
-      ? `${matches.length} result${matches.length === 1 ? '' : 's'}${matches.length > 10 ? ' · showing the first 10' : ''}`
-      : 'Effects and documentation';
-  }
-  function openSearch() {
-    if (dialog.open) {
-      return;
-    }
-    clearCards();
-    searchInput.value = '';
-    updateSearchResults();
-    searchDialog.showModal();
-    searchInput.focus();
-  }
-  on(searchTrigger, 'click', openSearch);
-  on(searchInput, 'input', updateSearchResults);
-  on(required('[data-search-close]', searchDialog), 'click', () => searchDialog.close());
-  on(searchDialog, 'close', () => {
-    if (!dialog.open && !searchDialog.open) {
-      searchTrigger.focus();
-      observeCards();
-    }
-  });
-  on(searchDialog, 'click', (event) => {
-    if (!(event.target instanceof Element)) {
-      return;
-    }
-    const effect = event.target.closest<HTMLElement>('[data-search-effect]');
-    if (effect) {
-      searchDialog.close();
-      openPreview(effect);
-    } else if (event.target.closest('a')) {
-      searchDialog.close();
-    }
-  });
-  on(searchDialog, 'keydown', (event) => {
-    const results = Array.from(
-      searchDialog.querySelectorAll<HTMLElement>('li:not([hidden]) > a, li:not([hidden]) > button'),
-    );
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      searchDialog.close();
-    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      const current = results.findIndex((result) => result === document.activeElement);
-      const next =
-        current === -1
-          ? event.key === 'ArrowDown'
-            ? 0
-            : results.length - 1
-          : (current + (event.key === 'ArrowDown' ? 1 : -1) + results.length) % results.length;
-      results[next]?.focus();
-    } else if (event.key === 'Enter' && event.target === searchInput) {
-      event.preventDefault();
-      results[0]?.click();
-    }
-  });
-  on(document, 'keydown', (event) => {
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-      event.preventDefault();
-      if (searchDialog.open) {
-        searchDialog.close();
-      } else {
-        openSearch();
-      }
-    }
-  });
 
   function selectAudience(audience: 'humans' | 'agents') {
     for (const tab of main.querySelectorAll<HTMLElement>('[data-audience]')) {

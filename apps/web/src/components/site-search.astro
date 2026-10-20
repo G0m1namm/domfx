@@ -2,6 +2,10 @@
 import { effectReference } from '../content/effect-reference';
 import { documentation } from '../content/documentation';
 import { effects } from '../content/effects';
+import '../styles/site-search.css';
+interface Props { effectResults?: 'preview' | 'reference' }
+// Preview results need the gallery's effect dialog; reference results are plain links.
+const { effectResults = 'preview' } = Astro.props;
 const sources = import.meta.glob('../pages/docs/**/*.{md,astro}', { query: '?raw', import: 'default', eager: true });
 const plain = (source: string) => source.replace(/^---[\s\S]*?---/, '').replace(/<[^>]*>/g, ' ').replace(/[`*#]/g, '').replace(/\s+/g, ' ').trim();
 const entries = documentation.flatMap((doc) => {
@@ -24,7 +28,10 @@ const entries = documentation.flatMap((doc) => {
   <div id="site-search-results" class="site-search-results">
     <section data-search-group="effects" aria-labelledby="search-effects-heading">
       <h3 id="search-effects-heading">Effects</h3>
-      <ul>{effects.map(({id, name, category}, index) => <li data-search-item data-search-kind="effects" data-title={name.toLowerCase()} data-keywords={`${name} ${category} effect`.toLowerCase()} data-starter={index < 4 ? 'true' : undefined}><button data-search-effect={id} data-id={id} data-name={name} data-category={category}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-sparkle"/></svg><span><strong>{name}</strong><small>{category}</small></span><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></button></li>)}</ul>
+      <ul>{effects.map(({id, name, category}, index) => {
+        const label = <><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-sparkle"/></svg><span><strong>{name}</strong><small>{category}</small></span><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></>;
+        return <li data-search-item data-search-kind="effects" data-title={name.toLowerCase()} data-keywords={`${name} ${category} effect`.toLowerCase()} data-starter={index < 4 ? 'true' : undefined}>{effectResults === 'reference' ? <a href={`/docs/api/effects/${id}`}>{label}</a> : <button data-search-effect={id} data-id={id} data-name={name} data-category={category}>{label}</button>}</li>;
+      })}</ul>
     </section>
     <section data-search-group="documentation" aria-labelledby="search-docs-heading">
       <h3 id="search-docs-heading">Documentation</h3>

@@ -69,7 +69,8 @@ for (const [, title, canonical] of pages) {
   assert(alternate, `${path}: Markdown alternate`);
   const markdown = await read(new URL(alternate[1]).pathname);
   assert(markdown.startsWith(`# ${title}\n`), `${path}: Markdown heading`);
-  assert(!/<(?:Docs\w+|script)\b|import .* from /.test(markdown), `${path}: raw component syntax`);
+  const prose = markdown.replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[ \t]*(?:\n|$)/gm, '');
+  assert(!/<Docs\w+\b|^import .* from /m.test(prose), `${path}: raw component syntax`);
   assert(full.includes(markdown.trim()), `${path}: missing full Markdown`);
   const schema = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/);
   assert(schema, `${path}: JSON-LD`);

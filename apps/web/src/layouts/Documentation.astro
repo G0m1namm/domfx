@@ -1,10 +1,12 @@
 ---
 import DocsNavigation from '../components/DocsNavigation.astro';
+import DocsToc from '../components/DocsToc.astro';
 import PhosphorIcons from '../components/phosphor-icons.astro';
 import SiteNav from '../components/SiteNav.astro';
 import SiteSearch from '../components/site-search.astro';
 import { documentation } from '../content/documentation';
 import { effects } from '../content/effects';
+import { tableOfContents } from '../content/table-of-contents';
 import '../styles/documentation.css';
 
 const slug = Astro.url.pathname.replace(/\/$/, '').replace(/^\/docs\//, '');
@@ -17,6 +19,9 @@ const previous = documentation[index - 1];
 const next = documentation[index + 1];
 const groupHome = documentation.find((entry) => entry.group === page.group);
 const effect = effects.find((entry) => page.slug === `api/effects/${entry.id}`);
+// Render once so the same markup feeds the article and its section links.
+const content = await Astro.slots.render('default');
+const headings = tableOfContents(content);
 ---
 <!doctype html>
 <html lang="en">
@@ -29,30 +34,44 @@ const effect = effects.find((entry) => page.slug === `api/effects/${entry.id}`);
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preload" href="/fonts/CabinetGrotesk-Medium.woff2" as="font" type="font/woff2" crossorigin />
   </head>
-  <body class="docs-page">
+  <body class="docs-page" id="top">
     <PhosphorIcons />
     <a class="skip-link" href="#main">Skip to content</a>
     <SiteNav current="docs" />
+    <div class="docs-subbar">
+      <button class="docs-subbar-menu" popovertarget="docs-menu"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-list"/></svg>Docs</button>
+      <span class="docs-subbar-title" aria-hidden="true">{page.title}</span>
+      {headings.length > 0 && <button class="docs-subbar-toc" popovertarget="docs-toc-menu">On this page<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-caret-down"/></svg></button>}
+    </div>
+    <div id="docs-menu" class="docs-drawer" popover>
+      <div class="docs-popover-head"><span>Documentation</span><button popovertarget="docs-menu" popovertargetaction="hide" aria-label="Close documentation menu"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div>
+      <DocsNavigation />
+    </div>
+    {headings.length > 0 && <div id="docs-toc-menu" class="docs-toc-popover" popover>
+      <div class="docs-popover-head"><span>On this page</span><button popovertarget="docs-toc-menu" popovertargetaction="hide" aria-label="Close page sections"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div>
+      <DocsToc headings={headings} />
+    </div>}
     <div class="docs-shell">
-      <details class="docs-mobile-menu"><summary>Browse documentation <span aria-hidden="true">+</span></summary><DocsNavigation /></details>
-      <div class="docs-layout">
+      <div class="docs-layout" data-has-toc={headings.length > 0 ? 'true' : undefined}>
         <aside class="docs-sidebar"><DocsNavigation /><p>Experimental API.</p><a class="text-link" href="/docs/installation">Installation options ↗</a><a class="text-link" href="/effects/">Try the live examples ↗</a></aside>
         <main id="main" tabindex="-1">
           <nav class="docs-breadcrumb" aria-label="Breadcrumb"><a href="/docs/introduction">Docs</a><span aria-hidden="true">/</span>{groupHome && groupHome !== page ? <a href={`/docs/${groupHome.slug}`}>{page.group}</a> : <span>{page.group}</span>}{effect && <><span aria-hidden="true">/</span><span>{effect.category}</span></>}</nav>
           <h1>{page.title}</h1>
           <p class="docs-description">{page.description}</p>
-          <article class="docs-content"><slot /></article>
+          <article class="docs-content"><Fragment set:html={content} /></article>
           <nav class="docs-pagination" aria-label="Documentation pages">
             {previous ? <a href={`/docs/${previous.slug}`}><span>Previous</span><strong><span aria-hidden="true">←</span> {previous.title}</strong></a> : <span />}
             {next && <a href={`/docs/${next.slug}`}><span>Next</span><strong>{next.title} <span aria-hidden="true">→</span></strong></a>}
           </nav>
           <footer class="docs-footer"><a href="https://github.com/G0m1namm/domfx/blob/main/QUICKSTART.md">Repository quickstart ↗</a><a href="https://github.com/G0m1namm/domfx/blob/main/LICENSE">MIT licensed ↗</a></footer>
         </main>
+        {headings.length > 0 && <aside class="docs-toc"><p class="docs-toc-title" aria-hidden="true">On this page</p><DocsToc headings={headings} /></aside>}
       </div>
     </div>
+    <a class="docs-back-to-top" href="#top" data-back-to-top aria-label="Back to top" title="Back to top"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up"/></svg></a>
     <SiteSearch effectResults="reference" />
     <script src="../scripts/docs-effect-lab.ts"></script>
     <script src="../scripts/docs-search.ts"></script>
-    <script src="../scripts/docs-sidebar.ts"></script>
+    <script src="../scripts/docs-navigation.ts"></script>
   </body>
 </html>

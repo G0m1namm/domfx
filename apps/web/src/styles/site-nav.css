@@ -195,3 +195,105 @@
     padding-inline: 7px;
   }
 }
+
+/* Site menu: replaces the hidden nav links on phones. A native popover, so it
+   opens, light-dismisses and closes on Escape without JavaScript. */
+.nav-menu-button {
+  display: none;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text, #e8eaf3);
+}
+.nav-menu-button:hover {
+  background: var(--raised);
+}
+.site-menu {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0 20px 32px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  background: var(--bg, #14151b);
+  color: var(--text, #e8eaf3);
+}
+.site-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  margin-bottom: 8px;
+  border-bottom: 1px solid #45475480;
+  color: var(--muted);
+  font-size: 13px;
+}
+.site-menu-head button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+.site-menu nav {
+  display: grid;
+}
+.site-menu nav a {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  border-bottom: 1px solid #2c2e38;
+  font-family: Cabinet, 'Cabinet Grotesk', sans-serif;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+.site-menu nav a[aria-current] {
+  text-decoration: underline;
+  text-decoration-color: var(--silver);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 8px;
+}
+.site-menu-star {
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-top: 24px;
+}
+@media (max-width: 700px) {
+  .nav-menu-button {
+    display: flex;
+  }
+  /* Navigation takes priority; the GitHub link keeps its icon and any count. */
+  .star-cta [data-star-label] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .star-cta {
+    min-width: 44px;
+    justify-content: center;
+  }
+}
+@media (min-width: 701px) {
+  .site-menu {
+    display: none;
+  }
+}

@@ -6,6 +6,7 @@ html {
   scroll-padding-top: calc(var(--header-height) + 16px);
 }
 .docs-page {
+  --docs-gutter: 36px;
   padding-top: var(--header-height);
 }
 /* Match the header's content width so the sidebar aligns with the wordmark. */
@@ -17,7 +18,7 @@ html {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   gap: 64px;
-  padding: 48px 36px 32px;
+  padding: 48px var(--docs-gutter) 32px;
 }
 /* Fit the viewport below the header and keep wheel/touch scrolling inside the
    sidebar instead of chaining into the page at either end. */
@@ -155,31 +156,6 @@ html {
   overflow: visible;
   border: 0;
 }
-.docs-page-links {
-  margin-block: 32px;
-  padding-left: 24px;
-  border-left: 1px solid var(--border);
-  font-size: 14px;
-}
-.docs-page-links p {
-  margin-bottom: 8px;
-  color: var(--muted);
-}
-.docs-page-links ul {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 24px;
-  list-style: none;
-  padding: 0;
-}
-.docs-page-links li {
-  margin: 0;
-}
-.docs-page-links a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
 .docs-table-scroll {
   max-width: 100%;
   overflow-x: auto;
@@ -284,9 +260,6 @@ html {
   align-items: center;
   min-height: 44px;
 }
-.docs-mobile-menu {
-  display: none;
-}
 @media (max-width: 900px) {
   .docs-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -295,38 +268,18 @@ html {
   .docs-sidebar {
     display: none;
   }
-  .docs-mobile-menu {
-    display: block;
-    padding: 16px 36px;
-    border-bottom: 1px solid var(--border);
-  }
-  .docs-mobile-menu summary {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .docs-mobile-menu nav {
-    margin-top: 24px;
-  }
 }
 @media (max-width: 700px) {
-  .docs-layout,
-  .docs-mobile-menu {
-    padding-inline: 20px;
+  .docs-page {
+    --docs-gutter: 20px;
   }
 }
 @media (max-width: 380px) {
-  .docs-layout,
-  .docs-mobile-menu {
-    padding-inline: 12px;
+  .docs-page {
+    --docs-gutter: 16px;
   }
 }
 @media (max-width: 600px) {
-  .docs-page-links ul {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .docs-content pre {
     padding: 16px;
   }
@@ -830,9 +783,6 @@ html {
   font-size: 13px;
   line-height: 1.5;
 }
-.docs-page-links .docs-nav-count {
-  margin-left: 8px;
-}
 
 @media (max-width: 600px) {
   .docs-lab-stage {
@@ -874,5 +824,242 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .docs-page * {
     transition: none !important;
+  }
+}
+
+/* Page sections: a sticky right rail when there is room, otherwise a dropdown in
+   the sub-bar. Both are generated from the page's h2/h3 headings. */
+.docs-toc,
+.docs-subbar {
+  display: none;
+}
+.docs-toc-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.docs-toc-list a {
+  display: block;
+  padding: 5px 0 5px 12px;
+  border-left: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  transition:
+    color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+.docs-toc-list [data-depth='3'] a {
+  padding-left: 24px;
+}
+.docs-toc-list a:hover {
+  color: #e8eaf3;
+}
+.docs-toc-list a[data-active] {
+  border-left-color: var(--silver);
+  color: #e8eaf3;
+}
+@media (min-width: 1180px) {
+  .docs-layout[data-has-toc] {
+    grid-template-columns: 240px minmax(0, 1fr) 200px;
+    gap: 48px;
+  }
+  .docs-toc {
+    position: sticky;
+    top: calc(var(--header-height) + 24px);
+    display: block;
+    align-self: start;
+    max-height: calc(100dvh - var(--header-height) - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .docs-toc-title {
+    margin: 0 0 12px;
+    color: #e8eaf3;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .docs-toc-popover {
+    display: none;
+  }
+}
+
+/* Sub-bar: docs menu (when the sidebar is hidden) and page sections (when the
+   rail is hidden), pinned under the site header. */
+@media (max-width: 1179px) {
+  html {
+    scroll-padding-top: calc(var(--header-height) + 52px + 16px);
+  }
+  .docs-subbar {
+    position: sticky;
+    top: var(--header-height);
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 52px;
+    padding-inline: var(--docs-gutter);
+    border-bottom: 1px solid #45475480;
+    background: #14151b;
+  }
+  .docs-sidebar {
+    top: calc(var(--header-height) + 52px + 24px);
+    max-height: calc(100dvh - var(--header-height) - 52px - 48px);
+  }
+}
+@media (min-width: 901px) and (max-width: 1179px) {
+  .docs-subbar:not(:has(.docs-subbar-toc)) {
+    display: none;
+  }
+}
+.docs-subbar button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: #e8eaf3;
+  font-size: 14px;
+}
+.docs-subbar button:hover {
+  border-color: var(--control-border);
+  background: var(--raised);
+}
+.docs-subbar .ui-icon {
+  width: 16px;
+  height: 16px;
+}
+.docs-subbar-title {
+  overflow: hidden;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.docs-subbar-toc {
+  margin-left: auto;
+}
+@media (min-width: 901px) {
+  .docs-subbar .docs-subbar-menu {
+    display: none;
+  }
+}
+
+/* Native popovers: open, light-dismiss and close on Escape without JavaScript. */
+.docs-drawer,
+.docs-toc-popover {
+  margin: 0;
+  padding: 0 20px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  background: #14151b;
+  color: #e8eaf3;
+}
+.docs-drawer::backdrop,
+.docs-toc-popover::backdrop {
+  background: #0a0b0fb3;
+}
+.docs-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(360px, 88vw);
+  height: 100dvh;
+  max-height: none;
+  border-width: 0 1px 0 0;
+}
+.docs-toc-popover {
+  position: fixed;
+  inset: calc(var(--header-height) + 60px) 16px auto auto;
+  width: min(340px, calc(100vw - 32px));
+  max-height: min(70dvh, 520px);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 16px 40px #0009;
+}
+.docs-popover-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  background: inherit;
+  color: var(--muted);
+  font-size: 13px;
+}
+.docs-popover-head button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  margin-right: -12px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+.docs-popover-head button:hover {
+  background: var(--raised);
+}
+.docs-toc-popover .docs-toc-list a {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  font-size: 14px;
+}
+@media (min-width: 901px) {
+  .docs-drawer {
+    display: none;
+  }
+}
+
+/* Back to top: always a plain #top link; with JavaScript it appears after one
+   viewport of scrolling and returns focus to the content. */
+.docs-back-to-top {
+  position: fixed;
+  right: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 45;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  background: #14151be6;
+  color: #e8eaf3;
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out,
+    visibility 160ms,
+    background-color 150ms ease-out;
+}
+.docs-back-to-top:hover {
+  background: var(--raised);
+}
+.docs-back-to-top[data-enhanced]:not([data-visible]) {
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}
+@media (max-width: 700px) {
+  .docs-back-to-top {
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+}
+@media (pointer: coarse) {
+  .docs-subbar button {
+    min-height: 44px;
   }
 }

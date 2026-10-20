@@ -11,9 +11,6 @@ const summaries = {
 ---
 <Documentation>
   <p>Every effect is an attachment function from <code>@domfx/browser</code> with the same <a href="/docs/api/shared">options and controls</a>. Each reference opens with a live preview you can tune, followed by its exact options.</p>
-  <nav class="docs-page-links" aria-label="On this page"><p>On this page</p><ul>
-    {effectsByCategory.map(({ category, effects }) => <li><a href={`#${category.toLowerCase()}`}>{category} <span class="docs-nav-count">{effects.length}</span></a></li>)}
-  </ul></nav>
   {effectsByCategory.map(({ category, effects }) => <>
     <h2 id={category.toLowerCase()}>{category}</h2>
     <p>{summaries[category]}</p>

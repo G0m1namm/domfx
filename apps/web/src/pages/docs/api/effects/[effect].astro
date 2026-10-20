@@ -43,11 +43,6 @@ if (effect.lifecycle !== 'active') {
     <div><dt>Options</dt><dd><code>{optionsType}</code></dd></div>
     <div><dt>Package</dt><dd><code>@domfx/browser</code></dd></div>
   </dl>
-  <nav class="docs-page-links" aria-label="On this page"><p>On this page</p><ul>
-    <li><a href="#usage">Usage</a></li><li><a href="#effect-options">Effect options</a></li>
-    <li><a href="#shared-options">Shared options</a></li><li><a href="#controls">Controls</a></li>
-    <li><a href="#limits">Limits</a></li><li><a href="#related">More {effect.category.toLowerCase()} effects</a></li>
-  </ul></nav>
   <h2 id="usage">Usage</h2>
   <p><code>{`${effect.exportName}(target: Element, options: ${optionsType}): EffectHandle`}</code></p>
   <p>Returns an effect instance immediately. Imports are safe during server rendering; call the function in the browser after the elements are mounted. The <a href="/docs/standalone">Standalone guide</a> includes the required HTML and CSS.</p>

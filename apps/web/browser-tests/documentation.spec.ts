@@ -83,7 +83,7 @@ test('documentation is readable and navigable without JavaScript at mobile and d
         await expect(page.locator('[data-docs-lab]')).toHaveCount(slug === 'standalone' ? 1 : 0);
       }
       if (width <= 900) {
-        await page.getByText('Browse documentation', { exact: false }).click();
+        await page.getByRole('button', { name: 'Docs', exact: true }).click();
       }
       await expect(
         page
@@ -142,7 +142,7 @@ test('all effect references work without JavaScript, with canonical controls and
         true,
       );
       if (width <= 900) {
-        await page.getByText('Browse documentation', { exact: false }).click();
+        await page.getByRole('button', { name: 'Docs', exact: true }).click();
       }
       await expect(
         page
@@ -157,7 +157,7 @@ test('all effect references work without JavaScript, with canonical controls and
 test('documentation keyboard navigation reaches guides and scrolls code', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto('/docs/introduction');
-  await page.getByText('Browse documentation', { exact: false }).focus();
+  await page.getByRole('button', { name: 'Docs', exact: true }).focus();
   await page.keyboard.press('Enter');
   const link = page
     .getByRole('navigation', { name: 'Documentation', exact: true })
@@ -221,6 +221,82 @@ test('documentation search opens by click and shortcut and links effect referenc
     .first()
     .click();
   await expect(page).toHaveURL(/\/docs\/troubleshooting\/?$/);
+});
+
+test('page sections follow the headings as a rail, a dropdown and a drawer', async ({ page }) => {
+  await page.goto('/docs/standalone');
+  const headings = await page.locator('.docs-content h2[id]').allTextContents();
+  expect(headings.length).toBeGreaterThan(2);
+  const rail = page.locator('.docs-toc');
+  await expect(rail).toBeVisible();
+  expect(await rail.locator('[data-toc-link]').allTextContents()).toEqual(headings);
+  await page.evaluate(() => document.getElementById('refresh-and-cleanup')?.scrollIntoView());
+  await expect(rail.locator('[data-active]')).toHaveText('Refresh and cleanup');
+
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await page.evaluate(() => scrollTo(0, 0));
+  await expect(rail).toBeHidden();
+  await page.getByRole('button', { name: 'On this page', exact: true }).click();
+  const sections = page.locator('#docs-toc-menu');
+  await expect(sections).toBeVisible();
+  await sections.getByRole('link', { name: 'Unavailable output', exact: true }).click();
+  await expect(sections).toBeHidden();
+  await expect(page).toHaveURL(/#unavailable-output$/);
+  const top = await page
+    .locator('#unavailable-output')
+    .evaluate((heading) => heading.getBoundingClientRect().top);
+  const chrome = await page
+    .locator('.docs-subbar')
+    .evaluate((bar) => bar.getBoundingClientRect().bottom);
+  expect(top).toBeGreaterThanOrEqual(chrome);
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.getByRole('button', { name: 'Docs', exact: true }).click();
+  const drawer = page.locator('#docs-menu');
+  await expect(drawer.getByRole('link', { name: 'Standalone', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await page.keyboard.press('Escape');
+  await expect(drawer).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('back to top appears after scrolling and returns focus to the content', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/docs/troubleshooting');
+  const button = page.getByRole('link', { name: 'Back to top', exact: true });
+  await expect(button).toBeHidden();
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await expect(button).toBeVisible();
+  await button.click();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+  await expect(page.locator('#main')).toBeFocused();
+});
+
+test('the site menu reaches Docs from Home on phones without JavaScript', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    baseURL,
+    viewport: { width: 360, height: 800 },
+  });
+  const page = await context.newPage();
+  await page.goto('/');
+  await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden();
+  await page.getByRole('button', { name: 'Open site menu' }).click();
+  const menu = page.getByRole('navigation', { name: 'Site' });
+  await menu.getByRole('link', { name: 'Docs', exact: true }).click();
+  await expect(page).toHaveURL(/\/docs\/introduction\/?$/);
+  await page.getByRole('button', { name: 'Docs', exact: true }).click();
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Documentation', exact: true })
+      .getByRole('link', { name: 'Introduction', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
+  await context.close();
 });
 
 const labPages = [

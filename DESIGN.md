@@ -270,6 +270,17 @@ pattern line or its pause control. Content edges align with the header. The stic
 sidebar fits the viewport below the header, contains its own scrolling and opens
 scrolled to the current page.
 
+Navigation on smaller screens follows shadcn/ui, Payload, Sanity and GSAP: at phone
+widths the shared header keeps search, a compact GitHub star icon (with its count from
+50 stars) and a 44px Menu button for Home, Effects, Docs and Star on GitHub, so primary
+navigation outranks the GitHub call to action. Below 1180px, docs add a sticky sub-bar
+under the header with a Docs drawer (when the sidebar is hidden) and an On this page
+dropdown. From 1180px, On this page is a sticky right rail. Its links are generated
+from each page's h2/h3 headings on the server and mark the current section while
+scrolling. Menus, drawers and dropdowns are native popovers, so they work without
+JavaScript. A 44px back-to-top link appears after one viewport of scrolling and returns
+focus to the content.
+
 ### Examples and toolbar
 
 The editorial homepage places the shared controls in its silver side panel:

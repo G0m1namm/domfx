@@ -106,7 +106,7 @@ function cleanContent(node, canonical) {
 
 function breadcrumbs(tree, path, canonical, title, site) {
   const entries = [{ name: 'Docs', item: new URL('/docs/introduction/', site).href }];
-  if (path.startsWith('/docs/api/')) {
+  if (path.startsWith('/docs/api/') && path !== '/docs/api/') {
     entries.push({ name: 'API', item: new URL('/docs/api/', site).href });
   }
   const category = select('.docs-effect-facts a', tree);

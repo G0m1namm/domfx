@@ -11,7 +11,10 @@
     "./site-links": "./src/site-links.ts",
     "./components/*.astro": "./src/components/*.astro",
     "./styles/*.css": "./src/styles/*.css",
-    "./public-path": "./src/public-path.mjs"
+    "./public-path": "./src/public-path.mjs",
+    "./config": "./src/config.ts",
+    "./metadata": "./src/metadata.ts",
+    "./marketing-pages": "./src/marketing-pages.ts"
   },
   "dependencies": {
     "@domfx/browser": "workspace:*"

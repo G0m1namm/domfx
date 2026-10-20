@@ -696,7 +696,7 @@ function initializeMarketing() {
     dialogStage.replaceChildren(target);
     required('#dialog-title', dialog).textContent = selectedEffect.name;
     required<HTMLAnchorElement>('[data-effect-reference]', dialog).href =
-      `/docs/api/effects/${selectedEffect.id}`;
+      `/docs/api/effects/${selectedEffect.id}/`;
     required('[data-dialog-category]', dialog).textContent = selectedEffect.category;
     dialogScene.dataset.effect = selectedEffect.id;
     dialogScene.dataset.category = selectedEffect.category;

@@ -10,17 +10,17 @@ export const footerLinkGroups: readonly FooterLinkGroup[] = [
   {
     title: 'Build',
     items: [
-      ['Your first effect', '/docs/standalone'],
-      ['GSAP integration', '/docs/gsap'],
-      ['API reference', '/docs/api'],
+      ['Your first effect', '/docs/standalone/'],
+      ['GSAP integration', '/docs/gsap/'],
+      ['API reference', '/docs/api/'],
     ],
   },
   {
     title: 'Explore',
     items: [
       ['All effects', '/effects/'],
-      ['Documentation', '/docs/introduction'],
-      ['Browser support', '/docs/support'],
+      ['Documentation', '/docs/introduction/'],
+      ['Browser support', '/docs/support/'],
     ],
   },
   {

@@ -9,37 +9,16 @@ import remarkGfm from 'remark-gfm';
 import remarkStringify from 'remark-stringify';
 import { unified } from 'unified';
 
-const markdownPipeline = unified().use(rehypeRemark).use(remarkGfm).use(remarkStringify);
+import { siteConfig } from '@domfx/site/config';
+import { escapeHtml, renderMetadata } from '@domfx/site/metadata';
 
-export function docsSiteConfig(env) {
-  if (env.DOMFX_SITE_PRODUCTION === 'true' && !env.DOMFX_SITE_URL) {
-    throw new Error('DOMFX_SITE_URL is required for a production site build.');
-  }
-  const site = new URL(env.DOMFX_SITE_URL ?? 'http://127.0.0.1:4321');
-  if (
-    !['http:', 'https:'].includes(site.protocol) ||
-    site.pathname !== '/' ||
-    site.search ||
-    site.hash ||
-    site.username ||
-    site.password
-  ) {
-    throw new Error(
-      'DOMFX_SITE_URL must be an HTTP(S) origin without credentials, path, query or fragment.',
-    );
-  }
-  return { site: site.origin, trailingSlash: 'always' };
-}
+const markdownPipeline = unified().use(rehypeRemark).use(remarkGfm).use(remarkStringify);
 
 function text(node) {
   if (node.type === 'text') {
     return node.value;
   }
   return (node.children ?? []).map(text).join('');
-}
-
-function escapeHtml(value) {
-  return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
 }
 
 function canonicalDocsLinks(html, site) {
@@ -136,9 +115,10 @@ export function docsDiscovery() {
       },
       'astro:build:done': async ({ dir }) => {
         const output = fileURLToPath(dir);
-        const site = config.site;
-        const indexable =
-          process.env.DOMFX_INDEXING === 'true' && process.env.DOMFX_SITE_PREVIEW !== 'true';
+        const { site, indexable } = siteConfig(process.env);
+        if (config.site !== site) {
+          throw new Error('Docs discovery origin differs from Astro site.');
+        }
         const pages = [];
         const files = (await readdir(output, { recursive: true }))
           .filter((file) => file.endsWith('index.html') && file !== 'index.html')
@@ -161,37 +141,45 @@ export function docsDiscovery() {
           const path = `/docs/${relative(output, dirname(filename)).split('\\').join('/')}/`;
           const canonical = new URL(path, site).href;
           const markdownPath = `${path.slice(0, -1)}.md`;
-          const graph = {
-            '@context': 'https://schema.org',
-            '@graph': [
-              {
-                '@type': 'TechArticle',
-                headline: title,
-                description,
-                url: canonical,
-                mainEntityOfPage: canonical,
-              },
-              {
-                '@type': 'BreadcrumbList',
-                itemListElement: breadcrumbs(tree, path, canonical, title, site),
-              },
-            ],
-          };
-          const metadata =
-            `<link rel="canonical" href="${escapeHtml(canonical)}">` +
-            `<meta name="robots" content="${indexable ? 'index, follow' : 'noindex, nofollow'}">` +
-            `<link rel="alternate" type="text/markdown" href="${escapeHtml(new URL(markdownPath, site).href)}">` +
-            `<script type="application/ld+json">${JSON.stringify(graph).replaceAll('<', '\\u003c')}</script>`;
+          const metadata = renderMetadata(
+            {
+              title,
+              description,
+              path,
+              type: 'article',
+              markdownPath,
+              structuredData: [
+                {
+                  '@type': 'TechArticle',
+                  headline: title,
+                  description,
+                  url: canonical,
+                  mainEntityOfPage: canonical,
+                },
+                {
+                  '@type': 'BreadcrumbList',
+                  itemListElement: breadcrumbs(tree, path, canonical, title, site),
+                },
+              ],
+            },
+            { site, indexable },
+          );
           const updated = html.replace(
             /<head\b([^>]*)>([\s\S]*?)<\/head>/i,
             (_match, attributes, head) => {
-              const cleaned = head.replace(/<(?:link|meta)\b[^>]*>/gi, (tag) =>
-                /(?:rel=["']canonical["']|name=["']robots["']|type=["']text\/markdown["'])/i.test(
-                  tag,
+              const cleaned = head
+                .replace(/<title\b[^>]*>[\s\S]*?<\/title>/gi, '')
+                .replace(
+                  /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi,
+                  '',
                 )
-                  ? ''
-                  : tag,
-              );
+                .replace(/<(?:link|meta)\b[^>]*>/gi, (tag) =>
+                  /(?:rel=["'](?:canonical|sitemap)["']|name=["'](?:description|robots|twitter:[^"']+)["']|property=["']og:[^"']+["']|type=["']text\/markdown["'])/i.test(
+                    tag,
+                  )
+                    ? ''
+                    : tag,
+                );
               return `<head${attributes}>${cleaned}${metadata}</head>`;
             },
           );

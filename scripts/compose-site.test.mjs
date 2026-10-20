@@ -17,6 +17,11 @@ for (const inPlace of [false, true]) {
       mkdirSync(dirname(join(root, path)), { recursive: true });
       writeFileSync(join(root, path), content);
     };
+    put(
+      web,
+      'site-contract.json',
+      JSON.stringify({ site: 'https://example.com', indexable: false, sitemap: 'sitemap-0.xml' }),
+    );
     put(web, 'index.html', '<h1>Marketing</h1>');
     put(web, 'docs/old/index.html', 'Old docs');
     put(web, '_astro/marketing.js', 'marketing');
@@ -56,6 +61,11 @@ for (const inPlace of [false, true]) {
     );
     put(
       docs,
+      'site-contract.json',
+      JSON.stringify({ site: 'https://example.com', indexable: true, sitemap: 'sitemap-0.xml' }),
+    );
+    put(
+      web,
       'site-contract.json',
       JSON.stringify({ site: 'https://example.com', indexable: true, sitemap: 'sitemap-0.xml' }),
     );

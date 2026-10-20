@@ -1,13 +1,16 @@
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
+import { siteConfig } from '@domfx/site/config';
 import { sitePublicDir } from '@domfx/site/public-path';
 
 import { effectsByCategory } from './src/content/documentation';
-import { docsDiscovery, docsSiteConfig } from './src/integrations/discovery.mjs';
+import { docsDiscovery } from './src/integrations/discovery.mjs';
+
+const { site } = siteConfig(process.env);
 
 export default defineConfig({
-  ...docsSiteConfig(process.env),
+  site,
   base: '/docs',
   trailingSlash: 'always',
   output: 'static',

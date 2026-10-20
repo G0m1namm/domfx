@@ -1,9 +1,9 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { cpus, release } from 'node:os';
+import { cpus, release, tmpdir } from 'node:os';
 import { extname, relative, resolve, sep } from 'node:path';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
 
@@ -20,6 +20,7 @@ const output = resolve(
 );
 const trials = Number(process.env.DOMFX_HOMEPAGE_TRIALS ?? 3);
 const durationMs = Number(process.env.DOMFX_HOMEPAGE_DURATION_MS ?? 1500);
+const nativeVisibilityOnly = process.argv.includes('--native-visibility');
 if (!Number.isInteger(trials) || trials < 1 || !Number.isFinite(durationMs) || durationMs < 250) {
   throw new Error('Trials must be a positive integer and duration at least 250 ms');
 }
@@ -98,6 +99,7 @@ const result = {
     realMobileHardware: false,
   },
   method: {
+    collection: nativeVisibilityOnly ? 'native-tab-visibility' : 'performance',
     trials,
     durationMs,
     warmupMs: 1000,
@@ -120,6 +122,19 @@ const result = {
   profiles: [],
   errors: [],
 };
+if (nativeVisibilityOnly) {
+  result.method = {
+    collection: 'native-tab-visibility',
+    trials,
+    controls:
+      'Production effects path in one fresh native profile/default context. Actual viewport/DPR and OS motion preference; no focus or document visibility override.',
+    server:
+      'Loopback static server, uncompressed responses, one-hour cache. Cache retained between routes/cycles in one fresh browser profile. No network performance claim.',
+    instrumentation:
+      'Boundary DOM/CDP snapshots and trusted browser visibilitychange events during tab activation. No rAF timing windows, CPU/allocation profiles or synthetic visibility events.',
+    unavailable: result.method.unavailable,
+  };
+}
 for (const name of ['measure-homepage.mjs', 'homepage-measurements.mjs']) {
   result.source.scripts[name] = hash(await readFile(resolve(import.meta.dirname, name)));
 }
@@ -412,7 +427,190 @@ async function ready(page, control) {
     control,
     { timeout: 15000 },
   );
-  await page.evaluate(() => window.__measurementObserver.disconnect());
+  await page.evaluate(() => window.__measurementObserver?.disconnect());
+}
+
+async function verifyNativeVisibility(base) {
+  const profile = await mkdtemp(resolve(tmpdir(), 'domfx-native-visibility-'));
+  const executable = process.env.DOMFX_BROWSER_EXECUTABLE ?? chromium.executablePath();
+  const args = [
+    `--user-data-dir=${profile}`,
+    '--remote-debugging-port=0',
+    '--remote-debugging-address=127.0.0.1',
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--enable-unsafe-webgpu',
+    'about:blank',
+  ];
+  const child = spawn(executable, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+  const native = {
+    method:
+      'Fresh headed Chromium profile, connected over loopback CDP with noDefaults:true in its default context. Tab activation uses bringToFront. No focus emulation, document visibility override or synthetic visibility event. Actual viewport/DPR and OS motion preference; no performance timing claim.',
+    executable,
+    args: args.filter((arg) => !arg.startsWith('--user-data-dir=')),
+    stderr: '',
+    preparations: [],
+    records: [],
+  };
+  result.nativeVisibility = native;
+  child.stderr.on('data', (data) => {
+    native.stderr = `${native.stderr}${data}`.slice(-16000);
+  });
+  let launchError;
+  child.on('error', (error) => {
+    launchError = error;
+  });
+  const exited = new Promise((done) => child.once('exit', done));
+  let nativeBrowser;
+  let page;
+  let cdp;
+  let record;
+  let preparation;
+  try {
+    let port;
+    const deadline = Date.now() + 15000;
+    while (!port && Date.now() < deadline) {
+      if (launchError || child.exitCode !== null || child.signalCode !== null) {
+        throw (
+          launchError ?? new Error(`Native browser exited: ${child.signalCode ?? child.exitCode}`)
+        );
+      }
+      port = await readFile(resolve(profile, 'DevToolsActivePort'), 'utf8')
+        .then((text) => text.split('\n')[0])
+        .catch(() => null);
+      if (!port) {
+        await pause(100);
+      }
+    }
+    if (!port) {
+      throw new Error('Native browser debug endpoint unavailable');
+    }
+    nativeBrowser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`, {
+      noDefaults: true,
+      timeout: 15000,
+    });
+    result.environment.browser = nativeBrowser.version();
+    const context = nativeBrowser.contexts()[0];
+    page = context.pages()[0] ?? (await context.newPage());
+    page.setDefaultTimeout(15000);
+    page.on('pageerror', (error) => result.errors.push(error.message));
+    cdp = await context.newCDPSession(page);
+    await cdp.send('Performance.enable', { timeDomain: 'timeTicks' });
+    const cover = await context.newPage();
+    for (const path of ['/', '/effects/']) {
+      record = undefined;
+      preparation = { path, outcome: 'running' };
+      native.preparations.push(preparation);
+      await page.bringToFront();
+      await page.goto(new URL(path, base).href, { waitUntil: 'load' });
+      await ready(page, 'effects');
+      if (!native.adapter) {
+        native.adapter = await page.evaluate(async () => {
+          const adapter = await navigator.gpu.requestAdapter();
+          return { vendor: adapter.info.vendor, architecture: adapter.info.architecture };
+        });
+      }
+      await page.evaluate(() => {
+        window.__nativeVisibility = [];
+        document.addEventListener('visibilitychange', (event) => {
+          window.__nativeVisibility.push({
+            hidden: document.hidden,
+            visibility: document.visibilityState,
+            trusted: event.isTrusted,
+            timeMs: performance.now(),
+          });
+        });
+      });
+      preparation.outcome = 'complete';
+      for (let index = 0; index < trials; index++) {
+        record = { path, index, outcome: 'running', events: [] };
+        native.records.push(record);
+        await page.evaluate(() => {
+          window.__nativeVisibility.length = 0;
+        });
+        record.before = await snapshot(page, cdp);
+        const before = record.before.dom;
+        if (path === '/') {
+          validateHomepage(before, 'effects');
+        } else if (before.surface !== 'library' || before.cards !== 21 || before.hidden) {
+          throw new Error('Expected the visible full gallery before native tab switch');
+        }
+        await save('report.json', result);
+        await cover.bringToFront();
+        await page.waitForFunction(() => document.hidden, null, { polling: 100 });
+        await page.waitForFunction(() => !document.querySelector('canvas'), null, {
+          polling: 100,
+        });
+        await pause(500);
+        record.hidden = await snapshot(page, cdp);
+        if (!record.hidden.dom.hidden || record.hidden.dom.canvases.length) {
+          throw new Error('Native hidden page did not stay released');
+        }
+        await save('report.json', result);
+        await page.bringToFront();
+        await page.waitForFunction(() => !document.hidden, null, { polling: 100 });
+        await ready(page, 'effects');
+        record.returned = await snapshot(page, cdp);
+        const hosts = [record.returned.dom.header, ...record.returned.dom.visiblePreviews];
+        if (hosts.some((host) => host.status !== 'active' || host.canvases !== 1)) {
+          throw new Error('Native return did not restore one canvas per visible host');
+        }
+        record.events = await page.evaluate(() => window.__nativeVisibility);
+        if (
+          record.events.length !== 2 ||
+          record.events.some((event) => !event.trusted) ||
+          !record.events[0].hidden ||
+          record.events[1].hidden
+        ) {
+          throw new Error('Expected exactly one trusted browser hide/return event pair');
+        }
+        record.outcome = 'complete';
+        await save('report.json', result);
+        console.log(`Native tab visibility ${path} ${index + 1}/${trials}: complete`);
+      }
+    }
+    record = undefined;
+    preparation = undefined;
+    if (result.errors.length) {
+      throw new Error('Native visibility page reported errors');
+    }
+  } catch (error) {
+    const failed = record ?? preparation;
+    if (failed) {
+      failed.outcome = 'failed';
+      failed.error = String(error);
+      failed.url = page.url();
+      failed.failedState = await snapshot(page, cdp).catch(() => null);
+    }
+    if (record?.before) {
+      record.events = await page.evaluate(() => window.__nativeVisibility ?? []).catch(() => []);
+    }
+    throw error;
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) {
+      child.kill('SIGTERM');
+    }
+    const disconnect = nativeBrowser?.close().catch((error) => {
+      native.disconnectError = String(error);
+    });
+    let exitTimeout;
+    await Promise.race([
+      Promise.all([exited, disconnect]),
+      new Promise((done) => {
+        exitTimeout = setTimeout(done, 3000);
+      }),
+    ]).finally(() => clearTimeout(exitTimeout));
+    if (child.exitCode !== null || child.signalCode !== null || launchError) {
+      await rm(profile, { recursive: true, force: true });
+      native.cleanup = 'complete';
+    } else {
+      native.cleanup = 'incomplete';
+      native.retainedProfile = profile;
+    }
+  }
+  if (native.cleanup !== 'complete') {
+    throw new Error('Native browser did not exit; temporary profile retained');
+  }
 }
 
 async function navigation(page, cdp, control, navigate) {
@@ -769,41 +967,45 @@ try {
   }
   await new Promise((done) => server.listen(0, '127.0.0.1', done));
   const base = `http://127.0.0.1:${server.address().port}/`;
-  browser = await chromium.launch({
-    headless: false,
-    executablePath: process.env.DOMFX_BROWSER_EXECUTABLE,
-    args: ['--enable-unsafe-webgpu', '--disable-back-forward-cache'],
-  });
-  result.environment.browser = browser.version();
-  for (const profile of [
-    { name: 'desktop-dpr1', viewport: { width: 1440, height: 900 }, dpr: 1 },
-    { name: 'desktop-dpr2', viewport: { width: 1440, height: 900 }, dpr: 2 },
-    { name: 'narrow-dpr2', viewport: { width: 360, height: 780 }, dpr: 2 },
-  ]) {
-    const record = { ...profile, conditions: [] };
-    result.profiles.push(record);
-    for (let index = 0; index < trials; index++) {
-      // Alternate order to expose, rather than hide, serial cache/driver drift.
-      const controls =
-        index % 2 ? ['capability-static', 'effects'] : ['effects', 'capability-static'];
-      for (const control of controls) {
-        const condition = {
-          control,
-          index,
-          outcome: 'running',
-          errors: [],
-          console: [],
-          samples: [],
-        };
-        record.conditions.push(condition);
-        await save('report.json', result);
-        await runCondition(browser, base, profile, condition);
-        await save('report.json', result);
-        console.log(
-          `${profile.name} ${control} ${index + 1}/${trials}: ${condition.outcome} ${condition.errors.join('; ')}`,
-        );
-        if (condition.outcome !== 'complete') {
-          throw new Error('Collection stopped; preserve and correct the failed condition');
+  if (nativeVisibilityOnly) {
+    await verifyNativeVisibility(base);
+  } else {
+    browser = await chromium.launch({
+      headless: false,
+      executablePath: process.env.DOMFX_BROWSER_EXECUTABLE,
+      args: ['--enable-unsafe-webgpu', '--disable-back-forward-cache'],
+    });
+    result.environment.browser = browser.version();
+    for (const profile of [
+      { name: 'desktop-dpr1', viewport: { width: 1440, height: 900 }, dpr: 1 },
+      { name: 'desktop-dpr2', viewport: { width: 1440, height: 900 }, dpr: 2 },
+      { name: 'narrow-dpr2', viewport: { width: 360, height: 780 }, dpr: 2 },
+    ]) {
+      const record = { ...profile, conditions: [] };
+      result.profiles.push(record);
+      for (let index = 0; index < trials; index++) {
+        // Alternate order to expose, rather than hide, serial cache/driver drift.
+        const controls =
+          index % 2 ? ['capability-static', 'effects'] : ['effects', 'capability-static'];
+        for (const control of controls) {
+          const condition = {
+            control,
+            index,
+            outcome: 'running',
+            errors: [],
+            console: [],
+            samples: [],
+          };
+          record.conditions.push(condition);
+          await save('report.json', result);
+          await runCondition(browser, base, profile, condition);
+          await save('report.json', result);
+          console.log(
+            `${profile.name} ${control} ${index + 1}/${trials}: ${condition.outcome} ${condition.errors.join('; ')}`,
+          );
+          if (condition.outcome !== 'complete') {
+            throw new Error('Collection stopped; preserve and correct the failed condition');
+          }
         }
       }
     }

@@ -14,6 +14,20 @@ pnpm build:web
 pnpm measure:homepage
 ```
 
+For the separate browser-generated tab visibility check:
+
+```sh
+pnpm measure:homepage --native-visibility
+```
+
+This uses a temporary headed Chromium profile and `connectOverCDP({ noDefaults:
+true })` in its default context. Normal tab activation generates visibility events;
+no document visibility property is overridden and no visibility event is dispatched.
+By default it checks three hide/return cycles on both `/` and `/effects/`, using the actual
+window, DPR and OS motion preference rather than the performance profiles.
+The native process and temporary profile belong to this command and are cleaned
+up on completion. A failed cycle fails collection and retains its partial state.
+
 Run serially, without competing builds, browser tests or GPU measurements. The
 command uses the shared browser-session lock and serves the composed
 `apps/web/dist` on a temporary loopback port. It does not rebuild that directory.
@@ -278,16 +292,44 @@ Resume; synthetic visibility return recreated visible effects. Final navigation
 to `about:blank` completed. These DOM observations do not prove exact internal
 resource destruction or actual GPU memory release.
 
-Actual tab-hide/return remains **unverified**. Bringing a second automated tab to
-the front never produced `document.hidden`; the runner records `unavailable`.
-A separate installed-Chrome tab switch also left the observed hosts active, and
-the inspection surface could not establish native document visibility. It is
-inconclusive, not a pass or a reproduced lifecycle defect. A final instrumented
-window check could not complete a native switch because native app control timed
-out; no hidden event was observed before its own timeout. BFCache is disabled in
-this measurement; merged correctness tests in #141 are separate evidence. Real
-mobile, other browsers, display/power controls, internal capture/resource counts,
-GPU pass time and actual VRAM remain unavailable.
+The original performance contexts recorded native tab-hide as `unavailable`:
+bringing another automated tab forward never produced `document.hidden`.
+Installed-Chrome inspection was inconclusive and native app control timed out.
+Those attempts remain excluded, rather than relabelled as successful.
+
+The separate `--native-visibility` mode removes Playwright's default page overrides.
+The pinned Playwright implementation enables focus emulation for ordinary pages;
+the [CDP definition](https://github.com/ChromeDevTools/devtools-protocol/blob/master/pdl/domains/Emulation.pdl)
+describes that override as simulating a focused and active page. Disabling focus
+emulation from an additional CDP session alone did not resolve the earlier attempt.
+Using a fresh native process/default context without those overrides did produce
+browser-generated hidden/visible transitions. This establishes a working verification
+method; it does not attribute the earlier failure to one individual override.
+
+Native tab-hide/return now has separate functional evidence: three cycles on each
+marketing route, all with trusted hidden/visible event pairs, zero canvases after
+500 ms hidden, and one canvas per visible effect host on return. The source/build
+identity and exact environment for the retained run are recorded below. It does
+not add performance timing samples or establish internal resource destruction.
+
+Retained run `2026-10-20T21-33-48-351Z` completed all six cycles and process/profile
+cleanup. Source was `8b4c2b8f9ee4c5a6025bf6bb02076a444bbafcf3` with the native-mode
+runner edits; runner SHA-256
+`e5724dee0fa53cd6a379da9ec2e4bb5dafec32a607dd24225ae7dcd809f69b72`.
+The helper, lockfile and composed build identities match the preceding supplement.
+Environment was Chromium 153.0.8010.12, Darwin 25.6.0 arm64, Apple M5 Pro / Metal 3,
+actual 1200×807 CSS px at DPR 2, reduced motion off. Display refresh and power mode
+remain unknown. These browser-generated tab switches were controlled through CDP;
+they are not evidence for OS window minimization or manual keyboard behavior.
+
+| Route       | Cycles passed | Before / hidden / returned canvases | Trusted events per cycle |
+| ----------- | ------------: | ----------------------------------: | -----------------------: |
+| `/`         |             3 |                           3 / 0 / 3 |                        2 |
+| `/effects/` |             3 |                           5 / 0 / 5 |                        2 |
+
+BFCache correctness tests in #141 remain separate evidence. Real mobile, other
+browsers, display/power controls, internal capture/resource counts, GPU pass time
+and actual VRAM remain unavailable.
 
 Local collection history is preserved rather than silently pooled:
 
@@ -309,7 +351,7 @@ Priorities supported by this run:
    approved artwork and capture output. Their raw sizes dominate the measured
    cold transfer; deployed compression/network and image-decode costs still need
    separate evidence before claiming a latency improvement.
-3. Obtain native tab-hide evidence and real-device measurements under #87.
+3. Extend native visibility evidence to other browsers/devices under #87.
    Establish website budgets under #37 before declaring any budget pass/fail.
 
 **No runtime optimization is included in this measurement change.** The historical

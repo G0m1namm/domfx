@@ -71,6 +71,7 @@ declare global {
     assets: {
       setup: typeof setup;
       capture: typeof capture;
+      captureElement: typeof captureElement;
       attach: typeof attach;
       readonly effect: EffectHandle | undefined;
       readonly result: typeof result;
@@ -81,6 +82,7 @@ declare global {
 window.assets = {
   setup,
   capture,
+  captureElement,
   attach,
   get effect() {
     return effect;

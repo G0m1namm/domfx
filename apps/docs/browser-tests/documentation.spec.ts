@@ -118,6 +118,43 @@ test('@smoke the native mobile docs drawer supports keyboard focus without JavaS
   await context.close();
 });
 
+test('@smoke the mobile docs drawer keeps footer and back-to-top links outside its focus scope', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/docs/troubleshooting/');
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  const backToTop = page.getByRole('link', {
+    name: 'Back to top',
+    exact: true,
+    includeHidden: true,
+  });
+  const footerHome = page.getByRole('contentinfo', { includeHidden: true }).getByRole('link', {
+    name: 'domfx',
+    exact: true,
+    includeHidden: true,
+  });
+  await expect(backToTop).toBeVisible();
+  const button = page.getByRole('button', { name: 'Docs', exact: true });
+  await button.click();
+  await expect(page.getByRole('link', { name: 'Troubleshooting', exact: true })).toBeVisible();
+  await footerHome.focus();
+  await expect(footerHome).not.toBeFocused();
+  await backToTop.focus();
+  await expect(backToTop).not.toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('link', { name: 'Troubleshooting', exact: true })).toBeHidden();
+  await expect
+    .poll(async () => {
+      await footerHome.focus();
+      return footerHome.evaluate((link) => link === document.activeElement);
+    })
+    .toBe(true);
+  await backToTop.focus();
+  await expect(backToTop).toBeFocused();
+});
+
 test('@smoke all catalog references retain their public options and usable source content without JavaScript', async ({
   browser,
   baseURL,

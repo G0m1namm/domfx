@@ -11,3 +11,13 @@ import DocsFooter from './DocsFooter.astro';
 </DefaultPageFrame>
 <DocsFooter />
 <BackToTop />
+
+<script>
+  // These full-width elements sit outside Starlight's native inert main frame.
+  const background = document.querySelectorAll<HTMLElement>('.docs-site-footer, [data-back-to-top]');
+  document.getElementById('starlight__sidebar')?.addEventListener('toggle', ({ newState }) => {
+    for (const element of background) {
+      element.inert = newState === 'open';
+    }
+  });
+</script>

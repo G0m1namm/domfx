@@ -49,7 +49,9 @@ Install Chromium for testing with `pnpm --filter @domfx/web exec playwright inst
 packages/core   → DOM/framework/GPU-independent contracts and computation
 packages/domfx  → browser capture and internal TypeGPU renderer; consumes core
 packages/gsap   → optional GSAP lifecycle helpers
+packages/site   → private shared catalog, site chrome, fonts and design tokens
 apps/web        → Astro website, public examples and user documentation
+apps/docs       → Starlight docs preview; cutover awaits visual approval (#133)
 tests/gpu       → package-private regression fixtures and numerical tests; no demo app
 ```
 

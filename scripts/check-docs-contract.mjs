@@ -19,10 +19,45 @@ const index = await read('/llms.txt');
 const full = await read('/llms-full.txt');
 const pages = [...index.matchAll(/^- \[([^\]]+)\]\((https?:\/\/[^)]+\/docs\/[^)]+\/)\):/gm)];
 assert(pages.length > 0, 'llms.txt must list docs pages');
+const robots = await read('/robots.txt');
+const sitemap = await read('/docs/sitemap-0.xml');
+const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+if (indexable) {
+  assert(
+    robots.includes('Allow: /') && !robots.includes('Disallow: /'),
+    'robots.txt must allow indexing',
+  );
+  const sitemapIndex = await read('/sitemap-index.xml');
+  const docsSitemap = new URL('/docs/sitemap-0.xml', pages[0][2]).href;
+  assert(sitemapIndex.includes(`<loc>${docsSitemap}</loc>`), 'sitemap index must include docs');
+  assert(
+    robots.includes(new URL('/sitemap-index.xml', docsSitemap).href),
+    'robots.txt sitemap index',
+  );
+  const expected = pages.map((page) => page[2]).sort();
+  assert(
+    JSON.stringify(sitemapUrls.sort()) === JSON.stringify(expected),
+    'docs sitemap must contain exactly the canonical docs pages',
+  );
+} else {
+  assert(
+    robots.includes('Disallow: /') && !robots.includes('Sitemap:'),
+    'robots.txt must disallow crawling',
+  );
+  assert(sitemapUrls.length === 0, 'disabled indexing must omit sitemap pages');
+  const sitemapIndex = await fetch(new URL('/sitemap-index.xml', base));
+  assert(sitemapIndex.status === 404, 'disabled indexing must omit the sitemap index');
+}
 const titles = new Set();
 for (const [, title, canonical] of pages) {
   const path = new URL(canonical).pathname;
   const html = await read(path);
+  for (const [, href] of html.matchAll(/<a\b[^>]*href="(\/docs(?:\/[^"#?]*)?)(?:[#?][^"]*)?"/g)) {
+    assert(
+      href.endsWith('/') || /\.[^/]+$/.test(href),
+      `${path}: noncanonical internal link ${href}`,
+    );
+  }
   assert(html.includes(`rel="canonical" href="${canonical}"`), `${path}: canonical`);
   assert(
     html.includes(`name="robots" content="${indexable ? 'index, follow' : 'noindex, nofollow'}"`),

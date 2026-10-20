@@ -65,13 +65,15 @@ fixture-only and contributor-doc changes need no package bump. See
 
 ## Dependency boundaries
 
-| Workspace        | Allowed workspace dependencies               |
-| ---------------- | -------------------------------------------- |
-| `packages/core`  | None; no DOM, framework, GPU or Node imports |
-| `packages/domfx` | Core                                         |
-| `packages/gsap`  | Core and browser package                     |
-| `tests/gpu`      | Library packages, never other apps           |
-| `apps/web`       | Library packages, never other apps           |
+| Workspace        | Allowed workspace dependencies                             |
+| ---------------- | ---------------------------------------------------------- |
+| `packages/core`  | None; no DOM, framework, GPU or Node imports               |
+| `packages/domfx` | Core                                                       |
+| `packages/gsap`  | Core and browser package                                   |
+| `packages/site`  | Browser package types; private site resources              |
+| `tests/gpu`      | Library packages, never other apps                         |
+| `apps/web`       | Library packages and shared site package; never other apps |
+| `apps/docs`      | Library packages and shared site package; never other apps |
 
 `workspace-boundaries.mjs` defines the direction. `pnpm lint:boundaries` checks
 manifests and imports (run `pnpm build` first). Cross-workspace dependencies must
@@ -85,6 +87,19 @@ Use the website's existing examples for public demonstrations; add a small packa
 fixture when a failure/lifecycle case cannot be exercised there.
 
 ## Verification
+
+The Starlight migration (#125) has a separate preview until maintainer visual
+approval (#133). Run `pnpm build:docs:preview`, then `pnpm preview:docs` to view the
+composed site at `http://127.0.0.1:4347`; `pnpm test:docs` builds and checks it.
+The normal website commands keep serving the current docs. Write migrated docs
+in `apps/docs/src/content/docs`; effect references come from the shared catalog.
+
+Docs discovery output uses `DOMFX_SITE_URL` as its origin. Set
+`DOMFX_SITE_PRODUCTION=true` to require that value for a production build.
+`DOMFX_INDEXING=true` enables indexing; the default is off, and
+`DOMFX_SITE_PREVIEW=true` always keeps it off. The preview build sets its loopback
+origin and disables indexing. Enabling public indexing remains a launch action
+after #91; marketing discovery work belongs to #124.
 
 For shader/library iteration, run `pnpm dev` from the root. It builds the packages
 first, watches core and GSAP JavaScript/declarations, watches the browser's Vite

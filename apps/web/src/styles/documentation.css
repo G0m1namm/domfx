@@ -1,45 +1,37 @@
 @import './shared.css';
 
+/* The fixed site header (site-nav.css) sets --header-height; anchors and the
+   sticky sidebar start below it. */
+html {
+  scroll-padding-top: calc(var(--header-height) + 16px);
+}
+.docs-page {
+  padding-top: var(--header-height);
+}
+/* Match the header's content width so the sidebar aligns with the wordmark. */
 .docs-shell {
-  max-width: 1280px;
+  max-width: 1320px;
   margin-inline: auto;
-}
-.docs-page .site-header::before,
-.docs-page .site-header::after {
-  display: none;
-}
-.docs-page .site-header nav {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 24px;
-}
-.docs-page .site-header nav a {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  color: var(--muted);
-  font-size: 14px;
-}
-.docs-page .site-header nav a:hover,
-.docs-page .site-header nav a[aria-current] {
-  color: #e8eaf3;
-  text-decoration: underline;
-  text-underline-offset: 6px;
 }
 .docs-layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   gap: 64px;
-  padding: 48px 40px 32px;
+  padding: 48px 36px 32px;
 }
+/* Fit the viewport below the header and keep wheel/touch scrolling inside the
+   sidebar instead of chaining into the page at either end. */
 .docs-sidebar {
   position: sticky;
-  top: 24px;
+  top: calc(var(--header-height) + 24px);
   align-self: start;
-  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - var(--header-height) - 48px);
+  margin-right: -12px;
+  padding-right: 12px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--border) transparent;
+  scrollbar-width: thin;
 }
 .docs-nav-group {
   margin-bottom: 32px;
@@ -107,7 +99,6 @@
   margin: 48px 0 24px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
-  scroll-margin-top: 24px;
 }
 .docs-content h3 {
   font-size: 22px;
@@ -299,14 +290,14 @@
 @media (max-width: 900px) {
   .docs-layout {
     grid-template-columns: minmax(0, 1fr);
-    padding: 32px 24px;
+    padding-block: 32px;
   }
   .docs-sidebar {
     display: none;
   }
   .docs-mobile-menu {
     display: block;
-    padding: 16px 24px;
+    padding: 16px 36px;
     border-bottom: 1px solid var(--border);
   }
   .docs-mobile-menu summary {
@@ -319,19 +310,23 @@
     margin-top: 24px;
   }
 }
+@media (max-width: 700px) {
+  .docs-layout,
+  .docs-mobile-menu {
+    padding-inline: 20px;
+  }
+}
+@media (max-width: 380px) {
+  .docs-layout,
+  .docs-mobile-menu {
+    padding-inline: 12px;
+  }
+}
 @media (max-width: 600px) {
   .docs-page-links ul {
     grid-template-columns: minmax(0, 1fr);
   }
-  .docs-page .site-header nav {
-    gap: 12px;
-  }
-  .docs-layout {
-    padding-inline: 16px;
-  }
-  .docs-mobile-menu {
-    padding-inline: 16px;
-  }
+
   .docs-content pre {
     padding: 16px;
   }
@@ -629,6 +624,7 @@
   border-radius: 6px;
   color: var(--muted);
   font-size: 14px;
+  white-space: nowrap;
   transition:
     background-color 150ms ease-out,
     color 150ms ease-out;
@@ -855,6 +851,9 @@
   .docs-lab-row {
     grid-template-columns: 88px minmax(0, 1fr) 52px;
     gap: 4px 12px;
+  }
+  .docs-lab-segments span {
+    padding-inline: 10px;
   }
   .docs-lab-code-bar {
     padding-left: 16px;

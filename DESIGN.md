@@ -264,6 +264,12 @@ attach only while visible, release on pagehide, respect reduced motion, never cl
 the host's output and leave the original subject and disabled controls in place
 without JavaScript or WebGPU. They are demonstrations, not verification evidence.
 
+Documentation uses the same fixed site header component as the marketing pages
+(wordmark, Effects and Docs links, search and the GitHub link) without the animated
+pattern line or its pause control. Content edges align with the header. The sticky
+sidebar fits the viewport below the header, contains its own scrolling and opens
+scrolled to the current page.
+
 ### Examples and toolbar
 
 The editorial homepage places the shared controls in its silver side panel:

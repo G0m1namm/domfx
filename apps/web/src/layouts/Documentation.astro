@@ -1,7 +1,7 @@
 ---
 import DocsNavigation from '../components/DocsNavigation.astro';
 import PhosphorIcons from '../components/phosphor-icons.astro';
-import SiteHeader from '../components/SiteHeader.astro';
+import SiteNav from '../components/SiteNav.astro';
 import SiteSearch from '../components/site-search.astro';
 import { documentation } from '../content/documentation';
 import { effects } from '../content/effects';
@@ -32,8 +32,8 @@ const effect = effects.find((entry) => page.slug === `api/effects/${entry.id}`);
   <body class="docs-page">
     <PhosphorIcons />
     <a class="skip-link" href="#main">Skip to content</a>
+    <SiteNav current="docs" />
     <div class="docs-shell">
-      <SiteHeader />
       <details class="docs-mobile-menu"><summary>Browse documentation <span aria-hidden="true">+</span></summary><DocsNavigation /></details>
       <div class="docs-layout">
         <aside class="docs-sidebar"><DocsNavigation /><p>Experimental API.</p><a class="text-link" href="/docs/installation">Installation options ↗</a><a class="text-link" href="/effects/">Try the live examples ↗</a></aside>
@@ -53,5 +53,6 @@ const effect = effects.find((entry) => page.slug === `api/effects/${entry.id}`);
     <SiteSearch effectResults="reference" />
     <script src="../scripts/docs-effect-lab.ts"></script>
     <script src="../scripts/docs-search.ts"></script>
+    <script src="../scripts/docs-sidebar.ts"></script>
   </body>
 </html>

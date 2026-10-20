@@ -1,5 +1,5 @@
-import { effectReference } from './effect-reference';
-import { effectCategories, effects } from './effects';
+import { effectReference } from '@domfx/site/effect-reference';
+import { effectCategories, effects } from '@domfx/site/effects';
 
 // Array order defines sidebar order and previous/next pagination.
 export const documentationGroups = [

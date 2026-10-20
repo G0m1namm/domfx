@@ -2,10 +2,13 @@ import { resolve } from 'node:path';
 
 import { defineConfig } from 'astro/config';
 
+import { sitePublicDir } from '@domfx/site/public-path';
+
 const packages = resolve(import.meta.dirname, '../../packages');
 
 export default defineConfig({
   output: 'static',
+  publicDir: sitePublicDir,
   devToolbar: { enabled: false },
   markdown: { syntaxHighlight: false },
   vite: {

@@ -1,37 +1,5 @@
-@font-face {
-  font-family: Lab Mono;
-  src: url('/fonts/LabMono-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: Cabinet;
-  src: url('/fonts/CabinetGrotesk-Medium.woff2');
-  font-display: swap;
-}
-@font-face {
-  font-family: General;
-  src: url('/fonts/GeneralSans-Regular.woff2');
-  font-display: swap;
-}
-@font-face {
-  font-family: General;
-  src: url('/fonts/GeneralSans-Medium.woff2');
-  font-weight: 500;
-  font-display: swap;
-}
-:root {
-  color-scheme: dark;
-  --bg: #14151b;
-  --surface: #1d1f27;
-  --raised: #292a35;
-  --text: #e8eaf3;
-  --muted: #aeb1c1;
-  --silver: #c2c5db;
-  --line: #454754;
-  --violet: #6153b7;
-  --yellow: #e6dc6a;
-}
+@import '@domfx/site/styles/fonts.css';
+@import '@domfx/site/styles/tokens.css';
 * {
   box-sizing: border-box;
 }
@@ -639,20 +607,7 @@ footer nav {
     transition: none !important;
   }
 }
-.icon-sprite {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
 .ui-icon {
-  display: inline-block;
-  vertical-align: middle;
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
   pointer-events: none;
 }
 .site-nav nav a,
@@ -2416,12 +2371,6 @@ body.marketing-page {
   }
 }
 /* Production affordances and fallbacks. */
-@font-face {
-  font-family: General;
-  src: url('/fonts/GeneralSans-Semibold.woff2');
-  font-weight: 600;
-  font-display: swap;
-}
 .filters button,
 .filters button[aria-pressed] {
   min-height: 44px;

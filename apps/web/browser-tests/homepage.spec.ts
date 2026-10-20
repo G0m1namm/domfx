@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { effects } from '../src/content/effects.js';
+import { effects } from '@domfx/site/effects';
 
 test('a card opens its own artwork and offers text, SVG and image previews', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });

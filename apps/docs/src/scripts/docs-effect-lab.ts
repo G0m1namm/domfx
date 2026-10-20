@@ -1,28 +1,25 @@
-import type * as BrowserEffects from '@domfx/browser';
-import type { AttachmentOptions, EffectHandle } from '@domfx/browser';
+import type { EffectStatus } from '@domfx/site/effect-slot';
+import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import { findEffect, type Effect } from '@domfx/site/effects';
-
-type Factory = (target: Element, options: AttachmentOptions) => EffectHandle;
+import { initializePage } from '@domfx/site/page-lifetime';
 
 const SEED = 314;
 const COPY_RESET_MS = 2000;
 
-let browserModule: Promise<typeof BrowserEffects> | undefined;
-function loadBrowser() {
-  browserModule ??= import('@domfx/browser');
-  return browserModule;
-}
+const savedPlayback = new WeakMap<HTMLElement, { paused: boolean; needsResume: boolean }>();
 
 function initializeLabs() {
   const hasGpu = 'gpu' in navigator && Boolean(navigator.gpu);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const cleanups: (() => void)[] = [];
   for (const lab of document.querySelectorAll<HTMLElement>('[data-docs-lab]')) {
     const effect = findEffect(lab.dataset.effect);
     if (!effect) {
       throw new Error(`Unknown docs lab effect: ${lab.dataset.effect}`);
     }
-    initializeLab(lab, effect, hasGpu, reducedMotion);
+    cleanups.push(initializeLab(lab, effect, hasGpu, reducedMotion));
   }
+  return () => cleanups.forEach((cleanup) => cleanup());
 }
 
 function initializeLab(
@@ -52,13 +49,15 @@ function initializeLab(
   const lifetime = new AbortController();
   const { signal } = lifetime;
   let visible = false;
-  let paused = false;
-  let disposed = false;
-  let revision = 0;
-  let attachFrame = 0;
+  let paused = savedPlayback.get(lab)?.paused ?? false;
+  let needsResume = reducedMotion.matches || (savedPlayback.get(lab)?.needsResume ?? false);
   let copyTimer = 0;
-  let staleRetries = 0;
-  let handle: EffectHandle | undefined;
+  const environment = createEffectEnvironment({
+    document: lab.ownerDocument,
+    reducedMotion,
+    needsResume: () => needsResume,
+  });
+  const slot = createEffectSlot({ host, environment, onChange: updateStatus });
 
   const intensity = () => Number(intensityInput.value) / 100;
   const currentTarget = () =>
@@ -75,126 +74,76 @@ function initializeLab(
     }
   }
 
-  function setStatus(message: string, state: string) {
-    status.textContent = message;
-    lab.dataset.status = state;
+  function updateStatus(next: EffectStatus) {
+    lab.dataset.status = next.lifecycle;
+    lab.dataset.paused = String(paused);
+    if (next.reason) {
+      lab.dataset.reason = next.reason;
+    } else {
+      delete lab.dataset.reason;
+    }
+    if (next.lifecycle === 'active') {
+      if (paused) {
+        slot.handle?.pause();
+      }
+      if (slot.handle) {
+        slot.handle.intensity = intensity();
+      }
+      status.textContent = paused ? 'Paused' : 'Live';
+    } else if (next.reason === 'no-webgpu') {
+      status.textContent =
+        'Effects are unavailable in this browser. The original content stays visible.';
+    } else if (next.reason === 'reduced-motion') {
+      status.textContent = reducedMotion.matches
+        ? 'Reduced motion keeps this preview still.'
+        : 'Choose Start effect to restart this preview.';
+    } else if (next.lifecycle === 'initializing') {
+      status.textContent = 'Preparing the live preview…';
+    } else if (next.lifecycle === 'suspended') {
+      status.textContent = 'Waiting to enter view.';
+    } else {
+      status.textContent = 'Preview unavailable. The original content stays visible.';
+    }
+    updateToggle();
   }
 
   function updateToggle() {
+    const handle = slot.handle;
     const unavailable = !hasGpu || reducedMotion.matches;
     controls.disabled = unavailable;
     toggle.disabled = unavailable;
     toggle.setAttribute('aria-pressed', String(paused));
-    const label = !hasGpu
-      ? 'Effects unavailable'
-      : reducedMotion.matches
-        ? 'Reduced motion'
-        : !handle || handle.lifecycle !== 'active'
-          ? 'Start effect'
-          : paused
-            ? 'Resume effect'
-            : 'Pause effect';
+    let label: string;
+    if (!hasGpu) {
+      label = 'Effects unavailable';
+    } else if (reducedMotion.matches) {
+      label = 'Reduced motion';
+    } else if (!handle || handle.lifecycle !== 'active') {
+      label = 'Start effect';
+    } else {
+      label = paused ? 'Resume effect' : 'Pause effect';
+    }
     toggle.setAttribute('aria-label', label);
     toggle.title = label;
     const playing = handle?.lifecycle === 'active' && !paused;
     toggleIcon.setAttribute('href', playing ? '#ph-pause' : '#ph-play');
   }
 
-  async function createHandle(target: HTMLElement | SVGElement): Promise<EffectHandle> {
-    const module = await loadBrowser();
-    const options: AttachmentOptions = {
-      host,
+  function attach() {
+    if (!visible) {
+      return;
+    }
+    return slot.show(currentTarget(), effect, () => ({
       clock: 'auto',
       motion: 'respect',
       intensity: intensity(),
       seed: SEED,
-    };
-    if (effect.id === 'fire') {
-      return module.attachFire(target, { ...options, flameHeight: Number(heightInput?.value) });
-    }
-    return (module[effect.exportName] as Factory)(target, options);
-  }
-
-  async function attach() {
-    const currentRevision = ++revision;
-    handle?.dispose();
-    handle = undefined;
-    paused = false;
-    updateToggle();
-
-    if (disposed || !visible) {
-      return;
-    }
-    if (!hasGpu) {
-      setStatus(
-        'Effects are unavailable in this browser. The original content stays visible.',
-        'unavailable',
-      );
-      return;
-    }
-    if (reducedMotion.matches) {
-      setStatus('Reduced motion keeps this preview still.', 'reduced-motion');
-      return;
-    }
-
-    setStatus('Preparing the live preview…', 'initializing');
-    try {
-      const target = currentTarget();
-      await document.fonts.ready;
-      if (target instanceof HTMLImageElement) {
-        await target.decode();
-      }
-      const nextHandle = await createHandle(target);
-      if (disposed || currentRevision !== revision) {
-        nextHandle.dispose();
-        return;
-      }
-      handle = nextHandle;
-      await nextHandle.ready;
-      if (disposed || currentRevision !== revision) {
-        nextHandle.dispose();
-        return;
-      }
-      if (nextHandle.lifecycle === 'active') {
-        staleRetries = 0;
-        delete lab.dataset.reason;
-        setStatus('Live', 'active');
-      } else if (nextHandle.reason === 'stale-raster' && visible && staleRetries < 1) {
-        staleRetries += 1;
-        nextHandle.dispose();
-        handle = undefined;
-        scheduleAttach();
-        return;
-      } else {
-        lab.dataset.reason = nextHandle.reason ?? 'unavailable';
-        setStatus(
-          'Preview unavailable. The original content stays visible.',
-          nextHandle.reason ?? 'unavailable',
-        );
-      }
-      updateToggle();
-    } catch (error) {
-      if (!disposed && currentRevision === revision) {
-        lab.dataset.reason = error instanceof Error ? error.message : String(error);
-        setStatus('Preview unavailable. The original content stays visible.', 'unavailable');
-        updateToggle();
-      }
-    }
-  }
-
-  function scheduleAttach() {
-    cancelAnimationFrame(attachFrame);
-    attachFrame = requestAnimationFrame(() => {
-      attachFrame = requestAnimationFrame(() => {
-        attachFrame = 0;
-        if (visible && !handle) {
-          void attach();
-        }
-      });
-    });
+      ...(effect.id === 'fire' ? { flameHeight: Number(heightInput?.value) } : {}),
+    }));
   }
 
   function selectSubject(value: string) {
+    paused = false;
     for (const target of targets) {
       target.toggleAttribute('hidden', target.dataset.docsLabTarget !== value);
     }
@@ -216,29 +165,24 @@ function initializeLab(
   }
 
   function dispose() {
-    disposed = true;
-    revision += 1;
-    cancelAnimationFrame(attachFrame);
+    savedPlayback.set(lab, { paused, needsResume });
     window.clearTimeout(copyTimer);
     lifetime.abort();
     observer.disconnect();
-    handle?.dispose();
-    handle = undefined;
+    slot.dispose();
   }
 
   const observer = new IntersectionObserver(
     ([entry]) => {
       visible = entry.isIntersecting && entry.intersectionRatio > 0;
       if (!visible) {
-        staleRetries = 0;
         return;
       }
-      if (handle?.reason === 'stale-raster') {
-        handle.dispose();
-        handle = undefined;
-      }
-      if (!handle) {
-        scheduleAttach();
+      if (
+        slot.status.lifecycle !== 'initializing' &&
+        (!slot.handle || slot.handle.reason === 'stale-raster')
+      ) {
+        void attach();
       }
     },
     { threshold: Number.EPSILON },
@@ -246,20 +190,18 @@ function initializeLab(
 
   updateValues();
   updateToggle();
-  setStatus(
-    hasGpu
-      ? 'Waiting to enter view.'
-      : 'Effects are unavailable in this browser. The original content stays visible.',
-    hasGpu ? 'idle' : 'unavailable',
-  );
+  status.textContent = hasGpu
+    ? 'Waiting to enter view.'
+    : 'Effects are unavailable in this browser. The original content stays visible.';
+  lab.dataset.paused = String(paused);
   observer.observe(host);
 
   intensityInput.addEventListener(
     'input',
     () => {
       updateValues();
-      if (handle?.lifecycle === 'active') {
-        handle.intensity = intensity();
+      if (slot.handle?.lifecycle === 'active') {
+        slot.handle.intensity = intensity();
       }
     },
     { signal },
@@ -273,19 +215,22 @@ function initializeLab(
   toggle.addEventListener(
     'click',
     () => {
+      const handle = slot.handle;
       if (!handle || handle.lifecycle !== 'active') {
-        void attach();
+        needsResume = false;
+        environment.update();
+        if (slot.status.lifecycle !== 'initializing') {
+          void attach();
+        }
         return;
       }
       paused = !paused;
       if (paused) {
         handle.pause();
-        setStatus('Paused', 'paused');
       } else {
         handle.resume();
-        setStatus('Live', 'active');
       }
-      updateToggle();
+      updateStatus(slot.status);
     },
     { signal },
   );
@@ -293,19 +238,15 @@ function initializeLab(
     'change',
     () => {
       if (reducedMotion.matches) {
-        revision += 1;
-        handle?.dispose();
-        handle = undefined;
         paused = false;
-        setStatus('Reduced motion keeps this preview still.', 'reduced-motion');
-      } else if (visible) {
-        setStatus('Choose Start effect to restart this preview.', 'ready');
+        needsResume = true;
       }
-      updateToggle();
+      environment.update();
+      updateStatus(slot.status);
     },
     { signal },
   );
-  window.addEventListener('pagehide', dispose, { once: true, signal });
+  return dispose;
 }
 
 function setFill(input: HTMLInputElement) {
@@ -322,4 +263,4 @@ function required<T extends Element>(selector: string, root: ParentNode): T {
   return element;
 }
 
-initializeLabs();
+initializePage(initializeLabs);

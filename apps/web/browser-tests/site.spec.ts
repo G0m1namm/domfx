@@ -33,15 +33,60 @@ test('visibility recovery replaces invalidated captures and preserves preview pa
     await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
     await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
     await page.getByRole('button', { name: 'Pause animation' }).click();
+    let pausedFrame = await page.locator('.dialog-stage').screenshot();
+    // Let the compositor settle before comparing the retained paused frame.
+    await expect
+      .poll(async () => {
+        const next = await page.locator('.dialog-stage').screenshot();
+        const unchanged = pausedFrame.equals(next);
+        pausedFrame = next;
+        return unchanged;
+      })
+      .toBe(true);
     await setHidden(true);
     await expect(page.locator('canvas')).toHaveCount(0);
     await setHidden(false);
     await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
     await expect(page.locator('.dialog-stage canvas')).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Resume animation' })).toBeVisible();
+    await expect
+      .poll(async () => pausedFrame.equals(await page.locator('.dialog-stage').screenshot()))
+      .toBe(true);
   } finally {
     releaseFonts();
   }
+});
+
+test('marketing controls work after an actual back/forward-cache restore', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => {
+    window.addEventListener('pageshow', (event) => {
+      document.documentElement.dataset.testPersisted = String(event.persisted);
+    });
+  });
+  await page.goto('/');
+  await expect(page.locator('.header-effect-host')).toHaveAttribute(
+    'data-reason',
+    'reduced-motion',
+  );
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect(page.locator('[data-closing-pause]')).toBeEnabled();
+  await page.goto('/effects/');
+  await page.goBack({ waitUntil: 'commit' });
+  await expect(page.locator('html')).toHaveAttribute('data-test-persisted', 'true');
+  await expect(page.locator('.header-effect-host')).toHaveAttribute(
+    'data-reason',
+    'reduced-motion',
+  );
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await page.locator('[data-closing-pause]').click();
+  await expect(page.locator('.header-effect-host')).toHaveAttribute('data-status', 'active');
+  await page.getByRole('button', { name: 'Search effects and documentation', exact: true }).click();
+  await expect(page.locator('#site-search')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
+  await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
+  await expect(page.locator('.dialog-stage canvas')).toHaveCount(1);
 });
 
 test('header and closing artwork share timing with a stronger closing effect', async ({ page }) => {
@@ -52,7 +97,7 @@ test('header and closing artwork share timing with a stronger closing effect', a
   const closing = page.locator('#closing-content');
   await expect(header).toHaveAttribute('data-status', 'active');
   await page.locator('[data-closing-target]').scrollIntoViewIfNeeded();
-  await expect(closing).toHaveAttribute('data-status', 'active');
+  await expect(closing.locator('[data-closing-host]')).toHaveAttribute('data-status', 'active');
   const snapshot = () =>
     page.evaluate(() => {
       const header = document.querySelector<HTMLElement>('.header-effect-host')!;

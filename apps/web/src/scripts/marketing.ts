@@ -1,11 +1,12 @@
-import type * as BrowserEffects from '@domfx/browser';
-import type { EffectHandle } from '@domfx/browser';
+import type { EffectSlot, EffectStatus } from '@domfx/site/effect-slot';
+import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import type { Effect } from '@domfx/site/effects';
 import { effects, findEffect, patternEffects } from '@domfx/site/effects';
+import { initializePage } from '@domfx/site/page-lifetime';
 
 import { initializeSiteSearch } from './site-search';
 
-const savedPattern = { index: 0, elapsed: 0, time: 3.2, paused: false };
+const savedPattern = { index: 0, elapsed: 0, time: 3.2, paused: false, needsResume: false };
 
 function initializeMarketing() {
   const lifetime = new AbortController();
@@ -54,24 +55,14 @@ function initializeMarketing() {
   let filter =
     document.querySelector<HTMLElement>('[data-filter][aria-pressed="true"]')?.dataset.filter ??
     'All';
-  let previewRevision = 0;
   let selectedEffect: Effect = effects[0];
   let targetKind: 'text' | 'svg' | 'image' = 'text';
   let previewSubject: Element | undefined;
   let paused = false;
   let previewTime = 2.4;
   let previewNeedsResume = false;
-  let dialogHandle: EffectHandle | undefined;
   let previewReturnFocus: HTMLElement | undefined;
-  const cardHandles = new Map<HTMLElement | SVGElement, EffectHandle>();
-  const pending = new Map<Element, number>();
-  let nextCardRequest = 0;
-  let browserModule: Promise<typeof BrowserEffects> | undefined;
-  async function loadEffect(effect: Effect) {
-    browserModule ??= import('@domfx/browser');
-    const module = await browserModule;
-    return module[effect.exportName];
-  }
+  const cardSlots = new Map<HTMLElement | SVGElement, EffectSlot>();
 
   // Reflect only this decorative output canvas; captured geometry stays axis-aligned.
   const headerHost = required<HTMLElement>('.header-effect-host');
@@ -81,14 +72,37 @@ function initializeMarketing() {
   const patternHold = 6;
   const patternPeak = 0.85;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let headerHandle: EffectHandle | undefined;
-  let headerRevision = 0;
-  let headerPending = false;
   let patternIndex = savedPattern.index;
   let patternElapsed = savedPattern.elapsed;
   let patternTime = savedPattern.time;
   let patternsPaused = savedPattern.paused || reducedMotion.matches;
-  let motionNeedsResume = reducedMotion.matches;
+  let motionNeedsResume = savedPattern.needsResume || reducedMotion.matches;
+  const patternEnvironment = createEffectEnvironment({
+    document,
+    reducedMotion,
+    needsResume: () => motionNeedsResume,
+  });
+  const previewEnvironment = createEffectEnvironment({
+    document,
+    reducedMotion,
+    needsResume: () => previewNeedsResume,
+  });
+  const headerSlot = createEffectSlot({
+    host: headerHost,
+    environment: patternEnvironment,
+    onChange: () => syncPatternEffects(),
+  });
+  const closingHost = required<HTMLElement>('#closing-content');
+  const closingSlot = createEffectSlot({
+    host: required<HTMLElement>('[data-closing-host]', closingHost),
+    environment: patternEnvironment,
+    onChange: () => syncPatternEffects(),
+  });
+  const dialogSlot = createEffectSlot({
+    host: dialogStage,
+    environment: previewEnvironment,
+    onChange: updatePreviewStatus,
+  });
 
   function updatePatternPlayback() {
     const paused = patternsPaused || reducedMotion.matches;
@@ -132,18 +146,17 @@ function initializeMarketing() {
 
   function syncPatternEffects() {
     const intensity = patternIntensity();
+    const headerHandle = headerSlot.handle;
     if (headerHandle) {
       headerHandle.time = patternTime;
       headerHandle.intensity = intensity;
     }
-    for (const handle of closingHandles) {
-      handle.time = patternTime;
-      handle.intensity = closingIntensity();
+    const closingHandle = closingSlot.handle;
+    if (closingHandle) {
+      closingHandle.time = patternTime;
+      closingHandle.intensity = closingIntensity();
     }
     for (const host of [headerHost, closingHost]) {
-      if (!host) {
-        continue;
-      }
       host.dataset.effect = patternEffects[patternIndex].id;
       host.dataset.time = patternTime.toFixed(3);
       host.dataset.intensity = (host === closingHost ? closingIntensity() : intensity).toFixed(3);
@@ -156,53 +169,20 @@ function initializeMarketing() {
     }
   }
 
-  async function showHeaderEffect() {
-    const revision = ++headerRevision;
-    headerHandle?.dispose();
-    headerHandle = undefined;
-    if (!hasGpu || reducedMotion.matches || motionNeedsResume || disposed || document.hidden) {
-      return;
-    }
-    headerPending = true;
-    try {
-      const factory = await loadEffect(patternEffects[patternIndex]);
-      if (revision !== headerRevision || disposed) {
-        return;
-      }
-      const handle = factory(headerLine, {
-        host: headerHost,
-        clock: 'manual',
-        intensity: patternIntensity(),
-        time: patternTime,
-        seed: 182,
-      });
-      headerHandle = handle;
-      await handle.ready;
-      if (revision !== headerRevision || disposed) {
-        handle.dispose();
-        return;
-      }
-      headerHost.dataset.status = handle.lifecycle;
-      syncPatternEffects();
-    } catch {
-      if (revision === headerRevision) {
-        headerHost.dataset.status = 'unavailable';
-      }
-    } finally {
-      if (revision === headerRevision) {
-        headerPending = false;
-      }
-    }
+  function showHeaderEffect() {
+    return headerSlot.show(headerLine, patternEffects[patternIndex], () => ({
+      clock: 'manual',
+      intensity: patternIntensity(),
+      time: patternTime,
+      seed: 182,
+    }));
   }
 
   function togglePatterns() {
     patternsPaused = !patternsPaused;
     if (!patternsPaused && motionNeedsResume) {
       motionNeedsResume = false;
-      void showHeaderEffect();
-      if (closingVisible) {
-        void attachClosingEffects();
-      }
+      patternEnvironment.update();
       observeCards();
     }
     updatePatternPlayback();
@@ -211,17 +191,10 @@ function initializeMarketing() {
     if (reducedMotion.matches) {
       patternsPaused = true;
       motionNeedsResume = true;
-      headerRevision += 1;
-      headerHandle?.dispose();
-      headerHandle = undefined;
-      headerPending = false;
-      clearClosingEffects();
-      clearCards();
       paused = true;
       previewNeedsResume = true;
-      if (dialog.open) {
-        void showDialogEffect();
-      }
+      patternEnvironment.update();
+      previewEnvironment.update();
     }
     updatePatternPlayback();
     updatePreviewPlayback();
@@ -238,80 +211,39 @@ function initializeMarketing() {
         if (entry.isIntersecting && !dialog.open && !searchDialog.open) {
           void attachCard(target);
         } else {
-          pending.delete(target);
-          cardHandles.get(target)?.dispose();
-          cardHandles.delete(target);
+          cardSlots.get(target)?.dispose();
+          cardSlots.delete(target);
         }
       }
     },
     { threshold: 0.08 },
   );
 
-  async function attachCard(target: HTMLElement | SVGElement) {
-    if (
-      disposed ||
-      document.hidden ||
-      !hasGpu ||
-      reducedMotion.matches ||
-      motionNeedsResume ||
-      cardHandles.has(target) ||
-      pending.has(target)
-    ) {
+  function attachCard(target: HTMLElement | SVGElement) {
+    if (disposed || cardSlots.has(target)) {
       return;
     }
-    const request = ++nextCardRequest;
-    pending.set(target, request);
-    try {
-      const effect = findEffect(target.dataset.preview);
-      const host = target.closest<HTMLElement>('[data-effect-host]');
-      if (!effect || !host) {
-        return;
-      }
-      const [factory] = await Promise.all([loadEffect(effect), document.fonts.ready]);
-      if (target instanceof HTMLImageElement) {
-        await target.decode();
-      }
-      if (
-        disposed ||
-        pending.get(target) !== request ||
-        !target.isConnected ||
-        dialog.open ||
-        searchDialog.open
-      ) {
-        return;
-      }
-      const handle = factory(target, {
-        host,
-        clock: 'ambient',
-        intensity: 0.7,
-        time: 2.4,
-        seed: 314,
-      });
-      cardHandles.set(target, handle);
-      await handle.ready;
-      if (disposed || cardHandles.get(target) !== handle) {
-        handle.dispose();
-        return;
-      }
-      target.dataset.status = handle.lifecycle;
-    } catch {
-      if (pending.get(target) === request) {
-        target.dataset.status = 'unavailable';
-      }
-    } finally {
-      if (pending.get(target) === request) {
-        pending.delete(target);
-      }
+    const effect = findEffect(target.dataset.preview);
+    const host = target.closest<HTMLElement>('[data-effect-host]');
+    if (!effect || !host) {
+      return;
     }
+    const slot = createEffectSlot({ host, environment: patternEnvironment });
+    cardSlots.set(target, slot);
+    return slot.show(target, effect, () => ({
+      clock: 'ambient',
+      intensity: 0.7,
+      time: 2.4,
+      seed: 314,
+    }));
   }
 
   function clearCards() {
     observer.disconnect();
-    pending.clear();
-    for (const handle of cardHandles.values()) {
-      handle.dispose();
+    for (const slot of cardSlots.values()) {
+      slot.dispose();
     }
-    cardHandles.clear();
+    cardSlots.clear();
   }
 
   function observeCards() {
@@ -439,65 +371,19 @@ function initializeMarketing() {
   void loadRepositoryStars();
 
   // Release the closing artwork offscreen; rejoining never resets the shared cycle.
-  let closingHandles: EffectHandle[] = [];
-  let closingHost: HTMLElement | undefined;
-  let closingRevision = 0;
   let closingVisible = false;
-  let closingPending = false;
 
-  function clearClosingEffects() {
-    closingRevision += 1;
-    for (const handle of closingHandles) {
-      handle.dispose();
-    }
-    closingHandles = [];
-    closingPending = false;
-  }
-
-  async function attachClosingEffects() {
-    clearClosingEffects();
-    if (!hasGpu || reducedMotion.matches || motionNeedsResume || disposed || document.hidden) {
-      return;
-    }
-    closingPending = true;
-    const revision = closingRevision;
-    try {
+  function attachClosingEffects() {
+    if (closingVisible) {
       const effect = patternEffects[patternIndex];
       const target = required<HTMLImageElement>('[data-closing-target]', closingHost);
-      const [factory] = await Promise.all([
-        loadEffect(effect),
-        document.fonts.ready,
-        target.decode(),
-      ]);
-      if (revision !== closingRevision || !closingVisible || disposed) {
-        return;
-      }
       target.dataset.effect = effect.id;
-      const handle = factory(target, {
-        host: required<HTMLElement>('[data-closing-host]', closingHost),
+      return closingSlot.show(target, effect, () => ({
         clock: 'manual',
         intensity: closingIntensity(),
         time: patternTime,
         seed: 182,
-      });
-      closingHandles = [handle];
-      await handle.ready;
-      if (revision !== closingRevision || disposed) {
-        handle.dispose();
-        return;
-      }
-      if (closingHost) {
-        closingHost.dataset.status = handle.lifecycle;
-      }
-      syncPatternEffects();
-    } catch {
-      if (revision === closingRevision && closingHost) {
-        closingHost.dataset.status = 'unavailable';
-      }
-    } finally {
-      if (revision === closingRevision) {
-        closingPending = false;
-      }
+      }));
     }
   }
 
@@ -511,7 +397,7 @@ function initializeMarketing() {
         if (closingVisible) {
           void attachClosingEffects();
         } else {
-          clearClosingEffects();
+          closingSlot.clear();
         }
       }
     },
@@ -519,7 +405,6 @@ function initializeMarketing() {
   );
 
   function initializeContent() {
-    closingHost = required<HTMLElement>('#closing-content');
     updatePatternPlayback();
     closingObserver.observe(required('[data-closing-target]', closingHost));
     if (!isLibrary) {
@@ -669,10 +554,25 @@ function initializeMarketing() {
     }
   });
 
-  async function showDialogEffect() {
-    const revision = ++previewRevision;
-    dialogHandle?.dispose();
-    dialogHandle = undefined;
+  function updatePreviewStatus(status: EffectStatus) {
+    if (dialogSlot.handle) {
+      dialogSlot.handle.intensity = Number(intensity.value) / 100;
+    }
+    required('[data-preview-status]', dialog).textContent =
+      status.reason === 'reduced-motion'
+        ? 'Animation paused for reduced motion.'
+        : status.reason === 'no-webgpu'
+          ? 'WebGPU is unavailable. Your HTML stays visible.'
+          : status.lifecycle === 'initializing'
+            ? 'Preparing the live preview…'
+            : status.lifecycle === 'active'
+              ? 'Live preview · WebGPU'
+              : status.reason
+                ? `Static content · ${status.reason}`
+                : 'Effect unavailable. Your HTML stays visible.';
+  }
+
+  function showDialogEffect() {
     const target = document.createElement('span');
     target.className = 'dialog-target';
     target.dataset.dialogTarget = '';
@@ -706,50 +606,19 @@ function initializeMarketing() {
       button.setAttribute('aria-pressed', String(button.dataset.target === targetKind));
     }
     const effect = selectedEffect;
-    if (disposed || document.hidden) {
+    if (disposed) {
       return;
     }
     updatePreviewPlayback();
-    if (!hasGpu || reducedMotion.matches || previewNeedsResume) {
-      required('[data-preview-status]', dialog).textContent =
-        reducedMotion.matches || previewNeedsResume
-          ? 'Animation paused for reduced motion.'
-          : 'WebGPU is unavailable. Your HTML stays visible.';
-      return;
-    }
-    try {
-      const [factory] = await Promise.all([
-        loadEffect(effect),
-        document.fonts.ready,
-        target.querySelector('img')?.decode(),
-      ]);
-      if (!dialog.open || revision !== previewRevision || disposed) {
-        return;
-      }
+    return dialogSlot.show(target, effect, () => {
       setPreviewZoom(previewZoom);
-      const handle = factory(target, {
-        host: dialogStage,
+      return {
         clock: 'manual',
         seed: 314,
         intensity: Number(intensity.value) / 100,
         time: previewTime,
-      });
-      dialogHandle = handle;
-      await handle.ready;
-      if (!dialog.open || revision !== previewRevision) {
-        handle.dispose();
-        return;
-      }
-      required('[data-preview-status]', dialog).textContent =
-        handle.lifecycle === 'active'
-          ? 'Live preview · WebGPU'
-          : `Static content · ${handle.reason ?? 'effect unavailable'}`;
-    } catch {
-      if (revision === previewRevision && !disposed) {
-        required('[data-preview-status]', dialog).textContent =
-          'Effect unavailable. Your HTML stays visible.';
-      }
-    }
+      };
+    });
   }
 
   function updatePreviewPlayback() {
@@ -818,9 +687,10 @@ function initializeMarketing() {
       paused = !paused;
       if (!paused) {
         previewNeedsResume = false;
+        previewEnvironment.update();
       }
       updatePreviewPlayback();
-      if (!paused && !dialogHandle) {
+      if (!paused && !dialogSlot.handle && dialogSlot.status.lifecycle !== 'initializing') {
         void showDialogEffect();
       }
     } else if (element.dataset.copy) {
@@ -832,15 +702,13 @@ function initializeMarketing() {
 
   on(intensity, 'input', () => {
     required('output', dialog).textContent = `${intensity.value}%`;
-    if (dialogHandle) {
-      dialogHandle.intensity = Number(intensity.value) / 100;
+    if (dialogSlot.handle) {
+      dialogSlot.handle.intensity = Number(intensity.value) / 100;
     }
     required('[data-code]', dialog).textContent = attachmentCode();
   });
   on(dialog, 'close', () => {
-    previewRevision += 1;
-    dialogHandle?.dispose();
-    dialogHandle = undefined;
+    dialogSlot.clear();
     previewDrag = undefined;
     setPreviewZoom(1);
     observeCards();
@@ -854,40 +722,19 @@ function initializeMarketing() {
     () => {
       lastTime = 0;
       lastPatternTime = 0;
-      if (document.hidden) {
-        // Invalidated captures cannot become active again; replace them on return.
-        headerRevision += 1;
-        headerHandle?.dispose();
-        headerHandle = undefined;
-        headerPending = false;
-        clearClosingEffects();
-        clearCards();
-        previewRevision += 1;
-        previewTime = dialogHandle?.time ?? previewTime;
-        dialogHandle?.dispose();
-        dialogHandle = undefined;
-      } else {
-        void showHeaderEffect();
-        if (closingVisible) {
-          void attachClosingEffects();
-        }
-        if (dialog.open) {
-          void showDialogEffect();
-        } else if (!searchDialog.open) {
-          observeCards();
-        }
-      }
     },
     { signal: lifetime.signal },
   );
   function tick(now: number) {
+    const headerHandle = headerSlot.handle;
+    const closingHandle = closingSlot.handle;
+    const dialogHandle = dialogSlot.handle;
     const patternsActive =
-      headerHandle?.lifecycle === 'active' ||
-      closingHandles.some((handle) => handle.lifecycle === 'active');
+      headerHandle?.lifecycle === 'active' || closingHandle?.lifecycle === 'active';
     if (
       patternsActive &&
-      !headerPending &&
-      !closingPending &&
+      headerSlot.status.lifecycle !== 'initializing' &&
+      closingSlot.status.lifecycle !== 'initializing' &&
       !patternsPaused &&
       !dialog.open &&
       !searchDialog.open &&
@@ -919,8 +766,9 @@ function initializeMarketing() {
       !reducedMotion.matches
     ) {
       if (lastTime) {
-        dialogHandle.time += Math.min((now - lastTime) / 1000, 0.05);
+        previewTime += Math.min((now - lastTime) / 1000, 0.05);
       }
+      dialogHandle.time = previewTime;
       lastTime = now;
     } else {
       lastTime = 0;
@@ -939,25 +787,18 @@ function initializeMarketing() {
       elapsed: patternElapsed,
       time: patternTime,
       paused: patternsPaused,
+      needsResume: motionNeedsResume,
     });
     cancelAnimationFrame(frame);
     window.clearTimeout(toastTimer);
     closingObserver.disconnect();
-    clearClosingEffects();
+    closingSlot.dispose();
     clearCards();
-    previewRevision += 1;
-    dialogHandle?.dispose();
-    headerRevision += 1;
-    headerHandle?.dispose();
+    dialogSlot.dispose();
+    headerSlot.dispose();
     dialog.close();
     searchDialog.close();
   };
 }
 
-let disposeMarketing = initializeMarketing();
-window.addEventListener('pagehide', () => disposeMarketing());
-window.addEventListener('pageshow', (event) => {
-  if (event.persisted) {
-    disposeMarketing = initializeMarketing();
-  }
-});
+initializePage(initializeMarketing);

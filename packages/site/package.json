@@ -7,6 +7,8 @@
   "type": "module",
   "exports": {
     "./effects": "./src/effects.ts",
+    "./effect-slot": "./src/effect-slot.ts",
+    "./page-lifetime": "./src/page-lifetime.ts",
     "./effect-reference": "./src/effect-reference.ts",
     "./site-links": "./src/site-links.ts",
     "./components/*.astro": "./src/components/*.astro",
@@ -15,6 +17,9 @@
     "./config": "./src/config.ts",
     "./metadata": "./src/metadata.ts",
     "./marketing-pages": "./src/marketing-pages.ts"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.mjs"
   },
   "dependencies": {
     "@domfx/browser": "workspace:*"

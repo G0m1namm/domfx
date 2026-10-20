@@ -42,6 +42,9 @@ See [artifact and documentation policy](engineering/artifact-policy.md) for publ
 
 ## Code health
 
+Read [code conventions](engineering/code-conventions.md) before JavaScript/TypeScript
+implementation and review; complete its final review checklist before handoff.
+
 For TypeScript implementation, refactoring, and architecture work, use
 [domfx-typescript-engineering](.agents/skills/domfx-typescript-engineering/SKILL.md).
 Apply patterns only when a current requirement warrants them.

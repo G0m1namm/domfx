@@ -58,6 +58,10 @@ instructions take precedence over upstream examples.
 - **Decisions:** reuse approvals and test boundaries from the issue or conversation.
   Ask when a material decision is unresolved. A prototype recommendation does not
   approve a new visual direction; [DESIGN.md](../DESIGN.md) still governs the website.
+- **Task context:** keep the current outcome, approved direction, non-goals and
+  acceptance checks in the issue or task brief. Update these when scope changes.
+  At a milestone or task switch, use `handoff` with revision, evidence and next-action
+  pointers; the next session should not need to reconstruct the conversation.
 - **Implementation:** use the TypeScript and relevant browser/GPU/GSAP skills in
   [skills.md](skills.md). Prefer pnpm; use the existing Oxfmt/Oxlint and package
   boundaries. RTK is a local CLI preference when installed, not a new contributor
@@ -75,10 +79,11 @@ instructions take precedence over upstream examples.
   verification run serially with the integration worktree idle. Research workers
   research directly instead of recursively delegating the same question. Research
   workers that commit or push evidence also receive dedicated worktrees and branches.
-- **Memory priority:** lower peak memory is a priority for the test-tooling
-  investigation. It is not a general constraint on implementation, agent concurrency,
-  or a new runtime/library requirement. Measure test memory with controlled browser
-  and server concurrency so concurrent development does not contaminate results.
+  For Orca dispatches and shared browser resources, follow
+  [coordination ownership](agents/coordination.md).
+- **Measurements:** take optimization priorities from the current issue, not earlier
+  conversations. Compare equivalent coverage under controlled browser/server
+  concurrency and record speed, memory and reliability tradeoffs.
 - **Artifacts and actions:** follow the [artifact policy](artifact-policy.md). Keep design
   exploration prototypes and screenshots local, and record approved conclusions in
   `DESIGN.md` or the issue. Selected non-design research evidence may use a dedicated
@@ -101,10 +106,9 @@ single-ticket or multi-ticket sequence. Use `$wayfinder` when the unresolved dec
 span sessions. Finish a difficult session with `$aihero-retro` while its evidence is
 still available.
 
-For the homepage exploration, start from the existing design issue, complete its
-`DESIGN.md` format criterion, and use `$prototype` to compare the requested concepts.
-For test tooling, research compatibility first, then compare measured peak memory
-under equivalent coverage. Reuse existing issues instead of creating duplicates.
+Reuse existing issues instead of creating duplicates. Keep planning proportional to
+the requested outcome; use the existing design and release conventions unless the
+task requires a new decision.
 
 ## Maintenance and provenance
 
@@ -117,7 +121,8 @@ Local adaptations: tracked `engineering/agents` and `engineering/adr` paths; the
 integration pointer; research/retro aliases and matching internal calls; nonrecursive
 research and isolated research branches; a separate teaching directory; reuse of approved test seams; proportional specs with a distinct parent
 label; repository verification in implement/implement-spec; worktree preservation and
-merge-aware completion; repository PR templates; and review of task-owned uncommitted/untracked changes.
+merge-aware completion; repository PR templates; review of task-owned uncommitted/untracked
+changes; and coordinator-owned Orca review dispatches.
 Codex invocation policy is recorded in each skill’s `agents/openai.yaml`.
 
 To update, fetch the desired upstream revision into a temporary directory, review

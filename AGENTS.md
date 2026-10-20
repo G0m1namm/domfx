@@ -3,6 +3,15 @@
 Read `README.md` and `CONTRIBUTING.md` before planning or implementation.
 Use `GLOSSARY.md` for shared domain terminology.
 
+## Communication
+
+Use the fewest words that clearly explain the idea. Lead with the result, use plain
+language, and say each point once. Keep details needed to act, verify, or understand
+a limitation; expand when asked.
+
+Keep tool output focused: read relevant file sections and request only needed fields.
+Save lengthy logs locally and return the outcome, relevant failure, and evidence path.
+
 ## Engineering workflow
 
 Use the [AI Hero workflow](engineering/agent-workflow.md) for planning, implementation,

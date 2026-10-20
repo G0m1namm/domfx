@@ -3,10 +3,10 @@ import washer from '../assets/brand/washer.png';
 import MarketingClosing from '../components/marketing-closing.astro';
 import MarketingStory from '../components/marketing-story.astro';
 import EffectCard from '../components/effect-card.astro';
-import PhosphorIcons from '../components/phosphor-icons.astro';
-import SiteNav from '../components/SiteNav.astro';
+import PhosphorIcons from '@domfx/site/components/phosphor-icons.astro';
+import SiteNav from '@domfx/site/components/SiteNav.astro';
 import SiteSearch from '../components/site-search.astro';
-import { effects } from '../content/effects';
+import { effects } from '@domfx/site/effects';
 import '../styles/marketing.css';
 interface Props { surface?: 'marketing' | 'library' }
 const { surface = 'marketing' } = Astro.props;

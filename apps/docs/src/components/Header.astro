@@ -1,0 +1,14 @@
+---
+import Search from '@astrojs/starlight/components/Search.astro';
+
+import SiteNav from '@domfx/site/components/SiteNav.astro';
+import PhosphorIcons from '@domfx/site/components/phosphor-icons.astro';
+---
+<PhosphorIcons />
+<SiteNav current="docs" as="div"><div class="docs-search" slot="search"><Search /></div></SiteNav>
+
+<script>
+  const trigger = document.querySelector<HTMLButtonElement>('button[data-open-modal]');
+  trigger?.setAttribute('title', 'Search effects and docs (⌘K / Ctrl+K)');
+  document.querySelector('site-search dialog')?.addEventListener('close', () => trigger?.focus());
+</script>

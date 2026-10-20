@@ -1,0 +1,10 @@
+---
+import DefaultMarkdownContent from '@astrojs/starlight/components/MarkdownContent.astro';
+
+const { description } = Astro.locals.starlightRoute.entry.data;
+---
+<DefaultMarkdownContent>
+  {description && <p class="docs-description">{description}</p>}
+  <slot />
+</DefaultMarkdownContent>
+<script src="../scripts/docs-effect-lab.ts"></script>

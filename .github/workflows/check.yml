@@ -51,11 +51,20 @@ jobs:
       - run: pnpm --filter @domfx/web exec playwright install --with-deps chromium
       - name: Website smoke (no GPU required)
         run: pnpm test:web:smoke:built
+      - name: Docs smoke (no GPU required)
+        run: pnpm test:docs:smoke:built
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: website-smoke
           path: .scratch/web/
+          include-hidden-files: true
+          retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: docs-smoke
+          path: .scratch/docs/report.json
           include-hidden-files: true
           retention-days: 7
       - run: pnpm release:status --since origin/main

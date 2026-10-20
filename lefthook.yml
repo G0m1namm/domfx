@@ -5,6 +5,8 @@ pre-commit:
       run: pnpm format:check
     lint:
       run: pnpm lint
+    artifacts:
+      run: pnpm check:artifacts
 
 commit-msg:
   commands:

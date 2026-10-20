@@ -16,6 +16,17 @@ export interface SiteSearch {
   trigger: HTMLButtonElement;
 }
 
+interface DocsSearchResult {
+  url: string;
+  excerpt: string;
+  plain_excerpt?: string;
+  meta: { title?: string };
+}
+
+interface DocsSearchIndex {
+  search(query: string): Promise<{ results: { data(): Promise<DocsSearchResult> }[] }>;
+}
+
 const resultLimit = 10;
 
 function required<T extends Element>(selector: string, root: ParentNode = document): T {
@@ -40,6 +51,11 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
   const status = required<HTMLElement>('.site-search-status', dialog);
   const groups = Array.from(dialog.querySelectorAll<HTMLElement>('[data-search-group]'));
   const items = Array.from(dialog.querySelectorAll<HTMLElement>('[data-search-item]'));
+  const docsIndexPath = dialog.dataset.docsPagefind;
+  const docsGroup = required<HTMLElement>('[data-search-group="documentation"]', dialog);
+  const docsList = required<HTMLUListElement>('ul', docsGroup);
+  let docsIndex: Promise<DocsSearchIndex> | undefined;
+  let queryRevision = 0;
   const on = <K extends keyof HTMLElementEventMap>(
     target: EventTarget,
     type: K,
@@ -48,7 +64,70 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
     target.addEventListener(type, callback as EventListener, { signal });
   };
 
+  function resultCount(count: number) {
+    return `${count} result${count === 1 ? '' : 's'}${count > resultLimit ? ` · showing the first ${resultLimit}` : ''}`;
+  }
+
+  function docsResult(result: DocsSearchResult) {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    const label = document.createElement('span');
+    const title = document.createElement('strong');
+    const excerpt = document.createElement('small');
+    link.href = result.url;
+    title.textContent = result.meta.title ?? 'Documentation';
+    excerpt.textContent = new DOMParser().parseFromString(
+      result.plain_excerpt ?? result.excerpt,
+      'text/html',
+    ).body.textContent;
+    label.append(title, excerpt);
+    link.append(label);
+    item.append(link);
+    return item;
+  }
+
+  async function updateDocs(
+    indexPath: string,
+    query: string,
+    revision: number,
+    effectCount: number,
+  ) {
+    const isCurrent = () => !signal.aborted && dialog.open && revision === queryRevision;
+    try {
+      docsIndex ??= import(/* @vite-ignore */ indexPath);
+      const index = await docsIndex;
+      if (!isCurrent()) {
+        return;
+      }
+      const search = await index.search(query);
+      if (!isCurrent()) {
+        return;
+      }
+      const results = await Promise.all(
+        search.results.slice(0, resultLimit - effectCount).map((result) => result.data()),
+      );
+      if (!isCurrent()) {
+        return;
+      }
+      docsList.replaceChildren(...results.map(docsResult));
+      docsGroup.hidden = results.length === 0;
+      empty.hidden = effectCount + results.length > 0;
+      status.textContent = resultCount(effectCount + search.results.length);
+    } catch {
+      if (isCurrent()) {
+        empty.hidden = effectCount > 0;
+        status.textContent =
+          'Documentation search is unavailable. You can still search effects or open Docs.';
+      }
+    }
+  }
+
   function updateResults() {
+    const revision = ++queryRevision;
+    if (docsIndexPath) {
+      docsList.replaceChildren();
+      docsGroup.hidden = true;
+    }
     const query = input.value.trim().toLowerCase();
     const terms = query.split(/\s+/).filter(Boolean);
     const matches = items.filter((item) =>
@@ -69,9 +148,12 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
       required('ul', group).append(...groupItems);
     }
     empty.hidden = visible.length > 0;
-    status.textContent = query
-      ? `${matches.length} result${matches.length === 1 ? '' : 's'}${matches.length > resultLimit ? ` · showing the first ${resultLimit}` : ''}`
-      : 'Effects and documentation';
+    status.textContent = query ? resultCount(matches.length) : 'Effects and documentation';
+    if (docsIndexPath && query) {
+      empty.hidden = true;
+      status.textContent = 'Searching documentation…';
+      void updateDocs(docsIndexPath, query, revision, visible.length);
+    }
   }
 
   function open() {
@@ -89,6 +171,7 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
   on(input, 'input', updateResults);
   on(required('[data-search-close]', dialog), 'click', () => dialog.close());
   on(dialog, 'close', () => {
+    queryRevision++;
     if (!dialog.open && !isBlocked()) {
       trigger.focus();
       options.onClose?.();
@@ -139,6 +222,13 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
       }
     }
   });
+  signal.addEventListener(
+    'abort',
+    () => {
+      queryRevision++;
+    },
+    { once: true },
+  );
   trigger.hidden = false;
   return { dialog, trigger };
 }

@@ -1,0 +1,15 @@
+:root {
+  color-scheme: dark;
+  --bg: #14151b;
+  --text: #e8eaf3;
+  --silver: #c2c5db;
+  --muted: #aeb1c1;
+  --border: #454754;
+  --line: var(--border);
+  --control-border: #8e91a8;
+  --surface: #1d1f27;
+  --raised: #292a35;
+  --focus: #e6dc6a;
+  --yellow: var(--focus);
+  --violet: #6153b7;
+}

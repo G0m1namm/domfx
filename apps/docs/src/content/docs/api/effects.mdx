@@ -1,0 +1,28 @@
+---
+title: "All effects"
+description: "Browse all 21 effects by category, with live previews on each reference."
+---
+
+import DocsEffectLinks from "../../../components/docs-effect-links.astro";
+import { effectsByCategory } from "../../documentation";
+
+<p>Every effect is an attachment function from <code>@domfx/browser</code> with the same <a href="/docs/api/shared">options and controls</a>. Each reference opens with a live preview you can tune, followed by its exact options.</p>
+## Energy
+
+Light and heat that move outward from the shape: lightning, flames and a travelling pulse.
+
+<DocsEffectLinks effects={effectsByCategory[0].effects} />
+
+## Material
+
+Coatings that cling to the edge and spread inward: ice, slime and scorched paper.
+
+<DocsEffectLinks effects={effectsByCategory[1].effects} />
+
+## Pattern
+
+Silver-violet marks that trace the silhouette, from ordered dots to woven strands.
+
+<DocsEffectLinks effects={effectsByCategory[2].effects} />
+
+<p>The <a href="/docs/api#available-effects">API reference</a> lists every import name in one table, and the <a href="/effects/">gallery</a> compares the effects side by side.</p>

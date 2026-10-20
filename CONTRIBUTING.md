@@ -35,7 +35,7 @@ setup and workspace map in [README.md](README.md).
 - Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
   `chore`, `style`, `revert`. Commitlint enforces the conventional preset and scopes.
 
-`pnpm install` installs Lefthook hooks. `pre-commit` checks formatting and lint
+`pnpm install` installs Lefthook hooks. `pre-commit` checks tracked artifacts, formatting and lint
 across the working tree (including unstaged edits); `commit-msg` checks the message;
 `pre-push` runs `pnpm check` and builds the production website without rebuilding the libraries.
 Use `DOMFX_FULL_VERIFY=1 git push` to opt into website smoke and the full local GPU suite in the hook. Reinstall with
@@ -65,13 +65,15 @@ fixture-only and contributor-doc changes need no package bump. See
 
 ## Dependency boundaries
 
-| Workspace        | Allowed workspace dependencies               |
-| ---------------- | -------------------------------------------- |
-| `packages/core`  | None; no DOM, framework, GPU or Node imports |
-| `packages/domfx` | Core                                         |
-| `packages/gsap`  | Core and browser package                     |
-| `tests/gpu`      | Library packages, never other apps           |
-| `apps/web`       | Library packages, never other apps           |
+| Workspace        | Allowed workspace dependencies                             |
+| ---------------- | ---------------------------------------------------------- |
+| `packages/core`  | None; no DOM, framework, GPU or Node imports               |
+| `packages/domfx` | Core                                                       |
+| `packages/gsap`  | Core and browser package                                   |
+| `packages/site`  | Browser package types; private site resources              |
+| `tests/gpu`      | Library packages, never other apps                         |
+| `apps/web`       | Library packages and shared site package; never other apps |
+| `apps/docs`      | Library packages and shared site package; never other apps |
 
 `workspace-boundaries.mjs` defines the direction. `pnpm lint:boundaries` checks
 manifests and imports (run `pnpm build` first). Cross-workspace dependencies must
@@ -86,10 +88,28 @@ fixture when a failure/lifecycle case cannot be exercised there.
 
 ## Verification
 
+`pnpm build:web` builds the marketing site and Starlight docs into `apps/web/dist`;
+`pnpm preview:web` serves that combined output. `pnpm test:docs` checks docs
+navigation, live labs, shared search and discovery on the composed site.
+Write docs in `apps/docs/src/content/docs`; effect references come from the shared
+catalog. The maintainer approved the migrated layout in #133; `DESIGN.md` records it.
+Pagefind is generated during builds; use the built preview to verify docs search
+and discovery. Development serves live docs content through the website's `/docs/`
+proxy; the internal docs server starts and stops with the website.
+
+Docs discovery output uses `DOMFX_SITE_URL` as its origin. Set
+`DOMFX_SITE_PRODUCTION=true` to require that value for a production build.
+`DOMFX_INDEXING=true` enables indexing; the default is off, and
+`DOMFX_SITE_PREVIEW=true` always keeps it off. `pnpm build:docs:preview` builds an
+isolated preview with a loopback origin and indexing disabled; `pnpm preview:docs`
+serves it on port 4347. Enabling public indexing remains a launch action
+after #91; marketing discovery work belongs to #124.
+
 For shader/library iteration, run `pnpm dev` from the root. It builds the packages
 first, watches core and GSAP JavaScript/declarations, watches the browser's Vite
-build and declarations, then starts Astro. Consumers continue to use built package
-exports, including the TypeGPU transform and patched SDF executor. A package edit
+build and declarations, then starts both Astro apps on one public origin. Consumers
+continue to use built package exports, including the TypeGPU transform and patched
+SDF executor. A package edit
 reloads the website; this is full-page reload, not retained animation state.
 Build/type errors remain visible in the terminal; correct them to resume output.
 Stop the command with Ctrl+C to release its watcher/server processes. This command
@@ -132,6 +152,12 @@ CI runs `pnpm check`, the production website build, a GPU-independent website sm
 suite and release metadata validation. Expensive GPU, soak and performance runs are
 local opt-in checks. The publication workflow remains disabled; its existing GPU
 preparation must be revised before enabling publication on hosted runners.
+
+Browser test and measurement commands reserve one session across linked worktrees
+and clean up their process group on exit (macOS/Linux). A busy session reports its
+owner; wait and retry. Wrap direct browser CLI checks with
+`pnpm browser:run <command> [args...]`. See [coordination ownership](engineering/agents/coordination.md)
+for manual browser windows, retained previews and interrupted-owner recovery.
 
 ## Publication and working artifacts
 

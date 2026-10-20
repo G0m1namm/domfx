@@ -6,24 +6,23 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "astro dev --host 127.0.0.1",
+    "dev": "node scripts/dev.mjs",
     "build": "astro build",
     "preview": "astro preview --host 127.0.0.1",
     "typecheck": "astro check",
-    "test:browser": "playwright test"
+    "test:browser": "node ../../scripts/browser-session.mjs pnpm exec playwright test"
   },
   "dependencies": {
     "@domfx/browser": "workspace:*",
+    "@domfx/site": "workspace:*",
     "astro": "7.3.3",
     "gsap": "3.15.0",
     "sharp": "0.35.5"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
-    "@domfx/gsap": "workspace:*",
     "@playwright/test": "1.63.0",
     "@types/node": "^24.5.2",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.6"
+    "typescript": "^5.9.3"
   }
 }

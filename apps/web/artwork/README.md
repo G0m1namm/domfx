@@ -1,7 +1,8 @@
 # Optical silver artwork
 
 Approved on 2026-10-20 for the marketing site and documentation Image preview.
-The five transparent PNGs live in [`src/assets/brand`](../src/assets/brand).
+The four marketing PNGs live in [`src/assets/brand`](../src/assets/brand);
+[Pierced ring](../../docs/src/assets/brand/pierced-ring.png) belongs to the docs app.
 
 | Shape        | Placement                                 | Generation prompt                           |
 | ------------ | ----------------------------------------- | ------------------------------------------- |
@@ -34,6 +35,6 @@ alternative text; effect lifetimes belong to the website controllers.
 
 The flat washer mark is [`public/brand-mark.svg`](../public/brand-mark.svg), with a
 small-size cut in [`public/favicon.svg`](../public/favicon.svg). Surface colors are
-in [`src/styles/brand.css`](../src/styles/brand.css). The
+in [`packages/site/src/styles/brand.css`](../../../packages/site/src/styles/brand.css). The
 [selected design](../../../DESIGN.md#approved-optical-silver-brand-direction)
 governs placement and the stronger closing effect.

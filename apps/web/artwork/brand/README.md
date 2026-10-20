@@ -8,4 +8,4 @@ The burnt-metal shape studies, Nested and Stack were rejected. Their unused SVGs
 were removed at the maintainer's request; Git history preserves the exploration.
 The production flat mark and favicon live in `apps/web/public`; selected transparent
 PNG targets live in `apps/web/src/assets/brand`. Subtle heat floors remain in
-`apps/web/src/styles/brand.css`. The GSAP Ignite bar keeps its original violet fill.
+`packages/site/src/styles/brand.css`. The GSAP Ignite bar keeps its original violet fill.

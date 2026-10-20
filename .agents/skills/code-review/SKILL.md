@@ -13,6 +13,8 @@ Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 
 Both axes run as **parallel sub-agents** so they don't pollute each other's context, then this skill aggregates their findings.
 
+For Orca-supervised work, the coordinator owns both review dispatches. An implementation worker hands back its revision and evidence instead of invoking nested reviewers. Supply reviewers with fresh context and their own lifecycle IDs; see [coordination ownership](../../../engineering/agents/coordination.md).
+
 The issue tracker should have been provided to you. If not, tell the user to run `/setup-matt-pocock-skills`.
 
 ## Process

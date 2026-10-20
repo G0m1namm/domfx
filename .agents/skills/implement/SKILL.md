@@ -15,6 +15,6 @@ Call the Skill tool with "tdd" where possible, at pre-agreed seams.
 
 Run focused checks during implementation. After edits settle, run `pnpm agent:verify` and the applicable browser/GPU/manual checks in `CONTRIBUTING.md`. The harness already includes `pnpm check`; repeat affected checks after review fixes.
 
-Once done, call the Skill tool with "code-review" to review the work.
+Once done, call the Skill tool with "code-review" to review the work. An Orca-dispatched implementation worker instead returns its fixed revision and evidence to the coordinator, who owns independent review dispatches under [coordination ownership](../../../engineering/agents/coordination.md).
 
 Commit only this task's changes on its feature branch after verification and review. Preserve unrelated work. Follow the repository tracker rules for PRs and completion.

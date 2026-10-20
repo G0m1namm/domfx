@@ -37,7 +37,7 @@
     },
     {
       "name": "pierced-ring",
-      "source": "../src/assets/brand/pierced-ring.png",
+      "source": "../../docs/src/assets/brand/pierced-ring.png",
       "prompt": "prompts/pierced-ring-optical.json",
       "width": 1254,
       "height": 1254,

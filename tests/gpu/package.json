@@ -16,7 +16,7 @@
   "scripts": {
     "build": "vite build",
     "typecheck": "tsc -p tsconfig.json",
-    "test:browser": "playwright test",
+    "test:browser": "node ../../scripts/browser-session.mjs pnpm exec playwright test",
     "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js"
   },
   "dependencies": {

@@ -1,0 +1,31 @@
+---
+title: "Effect instance"
+description: "Read effect state, update the captured image and release resources."
+---
+
+import DocsEffectMethods from "../../../components/docs-effect-methods.astro";
+import DocsEffectState from "../../../components/docs-effect-state.astro";
+
+<p>An effect instance (<code>EffectHandle</code>) is returned immediately by every effect function. Keep it to control animation, inspect setup results and release resources. <a href="/docs/api/shared#control-playback">Time and intensity</a> are its writable controls.</p>
+
+<span id="read-state" />
+
+## Read-only state
+
+<DocsEffectState />
+
+<span id="refresh-retry-and-dispose" />
+
+## Methods
+
+<DocsEffectMethods />
+
+<span id="independent-state" />
+
+## Understand the reported state
+
+<p><code>lifecycle</code> reports whether the effect can render. <code>raster</code> reports whether its captured image is up to date. <code>paused</code> reports only whether domfx's automatic animation is paused. These values describe different things.</p>
+
+<p>A GSAP-controlled effect has <code>paused: true</code> while its time changes. An effect can have <code>paused: false</code> while temporarily unable to render. A still effect can be active, up to date and visible.</p>
+
+<p><code>ready</code> describes the initial setup attempt only. It is not replaced by retry, does not mean an animation finished, and does not wait for completed GPU execution or screen presentation. Successful setup submits the initial output; inspect state for availability.</p>

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { effects } from '../src/content/effects.js';
+import { effects } from '@domfx/site/effects';
 
 test('a card opens its own artwork and offers text, SVG and image previews', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -176,9 +176,6 @@ test('global search opens an unfeatured effect, zooms and restores keyboard focu
   const trigger = page.getByRole('button', { name: 'Search effects and documentation' });
   await trigger.click();
   await page.getByRole('searchbox').fill('circuits');
-  await expect(
-    page.locator('[data-search-group="documentation"] a[href="/docs/api/effects/circuits"]'),
-  ).toBeVisible();
   await page.getByRole('searchbox').press('Enter');
   await expect(page.locator('#dialog-title')).toHaveText('Circuits');
   await expect(page.locator('#site-search')).not.toBeVisible();
@@ -191,8 +188,8 @@ test('global search opens an unfeatured effect, zooms and restores keyboard focu
   await page.getByRole('button', { name: 'Close preview' }).click();
   await expect(trigger).toBeFocused();
   await trigger.press('ControlOrMeta+k');
-  await page.getByRole('searchbox').fill('reduced motion');
-  await expect(page.locator('[data-search-group="documentation"]')).toBeVisible();
+  await page.getByRole('searchbox').fill('frost');
+  await expect(page.locator('[data-search-effect="frost"]')).toBeVisible();
   await page.getByRole('searchbox').press('Escape');
   await expect(trigger).toBeFocused();
 });

@@ -160,7 +160,7 @@ try {
       '--ignore-lock',
       ...process.argv.slice(2).filter((arg) => arg !== '--'),
     ],
-    /Local\s+http/,
+    /domfx website ready/,
   );
   await server.ready;
   console.log('domfx development ready: built exports, declarations and website are watching.');

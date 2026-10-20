@@ -1,0 +1,19 @@
+---
+import { effectReference } from '@domfx/site/effect-reference';
+import type { Effect } from '@domfx/site/effects';
+
+interface Props {
+  effects: readonly Effect[];
+}
+
+const { effects } = Astro.props;
+---
+<ul class="docs-effect-links">
+  {effects.map((effect) => <li>
+    <a href={`/docs/api/effects/${effect.id}`} data-category={effect.category}>
+      <span class="docs-effect-link-name">{effect.name}<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></span>
+      <span class="docs-effect-link-detail">{effectReference[effect.id].description}</span>
+      <code>{effect.exportName}</code>
+    </a>
+  </li>)}
+</ul>

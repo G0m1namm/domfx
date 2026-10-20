@@ -23,6 +23,12 @@ const titles = new Set();
 for (const [, title, canonical] of pages) {
   const path = new URL(canonical).pathname;
   const html = await read(path);
+  for (const [, href] of html.matchAll(/<a\b[^>]*href="(\/docs(?:\/[^"#?]*)?)(?:[#?][^"]*)?"/g)) {
+    assert(
+      href.endsWith('/') || /\.[^/]+$/.test(href),
+      `${path}: noncanonical internal link ${href}`,
+    );
+  }
   assert(html.includes(`rel="canonical" href="${canonical}"`), `${path}: canonical`);
   assert(
     html.includes(`name="robots" content="${indexable ? 'index, follow' : 'noindex, nofollow'}"`),

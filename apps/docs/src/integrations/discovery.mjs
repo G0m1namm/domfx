@@ -20,9 +20,13 @@ export function docsSiteConfig(env) {
     !['http:', 'https:'].includes(site.protocol) ||
     site.pathname !== '/' ||
     site.search ||
-    site.hash
+    site.hash ||
+    site.username ||
+    site.password
   ) {
-    throw new Error('DOMFX_SITE_URL must be an HTTP(S) origin without a path, query or fragment.');
+    throw new Error(
+      'DOMFX_SITE_URL must be an HTTP(S) origin without credentials, path, query or fragment.',
+    );
   }
   return { site: site.origin, trailingSlash: 'always' };
 }
@@ -36,6 +40,27 @@ function text(node) {
 
 function escapeHtml(value) {
   return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
+}
+
+function canonicalDocsLinks(html, site) {
+  return html.replace(/<a\b[^>]*>/gi, (tag) =>
+    tag.replace(/href=(["'])(.*?)\1/gi, (attribute, quote, href) => {
+      const url = new URL(href, site);
+      if (
+        url.origin !== new URL(site).origin ||
+        !/^\/docs(?:\/|$)/.test(url.pathname) ||
+        /\.[^/]+$/.test(url.pathname)
+      ) {
+        return attribute;
+      }
+      url.pathname =
+        url.pathname === '/docs' || url.pathname === '/docs/'
+          ? '/docs/introduction/'
+          : `${url.pathname.replace(/\/$/, '')}/`;
+      const canonical = href.startsWith('/') ? `${url.pathname}${url.search}${url.hash}` : url.href;
+      return `href=${quote}${canonical}${quote}`;
+    }),
+  );
 }
 
 function cleanContent(node, canonical) {
@@ -113,7 +138,7 @@ export function docsDiscovery() {
           .sort();
         for (const file of files) {
           const filename = join(output, file);
-          const html = await readFile(filename, 'utf8');
+          const html = canonicalDocsLinks(await readFile(filename, 'utf8'), site);
           const tree = unified().use(rehypeParse).parse(html);
           const content = select('.sl-markdown-content', tree);
           if (!content) {

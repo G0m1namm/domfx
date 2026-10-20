@@ -3,6 +3,7 @@ title: "Effect instance"
 description: "Read effect state, update the captured image and release resources."
 ---
 
+import DocsEffectMethods from "../../../components/docs-effect-methods.astro";
 import DocsEffectState from "../../../components/docs-effect-state.astro";
 
 <p>An effect instance (<code>EffectHandle</code>) is returned immediately by every effect function. Keep it to control animation, inspect setup results and release resources. <a href="/docs/api/shared#control-playback">Time and intensity</a> are its writable controls.</p>
@@ -12,6 +13,12 @@ import DocsEffectState from "../../../components/docs-effect-state.astro";
 ## Read-only state
 
 <DocsEffectState />
+
+<span id="refresh-retry-and-dispose" />
+
+## Methods
+
+<DocsEffectMethods />
 
 <span id="independent-state" />
 

@@ -59,7 +59,7 @@ export default defineConfig({
               collapsed: true,
               items: effects.map((effect) => ({
                 label: effect.name,
-                link: `/docs/api/effects/${effect.id}/`,
+                link: `/api/effects/${effect.id}/`,
               })),
             })),
           ],

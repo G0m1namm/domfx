@@ -15,7 +15,7 @@ export const fire = findEffect('fire');
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Find the target and host"><Code code={`const host = document.querySelector('#host');
 const target = document.querySelector('#target');
 if (!(host instanceof HTMLElement) || !target) {
-throw new Error('Missing host or target');
+  throw new Error('Missing host or target');
 }`} lang="ts" theme={codeTheme} /></div>
 
 ## Attach Fire

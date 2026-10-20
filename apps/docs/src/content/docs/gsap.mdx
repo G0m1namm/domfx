@@ -17,7 +17,7 @@ import { codeTheme, gsapCode } from "../examples";
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Find the target and host"><Code code={`const host = document.querySelector('#host');
 const target = document.querySelector('#target');
 if (!(host instanceof HTMLElement) || !target) {
-throw new Error('Missing host or target');
+  throw new Error('Missing host or target');
 }`} lang="ts" theme={codeTheme} /></div>
 
 <p>For a heading, replace the preview button with <code>&lt;h1 id="target"&gt;Your heading&lt;/h1&gt;</code> inside the container. The text remains selectable.</p>
@@ -49,16 +49,16 @@ throw new Error('Missing host or target');
 <p>Create tweens inside <code>gsap.context()</code> and return explicit resource cleanup. Register synchronously; a context does not automatically collect work created later by arbitrary promise continuations.</p>
 
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="GSAP context resource cleanup"><Code code={`const context = gsap.context(() => {
-const effect = attachFire(target, { host, clock: 'manual' });
-const tween = gsap.to(effect, {
-  time: 4, intensity: 0.4, duration: 4, ease: 'none',
-});
-const unsubscribe = effect.onDispose(() => tween.kill());
-return () => {
-  unsubscribe();
-  tween.kill();
-  effect.dispose();
-};
+  const effect = attachFire(target, { host, clock: 'manual' });
+  const tween = gsap.to(effect, {
+    time: 4, intensity: 0.4, duration: 4, ease: 'none',
+  });
+  const unsubscribe = effect.onDispose(() => tween.kill());
+  return () => {
+    unsubscribe();
+    tween.kill();
+    effect.dispose();
+  };
 });
 // On unmount, even before setup finishes:
 context.revert();`} lang="ts" theme={codeTheme} /></div>

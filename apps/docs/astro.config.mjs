@@ -25,6 +25,7 @@ export default defineConfig({
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
       components: {
         Header: './src/components/Header.astro',
+        PageFrame: './src/components/PageFrame.astro',
         MobileMenuToggle: './src/components/MobileMenuToggle.astro',
         MarkdownContent: './src/components/MarkdownContent.astro',
         Footer: './src/components/Footer.astro',

@@ -473,6 +473,7 @@
   height: 16px;
 }
 .sl-markdown-content .docs-lab-code pre {
+  overflow-x: auto;
   margin: 0;
   padding: 16px 24px 20px;
   border: 0;

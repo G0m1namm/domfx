@@ -17,7 +17,7 @@ function assert(condition, message) {
 
 const index = await read('/llms.txt');
 const full = await read('/llms-full.txt');
-const pages = [...index.matchAll(/^- \[([^\]]+)\]\((https?:\/\/[^)]+\/docs\/[^)]+\/)\):/gm)];
+const pages = [...index.matchAll(/^- \[([^\]]+)\]\((https?:\/\/[^)]+\/docs\/[^)]+\.md)\):/gm)];
 assert(pages.length > 0, 'llms.txt must list docs pages');
 const robots = await read('/robots.txt');
 const sitemap = await read('/docs/sitemap-0.xml');
@@ -34,7 +34,7 @@ if (indexable) {
     robots.includes(new URL('/sitemap-index.xml', docsSitemap).href),
     'robots.txt sitemap index',
   );
-  const expected = pages.map((page) => page[2]).sort();
+  const expected = pages.map((page) => page[2].replace(/\.md$/, '/')).sort();
   assert(
     JSON.stringify(sitemapUrls.sort()) === JSON.stringify(expected),
     'docs sitemap must contain exactly the canonical docs pages',
@@ -49,7 +49,8 @@ if (indexable) {
   assert(sitemapIndex.status === 404, 'disabled indexing must omit the sitemap index');
 }
 const titles = new Set();
-for (const [, title, canonical] of pages) {
+for (const [, title, markdownUrl] of pages) {
+  const canonical = markdownUrl.replace(/\.md$/, '/');
   const path = new URL(canonical).pathname;
   const html = await read(path);
   for (const [, href] of html.matchAll(/<a\b[^>]*href="(\/docs(?:\/[^"#?]*)?)(?:[#?][^"]*)?"/g)) {
@@ -67,6 +68,8 @@ for (const [, title, canonical] of pages) {
   titles.add(title);
   const alternate = html.match(/<link rel="alternate" type="text\/markdown" href="([^"]+)"/);
   assert(alternate, `${path}: Markdown alternate`);
+  assert(alternate[1] === markdownUrl, `${path}: llms link must match Markdown alternate`);
+  assert(full.includes(`Source: ${markdownUrl}`), `${path}: full Markdown source link`);
   const markdown = await read(new URL(alternate[1]).pathname);
   assert(markdown.startsWith(`# ${title}\n`), `${path}: Markdown heading`);
   const prose = markdown.replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[ \t]*(?:\n|$)/gm, '');

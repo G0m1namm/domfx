@@ -5,8 +5,10 @@ import SiteNav from '@domfx/site/components/SiteNav.astro';
 import PhosphorIcons from '@domfx/site/components/phosphor-icons.astro';
 ---
 <PhosphorIcons />
-<SiteNav current="docs"><Search slot="search" /></SiteNav>
+<SiteNav current="docs" as="div"><Search slot="search" /></SiteNav>
 
 <script>
-  document.querySelector('button[data-open-modal]')?.setAttribute('title', 'Search effects and docs (⌘K / Ctrl+K)');
+  const trigger = document.querySelector<HTMLButtonElement>('button[data-open-modal]');
+  trigger?.setAttribute('title', 'Search effects and docs (⌘K / Ctrl+K)');
+  document.querySelector('site-search dialog')?.addEventListener('close', () => trigger?.focus());
 </script>

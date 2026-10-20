@@ -22,6 +22,6 @@ test('discovery includes every catalog effect reference @smoke', async ({ reques
   expect(response.ok()).toBe(true);
   const index = await response.text();
   for (const effect of effects) {
-    expect(index).toContain(`/docs/api/effects/${effect.id}/)`);
+    expect(index).toContain(`/docs/api/effects/${effect.id}.md)`);
   }
 });

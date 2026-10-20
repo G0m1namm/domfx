@@ -79,6 +79,7 @@ test('@smoke documentation is readable and navigable without JavaScript at mobil
             .sort(),
         );
       }
+      await expect(page.getByRole('banner')).toHaveCount(1);
       await expect(
         page.getByRole('banner').getByRole('link', { name: 'domfx home', exact: true }),
       ).toBeVisible();
@@ -93,6 +94,28 @@ test('@smoke documentation is readable and navigable without JavaScript at mobil
     }
     await context.close();
   }
+});
+
+test('@smoke the native mobile docs drawer supports keyboard focus without JavaScript', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    baseURL,
+    viewport: { width: 360, height: 900 },
+  });
+  const page = await context.newPage();
+  await page.goto('/docs/introduction/');
+  const button = page.getByRole('button', { name: 'Docs', exact: true });
+  await button.focus();
+  await page.keyboard.press('Enter');
+  const navigation = page.getByRole('navigation', { name: 'Documentation', exact: true });
+  await expect(navigation.getByRole('link', { name: 'Introduction', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(navigation.getByRole('link', { name: 'Introduction', exact: true })).toBeHidden();
+  await expect(button).toBeFocused();
+  await context.close();
 });
 
 test('@smoke all catalog references retain their public options and usable source content without JavaScript', async ({
@@ -194,10 +217,12 @@ test('@smoke docs search uses Pagefind from the shared header and opens an effec
   expect(await trigger.evaluate((element) => element.getBoundingClientRect().width)).toBe(44);
   await trigger.click();
   const search = page.getByRole('dialog', { name: 'Search effects and documentation' });
-  const input = search.getByRole('searchbox');
+  const input = search.getByRole('textbox');
   await expect(input).toBeVisible();
   await input.fill('frost');
-  await search.getByRole('link', { name: 'Frost', exact: true }).click();
+  const frost = search.getByRole('link', { name: 'Frost', exact: true }).first();
+  await expect(frost).toHaveAttribute('href', '/docs/api/effects/frost/');
+  await frost.click();
   await expect(page).toHaveURL(/\/docs\/api\/effects\/frost\/$/);
   await page.keyboard.press('ControlOrMeta+k');
   await expect(

@@ -205,18 +205,24 @@ export function docsDiscovery() {
           const markdownFile = join(output, `${relative(output, dirname(filename))}.md`);
           await mkdir(dirname(markdownFile), { recursive: true });
           await writeFile(markdownFile, markdown);
-          pages.push({ title, description, canonical, markdown });
+          pages.push({
+            title,
+            description,
+            canonical,
+            markdownUrl: new URL(markdownPath, site).href,
+            markdown,
+          });
         }
         const index =
           '# domfx documentation\n\n' +
           pages
-            .map((page) => `- [${page.title}](${page.canonical}): ${page.description}`)
+            .map((page) => `- [${page.title}](${page.markdownUrl}): ${page.description}`)
             .join('\n') +
           '\n';
         await writeFile(join(output, 'llms.txt'), index);
         await writeFile(
           join(output, 'llms-full.txt'),
-          pages.map((page) => `${page.markdown}\nSource: ${page.canonical}`).join('\n\n'),
+          pages.map((page) => `${page.markdown}\nSource: ${page.markdownUrl}`).join('\n\n'),
         );
         const sitemap = 'sitemap-0.xml';
         await writeFile(

@@ -276,14 +276,15 @@
 .docs-lab[data-status='active'] .docs-lab-dot {
   background: #9ed9ad;
 }
-.docs-lab[data-status='active'] .docs-lab-status {
+.docs-lab[data-status='active'][data-paused='false'] .docs-lab-status {
   color: #e8eaf3;
 }
-.docs-lab[data-status='paused'] .docs-lab-dot {
+.docs-lab[data-paused='true'] .docs-lab-dot {
   background: #f2ca82;
 }
-.docs-lab[data-reason] .docs-lab-dot,
-.docs-lab[data-status='unavailable'] .docs-lab-dot {
+.docs-lab[data-reason]:not([data-reason='reduced-motion']):not([data-reason='target-not-visible'])
+  .docs-lab-dot,
+.docs-lab[data-status='unavailable']:not([data-reason='reduced-motion']) .docs-lab-dot {
   background: #ffa4a4;
 }
 .docs-lab-toggle {

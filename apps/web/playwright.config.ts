@@ -28,6 +28,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
     launchOptions: {
+      // Exercise real persisted pageshow, which Playwright disables by default.
+      ignoreDefaultArgs: ['--disable-back-forward-cache'],
       args: [
         '--enable-unsafe-webgpu',
         ...(gpuBackend === 'swiftshader'

@@ -28,7 +28,7 @@ const intensity = 80;
 const height = 32;
 ---
 
-<section class="docs-lab" data-docs-lab data-effect={effect.id} data-category={effect.category} data-status="idle" aria-labelledby={heading ? `${id}-title` : undefined} aria-label={heading ? undefined : `${effect.name} live preview`}>
+<section class="docs-lab" data-docs-lab data-effect={effect.id} data-category={effect.category} data-status="suspended" data-paused="false" aria-labelledby={heading ? `${id}-title` : undefined} aria-label={heading ? undefined : `${effect.name} live preview`}>
   {heading && <div class="docs-lab-heading"><h3 id={`${id}-title`}>{heading}</h3>{description && <p>{description}</p>}</div>}
   <div class="docs-lab-stage">
     <div class="docs-lab-host" data-docs-lab-host>

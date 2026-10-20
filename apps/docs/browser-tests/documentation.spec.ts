@@ -356,14 +356,87 @@ for (const { path, effect, text } of labPages) {
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     await expect(toggle).toHaveAccessibleName('Resume effect');
-    await expect(lab).toHaveAttribute('data-status', 'paused');
+    await expect(lab).toHaveAttribute('data-status', 'active');
+    await expect(lab).toHaveAttribute('data-paused', 'true');
     await toggle.click();
     await expect(lab).toHaveAttribute('data-status', 'active');
+    await expect(lab).toHaveAttribute('data-paused', 'false');
 
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
     await expect(canvas).toHaveCount(0);
   });
 }
+
+test('the docs lab restarts after pagehide and persisted pageshow', async ({ page }) => {
+  await page.goto('/docs/standalone/');
+  const lab = page.locator('[data-docs-lab]');
+  await lab.scrollIntoViewIfNeeded();
+  await expect(lab).toHaveAttribute('data-status', 'active');
+  await page.evaluate(() => {
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+  });
+  await expect(lab.locator('canvas')).toHaveCount(0);
+  await page.evaluate(() => {
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+  });
+  await expect(lab.locator('canvas')).toHaveCount(1);
+  const intensity = lab.locator('[data-docs-lab-intensity]');
+  await intensity.fill('45');
+  await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+});
+
+test('the docs lab preserves pause and requires Start after reduced-motion recovery', async ({
+  page,
+}) => {
+  await page.goto('/docs/standalone/');
+  const lab = page.locator('[data-docs-lab]');
+  await lab.scrollIntoViewIfNeeded();
+  await expect(lab).toHaveAttribute('data-status', 'active');
+  await lab.getByRole('button', { name: 'Pause effect', exact: true }).click();
+  const setHidden = (hidden: boolean) =>
+    page.evaluate((value) => {
+      Object.defineProperty(document, 'hidden', { configurable: true, value });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, hidden);
+  await setHidden(true);
+  await expect(lab.locator('canvas')).toHaveCount(0);
+  await setHidden(false);
+  await expect(lab).toHaveAttribute('data-status', 'active');
+  await expect(lab).toHaveAttribute('data-paused', 'true');
+  await expect(lab.getByRole('button', { name: 'Resume effect', exact: true })).toBeVisible();
+  await expect(lab.locator('canvas')).toHaveCount(1);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(lab.locator('canvas')).toHaveCount(0);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await setHidden(true);
+  await setHidden(false);
+  await expect(lab).toHaveAttribute('data-status', 'unavailable');
+  await expect(lab).toHaveAttribute('data-reason', 'reduced-motion');
+  await expect(lab.locator('canvas')).toHaveCount(0);
+  await lab.getByRole('button', { name: 'Start effect', exact: true }).click();
+  await expect(lab).toHaveAttribute('data-status', 'active');
+  await expect(lab.locator('canvas')).toHaveCount(1);
+});
+
+test('the docs lab works after an actual back/forward-cache restore', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.addEventListener('pageshow', (event) => {
+      document.documentElement.dataset.testPersisted = String(event.persisted);
+    });
+  });
+  await page.goto('/docs/standalone/');
+  await page.locator('[data-docs-lab]').scrollIntoViewIfNeeded();
+  await expect(page.locator('[data-docs-lab]')).toHaveAttribute('data-status', 'active');
+  await page.goto('/docs/installation/');
+  await page.goBack({ waitUntil: 'commit' });
+  await expect(page.locator('html')).toHaveAttribute('data-test-persisted', 'true');
+  const lab = page.locator('[data-docs-lab]');
+  await lab.scrollIntoViewIfNeeded();
+  await expect(lab).toHaveAttribute('data-status', 'active');
+  await lab.locator('[data-docs-lab-intensity]').fill('45');
+  await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+  await expect(lab.locator('canvas')).toHaveCount(1);
+});
 
 // Bundle the rendered code verbatim with only its caller-provided DOM and exports.
 // No copied example, package alias, capture mock or renderer transform is involved.

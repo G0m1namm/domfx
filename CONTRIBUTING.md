@@ -72,7 +72,7 @@ fixture-only and contributor-doc changes need no package bump. See
 | `packages/core`  | None; no DOM, framework, GPU or Node imports               |
 | `packages/domfx` | Core                                                       |
 | `packages/gsap`  | Core and browser package                                   |
-| `packages/site`  | Browser package types; private site resources              |
+| `packages/site`  | Browser types/lazy effect adapter; private site resources  |
 | `tests/gpu`      | Library packages, never other apps                         |
 | `apps/web`       | Library packages and shared site package; never other apps |
 | `apps/docs`      | Library packages and shared site package; never other apps |

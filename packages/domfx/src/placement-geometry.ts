@@ -3,17 +3,14 @@ export interface PlacementGeometry {
   readonly target: {
     /** Border-box origin in viewport pixels. */
     readonly viewportOrigin: { readonly x: number; readonly y: number };
+    /** Physical border-box origin in the layer containing block, supplied by Floating UI. */
+    readonly hostOriginCss: { readonly x: number; readonly y: number };
     /** Target-local CSS pixels to viewport pixels. */
     readonly scaleToViewport: { readonly x: number; readonly y: number };
   };
   readonly host: {
-    /** Border-box origin in viewport pixels. */
-    readonly viewportOrigin: { readonly x: number; readonly y: number };
     /** Host-local CSS pixels to viewport pixels. */
     readonly scaleToViewport: { readonly x: number; readonly y: number };
-    /** Host-local CSS offset including fractional borders and scrollbar gutters. */
-    readonly clientOriginCss: { readonly x: number; readonly y: number };
-    readonly scrollCss: { readonly x: number; readonly y: number };
   };
   /** Intersection of bypassed rectangular clips in viewport pixels; unbounded edges use infinities. */
   readonly clipViewport: {
@@ -48,14 +45,6 @@ export function calculateEffectPlacement({
   const mapping = capture.pixelToTargetLocal;
   const scaleX = targetScale.x / hostScale.x;
   const scaleY = targetScale.y / hostScale.y;
-  const targetOriginX =
-    (target.viewportOrigin.x - host.viewportOrigin.x) / hostScale.x -
-    host.clientOriginCss.x +
-    host.scrollCss.x;
-  const targetOriginY =
-    (target.viewportOrigin.y - host.viewportOrigin.y) / hostScale.y -
-    host.clientOriginCss.y +
-    host.scrollCss.y;
 
   const viewportLeft = target.viewportOrigin.x + mapping.e * targetScale.x;
   const viewportTop = target.viewportOrigin.y + mapping.f * targetScale.y;
@@ -73,8 +62,8 @@ export function calculateEffectPlacement({
   );
 
   return {
-    left: targetOriginX + mapping.e * scaleX,
-    top: targetOriginY + mapping.f * scaleY,
+    left: target.hostOriginCss.x + mapping.e * scaleX,
+    top: target.hostOriginCss.y + mapping.f * scaleY,
     width,
     height,
     clipPath:

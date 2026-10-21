@@ -29,7 +29,11 @@ async function until(condition: () => boolean) {
   assert.fail('controlled adapter was not entered');
 }
 
-function fixture(target: Element = {} as Element, initialization?: Promise<void>) {
+function fixture(
+  target: Element = {} as Element,
+  initialization?: Promise<void>,
+  presentation?: Promise<void>,
+) {
   const events: string[] = [];
   const captureGates: ReturnType<typeof deferred<CaptureFrame | undefined>>[] = [];
   const prepareGates: ReturnType<typeof deferred<PreparedGpuFrame>>[] = [];
@@ -80,8 +84,11 @@ function fixture(target: Element = {} as Element, initialization?: Promise<void>
       return gate.promise;
     },
     canRun: () => canRun,
-    present(frame) {
-      events.push(`present:${frame.pixels[0]}`);
+    async present(frame, _renderer, current) {
+      await presentation;
+      if (current()) {
+        events.push(`present:${frame.pixels[0]}`);
+      }
     },
     committed() {
       events.push('committed');
@@ -509,4 +516,77 @@ test('renderer failure retains its initiating revision after a pending refresh',
     await f.revisions.drain();
     session.dispose();
   }
+});
+
+test('readiness waits for placement and presentation before committing a revision', async () => {
+  const placement = deferred<void>();
+  const f = fixture({} as Element, undefined, placement.promise);
+  let settled = false;
+  const ready = f.revisions.start().then(() => {
+    settled = true;
+  });
+  await until(() => f.captureGates.length === 1);
+  f.captureGates[0].resolve(f.frame(1));
+  await until(() => f.prepareGates.length === 1);
+  f.prepareGates[0].resolve(f.prepared(1));
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.equal(settled, false);
+  assert.equal(f.events.includes('committed'), false);
+  assert.equal(f.events.includes('frame:release:1'), false);
+  placement.resolve();
+  await ready;
+  assert.equal(f.events.includes('present:1'), true);
+  assert.equal(f.events.includes('committed'), true);
+  f.revisions.stop(new Error('effect-disposed'));
+  assert.equal(f.memory.bytes, 0);
+});
+
+test('superseded placement does not commit or settle a newer refresh', async () => {
+  const placement = deferred<void>();
+  const f = fixture({} as Element, undefined, placement.promise);
+  const ready = f.revisions.start();
+  await until(() => f.captureGates.length === 1);
+  f.captureGates[0].resolve(f.frame(1));
+  await until(() => f.prepareGates.length === 1);
+  f.prepareGates[0].resolve(f.prepared(1));
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  let settled = false;
+  const refresh = f.revisions.request().then(() => {
+    settled = true;
+  });
+  placement.resolve();
+  await until(() => f.captureGates.length === 2);
+  assert.equal(settled, false);
+  assert.equal(f.events.includes('present:1'), false);
+  assert.equal(f.events.includes('committed'), false);
+  f.captureGates[1].resolve(f.frame(2));
+  await until(() => f.prepareGates.length === 2);
+  f.prepareGates[1].resolve(f.prepared(2));
+  await Promise.all([ready, refresh]);
+  assert.equal(f.events.includes('present:2'), true);
+  assert.equal(f.events.filter((event) => event === 'prepared:release:1').length, 1);
+  f.revisions.stop(new Error('effect-disposed'));
+  assert.equal(f.memory.bytes, 0);
+});
+
+test('disposed pending placement cannot present and drains its resources once', async () => {
+  const placement = deferred<void>();
+  const f = fixture({} as Element, undefined, placement.promise);
+  const ready = f.revisions.start();
+  await until(() => f.captureGates.length === 1);
+  f.captureGates[0].resolve(f.frame(1));
+  await until(() => f.prepareGates.length === 1);
+  f.prepareGates[0].resolve(f.prepared(1));
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  f.revisions.stop(new Error('effect-disposed'));
+  assert.equal(f.events.includes('prepared:release:1'), true);
+  assert.equal(f.rendererReleases, 0);
+  placement.resolve();
+  await ready;
+  assert.equal(f.events.includes('present:1'), false);
+  assert.equal(f.events.includes('committed'), false);
+  assert.equal(f.events.filter((event) => event === 'prepared:release:1').length, 1);
+  assert.equal(f.events.filter((event) => event === 'frame:release:1').length, 1);
+  assert.equal(f.rendererReleases, 1);
+  assert.equal(f.memory.bytes, 0);
 });

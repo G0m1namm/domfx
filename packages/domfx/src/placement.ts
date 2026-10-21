@@ -1,3 +1,5 @@
+import { autoUpdate, computePosition, offset, platform } from '@floating-ui/dom';
+
 import type { CaptureFrame } from '@domfx/core';
 
 import { cssEffectError } from './effect-error.js';
@@ -242,23 +244,45 @@ export function assertEffectComposition(target: Element, host: HTMLElement) {
 }
 
 /** Measure the captured raster in effect-host CSS pixels before writing layer styles. */
-export function measureEffectPlacement(target: Element, host: HTMLElement, frame: CaptureFrame) {
+export async function measureEffectPlacement(
+  target: Element,
+  host: HTMLElement,
+  layer: HTMLElement,
+  frame: CaptureFrame,
+) {
+  const origin = await computePosition(target, layer, {
+    strategy: 'absolute',
+    placement: 'bottom-start',
+    // Effects overlap the physical top-left, regardless of text direction.
+    platform: { ...platform, isRTL: () => false },
+    middleware: [offset(({ rects }) => -rects.reference.height)],
+  });
   const targetScale = scaleToViewport(target);
   const hostScale = scaleToViewport(host);
   const targetRect = target.getBoundingClientRect();
-  const hostRect = host.getBoundingClientRect();
-  const hostOrigin = clientOrigin(host, host.ownerDocument.defaultView!.getComputedStyle(host));
+  const floatingScale = await platform.getScale(host);
+  const client = clientOrigin(host, host.ownerDocument.defaultView!.getComputedStyle(host));
+  // Floating UI normalizes by rounded DOM scale/client metrics. Convert its origin
+  // to exact host CSS units, retaining its scrollbar gutter and physical alignment.
+  const hostOriginCss = {
+    x:
+      ((origin.x - host.scrollLeft + host.clientLeft) * floatingScale.x) / hostScale.x +
+      host.scrollLeft -
+      client.x,
+    y:
+      ((origin.y - host.scrollTop + host.clientTop) * floatingScale.y) / hostScale.y +
+      host.scrollTop -
+      client.y,
+  };
 
   const geometry: PlacementGeometry = {
     target: {
       viewportOrigin: { x: targetRect.left, y: targetRect.top },
+      hostOriginCss,
       scaleToViewport: targetScale,
     },
     host: {
-      viewportOrigin: { x: hostRect.left, y: hostRect.top },
       scaleToViewport: hostScale,
-      clientOriginCss: hostOrigin,
-      scrollCss: { x: host.scrollLeft, y: host.scrollTop },
     },
     clipViewport: measureClip(target, host),
     capture: {
@@ -269,4 +293,9 @@ export function measureEffectPlacement(target: Element, host: HTMLElement, frame
   };
 
   return calculateEffectPlacement(geometry);
+}
+
+/** Notifications join the document scheduler; transform tracking stays on its shared frame. */
+export function observeEffectPlacement(target: Element, layer: HTMLElement, changed: () => void) {
+  return autoUpdate(target, layer, changed, { animationFrame: false });
 }

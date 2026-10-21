@@ -9,9 +9,15 @@ import { chromium } from 'playwright';
 import { build, preview } from 'vite';
 
 import { distribution, metricDelta } from './layout-summary.mjs';
+import {
+  attributionSources,
+  placementCpuSamples,
+  placementInvocations,
+} from './placement-attribution.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const lab = resolve(root, 'tests/gpu');
+const attribution = process.argv.includes('--attribution');
 const directory = resolve(
   root,
   '.scratch/placement-measurements',
@@ -38,6 +44,8 @@ const result = {
       'Libraries built normally. One-entry Vite production consumer uses only the committed measurement HTML/TS, default minification and bundling, with no unrelated fixture entries. JS totals sum emitted files and their individual gzip sizes; browser-module totals sum library dist JS, which leaves declared runtime dependencies external.',
     limits:
       'Controlled local micro-workload, fixed order, no randomization/thermal isolation; paired controls are context, not proof that their difference is exclusive placement cost. No native Safari/mobile/page-zoom/GPU-duration claims. Callback pending counts exclude fixture rAF and native observer delivery; they do not prove every asynchronous queue is bounded.',
+    attribution:
+      'Optional --attribution uses an unminified source-mapped diagnostic consumer. Fresh processes separate exact measureEffectPlacement function-coverage counts (optimization disabled) from 1 ms sampling profiles without precise coverage or method wrappers. CPU figures are source-attributed sampled execution estimates, including placement visibility/clip helpers and Floating UI, not complete/exclusive placement CPU, layout/GPU durations or ordinary production timing. Async continuations are attributed by mapped source. Coverage calibrates three calls to an async function with two awaits before reporting invocation counts.',
   },
   environment: {
     node: process.version,
@@ -103,6 +111,7 @@ try {
           'tests/gpu/placement-measurement.html',
           'tests/gpu/src/placement-measurement.ts',
           'tests/gpu/scripts/measure-placement.mjs',
+          'tests/gpu/scripts/placement-attribution.mjs',
         ].map(async (path) => ({ path, sha256: digest(await readFile(resolve(root, path))) })),
       )),
     ],
@@ -118,6 +127,20 @@ try {
   if (compilation.status !== 0) {
     throw new Error(`library build failed: ${compilation.error ?? compilation.status}`);
   }
+  if (attribution) {
+    const mapped = spawnSync(
+      'pnpm',
+      ['--filter', '@domfx/browser', 'exec', 'vite', 'build', '--sourcemap'],
+      { cwd: root, encoding: 'utf8' },
+    );
+    await writeFile(
+      resolve(directory, 'sourcemap-build.log'),
+      `${mapped.stdout ?? ''}${mapped.stderr ?? ''}`,
+    );
+    if (mapped.status !== 0) {
+      throw new Error(`source-mapped browser build failed: ${mapped.error ?? mapped.status}`);
+    }
+  }
   const dist = resolve(directory, 'dist');
   await build({
     root: lab,
@@ -126,6 +149,8 @@ try {
     build: {
       outDir: dist,
       emptyOutDir: true,
+      minify: attribution ? false : undefined,
+      sourcemap: attribution,
       rollupOptions: { input: resolve(lab, 'placement-measurement.html') },
     },
   });
@@ -144,7 +169,11 @@ try {
       },
     ]),
   );
-  result.build = { mode: 'production', files: await files(dist, () => true) };
+  result.build = {
+    mode: attribution ? 'unminified attribution' : 'production',
+    files: await files(dist, () => true),
+  };
+  const sources = attribution ? await attributionSources(dist) : undefined;
   server = await preview({
     root: lab,
     configFile: false,
@@ -156,12 +185,13 @@ try {
     throw new Error('missing preview address');
   }
   for (const count of [1, 2]) {
-    for (const effects of [false, true]) {
-      for (const diagnostic of [false, true]) {
+    for (const effects of attribution ? [true] : [false, true]) {
+      for (const phase of attribution ? ['coverage', 'profile'] : ['ordinary', 'diagnostic']) {
+        const diagnostic = phase === 'diagnostic';
         const condition = {
           count,
           effects,
-          phase: diagnostic ? 'diagnostic' : 'ordinary',
+          phase,
           outcome: 'running',
           workloads: [],
           errors: [],
@@ -197,6 +227,10 @@ try {
           );
           const cdp = await page.context().newCDPSession(page);
           await cdp.send('Performance.enable', { timeDomain: 'timeTicks' });
+          if (attribution) {
+            await cdp.send('Profiler.enable');
+            await cdp.send('Profiler.setSamplingInterval', { interval: 1000 });
+          }
           for (const workload of ['stationary', 'scroll', 'transform']) {
             const workloadResult = { workload, trials: [] };
             condition.workloads.push(workloadResult);
@@ -204,17 +238,57 @@ try {
               (workload) => window.domfxPlacementMeasurement.sample(workload, 500),
               workload,
             );
-            for (let index = 0; index < (diagnostic ? 1 : 5); index += 1) {
+            for (let index = 0; index < (phase === 'ordinary' ? 5 : 1); index += 1) {
               const before = await cdp.send('Performance.getMetrics');
+              let coverageStarted;
+              if (phase === 'coverage') {
+                coverageStarted = await cdp.send('Profiler.startPreciseCoverage', {
+                  callCount: true,
+                  detailed: true,
+                });
+              } else if (phase === 'profile') {
+                await cdp.send('Profiler.start');
+              }
               const sample = await page.evaluate(
-                (workload) => window.domfxPlacementMeasurement.sample(workload, 1000),
-                workload,
+                ({ workload, durationMs }) =>
+                  window.domfxPlacementMeasurement.sample(workload, durationMs),
+                { workload, durationMs: phase === 'profile' ? 2000 : 1000 },
               );
+              let attributed;
+              if (phase === 'coverage') {
+                await cdp.send('Runtime.evaluate', {
+                  expression:
+                    '(async () => { const calibration = async function domfxCoverageCalibration() { await Promise.resolve(); await Promise.resolve(); }; for (let index = 0; index < 3; index += 1) { await calibration(); } })()',
+                  awaitPromise: true,
+                });
+                const coverage = await cdp.send('Profiler.takePreciseCoverage');
+                await cdp.send('Profiler.stopPreciseCoverage');
+                const calibration = coverage.result
+                  .flatMap((script) => script.functions)
+                  .filter((fn) => fn.functionName === 'domfxCoverageCalibration');
+                if (calibration.length !== 1 || calibration[0].ranges[0].count !== 3) {
+                  throw new Error('async invocation coverage calibration failed');
+                }
+                const artifact = `${count}-${workload}.coverage.json`;
+                await save(artifact, { ...coverage, startedAt: coverageStarted.timestamp });
+                attributed = {
+                  invocations: placementInvocations(coverage, sources),
+                  windowDurationMs: (coverage.timestamp - coverageStarted.timestamp) * 1000,
+                  calibrationCalls: 3,
+                  artifact,
+                };
+              } else if (phase === 'profile') {
+                const { profile } = await cdp.send('Profiler.stop');
+                const artifact = `${count}-${workload}.cpuprofile`;
+                await save(artifact, profile);
+                attributed = { cpu: placementCpuSamples(profile, sources.mapFrame), artifact };
+              }
               const after = await cdp.send('Performance.getMetrics');
               workloadResult.trials.push({
                 ...sample,
                 raf: distribution(sample.rafMs),
                 metrics: metricDelta(before, after),
+                attributed,
               });
             }
           }

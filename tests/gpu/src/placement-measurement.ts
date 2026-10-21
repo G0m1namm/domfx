@@ -7,12 +7,15 @@ const targets: HTMLElement[] = [];
 const nativeFrame = window.requestAnimationFrame.bind(window);
 const nativeRect = Element.prototype.getBoundingClientRect;
 const nextFrame = () => new Promise<number>((resolve) => nativeFrame(resolve));
-const host = document.querySelector<HTMLElement>('#host');
-const scroller = document.querySelector<HTMLElement>('#scroller');
-const content = document.querySelector<HTMLElement>('#content');
-if (!host || !scroller || !content) {
+const hostElement = document.querySelector<HTMLElement>('#host');
+const scrollerElement = document.querySelector<HTMLElement>('#scroller');
+const contentElement = document.querySelector<HTMLElement>('#content');
+if (!hostElement || !scrollerElement || !contentElement) {
   throw new Error('missing measurement fixture');
 }
+const host = hostElement;
+const scroller = scrollerElement;
+const content = contentElement;
 let effects = false;
 let probe: ReturnType<typeof installProbe> | undefined;
 let diagnostics: ReturnType<typeof startEffectDiagnostics> | undefined;
@@ -124,7 +127,7 @@ function state() {
     visibility: document.visibilityState,
     visibilityChanges,
     reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
-    layers: Array.from(host!.querySelectorAll('canvas'), (canvas) => ({
+    layers: Array.from(host.querySelectorAll('canvas'), (canvas) => ({
       left: canvas.style.left,
       top: canvas.style.top,
       width: canvas.width,
@@ -142,15 +145,15 @@ function state() {
 
 function move(workload: Workload, frame: number) {
   const wave = Math.sin(frame / 12);
-  const other = Math.cos(frame / 12);
+  const cosineWave = Math.cos(frame / 12);
   if (workload === 'scroll') {
-    host!.scrollLeft = 12 + wave * 10;
-    host!.scrollTop = 10 + other * 8;
-    scroller!.scrollLeft = 24 + wave * 18;
-    scroller!.scrollTop = 18 + other * 12;
+    host.scrollLeft = 12 + wave * 10;
+    host.scrollTop = 10 + cosineWave * 8;
+    scroller.scrollLeft = 24 + wave * 18;
+    scroller.scrollTop = 18 + cosineWave * 12;
   } else if (workload === 'transform') {
     for (const target of targets) {
-      target.style.transform = `translate(${6 + wave * 12}px, ${4 + other * 8}px) scale(${1.1 + wave * 0.05}, ${0.9 + other * 0.03})`;
+      target.style.transform = `translate(${6 + wave * 12}px, ${4 + cosineWave * 8}px) scale(${1.1 + wave * 0.05}, ${0.9 + cosineWave * 0.03})`;
     }
   }
 }
@@ -169,7 +172,7 @@ async function prepare(count: number, enabled: boolean, diagnostic: boolean) {
     target.className = 'target';
     target.style.left = `${100.25 + index * 150}px`;
     target.style.transform = 'translate(6px, 4px) scale(1.1, .9)';
-    content!.append(target);
+    content.append(target);
     targets.push(target);
   }
   await document.fonts.ready;
@@ -184,7 +187,7 @@ async function prepare(count: number, enabled: boolean, diagnostic: boolean) {
     : null;
   if (effects) {
     for (const target of targets) {
-      const handle = attachFire(target, { host: host!, clock: 'manual', time: 2, seed: 7 });
+      const handle = attachFire(target, { host, clock: 'manual', time: 2, seed: 7 });
       handles.push(handle);
       await handle.ready;
       handle.pause();

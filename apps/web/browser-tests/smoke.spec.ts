@@ -39,6 +39,7 @@ for (const path of ['/docs/installation/', '/docs/standalone/', '/docs/gsap/']) 
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     const response = await page.goto(path);
+    await page.waitForLoadState('networkidle');
     expect(response?.status()).toBe(200);
     await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.locator('main pre').first()).toBeVisible();

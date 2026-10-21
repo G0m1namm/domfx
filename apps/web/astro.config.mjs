@@ -21,7 +21,13 @@ export default defineConfig({
   vite: {
     server: {
       proxy: process.env.DOMFX_DOCS_DEV_URL
-        ? { '/docs': { target: process.env.DOMFX_DOCS_DEV_URL, ws: true } }
+        ? {
+            '/docs': { target: process.env.DOMFX_DOCS_DEV_URL, ws: true },
+            '/__domfx_docs/': {
+              target: process.env.DOMFX_DOCS_DEV_URL,
+              rewrite: (path) => path.replace(/^\/__domfx_docs/, ''),
+            },
+          }
         : {},
     },
     // Consume changing built exports directly, never an optimizer snapshot or source alias.
@@ -40,6 +46,24 @@ export default defineConfig({
         configureServer(server) {
           server.middlewares.use((request, response, next) => {
             const url = new URL(request.url ?? '/', 'http://localhost');
+            // Astro's dev modules use root URLs even with a /docs base. Redirect
+            // them into an internal namespace (outside page trailing-slash rules),
+            // so subsequent imports retain the docs server as their referrer.
+            const referrerPath = URL.parse(request.headers.referer ?? '')?.pathname;
+            if (
+              process.env.DOMFX_DOCS_DEV_URL &&
+              referrerPath &&
+              /^\/(?:docs|__domfx_docs)\//.test(referrerPath) &&
+              /^\/(?:@(?:fs|id|vite)\/|src\/|node_modules\/)/.test(url.pathname)
+            ) {
+              response.writeHead(307, {
+                Location: `/__domfx_docs${url.pathname}${url.search}`,
+                'Cache-Control': 'no-store',
+                Vary: 'Referer',
+              });
+              response.end();
+              return;
+            }
             if (process.env.DOMFX_DOCS_DEV_URL && /^\/docs(?:\/[a-z0-9-]+)*$/.test(url.pathname)) {
               response.writeHead(308, { Location: `${url.pathname}/${url.search}` });
               response.end();

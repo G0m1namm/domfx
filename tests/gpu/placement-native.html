@@ -8,7 +8,9 @@
   <body>
     <h1>Native placement verification</h1>
     <p>Set native browser zoom, then run. Keep this window visible until the result appears.</p>
+    <label><input id="visual-check" type="checkbox" /> Confirm painted output visually</label>
     <button id="run" type="button">Run placement checks</button>
+    <button id="confirm-paint" type="button" hidden>All three effects are visible</button>
     <output id="status" role="status">Ready</output>
     <div id="fixture"></div>
     <pre id="report"></pre>

@@ -5,17 +5,38 @@ const fixture = document.querySelector<HTMLElement>('#fixture');
 const button = document.querySelector<HTMLButtonElement>('#run');
 const status = document.querySelector<HTMLOutputElement>('#status');
 const report = document.querySelector<HTMLElement>('#report');
-if (!fixture || !button || !status || !report) {
+const visualCheck = document.querySelector<HTMLInputElement>('#visual-check');
+const confirmPaint = document.querySelector<HTMLButtonElement>('#confirm-paint');
+if (!fixture || !button || !status || !report || !visualCheck || !confirmPaint) {
   throw new Error('missing-placement-controls');
 }
+const paintControls = { visualCheck, confirmPaint, status };
 
 const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 let handles: EffectHandle[] = [];
+let cancelConfirmation: (() => void) | undefined;
 
 function dispose() {
+  cancelConfirmation?.();
   handles.forEach((handle) => handle.dispose());
   handles = [];
   fixture?.replaceChildren();
+}
+
+function confirmVisiblePaint(step: string) {
+  return new Promise<boolean>((resolve) => {
+    const finish = (confirmed: boolean) => {
+      paintControls.confirmPaint.hidden = true;
+      paintControls.confirmPaint.removeEventListener('click', confirm);
+      cancelConfirmation = undefined;
+      resolve(confirmed);
+    };
+    const confirm = () => finish(document.visibilityState === 'visible');
+    cancelConfirmation = () => finish(false);
+    paintControls.status.value = `Inspect ${step}: text, SVG and image`;
+    paintControls.confirmPaint.hidden = false;
+    paintControls.confirmPaint.addEventListener('click', confirm);
+  });
 }
 
 function readOutput(canvas: HTMLCanvasElement) {
@@ -43,6 +64,7 @@ function readOutput(canvas: HTMLCanvasElement) {
 
 async function run() {
   dispose();
+  const visual = paintControls.visualCheck.checked;
   if (document.visibilityState !== 'visible') {
     throw new Error('foreground-window-required');
   }
@@ -130,6 +152,14 @@ async function run() {
     await nextFrame();
     await nextFrame();
     await nextFrame();
+    let painted: number[] | null = null;
+    let paintConfirmed: boolean;
+    if (visual) {
+      paintConfirmed = await confirmVisiblePaint(step);
+    } else {
+      painted = await Promise.all(layers.map(readOutput));
+      paintConfirmed = painted.every((count) => count > 0);
+    }
     const points = targets.map((target, index) => {
       const targetRect = target.getBoundingClientRect();
       const layer = layers[index];
@@ -156,7 +186,6 @@ async function run() {
         errorPhysical: Math.max(...errors.map(Math.abs)) * devicePixelRatio,
       };
     });
-    const painted = await Promise.all(layers.map(readOutput));
     const state = handles.map((handle) => ({
       lifecycle: handle.lifecycle,
       raster: handle.raster,
@@ -166,7 +195,7 @@ async function run() {
     const valid =
       document.visibilityState === 'visible' &&
       points.every((point) => point.errorPhysical <= 1) &&
-      painted.every((count) => count > 0) &&
+      paintConfirmed &&
       state.every(
         (value) =>
           value.lifecycle === 'active' &&
@@ -174,7 +203,17 @@ async function run() {
           value.time === 1.5 &&
           value.paused,
       );
-    samples.push({ step, ...environment(), points, painted, state, captures: captures(), valid });
+    samples.push({
+      step,
+      ...environment(),
+      points,
+      paintVerification: visual ? 'visual-confirmation' : 'canvas-readback',
+      paintConfirmed,
+      painted,
+      state,
+      captures: captures(),
+      valid,
+    });
     if (!valid) {
       throw new Error(`invalid-native-placement:${step}`);
     }
@@ -219,6 +258,7 @@ async function run() {
 
 button.addEventListener('click', async () => {
   button.disabled = true;
+  visualCheck.disabled = true;
   status.value = 'Running';
   try {
     const result = await run();
@@ -236,6 +276,7 @@ button.addEventListener('click', async () => {
     window.dispatchEvent(new CustomEvent('domfx-native-placement', { detail: result }));
   } finally {
     button.disabled = false;
+    visualCheck.disabled = false;
   }
 });
 window.addEventListener('pagehide', dispose);

@@ -41,6 +41,7 @@
     "prepare": "lefthook install",
     "measure:steady": "node scripts/browser-session.mjs node tests/gpu/scripts/measure-performance.mjs --steady",
     "measure:layout": "node scripts/browser-session.mjs node tests/gpu/scripts/measure-layout.mjs",
+    "measure:placement": "node scripts/browser-session.mjs node tests/gpu/scripts/measure-placement.mjs",
     "measure:homepage": "node scripts/browser-session.mjs node scripts/measure-homepage.mjs",
     "measure:performance": "node scripts/browser-session.mjs node tests/gpu/scripts/measure-performance.mjs",
     "test:browser:evidence": "node scripts/browser-session.mjs node tests/gpu/scripts/browser-regression.mjs",

@@ -75,8 +75,9 @@ function initializeMarketing() {
   let patternIndex = savedPattern.index;
   let patternElapsed = savedPattern.elapsed;
   let patternTime = savedPattern.time;
-  let patternsPaused = savedPattern.paused || reducedMotion.matches;
-  let motionNeedsResume = savedPattern.needsResume || reducedMotion.matches;
+  let lastReducedMotion = reducedMotion.matches;
+  let patternsPaused = savedPattern.paused || lastReducedMotion;
+  let motionNeedsResume = savedPattern.needsResume || lastReducedMotion;
   const patternEnvironment = createEffectEnvironment({
     document,
     reducedMotion,
@@ -187,8 +188,10 @@ function initializeMarketing() {
     }
     updatePatternPlayback();
   }
-  on(reducedMotion, 'change', () => {
-    if (reducedMotion.matches) {
+
+  function syncMotionPreference() {
+    lastReducedMotion = reducedMotion.matches;
+    if (lastReducedMotion) {
       patternsPaused = true;
       motionNeedsResume = true;
       paused = true;
@@ -198,7 +201,9 @@ function initializeMarketing() {
     }
     updatePatternPlayback();
     updatePreviewPlayback();
-  });
+  }
+
+  on(reducedMotion, 'change', syncMotionPreference);
   updatePatternPlayback();
 
   const observer = new IntersectionObserver(
@@ -726,6 +731,10 @@ function initializeMarketing() {
     { signal: lifetime.signal },
   );
   function tick(now: number) {
+    // Reconcile an early matches read even if Chromium omits the change event.
+    if (reducedMotion.matches !== lastReducedMotion) {
+      syncMotionPreference();
+    }
     const headerHandle = headerSlot.handle;
     const closingHandle = closingSlot.handle;
     const dialogHandle = dialogSlot.handle;

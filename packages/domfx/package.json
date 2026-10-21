@@ -29,15 +29,19 @@
   "scripts": {
     "build": "vite build && tsc -p tsconfig.json --emitDeclarationOnly",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.config.json",
-    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js"
+    "test": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js",
+    "build:placement": "vite build --config vite.placement.config.ts",
+    "test:placement": "pnpm build:placement && node ../../scripts/browser-session.mjs pnpm exec playwright test --config playwright.placement.config.ts"
   },
   "dependencies": {
     "@domfx/core": "workspace:*",
+    "@floating-ui/dom": "1.8.0",
     "@typegpu/sdf": "0.12.0",
     "@zumer/snapdom": "^2.24.15",
     "typegpu": "^0.12.4"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/node": "^24.5.2",
     "@webgpu/types": "^0.1.64",
     "typescript": "^5.9.3",

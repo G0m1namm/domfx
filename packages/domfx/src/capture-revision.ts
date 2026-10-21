@@ -24,7 +24,11 @@ interface RevisionAdapters {
     current: () => boolean,
   ): Promise<CaptureFrame | undefined>;
   canRun(): boolean;
-  present(frame: CaptureFrame, renderer: AttachmentRenderer): void;
+  present(
+    frame: CaptureFrame,
+    renderer: AttachmentRenderer,
+    current: () => boolean,
+  ): void | Promise<void>;
   committed(): void;
   failed(error: unknown, fallback: 'capture-failed' | 'renderer-failed'): void;
   deviceLost(error: unknown): void;
@@ -220,12 +224,25 @@ export function createCaptureRevisions(adapters: RevisionAdapters) {
           frame = nextFrame;
           raster = 'fresh';
           try {
-            adapters.present(nextFrame, renderer);
+            await adapters.present(
+              nextFrame,
+              renderer,
+              () =>
+                enabled &&
+                raster === 'fresh' &&
+                revision === requestedRevision &&
+                generation === requestedGeneration,
+            );
           } finally {
             previous?.destroy();
             previousMemory?.release();
           }
-          if (raster === 'fresh' && enabled) {
+          if (
+            raster === 'fresh' &&
+            enabled &&
+            revision === requestedRevision &&
+            generation === requestedGeneration
+          ) {
             committed = true;
             adapters.trace?.(requestedRevision, 'revision', 'commit');
             settle();

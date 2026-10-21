@@ -43,6 +43,9 @@ function readOutput(canvas: HTMLCanvasElement) {
 
 async function run() {
   dispose();
+  if (document.visibilityState !== 'visible') {
+    throw new Error('foreground-window-required');
+  }
   const samples: object[] = [];
   const errors: string[] = [];
   const host = document.createElement('div');
@@ -92,6 +95,7 @@ async function run() {
       }
     : null;
   const diagnostics = startEffectDiagnostics();
+  let layers: HTMLCanvasElement[] = [];
 
   const environment = () => ({
     userAgent: navigator.userAgent,
@@ -106,14 +110,26 @@ async function run() {
     diagnostics.records.filter((record) => record.stage === 'capture' && record.phase === 'start')
       .length;
   const attach = async () => {
-    handles = targets.map((target) => attachFire(target, { host, clock: 'manual', time: 1.5 }));
-    await Promise.all(handles.map((handle) => handle.ready));
+    handles = [];
+    layers = [];
+    for (const target of targets) {
+      const previous = new Set(host.querySelectorAll('canvas'));
+      const handle = attachFire(target, { host, clock: 'manual', time: 1.5 });
+      handles.push(handle);
+      await handle.ready;
+      const layer = Array.from(host.querySelectorAll('canvas')).find(
+        (canvas) => !previous.has(canvas),
+      );
+      if (!layer) {
+        throw new Error(`missing-attached-layer:${handle.reasonDetail}`);
+      }
+      layers.push(layer);
+    }
   };
   const sample = async (step: string) => {
     await nextFrame();
     await nextFrame();
     await nextFrame();
-    const layers = Array.from(host.querySelectorAll('canvas'));
     const points = targets.map((target, index) => {
       const targetRect = target.getBoundingClientRect();
       const layer = layers[index];
@@ -133,6 +149,9 @@ async function run() {
       ];
       return {
         target: ['text', 'svg', 'image'][index],
+        targetRect: targetRect.toJSON(),
+        layerRect: layerRect.toJSON(),
+        errors,
         errorCss: Math.max(...errors.map(Math.abs)),
         errorPhysical: Math.max(...errors.map(Math.abs)) * devicePixelRatio,
       };
@@ -207,7 +226,11 @@ button.addEventListener('click', async () => {
     status.value = result.outcome;
     window.dispatchEvent(new CustomEvent('domfx-native-placement', { detail: result }));
   } catch (error) {
-    const result = { outcome: 'failed', errors: [String(error)] };
+    const result = {
+      outcome: 'failed',
+      visibility: document.visibilityState,
+      errors: [String(error)],
+    };
     report.textContent = JSON.stringify(result, null, 2);
     status.value = result.outcome;
     window.dispatchEvent(new CustomEvent('domfx-native-placement', { detail: result }));

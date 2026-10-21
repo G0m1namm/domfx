@@ -9,6 +9,7 @@ export default defineConfig({
         effects: resolve(import.meta.dirname, 'effects.html'),
         main: resolve(import.meta.dirname, 'index.html'),
         manual: resolve(import.meta.dirname, 'manual.html'),
+        placementNative: resolve(import.meta.dirname, 'placement-native.html'),
         gsap: resolve(import.meta.dirname, 'gsap.html'),
         assets: resolve(import.meta.dirname, 'assets.html'),
         accessibility: resolve(import.meta.dirname, 'accessibility.html'),

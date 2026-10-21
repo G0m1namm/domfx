@@ -463,7 +463,9 @@ Failures retain typed reasons and never schedule another retry. Control writes a
 animation bindings remain valid, but cannot trigger recovery themselves.
 
 Placement supports fractional translation and positive axis-aligned scale, including
-target, ancestor and host transforms. Fresh, visible attachments check geometry on the
+target, ancestor and host transforms. Floating UI computes the target origin inside
+the caller's host; domfx maps capture padding, scale and rectangular clips onto it.
+Scroll, resize and layout notifications share the Document scheduler. Fresh, visible attachments check geometry on the
 shared Document animation frame even in manual mode or while paused. Pure placement
 updates reuse the presented pixels without advancing time, recapturing or rendering
 again. Unchanged placement does not write layer styles. Inline changes limited to the

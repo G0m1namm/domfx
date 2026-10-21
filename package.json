@@ -64,6 +64,7 @@
     "build:gpu:built": "pnpm --filter @domfx/gpu-tests build",
     "test:gpu": "pnpm build:gpu && node scripts/browser-session.mjs pnpm --filter @domfx/gpu-tests exec playwright test --project production --grep @smoke",
     "test:capture": "pnpm build:gpu && node scripts/browser-session.mjs pnpm --filter @domfx/gpu-tests exec playwright test --config playwright.capture.config.ts",
+    "test:placement": "pnpm --filter @domfx/browser test:placement",
     "test:gpu:full": "pnpm build:gpu && pnpm test:gpu:built",
     "test:gpu:built": "pnpm --filter @domfx/gpu-tests test:browser",
     "test:web:smoke": "pnpm build:web && pnpm test:web:smoke:built",

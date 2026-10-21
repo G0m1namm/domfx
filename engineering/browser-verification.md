@@ -51,6 +51,26 @@ the earlier Linux rendering failures remain unresolved. Software rendering canno
 establish native performance or broad browser support. See the
 [support record](browser-support.md).
 
+## Capture alignment across engines
+
+```sh
+pnpm --filter @domfx/gpu-tests exec playwright install chromium firefox webkit
+pnpm test:capture
+```
+
+This GPU-independent check measures colored landmarks in actual captured pixels
+at DPR 1 and 2 in Chromium, Firefox and WebKit, in development and production.
+It checks positioned HTML, fractional geometry, translation/scale, padding and
+paint outside all four target edges. It also checks that capture preserves the
+original element. Playwright WebKit is a regression engine, not installed Safari.
+
+The capture uses HTML layout for its inset because WebKit can ignore SVG viewport
+translations for positioned HTML inside `foreignObject`. See
+[WebKit #23113](https://bugs.webkit.org/show_bug.cgi?id=23113#c62).
+This check does not establish GPU output, native page zoom or mobile support.
+Verify those separately on the actual browser, comparing the rendered shape with
+the original target after scrolling, resizing and pausing.
+
 ## Visual comparisons
 
 The local visual suite uses production website examples with fixed viewport and

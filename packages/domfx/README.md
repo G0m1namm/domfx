@@ -97,6 +97,12 @@ The capture clone freezes the target’s measured border-box size in local CSS p
 Responsive percentage and min/max constraints therefore cannot resize its paint in
 the capture sandbox. This leaves the live element and its styles unchanged.
 
+Exterior padding is applied inside the HTML capture sandbox with an identity SVG
+viewport. This avoids WebKit's misplaced paint for positioned HTML under SVG
+viewport translations. `pnpm test:capture` checks target-local pixel landmarks and
+exterior paint in Chromium, Firefox and WebKit; native Safari and zoom checks
+remain separate from that engine regression test.
+
 `captureElement` returns untransformed target-local straight RGBA8. The content bounds
 are the selected root's border box; padding is in CSS pixels. Raster pixel centers map
 through `pixelToLocal`: `(a * (x + 0.5) + e, d * (y + 0.5) + f)`. Placement applies root
@@ -107,8 +113,8 @@ The development and production gate runs at actual browser DPR 1 and 2. Each req
 fixture compares a 48 CSS-pixel padded capture against an 80 CSS-pixel reference:
 alpha differs by at most 1/255 in the overlap, no reference paint lies outside the
 smaller raster, the smaller raster's outer 20 CSS-pixel band is transparent, and the
-reference boundary is transparent. Padding expands the serialized SVG viewport before
-rasterization; appending transparent pixels to an already clipped image is insufficient.
+reference boundary is transparent. Padding expands the HTML sandbox and SVG viewport
+before rasterization; appending transparent pixels to an already clipped image is insufficient.
 Independent sentinels require four 10 × 10 overflow squares extending 20 CSS pixels
 on each side, a root shadow (`14px 9px 8px rgba(255,100,0,0.8)`), a root background,
 and exclusion of the ancestor background. SVG/raster holes and disconnected islands

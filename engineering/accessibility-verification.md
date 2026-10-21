@@ -22,7 +22,7 @@ revisions; they are not current-site passes.
 | Browser-generated docs hide/return                                  | **PASS: six cycles**, three each in standalone and Frost docs, in fresh installed Chrome over CDP with `noDefaults: true`; actual 1200×863, DPR 2, reduced motion off. Each lab changed active→suspended→active, one→zero→one canvases, trusted hidden/visible event pair, with explicit pause preserved. Native OS minimization remains **UNTESTED**.                                                                                                                                                                                                                                         |
 | Website/docs keyboard, fallback, no-JavaScript and history behavior | Existing suites ran on bundled Chromium and installed headed Chrome; see the support record for exact results. Docs drawer/Escape, code/table keyboard scrolling, search results/focus return, rendered standalone/GSAP examples, lab target/setting changes and BFCache checks passed in their declared automated scenarios. These are automated keyboard checks, not a complete native human keyboard audit. The bundled-Chromium website run had one unresolved reduced-motion control failure: [#144](https://github.com/G0m1namm/domfx/issues/144); later focused passes do not erase it. |
 | Installed Safari original UI                                        | **PASS, bounded fallback/navigation:** Text→SVG selected state, Pause→Resume and the original reference link to `/docs/api/effects/frost/` worked while the preview reported `Static content · target-not-visible`. This does not prove an active effect, rendered effect target replacement, native lifecycle restoration, mobile drawer behavior or actual spoken announcements.                                                                                                                                                                                                             |
-| Actual VoiceOver announcements and navigation                       | **UNAVAILABLE through this tool connection; scenarios UNTESTED.** VoiceOver 10 was started with Safari 26.6.2 available; System Settings showed VoiceOver on, its process ran, and VoiceOver Utility showed the caption panel enabled. Native inspection of the VoiceOver app timed out, so no actual speech/caption, rotor navigation or dialog/status announcement was observed. The attempted browser/AT pairing is not a pass. VoiceOver was turned off after the attempt; no new control/automation permission was enabled.                                                               |
+| Actual VoiceOver announcements and navigation                       | **Initial attempt UNAVAILABLE; later bounded passes.** Native app inspection could not recover speech on October 20. The [October 21 scripting continuation](#voiceover-scripting-continuation--2026-10-21-utc) recovered actual VoiceOver output with installed Safari. Only its named scenarios pass; full AT acceptance remains open.                                                                                                                                                                                                                                                       |
 | Physical mobile, another OS/GPU and other screen readers            | **UNAVAILABLE** for this run. The maintainer must provide a real device/session and a named operator before held checks can run. Desktop viewport/DPR emulation does not fill these rows.                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 The native Safari scroll attempt returned `noWindowsAvailable`. Its page content
@@ -67,6 +67,53 @@ document visibility remain **UNTESTED**.
 Local method notes are in `.scratch/browser-accessibility-87/native-continuation.md`;
 native screenshots were shown in the task conversation, not retained as files.
 Physical mobile, a second OS/GPU and the held Linux checks remain unchanged.
+
+### VoiceOver scripting continuation — 2026-10-21 UTC
+
+An agent drove **VoiceOver 10 with installed Safari 26.6.2** on the same Mac,
+runtime and composed build identified above, at `http://127.0.0.1:4387/`.
+User-approved temporary AppleScript control recovered actual speech output after
+Safari was activated in the foreground. Qualifying site observations ran from
+02:38 to 02:50 UTC. This was agent-driven AT verification, not a human listening
+session or a complete browser/AT pass. Safari viewport, DPR, adapter, motion and
+document visibility remain unmeasured.
+
+The probe read VoiceOver's `content of last phrase` separately from
+`text under cursor of vo cursor`; only the former supplies speech evidence.
+Navigation used `vo cursor` move/action commands and named `commander` commands.
+Native keyboard input changed sliders and entered search text. Empty, stale and
+timed-out reads were excluded from passes.
+
+| Scenario                      | Observed speech and result                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home reading order            | **PASS, bounded:** main heading, explanatory text, navigation links and the five Try buttons were spoken. The sampled card sequence added no decorative-canvas reading stop; this is not an exhaustive focus audit.                                                                                                                                                                                                                                |
+| Frost preview from home       | **PASS, bounded:** activation announced “Frost web dialog with 16 items Close preview button”. Text/SVG/Image selected states were spoken; Right changed intensity 70→71 and speech included “Intensity 71%”. Pause/Resume actions spoke “Resume animation”/“Pause animation”. Escape spoke “Try Frost button main” and returned the VO cursor to Try Frost. Image selection also produced “Live preview · WebGPU”.                                |
+| Shared search from home       | **PASS, bounded reading/navigation:** opening announced the search dialog and field. Entering `frost` produced ten results, read as “10 results” during VO navigation; the Frost effect button and first documentation link were spoken. Escape returned to the search trigger. An automatic result-count announcement was not established.                                                                                                        |
+| Gallery filters and rotor     | **PASS, bounded:** All/Energy/Material/Patterns controls were spoken. Activating Patterns spoke “selected”; rereading spoke “Patterns selected toggle button”, followed by pattern Try buttons. The heading rotor enumerated headings; selecting the gallery heading spoke “heading level 1 Effects 15”.                                                                                                                                           |
+| Standalone Fire lab           | **PASS, bounded:** the heading rotor reached Tune the attachment. Subject radios spoke their selected states; switching SVG produced “Preparing the live preview…” and Image produced “Live”. Right changed intensity 80→81, spoken as “81 Fire intensity slider”. Pause/Resume produced “Paused”/“Live”, with “Resume effect selected toggle button” readable while paused.                                                                       |
+| Frost reference lab and table | **PASS, bounded:** Skip to content reached the Frost heading. VO read original `domfx` text once, “Live” and Pause effect, without a decorative-canvas stop in that sequence. SVG/Image selected states, intensity 80→81 and Pause/Resume were spoken. The API table announced “3 columns, 7 rows”, column headings and the host row position.                                                                                                     |
+| Native 200% Frost docs        | **PASS, bounded:** Safari's page menu confirmed 200%, and the layout reflowed. VO read “Docs expanded button”, navigation links, expanded TOC and its links. Following Shared options spoke its heading; native Tab focused the Shared creation options region with a visible outline. Escape closed the docs drawer, but speech/focus return was inconclusive. Horizontal table/code scrolling and complete zoomed lab usability remain untested. |
+
+To repeat, enable VoiceOver and its General → Allow VoiceOver to be controlled
+with AppleScript setting with the operator's approval, foreground Safari, and read
+the last phrase through `tell application id "com.apple.VoiceOver"`.
+Use move right/left and move into item on `vo cursor`, then perform action on a
+named control. For the heading rotor, the working commander sequence was `rotor`,
+`move right` to change category, `move down`/`move up`, then `perform action for item`.
+The `next rotor item` probe returned empty speech; `open web menu` returned error 3.
+Neither attempt qualifies as rotor evidence.
+
+Local scripts and timestamped phrase/cursor pairs remain in ignored
+`.scratch/browser-accessibility-87/voiceover-step.mjs` and `voiceover-speech.jsonl`.
+Native screenshots were shown in the task conversation, not retained as files.
+AppleScript control and VoiceOver were confirmed off afterward; Safari's page menu
+confirmed restored 100% zoom. The owned Safari test window and preview server were
+closed. No Guidepup preference replacement or Safari remote automation was used.
+
+Unavailable/reduced-motion spoken status, explicit Start after preference recovery,
+full keyboard order, drawer focus return, code/table horizontal scrolling, native
+hide/history/refresh/disposal with AT, and other browser/AT/device pairings remain
+open. The failures in #143/#144 and the hardware/Linux holds are unchanged.
 
 ### Remaining human verification for #87
 

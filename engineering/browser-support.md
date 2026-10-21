@@ -35,8 +35,8 @@ their own adapter fields; the fixture identity is not substituted for them.
 | Browser default fonts                                        | **PASS: sampled reflow/controls; FAIL: text preference response.** Isolated installed-Chrome profiles used actual defaults of 16px and 24px at 360/768/1440×900, DPR 2, visible, reduced motion explicitly off. All 24 route/width/settings checks fit; sampled body paragraphs kept fixed sizes despite root growth. [#143](https://github.com/G0m1namm/domfx/issues/143) owns the correction; this is not a text-resizing pass.                                                                                                                                                                                               |
 | Installed Safari, current-site native UI                     | **PASS, bounded fallback/navigation:** Frost original text, SVG target choice, Pause→Resume, and the original effect-reference link to Starlight remained usable. Frost showed `Static content · target-not-visible`, so active rendering correctness is **UNTESTED**. The page menu confirmed 200% then 100%; full zoomed scrolling/keyboard usability is **UNTESTED** because native scrolling returned `noWindowsAvailable`. Browser adapter, CSS viewport/DPR, motion and actual document visibility were not exposed by this native surface and remain **UNTESTED**.                                                       |
 
-Actual VoiceOver speech/captions, complete native Safari rendering/lifecycle and
-manual keyboard coverage remain open. See the
+Complete VoiceOver coverage, native Safari rendering/lifecycle and manual keyboard
+coverage remain open. See the
 [current accessibility observations](accessibility-verification.md#current-site-observations--2026-10-20-utc)
 for individual results and the remaining human protocol. Physical mobile and a
 second OS/GPU are **UNAVAILABLE** for this run; the maintainer must supply access
@@ -54,6 +54,15 @@ return and keyboard table-of-contents expansion were observed. These bounded
 results extend the earlier fallback-only Safari row; they do not complete Safari
 rendering, keyboard, lifecycle or VoiceOver acceptance. Safari environment fields
 listed as unmeasured above remain **UNTESTED**.
+
+The [October 21 VoiceOver continuation](accessibility-verification.md#voiceover-scripting-continuation--2026-10-21-utc)
+recovered actual speech through user-approved temporary AppleScript control in
+installed Safari. Bounded passes cover home reading, Frost dialog controls/focus
+return, search reading/focus return, gallery filters/heading rotor, both docs labs,
+API-table reading and 200% docs navigation/TOC. Full native keyboard/lifecycle,
+unavailable/reduced-motion announcements and drawer focus return remain open.
+VoiceOver and scripting control were restored off, native zoom to 100%; no broader
+browser support or hardware pass follows from these observations.
 
 ### Current source, build and evidence identities
 

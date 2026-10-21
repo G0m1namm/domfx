@@ -133,6 +133,7 @@ async function run() {
       ];
       return {
         target: ['text', 'svg', 'image'][index],
+        errorCss: Math.max(...errors.map(Math.abs)),
         errorPhysical: Math.max(...errors.map(Math.abs)) * devicePixelRatio,
       };
     });

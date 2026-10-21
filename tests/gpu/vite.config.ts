@@ -15,6 +15,7 @@ export default defineConfig({
         performance: resolve(import.meta.dirname, 'performance.html'),
         steady: resolve(import.meta.dirname, 'steady.html'),
         layout: resolve(import.meta.dirname, 'layout.html'),
+        placementMeasurement: resolve(import.meta.dirname, 'placement-measurement.html'),
         stress: resolve(import.meta.dirname, 'stress.html'),
       },
     },

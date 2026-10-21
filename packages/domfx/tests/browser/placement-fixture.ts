@@ -194,6 +194,12 @@ async function lifecycle(
     document.body,
     'position:relative;margin:70.375px 80.125px;width:650.375px;height:400.625px;border:3.25px solid;',
   );
+  host.className = 'placement-inherited-spacing';
+  const style = document.createElement('style');
+  // Markdown sibling spacing must not move the attachment-owned canvas.
+  style.textContent =
+    '.placement-inherited-spacing :not(a, strong, em, del, span, input, code, br) + :not(a, strong, em, del, span, input, code, br) { margin-top:24px; }';
+  document.head.append(style);
   const target = element(
     host,
     'position:relative;left:140.25px;top:110.375px;width:120.375px;height:80.625px;',
@@ -399,17 +405,15 @@ async function lifecycle(
     if (!layer) {
       throw new Error('placement layer missing');
     }
-    const witness = element(host, layer.style.cssText);
-    const landmark = element(
-      witness,
-      'position:absolute;left:22.25519287833828%;top:28.169014084507044%;',
-    );
+    const bounds = layer.getBoundingClientRect();
     const expected = reference.getBoundingClientRect();
-    const actual = landmark.getBoundingClientRect();
+    const actual = {
+      left: bounds.left + bounds.width * 0.2225519287833828,
+      top: bounds.top + bounds.height * 0.28169014084507044,
+    };
     const physicalError =
       Math.max(Math.abs(expected.left - actual.left), Math.abs(expected.top - actual.top)) *
       devicePixelRatio;
-    witness.remove();
     const result = {
       pending,
       maximumInFlight,
@@ -456,6 +460,7 @@ async function lifecycle(
       handle.dispose();
     }
     host.remove();
+    style.remove();
     removeEventListener('unhandledrejection', unhandled);
     if (contextDescriptor) {
       Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', contextDescriptor);

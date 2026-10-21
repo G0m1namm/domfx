@@ -637,7 +637,7 @@ export function attachWithAdapters(
       canvas = document.createElement('canvas');
       canvas.setAttribute('aria-hidden', 'true');
       canvas.style.cssText =
-        'position:absolute;pointer-events:none;display:block;visibility:hidden;';
+        'position:absolute;margin:0;pointer-events:none;display:block;visibility:hidden;';
     }
     presenting = true;
     stopPlacement();

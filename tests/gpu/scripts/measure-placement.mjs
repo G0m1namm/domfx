@@ -45,7 +45,7 @@ const result = {
     limits:
       'Controlled local micro-workload, fixed order, no randomization/thermal isolation; paired controls are context, not proof that their difference is exclusive placement cost. No native Safari/mobile/page-zoom/GPU-duration claims. Callback pending counts exclude fixture rAF and native observer delivery; they do not prove every asynchronous queue is bounded.',
     attribution:
-      'Optional --attribution uses an unminified diagnostic consumer with consumer-to-library-to-source map resolution and recorded map hashes. Fresh processes separate exact measureEffectPlacement function-coverage counts (optimization disabled) from 1 ms sampling profiles without precise coverage or method wrappers. Coverage starts before navigation/compilation, resets after warmup, requires block entry ranges, and calibrates three calls to an async function with two awaits. CPU figures are source-attributed sampled execution estimates, including placement visibility/clip helpers and Floating UI, not complete/exclusive placement CPU, layout/GPU durations or ordinary production timing. Async continuations are attributed by mapped source.',
+      'Optional --attribution uses an unminified diagnostic consumer with consumer-to-library-to-source map resolution and recorded map hashes. Fresh processes separate exact measureEffectPlacement function-coverage counts (optimization disabled) from 1 ms sampling profiles without precise coverage or method wrappers. Each coverage workload gets a fresh process to avoid V8 omitting hot async function ranges across repeated collection windows; missing entry ranges fail the run. Coverage starts before navigation/compilation, resets after warmup, requires block entry ranges, and calibrates three calls to an async function with two awaits. CPU figures are source-attributed sampled execution estimates, including placement visibility/clip helpers and Floating UI, not complete/exclusive placement CPU, layout/GPU durations or ordinary production timing. Async continuations are attributed by mapped source.',
   },
   environment: {
     node: process.version,
@@ -196,9 +196,16 @@ try {
   if (!address || typeof address === 'string') {
     throw new Error('missing preview address');
   }
+  const workloads = ['stationary', 'scroll', 'transform'];
+  const phases = attribution
+    ? [
+        ...workloads.map((workload) => ({ phase: 'coverage', workloads: [workload] })),
+        { phase: 'profile', workloads },
+      ]
+    : ['ordinary', 'diagnostic'].map((phase) => ({ phase, workloads }));
   for (const count of [1, 2]) {
     for (const effects of attribution ? [true] : [false, true]) {
-      for (const phase of attribution ? ['coverage', 'profile'] : ['ordinary', 'diagnostic']) {
+      for (const { phase, workloads } of phases) {
         const diagnostic = phase === 'diagnostic';
         const condition = {
           count,
@@ -250,7 +257,7 @@ try {
             await cdp.send('Profiler.enable');
             await cdp.send('Profiler.setSamplingInterval', { interval: 1000 });
           }
-          for (const workload of ['stationary', 'scroll', 'transform']) {
+          for (const workload of workloads) {
             const workloadResult = { workload, trials: [] };
             condition.workloads.push(workloadResult);
             workloadResult.warmup = await page.evaluate(

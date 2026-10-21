@@ -105,7 +105,8 @@ It uses an unminified source-mapped consumer, isolates precise function-coverage
 counts from 1 ms CPU sampling in fresh processes, and retains raw coverage/profiles
 locally. Coverage disables optimization; its counts include CDP boundaries. The
 coverage session starts before navigation and compilation, then resets after warmup;
-counts require block entry ranges and an async-call calibration. Consumer and library
+each coverage workload uses a fresh process, and missing function ranges fail the run.
+Counts require block entry ranges and an async-call calibration. Consumer and library
 source maps are resolved together and their hashes recorded. The
 source-attributed sampling estimate includes placement visibility/clip helpers and
 Floating UI, including async continuations; it is not exclusive placement CPU or

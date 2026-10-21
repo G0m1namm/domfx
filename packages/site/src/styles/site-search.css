@@ -39,7 +39,7 @@
   border-radius: 10px;
   background: var(--search-bg);
   color: var(--search-text);
-  font: 15px/1.6 var(--search-body);
+  font: 0.9375rem/1.6 var(--search-body);
   overflow: auto;
   box-shadow: 0 24px 100px #0008;
 }
@@ -59,7 +59,7 @@
   padding: 16px 20px 8px;
 }
 .site-search-heading h2 {
-  font: 500 18px var(--search-display);
+  font: 500 1.125rem var(--search-display);
   letter-spacing: 0;
 }
 .site-search-heading button {
@@ -88,7 +88,7 @@
 .site-search-field input {
   min-width: 0;
   width: 100%;
-  font: 15px var(--search-body);
+  font: 0.9375rem var(--search-body);
   color: var(--search-text);
   background: transparent;
   border: 0;
@@ -106,7 +106,7 @@
 }
 .site-search-status {
   padding: 14px 20px 6px;
-  font: 11px var(--search-label);
+  font: 0.6875rem var(--search-label);
   color: var(--muted);
 }
 .site-search-results {
@@ -122,7 +122,7 @@
 }
 .site-search-results h3 {
   padding: 8px 10px;
-  font: 11px var(--search-label);
+  font: 0.6875rem var(--search-label);
   letter-spacing: normal;
   color: var(--muted);
 }
@@ -152,7 +152,7 @@
   border-radius: 6px;
   color: var(--search-text);
   text-align: left;
-  font: 14px var(--search-body);
+  font: 0.875rem var(--search-body);
 }
 .site-search-results a:hover,
 .site-search-results button:hover,
@@ -170,12 +170,12 @@
 .site-search-results strong {
   display: block;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .site-search-results small {
   display: block;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
   margin-top: 3px;
 }
@@ -192,7 +192,7 @@
 .site-search-empty {
   padding: 28px 20px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .site-search-empty[hidden] {
   display: none;
@@ -203,7 +203,7 @@
   gap: 16px;
   padding: 12px 20px;
   border-top: 1px solid #45475480;
-  font: 10px var(--search-label);
+  font: 0.625rem var(--search-label);
   color: var(--muted);
 }
 @media (max-width: 700px) {
@@ -220,7 +220,7 @@
     gap: 8px;
   }
   .site-search-field input {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .site-search-status {
     padding: 12px 14px 4px;
@@ -235,10 +235,10 @@
     padding: 12px 8px;
   }
   .site-search-results small {
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
   .site-search-hint {
-    font-size: 9px;
+    font-size: 0.5625rem;
     padding: 12px 14px;
     gap: 8px;
   }

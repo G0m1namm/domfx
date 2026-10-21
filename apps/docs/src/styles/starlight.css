@@ -25,8 +25,8 @@
   --docs-gutter: 36px;
   --sl-content-width: 760px;
   --sl-sidebar-width: 240px;
-  --sl-text-h2: 28px;
-  --sl-text-h3: 22px;
+  --sl-text-h2: 1.75rem;
+  --sl-text-h3: 1.375rem;
   --sl-content-gap-y: 24px;
   --sl-mobile-toc-height: 52px;
 }
@@ -80,7 +80,8 @@ h4 {
 }
 h1 {
   margin: 0;
-  font-size: clamp(2.5rem, 5.3vw, 4.75rem);
+  /* Keep the 16px design curve while following larger browser font defaults. */
+  font-size: clamp(2.5rem, calc(1rem + 5.3vw - 16px), 4.75rem);
   line-height: 1.08;
 }
 .docs-breadcrumb {
@@ -89,10 +90,10 @@ h1 {
   gap: 12px;
   margin-bottom: 24px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .sl-markdown-content {
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
@@ -100,7 +101,7 @@ h1 {
   max-width: 60ch;
   margin: 0 0 48px;
   color: var(--muted);
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 .sl-markdown-content p,
 .sl-markdown-content ul,
@@ -139,19 +140,21 @@ h1 {
   border-radius: 6px;
   color: #f4f5fb;
   background: var(--raised);
-  font-size: 14px;
+  font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
 .sl-markdown-content pre {
+  max-width: 100%;
+  min-width: 0;
   padding: 24px;
   border: 1px solid #62657a;
   border-radius: 10px;
   background: #101117 !important;
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 1.55;
 }
 .sl-markdown-content pre code {
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .sidebar-content {
   gap: 0;
@@ -162,11 +165,11 @@ h1 {
 }
 .sidebar-content .top-level > li > details > summary {
   padding: 0 0 8px;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.2;
 }
 .sidebar-content .large {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 .sidebar-content ul ul li {
@@ -183,7 +186,7 @@ h1 {
   border-left: 2px solid var(--border);
   border-radius: 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 .sidebar-content ul ul .large {
@@ -209,7 +212,7 @@ h1 {
   background: var(--raised);
   color: var(--muted);
   font:
-    11px/18px 'JetBrains Mono',
+    0.6875rem/1.636364 'JetBrains Mono',
     ui-monospace,
     monospace;
 }
@@ -224,7 +227,7 @@ h1 {
 .sidebar-content .docs-sidebar-note {
   margin-top: 32px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .sidebar-content > .text-link {
   padding: 0;
@@ -248,7 +251,7 @@ starlight-toc h2 {
   margin: 0 0 12px;
   color: #e8eaf3;
   font-family: 'General Sans', sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: 0;
 }
@@ -257,7 +260,7 @@ starlight-toc a {
   border-left: 1px solid var(--border);
   border-radius: 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.45;
 }
 starlight-toc a[aria-current='true'] {
@@ -267,7 +270,8 @@ starlight-toc a[aria-current='true'] {
 starlight-toc li:has(> a[href='#_top']) {
   display: none;
 }
-@media (min-width: 800px) {
+/* Match Starlight's font-relative sidebar (50rem) and rail (72rem) thresholds. */
+@media (min-width: 50em) {
   .main-frame {
     padding-left: calc(var(--docs-gutter) + 240px + 64px);
   }
@@ -297,7 +301,7 @@ starlight-toc li:has(> a[href='#_top']) {
     padding-top: 48px;
   }
 }
-@media (min-width: 1152px) {
+@media (min-width: 72em) {
   :root,
   :root[data-theme='light'] {
     --sl-mobile-toc-height: 0px;
@@ -330,7 +334,7 @@ starlight-toc li:has(> a[href='#_top']) {
   margin-block: 64px 16px;
   padding-top: 8px;
   border-top: 1px solid var(--border);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .docs-page-actions a {
   display: inline-flex;
@@ -352,13 +356,13 @@ starlight-toc li:has(> a[href='#_top']) {
   border-color: var(--border);
   box-shadow: none;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .pagination-links a[rel='next'] {
   grid-column: 2;
 }
 .pagination-links .link-title {
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 500;
   line-height: 1.6;
 }
@@ -399,7 +403,30 @@ starlight-toc li:has(> a[href='#_top']) {
 .site-nav .pagefind-ui {
   color: var(--sl-color-white);
 }
-@media (max-width: 799px) {
+/* Pagefind's fixed text sizes and minimum result widths otherwise ignore or
+   overflow enlarged browser defaults. Keep its ordinary 16px scale. */
+#starlight__search .pagefind-ui__result-title {
+  font-size: calc(1.3125rem * var(--pagefind-ui-scale));
+  overflow-wrap: anywhere;
+}
+#starlight__search .pagefind-ui__message {
+  font-size: calc(1rem * var(--pagefind-ui-scale));
+}
+#starlight__search .pagefind-ui__result-inner,
+#starlight__search .pagefind-ui__result-excerpt {
+  min-inline-size: 0;
+}
+/* Put Cancel on its own row when font-relative space leaves no usable query field. */
+@media not all and (min-width: 18em) {
+  site-search button[data-close-modal] {
+    position: static;
+    min-block-size: max(2.75rem, 44px);
+  }
+  #starlight__search {
+    --sl-search-cancel-space: 0px;
+  }
+}
+@media not all and (min-width: 50em) {
   .docs-effect-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -412,25 +439,25 @@ starlight-toc li:has(> a[href='#_top']) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 36px;
-  min-height: 36px;
+  height: auto;
+  min-block-size: max(2.75rem, 44px);
   margin-top: 8px;
   padding-inline: 12px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--sl-color-bg-nav);
   color: var(--silver);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .docs-mobile-title {
   display: none;
 }
-@media (min-width: 800px) {
+@media (min-width: 50em) {
   .docs-menu-toggle {
     display: none;
   }
 }
-@media (max-width: 1151px) {
+@media not all and (min-width: 72em) {
   .docs-mobile-title {
     position: fixed;
     top: calc(var(--sl-nav-height) + 15px);
@@ -440,7 +467,7 @@ starlight-toc li:has(> a[href='#_top']) {
     max-width: calc(100vw - var(--docs-gutter) - 256px);
     overflow: hidden;
     color: var(--muted);
-    font-size: 14px;
+    font-size: 0.875rem;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -450,7 +477,7 @@ starlight-toc li:has(> a[href='#_top']) {
   mobile-starlight-toc summary {
     justify-content: flex-end;
     padding-inline: var(--docs-gutter);
-    font-size: 14px;
+    font-size: 0.875rem;
   }
   mobile-starlight-toc .toggle {
     gap: 8px;
@@ -461,12 +488,17 @@ starlight-toc li:has(> a[href='#_top']) {
     display: none;
   }
 }
-@media (max-width: 799px) {
+@media not all and (min-width: 50em) {
+  :root,
+  :root[data-theme='light'] {
+    /* Reserve the growing Docs control plus its top and bottom inset. */
+    --sl-mobile-toc-height: calc(max(2.75rem, 44px) + 16px);
+  }
   .sidebar-pane {
-    inset-block-start: calc(var(--sl-nav-height) + 52px);
+    inset-block-start: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height));
   }
   .docs-mobile-title {
-    left: calc(var(--docs-gutter) + 94px);
+    left: calc(var(--docs-gutter) + 5.875rem);
   }
 }
 
@@ -489,7 +521,7 @@ starlight-toc li:has(> a[href='#_top']) {
   pointer-events: none;
 }
 
-@media (max-width: 700px) {
+@media not all and (min-width: 43.8125em) {
   :root,
   :root[data-theme='light'] {
     --sl-nav-height: 56px;

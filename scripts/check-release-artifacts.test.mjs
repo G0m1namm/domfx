@@ -16,6 +16,15 @@ import {
   validateArtifact,
 } from './check-release-artifacts.mjs';
 
+const gitEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')),
+);
+for (const key of Object.keys(process.env)) {
+  if (key.startsWith('GIT_')) {
+    delete process.env[key];
+  }
+}
+
 const source = {
   repository: 'github.com/example/domfx',
   revision: 'approved',
@@ -166,14 +175,13 @@ function cleanCheckout(t) {
   const directory = mkdtempSync(join(tmpdir(), 'domfx-release-checkout-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   writeFileSync(join(directory, 'tracked.txt'), 'tracked\n');
-  execFileSync('git', ['init', '--initial-branch=main'], { cwd: directory });
-  execFileSync('git', ['config', 'user.email', 'release@example.com'], { cwd: directory });
-  execFileSync('git', ['config', 'user.name', 'Release test'], { cwd: directory });
-  execFileSync('git', ['add', 'tracked.txt'], { cwd: directory });
-  execFileSync('git', ['commit', '--quiet', '-m', 'test release checkout'], { cwd: directory });
-  execFileSync('git', ['remote', 'add', 'origin', 'https://github.com/example/domfx.git'], {
-    cwd: directory,
-  });
+  const git = (args) => execFileSync('git', args, { cwd: directory, env: gitEnv });
+  git(['init', '--initial-branch=main']);
+  git(['config', 'user.email', 'release@example.com']);
+  git(['config', 'user.name', 'Release test']);
+  git(['add', 'tracked.txt']);
+  git(['commit', '--quiet', '-m', 'test release checkout']);
+  git(['remote', 'add', 'origin', 'https://github.com/example/domfx.git']);
   return directory;
 }
 
@@ -207,7 +215,7 @@ test('read-only handoff rejects source-mismatched evidence without a registry ac
   const result = spawnSync(
     process.execPath,
     [join(import.meta.dirname, 'check-release-artifacts.mjs'), '--handoff', directory, 'approved'],
-    { cwd: checkout, encoding: 'utf8' },
+    { cwd: checkout, encoding: 'utf8', env: gitEnv },
   );
 
   assert.notEqual(result.status, 0);
@@ -226,7 +234,7 @@ test('read-only handoff accepts matching private non-alpha evidence without a re
       directory,
       sourceIdentity.revision,
     ],
-    { cwd: checkout, encoding: 'utf8' },
+    { cwd: checkout, encoding: 'utf8', env: gitEnv },
   );
 
   assert.equal(result.status, 0, result.stderr);
@@ -247,7 +255,7 @@ test('read-only handoff requires the receiving checkout to be clean', (t) => {
       directory,
       sourceIdentity.revision,
     ],
-    { cwd: checkout, encoding: 'utf8' },
+    { cwd: checkout, encoding: 'utf8', env: gitEnv },
   );
 
   assert.notEqual(result.status, 0);

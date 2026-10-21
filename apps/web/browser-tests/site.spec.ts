@@ -199,10 +199,10 @@ test('reduced motion synchronizes playback when a media getter precedes change d
   const playback = page.locator('[data-closing-pause]');
   await expect(page.locator('canvas')).toHaveCount(0);
   await expect(playback).toBeDisabled();
-  await expect(playback).toHaveAccessibleName('Effects paused for reduced motion');
+  await expect(playback).toHaveAccessibleName('Reduced motion');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(playback).toBeEnabled();
-  await expect(playback).toHaveAccessibleName('Resume header and artwork effects');
+  await expect(playback).toHaveAccessibleName('Resume automatic effects');
   await expect(page.locator('canvas')).toHaveCount(0);
   await playback.click();
   await expect(page.locator('.header-effect-host canvas')).toHaveCount(1);

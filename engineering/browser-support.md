@@ -6,6 +6,23 @@ for an entire browser family. The original DOM must remain usable when an effect
 unavailable. [Release gates](../RELEASING.md#held-publication-approval)
 remain in force.
 
+## Keyboard and A/AA review — 2026-10-21 UTC
+
+The [bounded accessibility review](accessibility-verification.md#keyboard-and-aaa-review--2026-10-21-utc)
+records current keyboard/focus, visible code/table scrolling, contrast, resize/reflow,
+pointer alternatives and playback findings on the five #87 routes. It fixes selected
+state boundaries, label/name mismatches, drag-only panning and the automatic-effects
+pause gap, and verifies outside-click preview dismissal. Source/build identities,
+methods and explicit holds are in that record. New observations use bundled
+Playwright Chromium, not a new installed-Safari or screen-reader cohort; no full
+WCAG conformance or additional browser support is claimed.
+
+The earlier #143 default-font and #144 playback-control defects were resolved by
+[PR #153](https://github.com/G0m1namm/domfx/pull/153) (`f168bb4`) and
+[PR #151](https://github.com/G0m1namm/domfx/pull/151) (`1fc7baa`). Their failures in
+the October 20 cohort below remain historical results. Missing devices/engines and
+Linux/SwiftShader holds remain unchanged; they are outside #87's narrowed review.
+
 ## Native Safari placement — 2026-10-21 UTC
 
 **PASS:** Fire output on text, SVG and image targets stayed aligned through nested
@@ -61,7 +78,7 @@ identity; Safari's adapter was unmeasured. Power mode and display refresh were u
 
 | Environment and scope                                   | Result                                                                                                                 | Boundary                                                                                                                                                                                                                                                              |
 | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Bundled Chromium, website development/production        | **Intermittent failure:** initially 58 passed, 1 failed, 3 expected metadata skips; later 59 passed, 3 expected skips. | The development reduced-motion check saw zero canvases but an enabled artwork playback button. Ten focused repetitions passed, but [#144](https://github.com/G0m1namm/domfx/issues/144) remains unresolved.                                                           |
+| Bundled Chromium, website development/production        | **Intermittent failure:** initially 58 passed, 1 failed, 3 expected metadata skips; later 59 passed, 3 expected skips. | The development reduced-motion check saw zero canvases but an enabled artwork playback button. Ten focused repetitions did not resolve it; the later correction is [PR #151](https://github.com/G0m1namm/domfx/pull/151).                                             |
 | Bundled Chromium, composed docs production              | **PASS: 30/30.**                                                                                                       | Navigation with/without JavaScript, code/table keyboard scrolling, search, real lab output, unavailable output, motion recovery and actual BFCache restoration.                                                                                                       |
 | Bundled Chromium, GPU production smoke                  | **PASS: 13/13.**                                                                                                       | Rendering/readbacks, refresh, disposal, reduced motion, unavailable inputs and responsive capture. Smoke subset only; the full GPU suite was not rerun.                                                                                                               |
 | Installed headed Chrome, website development/production | **PASS: 59**, 3 expected metadata skips.                                                                               | No extra WebGPU launch flag; BFCache enabled. Default configured viewport 1440×1000, DPR 1; responsive/DPR cases use declared overrides.                                                                                                                              |

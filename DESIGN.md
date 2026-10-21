@@ -621,8 +621,10 @@ Keep setup, GSAP, native HTML and FAQ content on the marketing homepage.
 The header and Afterglow Asterisk use the same pattern sequence and
 one shared time and intensity cycle, including fade-out, effect switch and fade-in.
 The Asterisk joins the current phase when it enters view; release its attachment
-when offscreen without restarting the header. The closing artwork playback control pauses or
-resumes both decorations. The header has no playback button. Use a compact shared
+when offscreen without restarting the header. The footer playback control pauses or
+resumes all automatic marketing effects, including cards and supporting examples.
+Preserve that page pause when an offscreen example is recreated; dialog playback
+remains independent. The header has no playback button. Use a compact shared
 header: 64px on desktop and 56px on phones, retaining 44px control targets. Respect reduced motion and retain the paused state when
 that preference changes back.
 

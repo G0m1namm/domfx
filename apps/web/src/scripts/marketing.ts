@@ -46,6 +46,7 @@ function initializeMarketing() {
   const zoomOut = required<HTMLButtonElement>('[data-zoom-out]', dialog);
   const zoomIn = required<HTMLButtonElement>('[data-zoom-in]', dialog);
   const zoomLabel = required<HTMLElement>('[data-zoom-label]', dialog);
+  const panControls = required<HTMLElement>('.preview-pan-controls', dialog);
   const canHover = matchMedia('(hover: hover) and (pointer: fine)');
   let previewZoom = 1;
   let hoverZoom = false;
@@ -110,19 +111,15 @@ function initializeMarketing() {
     for (const button of document.querySelectorAll<HTMLButtonElement>('[data-closing-pause]')) {
       button.disabled = reducedMotion.matches || !hasGpu;
       button.setAttribute('aria-pressed', String(paused));
-      button.setAttribute(
-        'aria-label',
-        reducedMotion.matches
-          ? 'Effects paused for reduced motion'
-          : `${paused ? 'Resume' : 'Pause'} header and artwork effects`,
-      );
-      const label = !hasGpu
-        ? 'Effects unavailable'
-        : reducedMotion.matches
-          ? 'Reduced motion'
-          : paused
-            ? 'Resume effects'
-            : 'Pause effects';
+      let label: string;
+      if (!hasGpu) {
+        label = 'Effects unavailable';
+      } else if (reducedMotion.matches) {
+        label = 'Reduced motion';
+      } else {
+        label = paused ? 'Resume automatic effects' : 'Pause automatic effects';
+      }
+      button.setAttribute('aria-label', label);
       button.innerHTML = `<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-${paused ? 'play' : 'pause'}"/></svg><span>${label}</span>`;
     }
   }
@@ -186,6 +183,13 @@ function initializeMarketing() {
       patternEnvironment.update();
       observeCards();
     }
+    for (const slot of cardSlots.values()) {
+      if (patternsPaused) {
+        slot.handle?.pause();
+      } else {
+        slot.handle?.resume();
+      }
+    }
     updatePatternPlayback();
   }
 
@@ -233,7 +237,15 @@ function initializeMarketing() {
     if (!effect || !host) {
       return;
     }
-    const slot = createEffectSlot({ host, environment: patternEnvironment });
+    const slot = createEffectSlot({
+      host,
+      environment: patternEnvironment,
+      onChange: () => {
+        if (patternsPaused) {
+          slot.handle?.pause();
+        }
+      },
+    });
     cardSlots.set(target, slot);
     return slot.show(target, effect, () => ({
       clock: 'ambient',
@@ -356,16 +368,18 @@ function initializeMarketing() {
       }
       const count = data.stargazers_count;
       for (const cta of document.querySelectorAll<HTMLAnchorElement>('[data-repo-stars]')) {
-        required('[data-star-label]', cta).textContent = count >= 50 ? 'Stars' : 'Star on GitHub';
+        const label = count >= 50 ? 'Stars' : 'Star on GitHub';
+        required('[data-star-label]', cta).textContent = label;
         const badge = required<HTMLElement>('[data-star-count]', cta);
         badge.hidden = count < 50;
         badge.textContent = new Intl.NumberFormat('en', {
           notation: 'compact',
           maximumFractionDigits: 1,
         }).format(count);
+        const visibleLabel = count >= 50 ? `${label} ${badge.textContent}` : label;
         cta.setAttribute(
           'aria-label',
-          `${count.toLocaleString('en')} GitHub stars. Star domfx on GitHub`,
+          `${visibleLabel}: ${count.toLocaleString('en')} GitHub stars`,
         );
         cta.title = `${count.toLocaleString('en')} GitHub stars`;
       }
@@ -481,6 +495,7 @@ function initializeMarketing() {
     }
     zoomOut.disabled = previewZoom <= 1;
     zoomIn.disabled = previewZoom >= 3;
+    panControls.hidden = previewZoom <= 1;
   }
 
   function setPreviewZoom(value: number) {
@@ -533,6 +548,26 @@ function initializeMarketing() {
   on(dialogScene, 'pointercancel', () => {
     previewDrag = undefined;
   });
+
+  function panPreview(direction: string) {
+    hoverZoom = false;
+    switch (direction) {
+      case 'left':
+        panX += 32;
+        break;
+      case 'right':
+        panX -= 32;
+        break;
+      case 'up':
+        panY += 32;
+        break;
+      case 'down':
+        panY -= 32;
+        break;
+    }
+    updatePreviewZoom();
+  }
+
   on(dialogScene, 'keydown', (event) => {
     if (['+', '=', '-', '0'].includes(event.key)) {
       event.preventDefault();
@@ -542,10 +577,7 @@ function initializeMarketing() {
       ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)
     ) {
       event.preventDefault();
-      hoverZoom = false;
-      panX += event.key === 'ArrowLeft' ? 32 : event.key === 'ArrowRight' ? -32 : 0;
-      panY += event.key === 'ArrowUp' ? 32 : event.key === 'ArrowDown' ? -32 : 0;
-      updatePreviewZoom();
+      panPreview(event.key.slice(5).toLowerCase());
     }
   });
   on(window, 'resize', () => {
@@ -681,6 +713,8 @@ function initializeMarketing() {
       openPreview(element);
     } else if (element.hasAttribute('data-close')) {
       dialog.close();
+    } else if (element.dataset.pan) {
+      panPreview(element.dataset.pan);
     } else if (
       element.dataset.target === 'text' ||
       element.dataset.target === 'svg' ||
@@ -712,7 +746,34 @@ function initializeMarketing() {
     }
     required('[data-code]', dialog).textContent = attachmentCode();
   });
+
+  let backdropPointer: number | undefined;
+  function isBackdrop(event: PointerEvent) {
+    const bounds = dialog.getBoundingClientRect();
+    return (
+      event.target === dialog &&
+      (event.clientX < bounds.left ||
+        event.clientX > bounds.right ||
+        event.clientY < bounds.top ||
+        event.clientY > bounds.bottom)
+    );
+  }
+
+  on(dialog, 'pointerdown', (event) => {
+    backdropPointer = event.button === 0 && isBackdrop(event) ? event.pointerId : undefined;
+  });
+  on(dialog, 'pointerup', (event) => {
+    const dismiss = backdropPointer === event.pointerId && isBackdrop(event);
+    backdropPointer = undefined;
+    if (dismiss) {
+      dialog.close();
+    }
+  });
+  on(dialog, 'pointercancel', () => {
+    backdropPointer = undefined;
+  });
   on(dialog, 'close', () => {
+    backdropPointer = undefined;
     dialogSlot.clear();
     previewDrag = undefined;
     setPreviewZoom(1);

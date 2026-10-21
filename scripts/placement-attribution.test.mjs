@@ -1,7 +1,44 @@
 import assert from 'node:assert/strict';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
 import test from 'node:test';
 
-import { placementCpuSamples, placementInvocations } from './placement-attribution.mjs';
+import {
+  attributionSources,
+  placementCpuSamples,
+  placementInvocations,
+} from '../tests/gpu/scripts/placement-attribution.mjs';
+
+test('consumer maps resolve through the built browser map to original source', async () => {
+  const directory = await mkdtemp(resolve(tmpdir(), 'domfx-attribution-'));
+  try {
+    const consumer = resolve(directory, 'consumer');
+    const library = resolve(directory, 'library');
+    for (const folder of [consumer, library]) {
+      await mkdir(folder);
+      await writeFile(resolve(folder, 'index.js'), 'function f(){}');
+      await writeFile(
+        resolve(folder, 'index.js.map'),
+        JSON.stringify({
+          version: 3,
+          sources: [folder === consumer ? '../library/index.js' : '../src/placement.ts'],
+          names: [],
+          mappings: 'AAAA',
+        }),
+      );
+    }
+    const sources = await attributionSources(consumer, library);
+    assert.deepEqual(
+      sources.mapFrame({ url: 'http://localhost/index.js', lineNumber: 0, columnNumber: 0 }),
+      { source: resolve(directory, 'src/placement.ts'), line: 0, column: 0 },
+    );
+    assert.equal(sources.identities.length, 2);
+    assert.ok(sources.identities.every((source) => source.sourceMapSha256.length === 64));
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
 
 test('invocation identity requires one exact function and mapped placement source', () => {
   const fn = {
@@ -15,6 +52,14 @@ test('invocation identity requires one exact function and mapped placement sourc
     mapFrame: () => ({ source: '/packages/domfx/src/placement.ts', line: 246, column: 0 }),
   };
   assert.equal(placementInvocations(coverage, sources).count, 7);
+  assert.throws(
+    () =>
+      placementInvocations(
+        { result: [{ ...coverage.result[0], functions: [{ ...fn, isBlockCoverage: false }] }] },
+        sources,
+      ),
+    /found 0/,
+  );
   assert.throws(
     () =>
       placementInvocations(coverage, { ...sources, mapFrame: () => ({ source: '/unrelated.ts' }) }),

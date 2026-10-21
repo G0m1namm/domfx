@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { cpus, release } from 'node:os';
 import { relative, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -45,7 +45,7 @@ const result = {
     limits:
       'Controlled local micro-workload, fixed order, no randomization/thermal isolation; paired controls are context, not proof that their difference is exclusive placement cost. No native Safari/mobile/page-zoom/GPU-duration claims. Callback pending counts exclude fixture rAF and native observer delivery; they do not prove every asynchronous queue is bounded.',
     attribution:
-      'Optional --attribution uses an unminified source-mapped diagnostic consumer. Fresh processes separate exact measureEffectPlacement function-coverage counts (optimization disabled) from 1 ms sampling profiles without precise coverage or method wrappers. CPU figures are source-attributed sampled execution estimates, including placement visibility/clip helpers and Floating UI, not complete/exclusive placement CPU, layout/GPU durations or ordinary production timing. Async continuations are attributed by mapped source. Coverage calibrates three calls to an async function with two awaits before reporting invocation counts.',
+      'Optional --attribution uses an unminified diagnostic consumer with consumer-to-library-to-source map resolution and recorded map hashes. Fresh processes separate exact measureEffectPlacement function-coverage counts (optimization disabled) from 1 ms sampling profiles without precise coverage or method wrappers. Coverage starts before navigation/compilation, resets after warmup, requires block entry ranges, and calibrates three calls to an async function with two awaits. CPU figures are source-attributed sampled execution estimates, including placement visibility/clip helpers and Floating UI, not complete/exclusive placement CPU, layout/GPU durations or ordinary production timing. Async continuations are attributed by mapped source.',
   },
   environment: {
     node: process.version,
@@ -140,6 +140,13 @@ try {
     if (mapped.status !== 0) {
       throw new Error(`source-mapped browser build failed: ${mapped.error ?? mapped.status}`);
     }
+    const snapshot = resolve(directory, 'browser-dist');
+    await mkdir(snapshot);
+    for (const name of await readdir(resolve(root, 'packages/domfx/dist'))) {
+      if (name.endsWith('.js') || name.endsWith('.js.map')) {
+        await copyFile(resolve(root, 'packages/domfx/dist', name), resolve(snapshot, name));
+      }
+    }
   }
   const dist = resolve(directory, 'dist');
   await build({
@@ -173,7 +180,12 @@ try {
     mode: attribution ? 'unminified attribution' : 'production',
     files: await files(dist, () => true),
   };
-  const sources = attribution ? await attributionSources(dist) : undefined;
+  const sources = attribution
+    ? await attributionSources(dist, resolve(root, 'packages/domfx/dist'))
+    : undefined;
+  if (sources) {
+    result.build.sourceMaps = sources.identities;
+  }
   server = await preview({
     root: lab,
     configFile: false,
@@ -217,6 +229,13 @@ try {
               condition.errors.push(message.text());
             }
           });
+          let cdp;
+          if (phase === 'coverage') {
+            cdp = await page.context().newCDPSession(page);
+            await cdp.send('Profiler.enable');
+            // V8 needs detailed coverage enabled before compiling async functions.
+            await cdp.send('Profiler.startPreciseCoverage', { callCount: true, detailed: true });
+          }
           await page.goto(`http://127.0.0.1:${address.port}/placement-measurement.html`);
           await page.bringToFront();
           await page.waitForFunction(() => window.domfxPlacementMeasurement);
@@ -225,9 +244,9 @@ try {
               window.domfxPlacementMeasurement.prepare(count, effects, diagnostic),
             { count, effects, diagnostic },
           );
-          const cdp = await page.context().newCDPSession(page);
+          cdp ??= await page.context().newCDPSession(page);
           await cdp.send('Performance.enable', { timeDomain: 'timeTicks' });
-          if (attribution) {
+          if (phase === 'profile') {
             await cdp.send('Profiler.enable');
             await cdp.send('Profiler.setSamplingInterval', { interval: 1000 });
           }
@@ -242,10 +261,7 @@ try {
               const before = await cdp.send('Performance.getMetrics');
               let coverageStarted;
               if (phase === 'coverage') {
-                coverageStarted = await cdp.send('Profiler.startPreciseCoverage', {
-                  callCount: true,
-                  detailed: true,
-                });
+                coverageStarted = await cdp.send('Profiler.takePreciseCoverage');
               } else if (phase === 'profile') {
                 await cdp.send('Profiler.start');
               }
@@ -262,7 +278,6 @@ try {
                   awaitPromise: true,
                 });
                 const coverage = await cdp.send('Profiler.takePreciseCoverage');
-                await cdp.send('Profiler.stopPreciseCoverage');
                 const calibration = coverage.result
                   .flatMap((script) => script.functions)
                   .filter((fn) => fn.functionName === 'domfxCoverageCalibration');
@@ -291,6 +306,9 @@ try {
                 attributed,
               });
             }
+          }
+          if (phase === 'coverage') {
+            await cdp.send('Profiler.stopPreciseCoverage');
           }
           if (diagnostic) {
             condition.offscreenTransition = await page.evaluate(() =>

@@ -59,8 +59,16 @@ The [October 21 VoiceOver continuation](accessibility-verification.md#voiceover-
 recovered actual speech through user-approved temporary AppleScript control in
 installed Safari. Bounded passes cover home reading, Frost dialog controls/focus
 return, search reading/focus return, gallery filters/heading rotor, both docs labs,
-API-table reading and 200% docs navigation/TOC. Full native keyboard/lifecycle,
-unavailable/reduced-motion announcements and drawer focus return remain open.
+API-table reading and 200% docs navigation/TOC. The
+[follow-up cohort](accessibility-verification.md#voiceover-and-native-follow-up--2026-10-21-utc)
+adds actual reduced-motion/restart and controlled unavailable speech, drawer focus
+return, paused native minimize/restore, native horizontal scrolling with VoiceOver
+off, and a measured Safari BFCache return followed by usable Start. Unmodified
+preview observations and the instrumented proxy cohort have separate boundaries;
+the latter records actual viewport/DPR, visibility, native zoom and motion. Its
+scroll offsets increased while reporting `hidden`, so visible foreground scrolling
+remains untested. Full keyboard order, complete zoomed labs, native public-API
+refresh/disposal/reattachment and AT history remain open.
 VoiceOver and scripting control were restored off, native zoom to 100%; no broader
 browser support or hardware pass follows from these observations.
 

@@ -110,10 +110,83 @@ AppleScript control and VoiceOver were confirmed off afterward; Safari's page me
 confirmed restored 100% zoom. The owned Safari test window and preview server were
 closed. No Guidepup preference replacement or Safari remote automation was used.
 
-Unavailable/reduced-motion spoken status, explicit Start after preference recovery,
-full keyboard order, drawer focus return, code/table horizontal scrolling, native
-hide/history/refresh/disposal with AT, and other browser/AT/device pairings remain
-open. The failures in #143/#144 and the hardware/Linux holds are unchanged.
+The following continuation supplies unavailable/reduced-motion speech, explicit
+Start recovery, drawer focus return and additional native keyboard/history evidence.
+The failures in #143/#144 and the hardware/Linux holds are unchanged.
+
+### VoiceOver and native follow-up — 2026-10-21 UTC
+
+The same agent, Mac, Safari 26.6.2, VoiceOver 10 and unchanged runtime/build were
+used from 02:59 to 03:24 UTC. Actual speech was read with the approved probe above.
+These are individual scenario results, not complete Safari/AT acceptance.
+
+- **PASS, native preference and speech on the unmodified preview:** enabling
+  macOS Accessibility → Motion → Reduce motion produced “Reduced motion keeps
+  this preview still.” and “Reduced motion dimmed toggle button” in the Frost
+  and standalone Fire labs. Turning the native preference off left the preview
+  stopped: “Choose Start effect to restart this preview.” and “Start effect toggle
+  button”. Explicit activation spoke “Live”. No emulated media preference was used.
+- **PASS, bounded native minimize/restore on the unmodified preview:** the Fire
+  lab was explicitly paused, its Safari window minimized, then that named window
+  restored through Safari's Window menu. The paused UI remained; VoiceOver spoke
+  “Resume effect selected toggle button”. Visibility events, canvas cleanup and
+  internal resource release were not measured in this scenario. CSS viewport/DPR
+  and adapter remain unmeasured for both unmodified-preview scenarios.
+- **PASS, controlled unavailable speech:** a separate local proxy masked
+  `navigator.gpu` before application startup, only for `?__qa_no_gpu=1`. Frost's
+  original `domfx` remained readable, followed by “Effects are unavailable in this
+  browser. The original content stays visible.” and “Effects unavailable dimmed
+  toggle button”. The diagnostic reported 1324×888 CSS px, DPR 2, visible, native
+  100% zoom and reduced motion off. This is fault injection, not a physical GPU
+  failure or a rendering pass.
+- **PASS, drawer focus return with VoiceOver:** at confirmed native 200% zoom on
+  the normal proxy route, actual 662×444 CSS px/DPR 4, visible, motion off and
+  `navigator.gpu` present, the Docs invoker received keyboard focus before opening.
+  Focus moved to Installation inside the drawer. Escape spoke “Docs collapsed
+  button”; moving the VO cursor to keyboard focus spoke the same invoker. This
+  resolves the earlier inconclusive return, not the entire drawer focus order.
+- **PASS, bounded native horizontal scrolling with VoiceOver off:** at native
+  200%, narrowing the owned Safari window produced 432×471 CSS px/DPR 4. Safari's
+  Option-Tab reached Shared creation options with a visible outline. A trusted
+  Right-arrow event reached that region; after raising the window, `scrollLeft`
+  increased 0→171 (client width 391, content width 560). In the GSAP guide, clicking
+  the full lifecycle code block then pressing Right moved its enclosing region
+  0→131 (391/545). Both measured scroll results reported document visibility
+  `hidden`; they establish native keyboard scrolling in that state, not a visible
+  foreground or VoiceOver scrolling pass. Earlier nonmoving attempts are not
+  classified as app failures. Arrow-key and single-key Quick Nav were inspected
+  as off; no successful Quick Nav transition was established.
+- **PASS, bounded actual BFCache recovery on the proxy:** standalone → GSAP via
+  the footer link → native Back reported a trusted `pageshow` with `persisted:true`.
+  At 662×444/DPR 4, native 200%, motion off, foregrounding Safari reported a trusted
+  visible transition. Explicit Start then produced Live/Pause effect. This does
+  not establish paused-state preservation across history or an AT history pass.
+
+The unmodified preview used port 4387; the instrumented proxy used 4388 and is a
+separate cohort. It forwarded the same built HTML/assets and injected an inert,
+nonfocusable “QA environment, outside the application audit” panel. Its readings
+were `innerWidth`/`innerHeight`, `devicePixelRatio`, motion/visibility, GPU API
+presence, trusted lifecycle/key events, and region scroll offsets/dimensions.
+It added no application controls or input cancellation. Exclude this helper from
+original-app reading/focus judgments. Reproduce the unavailable case by masking
+the API before startup; omit that mask for navigation/scroll/history checks.
+Observe actual `pageshow.persisted` rather than assuming Back used BFCache.
+GPU API presence does not identify a requested adapter.
+
+Final local proxy SHA-256:
+`0c1a57e846335d810ad879a4571226b55889938202c462211b290eae465a169e`.
+Method notes, the evolving ignored proxy and timestamped speech remain in
+`.scratch/browser-accessibility-87/`; native screenshots were shown in the task
+conversation, not saved as files. VoiceOver and AppleScript control were confirmed
+off, Reduce motion off, native zoom restored to 100%, and the owned window size
+restored. The owned test window and both servers were closed; the pre-existing
+Safari Start Page was preserved.
+
+Complete native keyboard order, visible foreground code/table scrolling, complete
+zoomed lab usability, Safari public-API refresh/disposal/reattachment, AT history
+and other browser/AT/device pairings remain **UNTESTED**. Existing automated
+fixtures retain their own passes; they do not fill these native/AT rows. Physical
+mobile/second OS/GPU remain **UNAVAILABLE** and Linux/SwiftShader remains **held**.
 
 ### Remaining human verification for #87
 

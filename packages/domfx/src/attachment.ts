@@ -216,6 +216,10 @@ export function attachWithAdapters(
   });
 
   function targetSize() {
+    // Hidden targets retain computed dimensions but have no layout box.
+    if (target.getClientRects().length === 0) {
+      return { width: 0, height: 0 };
+    }
     const style = targetStyle();
     let width = Number.parseFloat(style.width);
     let height = Number.parseFloat(style.height);
@@ -600,7 +604,11 @@ export function attachWithAdapters(
     }
 
     layer.style.visibility = 'visible';
+    const resuming = lifecycle !== 'active';
     lifecycle = 'active';
+    if (resuming && running()) {
+      lastTimestamp = now();
+    }
     reason = undefined;
     reasonDetail = undefined;
     observePlacement();
@@ -637,6 +645,7 @@ export function attachWithAdapters(
     canvas.style.display = 'block';
     canvas.style.width = `${frame.width * frame.pixelToLocal.a}px`;
     canvas.style.height = `${frame.height * frame.pixelToLocal.d}px`;
+    lastPlacement = undefined;
     canvas.width = frame.width;
     canvas.height = frame.height;
     context ??= canvas.getContext('webgpu');

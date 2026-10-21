@@ -164,7 +164,7 @@ test('host seek/reverse reproduces GPU output through one scheduled commit witho
   page,
 }, testInfo) => {
   await openConsumer(page);
-  const result = await page.evaluate(() => {
+  const result = await page.evaluate(async () => {
     const { effect, timeline } = window.bindingConsumer;
     const canvas = document.querySelector<HTMLCanvasElement>('#host canvas');
     if (!canvas) {
@@ -198,12 +198,14 @@ test('host seek/reverse reproduces GPU output through one scheduled commit witho
       return requests;
     };
     window.cancelAnimationFrame = (id) => callbacks.delete(id);
-    function frame() {
+    async function frame() {
       const batch = [...callbacks.values()];
       callbacks.clear();
       for (const callback of batch) {
         callback(performance.now());
       }
+      // Placement finishes asynchronously before the frame can be observed.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
     }
     Object.defineProperty(document, 'hidden', { configurable: true, value: false });
     document.dispatchEvent(new Event('visibilitychange'));
@@ -214,18 +216,18 @@ test('host seek/reverse reproduces GPU output through one scheduled commit witho
     timeline.seek(3);
     timeline.seek(2); // Default suppressEvents=true must still write both controls.
     const beforeFrame = { commits, time: effect.time, intensity: effect.intensity };
-    frame();
+    await frame();
     const first = canvas.toDataURL();
     const afterFrame = { commits };
     timeline.seek(3);
-    frame();
+    await frame();
     const changed = canvas.toDataURL() !== first;
     timeline.reverse().pause();
     timeline.seek(2);
-    frame();
+    await frame();
     const repeated = canvas.toDataURL() === first;
     timeline.seek(0);
-    frame();
+    await frame();
     return {
       initial,
       child,

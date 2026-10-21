@@ -297,5 +297,7 @@ export async function measureEffectPlacement(
 
 /** Notifications join the document scheduler; transform tracking stays on its shared frame. */
 export function observeEffectPlacement(target: Element, layer: HTMLElement, changed: () => void) {
-  return autoUpdate(target, layer, changed, { animationFrame: false });
+  // The attachment owns size invalidation and shared-frame geometry tracking.
+  // Floating UI's element-resize observer queues a frame its cleanup cannot cancel.
+  return autoUpdate(target, layer, changed, { animationFrame: false, elementResize: false });
 }

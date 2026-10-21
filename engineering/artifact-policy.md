@@ -74,6 +74,10 @@ review still decides whether artifacts outside the prohibited paths belong in so
 - **Research and evaluation records:** State the question, dated source commit, environment,
   primary observations, recommendation/decision, and limits. Promote only durable findings;
   keep raw per-run logs in ignored local locations.
+- **Public verification summaries:** Lead with what works, known failures and untested
+  scope. Keep dates, versions, source identities and reproduction details that help
+  readers interpret the results. Keep session transcripts, tool troubleshooting,
+  cleanup steps and local artifact inventories in ignored working notes.
 - **Task briefs and PRs:** Keep task scope, non-goals, and observable acceptance checks
   in the linked GitHub issue. PR descriptions cite the issue, summarize changes, record
   reproducible evidence, and state unverified scope.

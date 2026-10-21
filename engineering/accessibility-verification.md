@@ -1,9 +1,93 @@
 # Underlying interaction and accessibility
 
-[Issue #28](https://github.com/G0m1namm/domfx/issues/28) verifies that the original
-DOM remains the source of content and input. This is a bounded fixture audit,
-not a certification of a host application's accessibility or universal assistive
-technology support.
+The original DOM remains the source of content and input. These checks cover named
+fixtures and site scenarios; they do not certify a host application's accessibility
+or establish universal assistive-technology support.
+
+## Current-site observations — 2026-10-20 UTC
+
+Verified October 20–21 for [#87](https://github.com/G0m1namm/domfx/issues/87) on
+runtime [fcf7532](https://github.com/G0m1namm/domfx/commit/fcf753206814a77d16f3709e3eacd13165c765ea).
+The [browser support record](browser-support.md#current-site-verification--2026-10-20-utc)
+identifies the environment and automated results. All passes below apply only to
+the named scenario.
+
+### Original content, zoom and lifecycle
+
+| Scenario                                  | Result                                                                                                                                                                                                              | Limit                                                                                                                                                               |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Original text under an active Fire effect | **PASS:** native pointer selection in installed Chrome 155 selected and visibly highlighted the standalone lab's original `domfx` text.                                                                             | Native 100% zoom, 1672×947 CSS px, DPR 2, visible, reduced motion off. Touch selection was not tested.                                                              |
+| Chrome native 200% zoom                   | **PASS, sampled controls/reflow:** gallery preview and docs controls remained reachable; closing the preview returned focus to Try Frost. The Image target's capture-budget fallback retained its original content. | 836×473 CSS px, DPR 4. This does not establish complete native keyboard order.                                                                                      |
+| Larger browser default fonts              | **FAIL:** roots changed from 16px to 24px, but sampled body paragraphs retained fixed sizes. Sampled layouts and controls fit at 360/768/1440×900, DPR 2.                                                           | Reflow is not text resizing. [#143](https://github.com/G0m1namm/domfx/issues/143) tracks the defect.                                                                |
+| Chrome docs tab hide/return               | **PASS:** three browser-generated cycles on each of the standalone and Frost labs; trusted hidden/visible events, zero canvases while hidden, active output on return and explicit pause preserved.                 | Fresh default profile over CDP, 1200×863 CSS px, DPR 2, motion off. This does not measure internal GPU-resource release or OS minimization.                         |
+| Safari native Frost preview               | **PASS, sampled UI:** visible Frost edges on Text/SVG/Image, intensity, Pause/Resume, preview zoom, reference link and Escape focus return.                                                                         | Safari 26.6.2; viewport/DPR, adapter, motion and visibility were unmeasured in this scenario. Full placement and lifecycle coverage remains open.                   |
+| Safari native 200% docs zoom              | **PASS, sampled navigation:** docs drawer, table of contents, search/results and search focus return were usable.                                                                                                   | Complete zoomed lab usability and foreground code/table scrolling remain untested.                                                                                  |
+| Safari paused minimize/restore            | **PASS:** after explicitly pausing Fire, minimizing and restoring its window retained the paused UI; VoiceOver read “Resume effect selected toggle button”.                                                         | Visibility events, canvas cleanup and internal resource release were not measured.                                                                                  |
+| Safari BFCache return                     | **PASS, recovery after explicit Start:** standalone → GSAP → native Back reported trusted `pageshow.persisted: true`; Start produced Live/Pause effect.                                                             | Instrumented build, native 200%, 662×444 CSS px, DPR 4, motion off; trusted visible transition observed. Paused-state preservation and AT history were not tested.  |
+| Safari native horizontal scrolling        | Scroll offsets increased for an API table and code block with VoiceOver off at native 200%, 432×471 CSS px, DPR 4.                                                                                                  | Both measurements reported `hidden`. **Visible foreground and VoiceOver scrolling remain untested**; no application failure is assigned from inconclusive attempts. |
+
+### VoiceOver with Safari — 2026-10-21 UTC
+
+**VoiceOver 10 / Safari 26.6.2 / macOS 26.6.2.** Automated VoiceOver navigation
+read the actual last spoken phrase separately from cursor text. These are observed
+speech results, not a human listening audit or deductions from an accessibility tree.
+Viewport/DPR, adapter, motion and visibility were unmeasured for the initial reading
+checks; the instrumented cases below record their own conditions.
+
+| Scenario                            | Observed result                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home reading and gallery            | **PASS, sampled sequence:** headings, links and five Try buttons were spoken. Filters announced their selected state; the heading rotor reached Effects. No decorative-canvas stop appeared in the sampled card sequence.                                                                                                                                   |
+| Frost preview                       | **PASS:** dialog announcement, Text/SVG/Image selected states, intensity 70→71, Pause/Resume and Escape returning the VO cursor to Try Frost. Image selection also announced “Live preview · WebGPU”.                                                                                                                                                       |
+| Shared search                       | **PASS, reading/navigation:** the dialog, field, ten results and result links were read; Escape returned to the trigger. Automatic result-count announcement was not established.                                                                                                                                                                           |
+| Standalone Fire and Frost docs labs | **PASS:** subject selected states, intensity 80→81, preparing/live/paused status and Pause/Resume were spoken. Original Frost `domfx` text was read once without a decorative-canvas stop in that sequence.                                                                                                                                                 |
+| Frost API table                     | **PASS:** “3 columns, 7 rows”, column headings and host-row position were spoken.                                                                                                                                                                                                                                                                           |
+| Native 200% docs navigation         | **PASS, sampled sequence:** Docs expanded state, navigation links, table of contents and heading links were spoken.                                                                                                                                                                                                                                         |
+| Drawer Escape focus return          | **PASS:** keyboard focus moved from Docs into the drawer; Escape returned to Docs and spoke “Docs collapsed button”. Moving the VO cursor to keyboard focus confirmed the invoker. Instrumented build, native 200%, 662×444 CSS px, DPR 4, visible, motion off. Full drawer focus order remains untested.                                                   |
+| Native reduced motion and recovery  | **PASS:** the macOS preference produced “Reduced motion keeps this preview still.” and a disabled playback control in both labs. Turning it off left the preview stopped and announced “Choose Start effect to restart this preview.” Explicit Start spoke “Live”. No media emulation was used.                                                             |
+| Controlled WebGPU unavailability    | **PASS:** with `navigator.gpu` masked before startup, original Frost text remained readable; speech included “Effects are unavailable in this browser. The original content stays visible.” and the disabled control. Instrumented build, native 100%, 1324×888 CSS px, DPR 2, visible, motion off. This is injected API absence, not physical GPU failure. |
+
+The instrumented cases used the same built application with a separate nonfocusable
+diagnostic panel. It recorded viewport/DPR, motion, visibility, trusted events and
+scroll offsets without cancelling input. The panel was excluded from application
+reading/focus judgments. GPU API presence was recorded, not adapter identity.
+
+### Known failures and remaining checks
+
+- [#143](https://github.com/G0m1namm/domfx/issues/143): body text ignores larger browser default fonts.
+- [#144](https://github.com/G0m1namm/domfx/issues/144): an intermittent bundled-Chromium development check left the artwork playback control enabled under reduced motion despite zero canvases. Later passes do not resolve it.
+- **Untested:** complete native keyboard order, visible foreground code/table scrolling,
+  complete zoomed lab usability, Safari public-API refresh/disposal/reattachment,
+  AT history, other browser/screen-reader pairings, braille, switch and voice control.
+- **Unavailable in this cohort:** physical mobile and a second OS/GPU. Real-device
+  access is needed for touch, pan and selection checks; desktop emulation is insufficient.
+- **Held:** Linux/SwiftShader; see the [support limits](browser-support.md#missing-coverage).
+
+[#87](https://github.com/G0m1namm/domfx/issues/87) remains open for these gaps.
+
+## Verify the current site
+
+Build with `pnpm build:web` and serve with `pnpm preview:web`. Record source/build,
+OS, browser/AT versions, viewport/DPR, native zoom, motion preference and visibility.
+Assign results per scenario, leaving unmeasured conditions explicit.
+
+1. On `/` and `/effects/`, read headings, links and filters. Open a preview; change
+   Text/SVG/Image, intensity and Pause/Resume; close and check focus return.
+   Confirm decorative canvases add no duplicate reading or focus stop.
+2. On `/docs/standalone/` and `/docs/api/effects/frost/`, check navigation, drawer
+   focus/Escape, table of contents, code/table scrolling, search and live-lab controls.
+3. Change the native reduced-motion preference; read the stopped status, turn it
+   off and verify explicit Start/Resume recovery. For unavailable output, mask
+   `navigator.gpu` before startup and record this as injected API absence.
+4. Check native tab hide/return, paused minimize/restore and history restoration.
+   Observe `pageshow.persisted` before claiming BFCache. Use rendered examples or
+   the fixture below for public refresh/disposal/reattachment operations.
+5. Check native 200% zoom, larger browser default fonts and narrow reflow under the
+   [UI conventions](ui-conventions.md). Preview zoom is a separate feature.
+
+For AT checks, record actual spoken or captioned announcements. The October 21
+method used VoiceOver's AppleScript interface to read `content of last phrase`;
+`text under cursor of vo cursor` alone is not speech evidence. Native VoiceOver
+navigation with observed audio or captions can also verify these scenarios.
 
 ## Reproduce
 
@@ -56,134 +140,19 @@ an unavailable renderer from passing an active-overlay test. Existing website,
 manual and GSAP tests continue to verify their real GPU output and interactions;
 this fixture adds the baseline and lifecycle comparisons without replacing them.
 
-Each phase attaches `*-input.json`, `*-focus.png` and `*-selection.png` to the
-Playwright report. `accessibility-environment.json` records the browser version,
-project, viewport, DPR, visibility, motion preference, adapter information and final
-state. GPU fixture evidence lives under `.scratch/browser/`. Screenshots support visual inspection and are not image
-diff assertions. The accessible snapshot is browser-derived test evidence, not a
-screen reader's spoken output.
+The fixture report records browser, viewport, DPR, visibility, motion preference,
+adapter and lifecycle state. Its accessibility snapshots describe browser semantics;
+actual screen-reader speech is recorded separately above.
 
 ## Recorded manual observations — 2026-09-15
 
-An agent drove the visible Chrome browser on macOS through the UI, separately from
-the Playwright assertions. This was not a human assistive-technology session.
-The development fixture used its manual clock, with an active, fresh fire layer.
-The visible browser was narrow enough to clip the fixture's right edge; observations
-below cover the visible controls, not responsive-layout conformance.
+The original [#28](https://github.com/G0m1namm/domfx/issues/28) fixture audit used
+visible Chrome on macOS. Keyboard activation, visible focus, original text selection
+and retained input after borrowed/owned GSAP context reversion were observed. The
+native accessibility tree contained original controls without duplicated canvas
+content. Actual screen-reader speech was not tested in that audit.
 
-| Observation                                       | Result                                                                                                   |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| No-effect button focus and Enter                  | Blue focus outline visible; both caller counters advanced once.                                          |
-| Active layer, button focus and Enter              | Same visible outline; both counters advanced once.                                                       |
-| Active layer, text drag                           | Original text showed the browser's selection highlight beneath the effect.                               |
-| Borrowed context revert                           | Effect remained active; pointer activation advanced both counters and Tab reached Original link.         |
-| Owned context revert                              | Layer disappeared; keyboard focus/Enter still worked, with both counters advancing once.                 |
-| Native browser accessibility tree in those states | One original button, link and labeled input; no decorative canvas or duplicated target content appeared. |
-
-Reduced-motion and missing-WebGPU input comparisons are automated in both projects;
-no separate manual OS-preference or physical GPU-failure session was performed.
-Saved focus/selection images provide phase-specific visual evidence for follow-up.
-
-**Untested assistive technology:** VoiceOver speech/rotor, NVDA, JAWS, TalkBack,
-braille displays, switch control and voice control. Native accessibility-tree
-inspection does not establish any of these. Safari/Firefox interaction coverage,
-touch selection and additional host layouts remained outside the 2026-09-15 fixture
-run. Record browser/OS/AT versions,
-navigation commands, expected/actual announcements and lifecycle state when adding
-such coverage; do not mark them passed from these automated results.
-
-## Available-Mac continuation — 2026-10-18
-
-On source `8d7eeecbf4faa1ea4609de19147b23abd09770d4`, installed Chrome
-155.0.8059.80 was inspected at native 200% browser zoom on macOS 26.6.2.
-The visible page had an 836 × 473 CSS-pixel viewport, DPR 4 and no reduced-motion
-preference. Fire was unavailable in that state, and the original HTML remained
-visible. Keyboard Enter opened Effect settings, Motion and Prompt; focus reached
-the relevant controls. Motion's speed slider responded to Right and Left arrows
-and was restored to 1×. The GSAP seek control reached a 2.0/4.0 s still frame
-and was reset. The Docs navigation and browse menu were operable. The local
-Reduce motion control produced a still background and disabled animation and
-player playback; it was turned off again. Native zoom was restored to 100%.
-These are bounded keyboard/visible-state observations, not spoken output or a
-complete selected-browser result. Chrome's browser-reported GPU adapter was not
-measured, so its environment-level acceptance remains **UNTESTED**.
-
-For the selected native Chrome and Safari sessions, scrolling, lifecycle
-(refresh/replacement, teardown/reattachment), native text selection and visibility
-return remain **UNTESTED**. The Chrome observations above do not establish these
-cases, and the earlier Safari 200% interaction observations remain limited to that
-run. Safari's viewport, DPR, adapter and motion preference were not measured;
-its environment-level acceptance also remains **UNTESTED**. VoiceOver actual speech,
-physical mobile and a second OS/GPU remain **UNAVAILABLE**.
-
-**VoiceOver: UNAVAILABLE.** Installed Safari 26.6.2 exposed semantic headings,
-links, image descriptions, the Effect selector, intensity slider, Pause button
-and panels through its accessibility tree. A single VoiceOver shortcut attempt
-did not start an observable VoiceOver process or produce speech/captions in the
-available capture surfaces. No actual announcement or VoiceOver navigation was
-recorded, so none of the heading, link, panel, slider, status or decorative-canvas
-speech checks passes. The next step is a human VoiceOver session on this Mac with
-observable audio or captions, recording the commands and actual announcements
-through the page and state changes. Accessibility-tree output alone cannot close
-that gap. No macOS privacy, security or browser-automation setting was changed.
-
-### Bounded native follow-up — 2026-10-19 UTC
-
-On unchanged source `8d7eeecbf4faa1ea4609de19147b23abd09770d4`, Safari
-26.6.2 exposed the built homepage's original Effect selector, intensity slider
-and Pause button. Native accessibility actions changed Pause → Resume → Pause,
-then Effect Fire → None → Fire. Intensity and Pause became disabled under None
-and enabled again under Fire. Chrome 155's Effect selector likewise changed
-Fire → None with intensity and Pause disabled. These are control-state
-observations, not proof of rendered pixels or library `refresh()`/`dispose()`.
-
-Chrome's homepage and Safari's separate diagnostic page reported
-`document.visibilityState: hidden` during this session. Chrome's console
-reported a 1421 × 1003 CSS-pixel viewport, DPR 2, reduced motion
-false and a requested `apple` / `metal-3` adapter with empty device/description.
-A separate local-only Safari diagnostic tab reported viewport 1324 × 850, DPR 2,
-reduced motion false and requested adapter fields all `apple`; that page was
-explicitly separate from the authored homepage and remained hidden across a tab
-switch. Native scroll actions returned `noWindowsAvailable`, so placement,
-selection and visibility return remain **UNTESTED**. The two new Chrome capture
-files were byte-identical despite Fire/None control changes and support no new
-pixel claim. The earlier Safari native Fire/None captures remain the bounded
-visual observation described in the browser support record.
-
-No spoken or captioned VoiceOver output was captured in this follow-up; the
-previous **UNAVAILABLE** status is unchanged. AX control names and states do not
-establish what VoiceOver announces. Real mobile touch and another OS/GPU are also
-still **UNAVAILABLE**.
-
-The native observations and reproduction protocol are recorded in the Orca
-supervised Dispatch `ctx_0d6d7a9e7420` transcript for worktree
-`87-native-mac-evidence` and the ignored local protocol
-`.scratch/native-mac-evidence-87.md`. The independent website run is recorded at
-`.scratch/web/report.json` (124 passed, 0 skipped/failed/flaky); the attempted
-rerun log `.scratch/issue-87-test-web.log` records a port-4322 conflict before
-tests started. Native Safari/Chrome captures were not retained as files, so raw
-pixels are unavailable for review; the local website test screenshots are
-automated Playwright evidence, not native captures.
-
-### Issue #87 native Mac continuation — 2026-10-19 UTC
-
-The native-production-page observations used source
-`c6805fea03845c26ff6993ff83eb513ebc9e1da5`, lockfile SHA-256
-`9fd9ab1136ae32a42690f0ef80763d4a47cf468cc8f2343cab20991d2b1f8b89`, and built
-`apps/web/dist/index.html` SHA-256
-`f68815a55ad7b20cf82a9c7c2b7c1747bcc0e1ec5a0fec73d62f3f77ae2a9658`, served at
-`http://127.0.0.1:4321/`. The host was macOS 26.6.2 (25G83), arm64, MacBook Pro
-Mac17,8, Apple M5 Pro with 24 GB RAM; Safari was 26.6.2 and installed Chrome was
-152.0.7977.76. CSS viewport, DPR, browser adapter, reduced-motion state and page
-visibility were not exposed by the native inspection surface and are **UNTESTED**;
-the host Metal 4 report is not a browser adapter claim.
-
-| Scenario                                                          | Result                                                                                                                                                                                                                                                           | Evidence boundary                                                                                                                                                                                                                        |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Safari original native link and scroll                            | **PASS:** the original `Select the text. Try this link` navigated to `#integration`, moving the native Safari page to the integration section.                                                                                                                   | This was observed with None selected after Safari's Fire view failed visually; it is not active-layer selection evidence.                                                                                                                |
-| Safari original text selection while Fire is selected             | **UNTESTED.**                                                                                                                                                                                                                                                    | The native session did not obtain a qualifying text-selection observation.                                                                                                                                                               |
-| Chrome Fire versus fallback controls at 100%; native 200% zoom    | **PASS, bounded:** native views showed Fire around original content; None left original content visible and disabled Intensity/Pause. Chrome's native zoom control displayed `200%`.                                                                             | User control interrupted before native scroll, selection, links, hide/return or lifecycle checks. Those scenarios are **UNTESTED**.                                                                                                      |
-| Safari Fire-selected visible output                               | **UNTESTED: Fire correctness.** Fire and None native views looked the same, showing the plain image, SVG and text, although the selector accepted Fire. **PASS: fallback controls.** None visibly disabled Intensity and Pause while retaining original content. | The visual observation does not establish effect availability or status, so no rendering pass/fail is assigned. This is not an accessibility-tree or assistive-technology conclusion.                                                    |
-| Hide/return and public refresh/replacement, disposal/reattachment | **UNTESTED.**                                                                                                                                                                                                                                                    | The production page does not expose public lifecycle calls, and no qualifying visibility-return observation was obtained.                                                                                                                |
-| Actual VoiceOver speech, navigation or announcements              | **UNTESTED.**                                                                                                                                                                                                                                                    | VoiceOver was not activated in this continuation and no actual spoken or captioned announcement was observed. Existing historical **UNAVAILABLE** rows remain preserved; neither AX names nor control states substitute for this result. |
-| Real mobile touch, second OS/GPU, other screen readers            | **UNAVAILABLE.**                                                                                                                                                                                                                                                 | No real device, second host GPU/OS, or assistive-technology session was accessible; no emulation is device evidence.                                                                                                                     |
+Earlier October checks used retired website layouts. Their source-specific results
+remain in [#101](https://github.com/G0m1namm/domfx/pull/101),
+[#107](https://github.com/G0m1namm/domfx/pull/107) and
+[#110](https://github.com/G0m1namm/domfx/pull/110); they are not current-site passes.

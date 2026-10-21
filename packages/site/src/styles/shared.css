@@ -107,7 +107,7 @@ output {
   gap: 12px;
   min-height: 44px;
   color: var(--silver);
-  font-size: 14px;
+  font-size: 0.875rem;
   text-decoration: underline;
   text-underline-offset: 5px;
 }

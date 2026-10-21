@@ -1,4 +1,5 @@
 .docs-code-scroll {
+  max-width: 100%;
   min-width: 0;
   overflow-x: auto;
   border: 1px solid #62657a;
@@ -24,7 +25,7 @@
   width: 100%;
   min-width: 560px;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 0.875rem;
   text-align: left;
   line-height: 1.6;
 }
@@ -50,7 +51,7 @@
   border: 0;
   background: none;
   color: var(--silver);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .docs-table-scroll p {
   margin: 8px 0 0;
@@ -88,7 +89,7 @@
   gap: 6px;
   min-height: 44px;
   font:
-    500 26px/1 Cabinet,
+    500 1.625rem/1 Cabinet,
     'Cabinet Grotesk',
     sans-serif;
   letter-spacing: -1.2px;
@@ -96,19 +97,19 @@
 .docs-site-footer-intro p {
   margin: 4px 0 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .docs-site-footer nav {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .docs-site-footer h2 {
   margin: 0 0 4px;
   color: var(--muted);
   font:
-    400 11px/1.6 'Lab Mono',
+    400 0.6875rem/1.6 'Lab Mono',
     'JetBrains Mono',
     monospace;
   letter-spacing: normal;
@@ -118,6 +119,7 @@
   align-items: center;
   gap: 6px;
   min-height: 44px;
+  overflow-wrap: anywhere;
   transition: color 150ms ease-out;
 }
 .docs-site-footer nav a:hover {
@@ -140,7 +142,7 @@
   border-top: 1px solid var(--border);
   color: var(--muted);
   font:
-    11px 'Lab Mono',
+    0.6875rem 'Lab Mono',
     'JetBrains Mono',
     monospace;
 }
@@ -182,12 +184,12 @@
 }
 .sl-markdown-content .docs-lab-heading h3 {
   margin: 0;
-  font-size: 22px;
+  font-size: 1.375rem;
 }
 .sl-markdown-content .docs-lab-heading p {
   margin: 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 /* No overflow clipping on any host ancestor: output must not be cut by the frame. */
 .docs-lab-stage {
@@ -226,7 +228,8 @@
 .docs-lab-text {
   color: #f4f5fb;
   font-family: 'Cabinet Grotesk', ui-sans-serif, sans-serif;
-  font-size: clamp(3.25rem, 10vw, 5.75rem);
+  /* Keep the 16px design curve while following larger browser font defaults. */
+  font-size: clamp(3.25rem, calc(1rem + 10vw - 16px), 5.75rem);
   letter-spacing: -0.075em;
   line-height: 0.85;
   user-select: text;
@@ -263,7 +266,7 @@
   border-radius: 6px;
   background: #14151bd9;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.4;
 }
 .docs-lab-dot {
@@ -329,7 +332,7 @@
 .docs-lab-label {
   grid-column: 1 / -1;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 .docs-lab-row output {
@@ -337,13 +340,13 @@
   border-radius: 6px;
   background: var(--raised);
   color: #e8eaf3;
-  font-size: 13px;
+  font-size: 0.8125rem;
   text-align: center;
 }
 .docs-lab-note {
   grid-column: 1 / -1;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .docs-lab-segments {
   display: inline-flex;
@@ -375,7 +378,7 @@
   border: 1px solid transparent;
   border-radius: 6px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 0.875rem;
   white-space: nowrap;
   transition:
     background-color 150ms ease-out,
@@ -452,7 +455,7 @@
   gap: 12px;
   padding: 8px 12px 8px 24px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .docs-lab-copy {
   display: inline-flex;
@@ -464,7 +467,7 @@
   border-radius: 6px;
   background: transparent;
   color: #e8eaf3;
-  font-size: 13px;
+  font-size: 0.8125rem;
   transition:
     background-color 150ms ease-out,
     border-color 150ms ease-out;
@@ -485,7 +488,7 @@
   border-top: 1px solid #2c2e38;
   border-radius: 0 0 9px 9px;
   color: #d7daee;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .docs-lab-code output {
   color: #9ed9ad;
@@ -509,11 +512,11 @@
 .docs-effect-facts dt {
   margin-bottom: 2px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .docs-effect-facts dd {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .sl-markdown-content .docs-effect-facts code,
 .sl-markdown-content .docs-effect-links code {
@@ -521,7 +524,7 @@
   border: 0;
   background: none;
   color: var(--silver);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .sl-markdown-content .docs-effect-links {
   display: grid;
@@ -580,7 +583,7 @@
 }
 .docs-effect-link-detail {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.5;
 }
 

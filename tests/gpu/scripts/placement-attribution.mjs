@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import { SourceMap } from 'node:module';
-import { relative, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 
 const hash = (value) => createHash('sha256').update(value).digest('hex');
 const placementSource = (source) =>
@@ -9,39 +9,58 @@ const placementSource = (source) =>
 const floatingSource = (source) => source.includes('/@floating-ui/');
 
 /** Read only the maps emitted for this isolated diagnostic consumer. */
-export async function attributionSources(directory) {
+export async function attributionSources(directory, libraryDirectory) {
   const scripts = new Map();
-  for (const entry of await readdir(directory, { recursive: true, withFileTypes: true })) {
-    if (!entry.isFile() || !entry.name.endsWith('.js')) {
-      continue;
+  for (const folder of [directory, libraryDirectory]) {
+    for (const entry of await readdir(folder, { recursive: true, withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith('.js')) {
+        continue;
+      }
+      const path = resolve(entry.parentPath, entry.name);
+      const text = await readFile(path, 'utf8');
+      const mapBytes = await readFile(`${path}.map`);
+      scripts.set(path, {
+        path,
+        text,
+        map: new SourceMap(JSON.parse(mapBytes)),
+        scriptSha256: hash(text),
+        sourceMapSha256: hash(mapBytes),
+      });
     }
-    const path = resolve(entry.parentPath, entry.name);
-    const text = await readFile(path, 'utf8');
-    const mapBytes = await readFile(`${path}.map`);
-    scripts.set(`/${relative(directory, path)}`, {
-      text,
-      map: new SourceMap(JSON.parse(mapBytes)),
-      scriptSha256: hash(text),
-      sourceMapSha256: hash(mapBytes),
-    });
   }
-  const scriptFor = (url) => scripts.get(new URL(url).pathname);
+  const scriptFor = (url) => scripts.get(resolve(directory, `.${new URL(url).pathname}`));
   function mapFrame(frame) {
     if (!frame.url || frame.lineNumber < 0 || frame.columnNumber < 0) {
       return undefined;
     }
-    const script = scriptFor(frame.url);
-    const mapped = script?.map.findEntry(frame.lineNumber, frame.columnNumber);
-    if (typeof mapped?.originalSource !== 'string') {
-      return undefined;
+    let script = scriptFor(frame.url);
+    let line = frame.lineNumber;
+    let column = frame.columnNumber;
+    const visited = new Set();
+    while (script && !visited.has(script.path)) {
+      visited.add(script.path);
+      const mapped = script.map.findEntry(line, column);
+      if (typeof mapped?.originalSource !== 'string') {
+        return undefined;
+      }
+      const source = resolve(dirname(script.path), mapped.originalSource);
+      line = mapped.originalLine;
+      column = mapped.originalColumn;
+      script = scripts.get(source);
+      if (!script) {
+        return { source: source.replaceAll('\\', '/'), line, column };
+      }
     }
-    return {
-      source: mapped.originalSource.replaceAll('\\', '/'),
-      line: mapped.originalLine,
-      column: mapped.originalColumn,
-    };
   }
-  return { scriptFor, mapFrame };
+  return {
+    scriptFor,
+    mapFrame,
+    identities: [...scripts.values()].map(({ path, scriptSha256, sourceMapSha256 }) => ({
+      path: relative(directory, path),
+      scriptSha256,
+      sourceMapSha256,
+    })),
+  };
 }
 
 /** Precise function coverage is isolated from profiling: it disables optimization. */

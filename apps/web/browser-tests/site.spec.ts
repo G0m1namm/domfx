@@ -149,6 +149,7 @@ test('reduced motion removes output and requires explicit resume after recovery'
   await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('.dialog-stage canvas')).toHaveCount(0);
+  await expect(page.locator('[data-pause]')).toBeDisabled();
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(page.getByRole('button', { name: 'Resume animation' })).toBeEnabled();
   for (const hidden of [true, false]) {
@@ -164,6 +165,47 @@ test('reduced motion removes output and requires explicit resume after recovery'
   await expect(page.locator('.dialog-stage canvas')).toHaveCount(0);
   await page.getByRole('button', { name: 'Resume animation' }).click();
   await expect(page.locator('.dialog-stage canvas')).toHaveCount(1);
+});
+
+test('reduced motion synchronizes playback when a media getter precedes change delivery', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const matchMedia = window.matchMedia.bind(window);
+    let marketingMotion: MediaQueryList | undefined;
+    window.matchMedia = (query) => {
+      const result = matchMedia(query);
+      if (!marketingMotion && query === '(prefers-reduced-motion: reduce)') {
+        marketingMotion = result;
+      }
+      return result;
+    };
+    Object.defineProperty(window, 'readMarketingMotion', {
+      value: () => marketingMotion?.matches,
+    });
+  });
+  await page.goto('/');
+  await expect(page.locator('.header-effect-host canvas')).toHaveCount(1);
+  const session = await page.context().newCDPSession(page);
+  await session.send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+  });
+  // Read the page's native query before Chromium delivers its queued change event.
+  // This reproduces the getter ordering possible in the marketing animation tick.
+  const sample = await session.send('Runtime.evaluate', {
+    expression: 'window.readMarketingMotion()',
+  });
+  expect(sample.result.value).toBe(true);
+  const playback = page.locator('[data-closing-pause]');
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(playback).toBeDisabled();
+  await expect(playback).toHaveAccessibleName('Effects paused for reduced motion');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await expect(playback).toBeEnabled();
+  await expect(playback).toHaveAccessibleName('Resume header and artwork effects');
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await playback.click();
+  await expect(page.locator('.header-effect-host canvas')).toHaveCount(1);
 });
 
 for (const dpr of [1, 2]) {

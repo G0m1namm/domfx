@@ -6,6 +6,44 @@ for an entire browser family. The original DOM must remain usable when an effect
 unavailable. [Release gates](../RELEASING.md#held-publication-approval)
 remain in force.
 
+## Native Safari placement — 2026-10-21 UTC
+
+**PASS:** Fire output on text, SVG and image targets stayed aligned through nested
+scrolling, positive axis-aligned scale/translation, paused movement, refresh and
+disposal/reattachment. All five steps passed at both native zoom levels; movement
+kept the capture count at three, refresh raised it to six and reattachment to nine.
+Disposal removed every effect canvas.
+
+Environment: installed Safari **26.6.2 (21624.5.1.11.3)**, WebKit UA **605.1.15**,
+macOS **26.6.2 (25G83)**, Apple M5 Pro. Both runs remained visible, with reduced
+motion off and visual viewport scale 1. A separate default-adapter query returned
+`apple` for vendor, architecture, device and description; renderer-device identity
+was not measured.
+
+| Native page zoom | CSS viewport | DPR | Maximum geometry error, physical pixels |
+| ---------------- | ------------ | --: | --------------------------------------: |
+| 100%             | 1324×851     |   2 |                                 0.02969 |
+| 200%             | 662×425      |   4 |                                 0.02970 |
+
+Paint was visually inspected and explicitly confirmed at every step. Geometry,
+paused time, active/fresh state, capture counts and cleanup were checked by the
+fixture. Canvas snapshots returned transparent pixels despite visible output in
+this Safari run; automated canvas pixel readback remains unqualified here.
+
+Source: [b84d118](https://github.com/G0m1namm/domfx/commit/b84d118), with unchanged
+browser runtime from [3bd6ebb](https://github.com/G0m1namm/domfx/commit/3bd6ebb).
+GPU fixture build SHA-256: `00fecafbf8fd19510b0f138fec140ad8fda3b738abe965ad4ad0bc3c5931eb57`;
+lockfile SHA-256: `0fbf0fdbe9db80994088f9123380e1c0ed3158f60f810a702fabee2577a62514`.
+The build digest hashes compact JSON mapping sorted relative `tests/gpu/dist` file
+paths to their content SHA-256 values.
+
+To repeat, run `pnpm build`, `pnpm build:gpu:built`, then
+`pnpm browser:run pnpm --filter @domfx/gpu-tests exec vite preview --host 127.0.0.1 --port 4197`.
+Open `/placement-native.html` in installed Safari, select “Confirm painted output
+visually”, set native zoom to 100% or 200%, and inspect all three targets before
+each confirmation. These results cover this fixture and environment; broader
+keyboard, accessibility, full-site zoom and physical-device checks remain separate.
+
 ## Current-site verification — 2026-10-20 UTC
 
 Verified October 20–21 for [#87](https://github.com/G0m1namm/domfx/issues/87):
@@ -60,14 +98,14 @@ Safari attempts do not establish incompatibility.
 
 ## Missing coverage
 
-| Scope                                                                                                            | Current status                                                                                                                                                                                                                                                                                                                                                             |
-| ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Safari native public-API refresh/disposal/reattachment, complete keyboard order, full zoomed labs and AT history | **UNTESTED.** Existing automated Chromium results do not fill these Safari/native rows.                                                                                                                                                                                                                                                                                    |
-| Other browser/AT pairings, Firefox, Edge, other browser versions and other desktop GPU/OS combinations           | **UNTESTED.** A fresh run on each named environment is needed. Shared engines or vendors are insufficient.                                                                                                                                                                                                                                                                 |
-| Physical iOS/Android devices and a second OS/GPU                                                                 | **UNAVAILABLE in this cohort.** Real hardware/session access is required; desktop emulation does not establish touch, selection, rendering or lifecycle behavior on those devices.                                                                                                                                                                                         |
-| Linux Chromium/SwiftShader                                                                                       | **HELD.** [Failed run 36828639144](https://github.com/G0m1namm/domfx/actions/runs/36828639144) had initialization and no-adapter failures. No new rendering pass is claimed; [#41](https://github.com/G0m1namm/domfx/issues/41) and [#91](https://github.com/G0m1namm/domfx/issues/91) own release reliance. No-GPU smoke success does not resolve software-GPU rendering. |
-| Fractional DPR, physical device loss, long sessions, broader geometry/assets and bundlers                        | **UNTESTED beyond named fixtures.** Controlled failures and bounded Vite consumers do not establish these capabilities.                                                                                                                                                                                                                                                    |
-| Physical 60 Hz responsiveness fallback                                                                           | **UNTESTED.** Requires an observed 60 Hz display and the prescribed measurement trials.                                                                                                                                                                                                                                                                                    |
+| Scope                                                                                                  | Current status                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Safari complete keyboard order, full zoomed labs and AT history                                        | **UNTESTED.** Existing automated Chromium results do not fill these Safari/native rows.                                                                                                                                                                                                                                                                                    |
+| Other browser/AT pairings, Firefox, Edge, other browser versions and other desktop GPU/OS combinations | **UNTESTED.** A fresh run on each named environment is needed. Shared engines or vendors are insufficient.                                                                                                                                                                                                                                                                 |
+| Physical iOS/Android devices and a second OS/GPU                                                       | **UNAVAILABLE in this cohort.** Real hardware/session access is required; desktop emulation does not establish touch, selection, rendering or lifecycle behavior on those devices.                                                                                                                                                                                         |
+| Linux Chromium/SwiftShader                                                                             | **HELD.** [Failed run 36828639144](https://github.com/G0m1namm/domfx/actions/runs/36828639144) had initialization and no-adapter failures. No new rendering pass is claimed; [#41](https://github.com/G0m1namm/domfx/issues/41) and [#91](https://github.com/G0m1namm/domfx/issues/91) own release reliance. No-GPU smoke success does not resolve software-GPU rendering. |
+| Fractional DPR, physical device loss, long sessions, broader geometry/assets and bundlers              | **UNTESTED beyond named fixtures.** Controlled failures and bounded Vite consumers do not establish these capabilities.                                                                                                                                                                                                                                                    |
+| Physical 60 Hz responsiveness fallback                                                                 | **UNTESTED.** Requires an observed 60 Hz display and the prescribed measurement trials.                                                                                                                                                                                                                                                                                    |
 
 The [capture](../packages/domfx/README.md#padded-capture-fidelity) and
 [composition](../packages/domfx/README.md#composition-detection-and-caller-obligations)

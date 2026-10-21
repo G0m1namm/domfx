@@ -92,5 +92,8 @@ export default defineConfig({
     }),
     docsDiscovery(),
   ],
-  vite: { optimizeDeps: { exclude: ['@domfx/browser', '@domfx/core', '@domfx/gsap'] } },
+  vite: {
+    server: { ws: { path: '/docs/__vite_hmr' } },
+    optimizeDeps: { exclude: ['@domfx/browser', '@domfx/core', '@domfx/gsap'] },
+  },
 });

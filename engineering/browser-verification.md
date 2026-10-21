@@ -51,6 +51,68 @@ the earlier Linux rendering failures remain unresolved. Software rendering canno
 establish native performance or broad browser support. See the
 [support record](browser-support.md).
 
+## Capture alignment across engines
+
+```sh
+pnpm --filter @domfx/gpu-tests exec playwright install chromium firefox webkit
+pnpm test:capture
+```
+
+This GPU-independent check measures colored landmarks in actual captured pixels
+at DPR 1 and 2 in Chromium, Firefox and WebKit, in development and production.
+It checks positioned HTML, fractional geometry, translation/scale, padding and
+paint outside all four target edges. It also checks that capture preserves the
+original element. Playwright WebKit is a regression engine, not installed Safari.
+
+The capture uses HTML layout for its inset because WebKit can ignore SVG viewport
+translations for positioned HTML inside `foreignObject`. See
+[WebKit #23113](https://bugs.webkit.org/show_bug.cgi?id=23113#c62).
+This check does not establish GPU output, native page zoom or mobile support.
+Verify those separately on the actual browser, comparing the rendered shape with
+the original target after scrolling, resizing and pausing.
+
+## Placement and native zoom
+
+`pnpm test:placement` checks the actual private Floating UI adapter without a GPU
+in Chromium, Firefox and Playwright WebKit, development and production, at DPR 1/2.
+The real-GPU placement and lifecycle tests remain part of `pnpm test:gpu:full`.
+Geometry-only results do not establish captured pixels or rendered output.
+
+For installed Safari, build with `pnpm build:gpu`, serve `tests/gpu/dist` using
+the private fixture's Vite preview, and open `/placement-native.html`. Keep that
+window in the foreground. At native 100% and 200% page zoom, click **Run placement
+checks** and retain the JSON report locally. Restore the browser zoom afterward.
+The fixture checks text/SVG/image targets, nested scrolling, nonuniform scale,
+paused movement without recapture, refresh, disposal and reattachment. It requires
+visible samples, nontransparent GPU output and at most one physical pixel of layer
+geometry error against live target bounds. This is not a pixel-shape comparison.
+
+Record the source revision, lockfile/build hashes, installed browser/OS, observed
+native zoom, viewport/DPR, visibility and motion setting with the results. The
+reported default adapter is a separate capability query, not renderer-device
+identity. Playwright WebKit and a JavaScript viewport scale cannot prove native
+Safari page zoom. The fixture emits `domfx-native-placement` with its report for
+local evidence collection; no report leaves the page by default.
+
+`pnpm measure:placement` compares one/two paused public attachments with no-effect
+controls through stationary, nested-scroll and transformed movement workloads.
+Run the same committed fixture before and after a placement change, with browser
+runs serialized. Its report separates ordinary page timings from instrumented
+read/frame/submission counts and records bundle sizes, source/build identities,
+cleanup and method limits. These local samples do not promise a speed improvement.
+For separate placement attribution, run `pnpm measure:placement -- --attribution`.
+It uses an unminified source-mapped consumer, isolates precise function-coverage
+counts from 1 ms CPU sampling in fresh processes, and retains raw coverage/profiles
+locally. Coverage disables optimization; its counts include CDP boundaries. The
+coverage session starts before navigation and compilation, then resets after warmup;
+each coverage workload uses a fresh process, and missing function ranges fail the run.
+Counts require block entry ranges and an async-call calibration. Consumer and library
+source maps are resolved together and their hashes recorded. The
+source-attributed sampling estimate includes placement visibility/clip helpers and
+Floating UI, including async continuations; it is not exclusive placement CPU or
+layout/GPU time. Keep these diagnostic results separate from ordinary timings and
+production bundle sizes, and use the same mode for both source revisions.
+
 ## Visual comparisons
 
 The local visual suite uses production website examples with fixed viewport and

@@ -308,6 +308,7 @@
   border-color: var(--silver);
 }
 .docs-lab-controls {
+  container-type: inline-size;
   min-width: 0;
   margin: 0;
   padding: 4px 24px;
@@ -316,7 +317,7 @@
 }
 .docs-lab-row {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr) 64px;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 4px 16px;
   align-items: center;
   min-height: 56px;
@@ -326,6 +327,7 @@
   border-top: 1px solid #2c2e38;
 }
 .docs-lab-label {
+  grid-column: 1 / -1;
   color: var(--muted);
   font-size: 14px;
   font-weight: 500;
@@ -339,14 +341,16 @@
   text-align: center;
 }
 .docs-lab-note {
-  grid-column: 2 / -1;
+  grid-column: 1 / -1;
   color: var(--muted);
   font-size: 12px;
 }
 .docs-lab-segments {
   display: inline-flex;
-  grid-column: 2 / -1;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
   justify-self: start;
+  max-inline-size: 100%;
   gap: 2px;
   padding: 3px;
   border: 1px solid var(--border);
@@ -594,10 +598,6 @@
   .docs-lab-controls {
     padding-inline: 16px;
   }
-  .docs-lab-row {
-    grid-template-columns: 88px minmax(0, 1fr) 52px;
-    gap: 4px 12px;
-  }
   .docs-lab-segments span {
     padding-inline: 10px;
   }
@@ -615,6 +615,19 @@
   }
   .docs-effect-facts > div:nth-child(n + 3) {
     border-top: 1px solid var(--border);
+  }
+}
+/* Keep labels above controls until this column has room for the full row. */
+@container (min-width: 24rem) {
+  .docs-lab-row {
+    grid-template-columns: 7.5rem minmax(0, 1fr) 4rem;
+  }
+  .docs-lab-label {
+    grid-column: auto;
+  }
+  .docs-lab-segments,
+  .docs-lab-note {
+    grid-column: 2 / -1;
   }
 }
 @media (prefers-reduced-motion: reduce) {

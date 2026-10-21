@@ -91,24 +91,39 @@ export async function captureElementWithReservation(
   if (assetFailure) {
     throw assetFailure;
   }
-  const { w0, h0, contentX, contentY } = snapshot.meta;
+  const { w0, h0 } = snapshot.meta;
   const widthCss = w0 + padding * 2;
   const heightCss = h0 + padding * 2;
   const width = Math.ceil(widthCss * dpr);
   const height = Math.ceil(heightCss * dpr);
   estimateFrameMemory(width, height);
   reserve?.(width, height);
-  // SnapDOM's crop clamps to its existing viewBox. Expand the serialized SVG's
-  // viewport instead, so overflow/shadows are painted into the requested exterior.
+  // Use HTML layout for the capture inset: WebKit can ignore SVG viewBox
+  // translations for positioned HTML inside foreignObject (WebKit #23113).
+  // SnapDOM 2.24.15 puts the selected root in a reset HTML sandbox after its CSS.
   const svgText = decodeURIComponent(snapshot.url.slice(snapshot.url.indexOf(',') + 1));
   const view = element.ownerDocument.defaultView!;
   const svg = new view.DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement;
-  svg.setAttribute(
-    'viewBox',
-    `${contentX - padding} ${contentY - padding} ${widthCss} ${heightCss}`,
-  );
+  const foreignObject = svg.querySelector('foreignObject');
+  const sandbox = foreignObject?.querySelector('div');
+  if (!foreignObject || !sandbox) {
+    throw new CaptureError(
+      'capture-decode-failed',
+      'snapshot',
+      new Error('capture-sandbox-missing'),
+    );
+  }
+  svg.setAttribute('viewBox', `0 0 ${widthCss} ${heightCss}`);
   svg.setAttribute('width', String(widthCss));
   svg.setAttribute('height', String(heightCss));
+  foreignObject.setAttribute('x', '0');
+  foreignObject.setAttribute('y', '0');
+  foreignObject.setAttribute('width', String(widthCss));
+  foreignObject.setAttribute('height', String(heightCss));
+  sandbox.style.setProperty('padding-left', `${padding}px`, 'important');
+  sandbox.style.setProperty('padding-top', `${padding}px`, 'important');
+  sandbox.style.width = `${widthCss}px`;
+  sandbox.style.height = `${heightCss}px`;
   const image = element.ownerDocument.createElement('img');
   image.src =
     'data:image/svg+xml;charset=utf-8,' +

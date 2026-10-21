@@ -18,6 +18,7 @@ import {
   isPlacementMutation,
   isTargetVisible,
   measureEffectPlacement,
+  observeEffectPlacement,
   scaleToViewport,
 } from './placement.js';
 import type { AttachmentRenderer } from './renderer-service.js';
@@ -41,7 +42,7 @@ export interface AttachmentAdapters {
   createRenderer: () => Promise<AttachmentRenderer>;
 }
 
-function attachWithAdapters(
+export function attachWithAdapters(
   target: Element,
   request:
     | { effect: 'fire'; options: FireOptions }
@@ -53,6 +54,7 @@ function attachWithAdapters(
     | { effect: 'dither'; options: DitherOptions }
     | { effect: PatternEffect; options: PatternOptions },
   adapters: AttachmentAdapters,
+  measurePlacement = measureEffectPlacement,
 ): EffectHandle {
   const { effect, options } = request;
   const document = target?.ownerDocument;
@@ -108,6 +110,7 @@ function attachWithAdapters(
   const motion = view.matchMedia('(prefers-reduced-motion: reduce)');
   const scheduler = schedulerFor(document, view);
   const now = () => view.performance.now();
+  const targetStyle = view.getComputedStyle.bind(view, target);
 
   let paused = clock === 'manual' || motionPolicy === 'static';
   let motionSuspended = false;
@@ -158,7 +161,11 @@ function attachWithAdapters(
   });
 
   let canvas: HTMLCanvasElement | undefined;
-  let lastPlacement: ReturnType<typeof measureEffectPlacement> | undefined;
+  let lastPlacement: Awaited<ReturnType<typeof measureEffectPlacement>> | undefined;
+  let placementGeneration = 0;
+  let placementWork: Promise<void> | undefined;
+  let stopPlacementNotifications: (() => void) | undefined;
+  let presenting = false;
   claimed.add(target);
   owners.set(document, claimed);
 
@@ -180,16 +187,24 @@ function attachWithAdapters(
   const observer = new view.MutationObserver(checkMutations);
   const connectionObserver = new view.MutationObserver(checkConnection);
   let observedSize = { width: 0, height: 0 };
-  const resizeObserver = new view.ResizeObserver(() => {
+  const resizeObserver = new view.ResizeObserver((entries) => {
     if (!checkConnection()) {
       return;
     }
     try {
-      const size = targetSize();
-      // Dividing viewport coordinates by accumulated transforms can add float noise.
+      const box = entries[0]?.borderBoxSize[0];
+      const vertical = targetStyle().writingMode !== 'horizontal-tb';
+      let size = targetSize();
+      if (box && box.inlineSize > 0 && box.blockSize > 0) {
+        size = { width: box.inlineSize, height: box.blockSize };
+        if (vertical) {
+          size = { width: box.blockSize, height: box.inlineSize };
+        }
+      }
+      // Computed styles serialize fractional local dimensions to finite precision.
       const changed =
-        Math.abs(size.width - observedSize.width) > 0.0001 ||
-        Math.abs(size.height - observedSize.height) > 0.0001;
+        Math.abs(size.width - observedSize.width) > 0.001 ||
+        Math.abs(size.height - observedSize.height) > 0.001;
       observedSize = size;
       if (changed) {
         syncVisibility();
@@ -201,6 +216,28 @@ function attachWithAdapters(
   });
 
   function targetSize() {
+    // Hidden targets retain computed dimensions but have no layout box.
+    if (target.getClientRects().length === 0) {
+      return { width: 0, height: 0 };
+    }
+    const style = targetStyle();
+    let width = Number.parseFloat(style.width);
+    let height = Number.parseFloat(style.height);
+    if (Number.isFinite(width) && Number.isFinite(height)) {
+      if (style.boxSizing !== 'border-box') {
+        width +=
+          Number.parseFloat(style.paddingLeft) +
+          Number.parseFloat(style.paddingRight) +
+          Number.parseFloat(style.borderLeftWidth) +
+          Number.parseFloat(style.borderRightWidth);
+        height +=
+          Number.parseFloat(style.paddingTop) +
+          Number.parseFloat(style.paddingBottom) +
+          Number.parseFloat(style.borderTopWidth) +
+          Number.parseFloat(style.borderBottomWidth);
+      }
+      return { width, height };
+    }
     const scale = scaleToViewport(target);
     const rect = target.getBoundingClientRect();
     return { width: rect.width / scale.x, height: rect.height / scale.y };
@@ -273,12 +310,15 @@ function attachWithAdapters(
     reasonDetail = undefined;
     if (canvas) {
       canvas.style.display = 'none';
+      canvas.style.visibility = 'hidden';
     }
+    stopPlacement();
     scheduler.cancel(commit);
     lastTimestamp = undefined;
   }
 
   function cleanup() {
+    stopPlacement();
     scheduler.cancel(commit);
     scheduler.cancel(refreshObserved);
     lastTimestamp = undefined;
@@ -295,7 +335,6 @@ function attachWithAdapters(
     document.fonts.removeEventListener('loadingdone', assetChanged);
     document.fonts.removeEventListener('loadingerror', assetChanged);
     view?.removeEventListener('resize', observePaint);
-    document.removeEventListener('scroll', invalidate, true);
     document.removeEventListener('visibilitychange', visibilityChanged);
     motion.removeEventListener('change', suspendForMotion);
 
@@ -320,7 +359,9 @@ function attachWithAdapters(
     reasonDetail = undefined;
     if (canvas) {
       canvas.style.display = 'none';
+      canvas.style.visibility = 'hidden';
     }
+    stopPlacement();
     scheduler.cancel(commit);
     lastTimestamp = undefined;
   }
@@ -351,7 +392,7 @@ function attachWithAdapters(
     }
     if (visibilitySuspended) {
       scheduler.cancel(refreshObserved);
-      if (revisions.raster === 'refreshing') {
+      if (revisions.raster === 'refreshing' || presenting) {
         stale();
       } else if (revisions.raster === 'fresh') {
         suspend('target-not-visible');
@@ -405,9 +446,7 @@ function attachWithAdapters(
     }
     // Placement follows layout even when the caller owns or pauses time. Reuse
     // the presented pixels unless controls or the ambient clock need new output.
-    paint(dirty || running());
-
-    dirty = false;
+    queuePaint(dirty || running());
     lastTimestamp = running() ? timestamp : undefined;
     return (
       (lifecycle === 'active' && revisions.raster === 'fresh') ||
@@ -456,73 +495,123 @@ function attachWithAdapters(
     }
   }
 
-  function paint(render = true) {
+  function stopPlacement() {
+    placementGeneration += 1;
+    stopPlacementNotifications?.();
+    stopPlacementNotifications = undefined;
+  }
+
+  function observePlacement() {
+    if (!stopPlacementNotifications && canvas) {
+      stopPlacementNotifications = observeEffectPlacement(target, canvas, () => {
+        scheduler.schedule(commit);
+      });
+    }
+  }
+
+  function queuePaint(render = true) {
+    dirty ||= render;
+    if (placementWork || presenting) {
+      return;
+    }
+    const generation = placementGeneration;
+    placementWork = paint(generation)
+      .catch((error: unknown) => {
+        if (generation === placementGeneration) {
+          unavailable(error);
+        }
+      })
+      .finally(() => {
+        placementWork = undefined;
+      });
+  }
+
+  async function paint(generation: number, current = () => true) {
     suspendForMotion();
     // Pending work has no raster to place yet, but must observe invalid CSS too.
     if (revisions.raster === 'refreshing' && !checkComposition()) {
       return;
     }
     checkMutations(observer.takeRecords());
+    const frame = revisions.frame;
+    const prepared = revisions.prepared;
+    const layer = canvas;
+    const output = context;
     if (
       lifecycle === 'disposed' ||
       lifecycle === 'unavailable' ||
       revisions.raster !== 'fresh' ||
-      !revisions.prepared ||
-      !revisions.frame ||
-      !context ||
-      !canvas
+      !prepared ||
+      !frame ||
+      !output ||
+      !layer ||
+      !syncVisibility()
     ) {
       return;
     }
 
-    if (!syncVisibility()) {
+    // Suspended output is made measurable while still hidden, before any library reads.
+    if (layer.style.display === 'none') {
+      layer.style.visibility = 'hidden';
+      layer.style.display = 'block';
+    }
+    const placement = await measurePlacement(target, host, layer, frame);
+    if (
+      generation !== placementGeneration ||
+      !current() ||
+      canvas !== layer ||
+      revisions.frame !== frame ||
+      revisions.prepared !== prepared ||
+      revisions.raster !== 'fresh' ||
+      !checkComposition() ||
+      !syncVisibility()
+    ) {
       return;
     }
 
-    try {
-      const placement = measureEffectPlacement(target, host, revisions.frame);
-      if (
-        !lastPlacement ||
-        placement.left !== lastPlacement.left ||
-        placement.top !== lastPlacement.top ||
-        placement.width !== lastPlacement.width ||
-        placement.height !== lastPlacement.height ||
-        placement.clipPath !== lastPlacement.clipPath
-      ) {
-        canvas.style.left = `${placement.left}px`;
-        canvas.style.top = `${placement.top}px`;
-        canvas.style.width = `${placement.width}px`;
-        canvas.style.height = `${placement.height}px`;
-        canvas.style.clipPath = placement.clipPath;
-        lastPlacement = placement;
-      }
-      if (canvas.style.display !== 'block') {
-        canvas.style.display = 'block';
-      }
-
-      if (render) {
-        revisions.prepared.render(
-          motionPolicy === 'static' ? 0 : time,
-          seed,
-          intensity,
-          1 / revisions.frame.pixelToLocal.a,
-          undefined,
-          flameHeight,
-          effect,
-        );
-        revisions.prepared.present(context.getCurrentTexture());
-        if (trace && presentedRevision !== revisions.revision) {
-          trace(revisions.revision, 'presentation', 'end');
-          presentedRevision = revisions.revision;
-        }
-      }
-
-      lifecycle = 'active';
-      reason = undefined;
-      reasonDetail = undefined;
-    } catch (error) {
-      unavailable(error);
+    if (
+      !lastPlacement ||
+      placement.left !== lastPlacement.left ||
+      placement.top !== lastPlacement.top ||
+      placement.width !== lastPlacement.width ||
+      placement.height !== lastPlacement.height ||
+      placement.clipPath !== lastPlacement.clipPath
+    ) {
+      layer.style.left = `${placement.left}px`;
+      layer.style.top = `${placement.top}px`;
+      layer.style.width = `${placement.width}px`;
+      layer.style.height = `${placement.height}px`;
+      layer.style.clipPath = placement.clipPath;
+      lastPlacement = placement;
     }
+
+    if (dirty) {
+      prepared.render(
+        motionPolicy === 'static' ? 0 : time,
+        seed,
+        intensity,
+        1 / frame.pixelToLocal.a,
+        undefined,
+        flameHeight,
+        effect,
+      );
+      prepared.present(output.getCurrentTexture());
+      dirty = false;
+      if (trace && presentedRevision !== revisions.revision) {
+        trace(revisions.revision, 'presentation', 'end');
+        presentedRevision = revisions.revision;
+      }
+    }
+
+    layer.style.visibility = 'visible';
+    const resuming = lifecycle !== 'active';
+    lifecycle = 'active';
+    if (resuming && running()) {
+      lastTimestamp = now();
+    }
+    reason = undefined;
+    reasonDetail = undefined;
+    observePlacement();
   }
 
   function canCapture() {
@@ -539,15 +628,24 @@ function attachWithAdapters(
     );
   }
 
-  function presentRevision(
+  async function presentRevision(
     frame: NonNullable<typeof revisions.frame>,
     renderer: AttachmentRenderer,
+    current: () => boolean,
   ) {
     if (!canvas) {
       canvas = document.createElement('canvas');
       canvas.setAttribute('aria-hidden', 'true');
-      canvas.style.cssText = 'position:absolute;pointer-events:none;display:none;';
+      canvas.style.cssText =
+        'position:absolute;margin:0;pointer-events:none;display:block;visibility:hidden;';
     }
+    presenting = true;
+    stopPlacement();
+    canvas.style.visibility = 'hidden';
+    canvas.style.display = 'block';
+    canvas.style.width = `${frame.width * frame.pixelToLocal.a}px`;
+    canvas.style.height = `${frame.height * frame.pixelToLocal.d}px`;
+    lastPlacement = undefined;
     canvas.width = frame.width;
     canvas.height = frame.height;
     context ??= canvas.getContext('webgpu');
@@ -561,7 +659,15 @@ function attachWithAdapters(
       usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     });
     host.append(canvas);
-    paint();
+    try {
+      await placementWork;
+      if (current()) {
+        dirty = true;
+        await paint(placementGeneration, current);
+      }
+    } finally {
+      presenting = false;
+    }
   }
 
   function refresh(): Promise<void> {
@@ -632,7 +738,6 @@ function attachWithAdapters(
     document.fonts.addEventListener('loadingdone', assetChanged);
     document.fonts.addEventListener('loadingerror', assetChanged);
     view?.addEventListener('resize', observePaint);
-    document.addEventListener('scroll', invalidate, true);
     document.addEventListener('visibilitychange', visibilityChanged);
     motion.addEventListener('change', suspendForMotion);
   }

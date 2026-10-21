@@ -66,13 +66,15 @@ for (const clock of ['auto', 'ambient'] as const) {
         callbacks.delete(id);
       };
       performance.now = () => now;
-      function tick(milliseconds: number) {
+      async function tick(milliseconds: number) {
         now += milliseconds;
         const batch = [...callbacks.values()];
         callbacks.clear();
         for (const callback of batch) {
           callback(now);
         }
+        // Placement finishes asynchronously before the frame can be observed.
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
       }
       Object.defineProperty(document, 'hidden', { configurable: true, value: false });
       document.dispatchEvent(new Event('visibilitychange'));
@@ -84,14 +86,14 @@ for (const clock of ['auto', 'ambient'] as const) {
       ambient.time = 6;
       ambient.intensity = 0.8;
       const beforeFrame = { requests, counts: counts(), time: manual.time };
-      tick(100);
+      await tick(100);
       const batch = { requests, counts: counts(), pending: callbacks.size };
       const pausedImage = layers[1].toDataURL();
-      tick(5000);
+      await tick(5000);
       const pausedTime = ambient.time;
       ambient.resume();
       ambient.resume(); // Idempotent, and must not reset the clock origin.
-      tick(250);
+      await tick(250);
       const advanced = {
         time: ambient.time,
         manualTime: manual.time,
@@ -100,10 +102,10 @@ for (const clock of ['auto', 'ambient'] as const) {
       };
       ambient.pause();
       const pendingAfterPause = callbacks.size;
-      tick(10_000);
+      await tick(10_000);
       const frozenTime = ambient.time;
       ambient.time = 6;
-      tick(16);
+      await tick(16);
       const sought = {
         time: ambient.time,
         paused: ambient.paused,
@@ -111,24 +113,24 @@ for (const clock of ['auto', 'ambient'] as const) {
         pending: callbacks.size,
       };
       ambient.resume();
-      tick(500);
+      await tick(500);
       const resumed = { time: ambient.time, seed: ambient.seed };
       ambient.time = -2;
-      tick(250);
+      await tick(250);
       const runningSeek = ambient.time;
       // A pause must retain dirty writes, while keeping geometry tracking active.
       ambient.intensity = 0;
       ambient.pause();
-      tick(16);
+      await tick(16);
       const pausedWrite = { pending: callbacks.size, counts: counts() };
       ambient.resume();
       for (let i = 0; i < 20; i += 1) {
-        tick(16);
+        await tick(16);
       }
       manual.time = 9;
       ambient.dispose();
       const pendingWithManual = callbacks.size;
-      tick(16);
+      await tick(16);
       const afterAmbientDisposal = counts();
       manual.time = 10;
       manual.dispose();
@@ -136,7 +138,7 @@ for (const clock of ['auto', 'ambient'] as const) {
       ambient.resume();
       ambient.time = 99;
       manual.intensity = 0.1;
-      tick(1000);
+      await tick(1000);
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
       return {
         modes: [manual.clock, ambient.clock],
@@ -218,20 +220,22 @@ for (const ending of ['stale', 'renderer-failed'] as const) {
       window.cancelAnimationFrame = (id) => {
         callbacks.delete(id);
       };
-      function tick(milliseconds: number) {
+      async function tick(milliseconds: number) {
         now += milliseconds;
         const batch = [...callbacks.values()];
         callbacks.clear();
         for (const callback of batch) {
           callback(now);
         }
+        // Placement finishes asynchronously before the frame can be observed.
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
       }
       Object.defineProperty(document, 'hidden', { configurable: true, value: false });
       document.dispatchEvent(new Event('visibilitychange'));
-      tick(0); // Restore visibility before establishing the resumed clock origin.
+      await tick(0); // Restore visibility before establishing the resumed clock origin.
       ambient.time = 3;
       ambient.resume();
-      tick(250);
+      await tick(250);
       Object.defineProperty(document, 'hidden', { configurable: true, value: true });
       document.dispatchEvent(new Event('visibilitychange'));
       const hidden = {
@@ -240,12 +244,12 @@ for (const ending of ['stale', 'renderer-failed'] as const) {
         display: host.querySelector('canvas')?.style.display,
         paused: ambient.paused,
       };
-      tick(10_000);
+      await tick(10_000);
       Object.defineProperty(document, 'hidden', { configurable: true, value: false });
       document.dispatchEvent(new Event('visibilitychange'));
-      tick(16);
+      await tick(16);
       const restoredTime = ambient.time;
-      tick(250);
+      await tick(250);
       const advancingTime = ambient.time;
       if (failure === 'stale') {
         target.setAttribute('data-painted-change', 'true');
@@ -254,7 +258,7 @@ for (const ending of ['stale', 'renderer-failed'] as const) {
         GPUCanvasContext.prototype.getCurrentTexture = () => {
           throw new Error('injected commit failure');
         };
-        tick(16);
+        await tick(16);
       }
       const stopped = {
         lifecycle: ambient.lifecycle,
@@ -305,6 +309,7 @@ for (const mode of ['manual', 'paused', 'running'] as const) {
         document.dispatchEvent(new Event('visibilitychange'));
       };
       hide(true);
+      const nativeFrame = window.requestAnimationFrame.bind(window);
       let now = 1000;
       let nextId = 0;
       const callbacks = new Map<number, FrameRequestCallback>();
@@ -316,24 +321,30 @@ for (const mode of ['manual', 'paused', 'running'] as const) {
       window.cancelAnimationFrame = (id) => {
         callbacks.delete(id);
       };
-      function tick(milliseconds: number) {
+      async function tick(milliseconds: number) {
         now += milliseconds;
         const batch = [...callbacks.values()];
         callbacks.clear();
         for (const callback of batch) {
           callback(now);
         }
+        // Placement finishes asynchronously before the frame can be observed.
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
       }
       hide(false);
-      tick(0);
+      await tick(0);
       if (mode === 'running') {
         effect.resume();
       }
-      tick(250);
+      await tick(250);
       const before = effect.time;
       const transform = target.style.transform;
       target.style.transform = 'translateY(2000px)';
-      tick(250);
+      await tick(250);
+      // Native intersection delivery follows the rendering opportunity, so let
+      // it record offscreen state before measuring the idle period and re-entry.
+      await new Promise<void>((resolve) => nativeFrame(() => resolve()));
+      await new Promise<void>((resolve) => nativeFrame(() => resolve()));
       const offscreen = {
         time: effect.time,
         lifecycle: effect.lifecycle,
@@ -350,7 +361,7 @@ for (const mode of ['manual', 'paused', 'running'] as const) {
       reads = 0;
       for (let index = 0; index < 5; index += 1) {
         document.dispatchEvent(new Event('scroll'));
-        tick(2000);
+        await tick(2000);
       }
       const sleeping = {
         reads,
@@ -368,16 +379,16 @@ for (const mode of ['manual', 'paused', 'running'] as const) {
         await new Promise<void>((resolve) => setTimeout(resolve, 10));
       }
       const beforeReentry = { pending: callbacks.size, display: layer.style.display };
-      tick(16);
+      await tick(16);
       const reentry = fixture.sample();
-      tick(250);
+      await tick(250);
       const after = effect.time;
       hide(true);
       fixture.move('layout');
-      tick(10_000);
+      await tick(10_000);
       hide(false);
       const beforeDocumentReentry = layer.style.display;
-      tick(16);
+      await tick(16);
       const documentReentry = fixture.sample();
       hide(true);
       effect.dispose();

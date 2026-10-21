@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Controlled effect placement measurement</title>
+    <style>
+      body { margin: 3rem; font-family: sans-serif; }
+      /* Deliberately fractional CSS-pixel geometry is the measurement input. */
+      #host { position: relative; width: 700px; height: 400px; overflow: auto; border: 7px solid; transform: scale(1.05, .95); transform-origin: top left; }
+      #host-content { width: 1000px; height: 600px; }
+      #scroller { position: absolute; left: 90px; top: 65px; width: 480px; height: 220px; overflow: auto; border: 3px solid; }
+      #content { position: relative; width: 800px; height: 440px; }
+      .target { position: absolute; top: 80.125px; width: 40.375px; height: 28.625px; border-radius: 4px; background: #345; transform-origin: 25% 75%; }
+    </style>
+  </head>
+  <body>
+    <h1>Controlled effect placement measurement</h1>
+    <div id="host">
+      <div id="host-content">
+        <div id="scroller"><div id="content"></div></div>
+      </div>
+    </div>
+    <script type="module" src="/src/placement-measurement.ts"></script>
+  </body>
+</html>

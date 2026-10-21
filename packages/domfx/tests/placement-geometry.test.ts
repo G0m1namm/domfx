@@ -4,12 +4,13 @@ import { test } from 'node:test';
 import { calculateEffectPlacement, type PlacementGeometry } from '../src/placement-geometry.js';
 
 const geometry: PlacementGeometry = {
-  target: { viewportOrigin: { x: 0, y: 0 }, scaleToViewport: { x: 1, y: 1 } },
-  host: {
+  target: {
     viewportOrigin: { x: 0, y: 0 },
+    hostOriginCss: { x: 0, y: 0 },
     scaleToViewport: { x: 1, y: 1 },
-    clientOriginCss: { x: 0, y: 0 },
-    scrollCss: { x: 0, y: 0 },
+  },
+  host: {
+    scaleToViewport: { x: 1, y: 1 },
   },
   clipViewport: { left: -Infinity, top: -Infinity, right: Infinity, bottom: Infinity },
   capture: { width: 100, height: 60, pixelToTargetLocal: { a: 1, d: 1, e: 0, f: 0 } },
@@ -26,27 +27,11 @@ const cases: {
     expected: { left: 0, top: 0, width: 100, height: 60, clipPath: 'none' },
   },
   {
-    name: 'fractional viewport offsets remain fractional in host CSS coordinates',
+    name: 'Floating UI physical origin remains fractional in host CSS coordinates',
     input: {
-      target: { ...geometry.target, viewportOrigin: { x: 100.625, y: 50.875 } },
-      host: { ...geometry.host, viewportOrigin: { x: 10.25, y: 20.125 } },
+      target: { ...geometry.target, hostOriginCss: { x: 90.375, y: 30.75 } },
     },
     expected: { left: 90.375, top: 30.75, width: 100, height: 60, clipPath: 'none' },
-  },
-  {
-    name: 'fractional host borders move the containing-block origin',
-    input: { host: { ...geometry.host, clientOriginCss: { x: 3.25, y: 4.5 } } },
-    expected: { left: -3.25, top: -4.5, width: 100, height: 60, clipPath: 'none' },
-  },
-  {
-    name: 'measured host origin retains a left scrollbar gutter',
-    input: { host: { ...geometry.host, clientOriginCss: { x: 18.25, y: 4.5 } } },
-    expected: { left: -18.25, top: -4.5, width: 100, height: 60, clipPath: 'none' },
-  },
-  {
-    name: 'host scrolling is expressed in host-local CSS pixels',
-    input: { host: { ...geometry.host, scrollCss: { x: 17.5, y: 21.25 } } },
-    expected: { left: 17.5, top: 21.25, width: 100, height: 60, clipPath: 'none' },
   },
   {
     name: 'independent target and host scales divide per axis',
@@ -116,14 +101,15 @@ const cases: {
     expected: { left: 0, top: 0, width: 100, height: 60, clipPath: 'inset(0px 0px 0px 100px)' },
   },
   {
-    name: 'scales, viewport offsets, borders, scrolling, padding and clipping compose',
+    name: 'scales, Floating UI origin, padding and clipping compose',
     input: {
-      target: { viewportOrigin: { x: 250.5, y: 140.25 }, scaleToViewport: { x: 3, y: 1.5 } },
+      target: {
+        viewportOrigin: { x: 250.5, y: 140.25 },
+        hostOriginCss: { x: 114.375, y: 257 },
+        scaleToViewport: { x: 3, y: 1.5 },
+      },
       host: {
-        viewportOrigin: { x: 50.25, y: 20.125 },
         scaleToViewport: { x: 2, y: 0.5 },
-        clientOriginCss: { x: 3.25, y: 4.5 },
-        scrollCss: { x: 17.5, y: 21.25 },
       },
       capture: { width: 240, height: 160, pixelToTargetLocal: { a: 0.5, d: 0.25, e: -8, f: -12 } },
       // The padded raster spans (226.5, 122.25) to (586.5, 182.25) in the viewport.

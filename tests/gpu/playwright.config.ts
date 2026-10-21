@@ -9,6 +9,11 @@ if (!['native', 'swiftshader'].includes(gpuBackend)) {
   throw new Error('DOMFX_GPU_BACKEND must be native or swiftshader');
 }
 
+export const fixtureProjects = [
+  { name: 'development', use: { baseURL: 'http://127.0.0.1:4173' } },
+  { name: 'production', use: { baseURL: 'http://127.0.0.1:4174' } },
+];
+
 export default defineConfig({
   testDir: './browser-tests',
   outputDir: resolve(artifacts, 'test-results'),
@@ -46,10 +51,7 @@ export default defineConfig({
       ],
     },
   },
-  projects: [
-    { name: 'development', use: { baseURL: 'http://127.0.0.1:4173' } },
-    { name: 'production', use: { baseURL: 'http://127.0.0.1:4174' } },
-  ],
+  projects: fixtureProjects,
   webServer: [
     {
       command: 'pnpm exec vite --host 127.0.0.1 --port 4173 --strictPort',

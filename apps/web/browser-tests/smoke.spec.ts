@@ -99,7 +99,7 @@ test('body, control and code text follow the browser default font preference', a
               const content = document.querySelector('main')?.getBoundingClientRect();
               return {
                 height: box.height,
-                titleClear: title && title.left >= box.right,
+                titleClear: !title || title.width === 0 || title.left >= box.right,
                 contentClear: content && content.top >= box.bottom,
                 fits:
                   label.top >= box.top && label.bottom <= box.bottom && label.right <= box.right,

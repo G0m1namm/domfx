@@ -1,14 +1,16 @@
 /* Fixed site header shared by marketing and documentation layouts.
    Font and color fallbacks cover both pages' token and @font-face names. */
 :root {
-  --header-height: 64px;
+  --header-height: max(4rem, 64px);
 }
 .site-nav {
   position: fixed;
   inset: 0 0 auto;
   z-index: 50;
+  container-type: inline-size;
   display: flex;
   align-items: center;
+  font-size: 1rem;
   height: var(--header-height);
   margin: auto;
   padding: 0;
@@ -32,6 +34,7 @@
   font-family: Cabinet, 'Cabinet Grotesk', sans-serif;
   font-size: 1.9375rem;
   font-weight: 500;
+  line-height: 1;
   letter-spacing: -1.5px;
 }
 .site-nav nav {
@@ -67,6 +70,74 @@
 .nav-inner > .header-search {
   margin-left: auto;
 }
+.language-switcher {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  inline-size: 7.75rem;
+}
+.language-switcher summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-block-size: max(2.75rem, 44px);
+  padding-inline: 0.75rem;
+  border: 1px solid var(--control-border);
+  border-radius: 0.375rem;
+  color: var(--text, #e8eaf3);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  list-style: none;
+}
+.language-switcher summary::-webkit-details-marker {
+  display: none;
+}
+.language-switcher summary:hover,
+.language-switcher[open] summary {
+  background: var(--raised);
+}
+.language-switcher summary .ui-icon {
+  inline-size: 1em;
+  block-size: 1em;
+  transition: transform 0.15s;
+}
+.language-switcher[open] summary .ui-icon {
+  transform: rotate(180deg);
+}
+.site-nav .language-links {
+  position: absolute;
+  inset-block-start: calc(100% + 0.5rem);
+  inset-inline-end: 0;
+  display: grid;
+  gap: 0;
+  inline-size: 100%;
+  padding: 0.25rem;
+  border: 1px solid var(--control-border);
+  border-radius: 0.375rem;
+  background: var(--surface, #1d1f27);
+  box-shadow: 0 0.75rem 2rem #0006;
+}
+.site-nav .language-links a {
+  justify-content: space-between;
+  min-block-size: max(2.75rem, 44px);
+  padding-inline: 0.625rem;
+  border-radius: 0.25rem;
+  text-decoration: none;
+}
+.site-nav .language-links a:hover,
+.site-nav .language-links a:focus-visible {
+  background: var(--raised);
+}
+.site-nav .language-links a .ui-icon,
+.site-menu .menu-language-links a .ui-icon {
+  inline-size: 1em;
+  block-size: 1em;
+  visibility: hidden;
+}
+.site-nav .language-links a[aria-current] .ui-icon,
+.site-menu .menu-language-links a[aria-current] .ui-icon {
+  visibility: visible;
+}
 .nav-cta {
   display: flex;
   align-items: center;
@@ -87,6 +158,8 @@
 }
 .star-cta {
   gap: 8px;
+  justify-content: center;
+  min-inline-size: 11rem;
   min-height: 44px;
   color: var(--text, #e8eaf3);
 }
@@ -133,11 +206,8 @@
     gap: 16px;
   }
 }
-/* Keep the desktop links until their font-relative space runs out. */
-@media not all and (min-width: 43.8125em) {
-  :root {
-    --header-height: 56px;
-  }
+/* Query the header's font-relative space so larger default text switches to the menu. */
+@container (width < 43.8125em) {
   .nav-inner {
     gap: 10px;
     padding-inline: 20px;
@@ -145,11 +215,19 @@
   .site-nav nav {
     display: none;
   }
+  .site-nav .language-switcher {
+    display: none;
+  }
   .site-nav .wordmark {
     font-size: 1.6875rem;
   }
   .site-nav .star-cta {
     display: none;
+  }
+}
+@media not all and (min-width: 43.8125em) {
+  :root {
+    --header-height: max(3.5rem, 56px);
   }
 }
 @media (max-width: 380px) {
@@ -231,19 +309,37 @@
   text-decoration-thickness: 1px;
   text-underline-offset: 8px;
 }
+.menu-language-title {
+  display: block;
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+.site-menu .menu-language-links {
+  display: grid;
+  gap: 0;
+  margin-top: 0.25rem;
+}
+.site-menu .menu-language-links a {
+  justify-content: space-between;
+  min-height: max(2.75rem, 44px);
+  border-bottom: 1px solid #2c2e38;
+  font-family: General, 'General Sans', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0;
+  text-decoration: none;
+}
+.site-menu .menu-language-links a[aria-current] {
+  color: var(--silver);
+}
 .site-menu-star {
   justify-content: center;
   gap: 8px;
   min-height: 48px;
   margin-top: 24px;
 }
-@media not all and (min-width: 43.8125em) {
+@container (width < 43.8125em) {
   .nav-menu-button {
     display: flex;
-  }
-}
-@media (min-width: 43.8125em) {
-  .site-menu {
-    display: none;
   }
 }

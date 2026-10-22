@@ -9,6 +9,6 @@ import PhosphorIcons from '@domfx/site/components/phosphor-icons.astro';
 
 <script>
   const trigger = document.querySelector<HTMLButtonElement>('button[data-open-modal]');
-  trigger?.setAttribute('title', 'Search effects and docs (⌘K / Ctrl+K)');
+  trigger?.setAttribute('title', document.documentElement.lang === 'es' ? 'Buscar efectos y documentación (⌘K / Ctrl+K)' : 'Search effects and docs (⌘K / Ctrl+K)');
   document.querySelector('site-search dialog')?.addEventListener('close', () => trigger?.focus());
 </script>

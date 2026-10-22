@@ -31,3 +31,34 @@ export const footerLinkGroups: readonly FooterLinkGroup[] = [
     ],
   },
 ];
+
+export function localizedFooterLinkGroups(locale: 'en' | 'es'): readonly FooterLinkGroup[] {
+  if (locale === 'en') {
+    return footerLinkGroups;
+  }
+  return [
+    {
+      title: 'Crear',
+      items: [
+        ['Tu primer efecto', '/docs/es/standalone/'],
+        ['Integración con GSAP', '/docs/es/gsap/'],
+        ['Referencia de la API', '/docs/es/api/'],
+      ],
+    },
+    {
+      title: 'Explorar',
+      items: [
+        ['Todos los efectos', '/es/effects/'],
+        ['Documentación', '/docs/es/introduction/'],
+        ['Compatibilidad con navegadores', '/docs/es/support/'],
+      ],
+    },
+    {
+      title: 'domfx',
+      items: [
+        ['GitHub', repositoryUrl],
+        ['npm', 'https://www.npmjs.com/package/@domfx/browser'],
+      ],
+    },
+  ];
+}

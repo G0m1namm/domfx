@@ -21,7 +21,7 @@
   --sl-color-text-accent: #c2c5db;
   --sl-color-hairline: #454754;
   --sl-color-hairline-light: #454754;
-  --sl-nav-height: 64px;
+  --sl-nav-height: var(--header-height);
   --docs-gutter: 36px;
   --sl-content-width: 760px;
   --sl-sidebar-width: 240px;
@@ -498,7 +498,7 @@ starlight-toc li:has(> a[href='#_top']) {
     inset-block-start: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height));
   }
   .docs-mobile-title {
-    left: calc(var(--docs-gutter) + 5.875rem);
+    display: none;
   }
 }
 
@@ -524,7 +524,6 @@ starlight-toc li:has(> a[href='#_top']) {
 @media not all and (min-width: 43.8125em) {
   :root,
   :root[data-theme='light'] {
-    --sl-nav-height: 56px;
     --docs-gutter: 20px;
   }
 }

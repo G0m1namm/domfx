@@ -34,22 +34,58 @@ function one(values, message) {
   return values[0];
 }
 
+function localeIdentity(path) {
+  if (path.startsWith('/docs/es/')) {
+    return { locale: 'es', equivalent: path.replace('/docs/es/', '/docs/') };
+  }
+  if (path.startsWith('/es/')) {
+    return { locale: 'es', equivalent: path.replace('/es/', '/') };
+  }
+  return { locale: 'en', equivalent: path };
+}
+
+function spanishPath(path) {
+  return path.startsWith('/docs/')
+    ? path.replace('/docs/', '/docs/es/')
+    : path.replace('/', '/es/');
+}
+
+function uniqueOrEquivalent(seen, value, path, label) {
+  const previous = seen.get(value);
+  if (previous) {
+    const currentIdentity = localeIdentity(path);
+    const previousIdentity = localeIdentity(previous);
+    assert(
+      currentIdentity.locale !== previousIdentity.locale &&
+        currentIdentity.equivalent === previousIdentity.equivalent,
+      `${path}: duplicate ${label}`,
+    );
+  }
+  seen.set(value, path);
+}
+
 export async function validateSiteOutput({ read, paths, site, indexable }) {
   const required = async (path) => {
     const content = await read(path);
     assert(content !== null, `${path}: missing built output`);
     return content.toString();
   };
-  const titles = new Set();
-  const descriptions = new Set();
+  const titles = new Map();
+  const descriptions = new Map();
   const contentPaths = [];
   const documents = new Map();
+  const internalLinks = new Set();
+  const assets = new Set();
   for (const path of paths) {
     const html = await required(path);
     const head = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? html.split(/<body\b/i)[0];
     if (tags(head, 'meta').some((meta) => meta['http-equiv']?.toLowerCase() === 'refresh')) {
-      assert(['/examples/', '/docs/'].includes(path), `${path}: unexpected redirect`);
-      const target = path === '/examples/' ? '/effects/' : '/docs/introduction/';
+      const target = {
+        '/examples/': '/effects/',
+        '/docs/': '/docs/introduction/',
+        '/docs/es/': '/docs/es/introduction/',
+      }[path];
+      assert(target, `${path}: unexpected redirect`);
       assert(
         tags(head, 'meta').some((meta) => meta.name === 'robots' && meta.content === 'noindex'),
         `${path}: redirect must be noindex`,
@@ -74,6 +110,8 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
       );
       continue;
     }
+    const { locale } = localeIdentity(path);
+    assert.equal(tags(html, 'html')[0]?.lang, locale, `${path}: HTML language`);
     contentPaths.push(path);
     const title = decode(
       one(
@@ -89,10 +127,8 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
         `${path}: expected one ${key}`,
       );
     const description = value('description');
-    assert(!titles.has(title), `${path}: duplicate title`);
-    assert(!descriptions.has(description), `${path}: duplicate description`);
-    titles.add(title);
-    descriptions.add(description);
+    uniqueOrEquivalent(titles, title, path, 'title');
+    uniqueOrEquivalent(descriptions, description, path, 'description');
     const canonical = new URL(path, site).href;
     assert.equal(
       one(
@@ -103,6 +139,25 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
       `${path}: canonical origin/path`,
     );
     assert(path.endsWith('/'), `${path}: canonical trailing slash`);
+    const { equivalent } = localeIdentity(path);
+    const englishPath = equivalent;
+    const spanish = spanishPath(englishPath);
+    for (const [language, expected] of [
+      ['en', new URL(englishPath, site).href],
+      ['es', new URL(spanish, site).href],
+      ['x-default', new URL(englishPath, site).href],
+    ]) {
+      assert.equal(
+        one(
+          links
+            .filter((link) => link.rel === 'alternate' && link.hreflang === language)
+            .map((link) => link.href),
+          `${path}: ${language} hreflang`,
+        ),
+        expected,
+        `${path}: ${language} alternate target`,
+      );
+    }
     assert.equal(
       value('robots'),
       indexable ? 'index, follow' : 'noindex, nofollow',
@@ -123,8 +178,8 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
     })) {
       assert.equal(value(key), expected, `${path}: ${key}`);
     }
-    value('og:image:alt');
-    value('twitter:image:alt');
+    const imageAlt = value('og:image:alt');
+    assert.equal(value('twitter:image:alt'), imageAlt, `${path}: share image alt`);
     const scripts = [...head.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].filter(
       (match) => tags(`<script${match[1]}>`, 'script')[0].type === 'application/ld+json',
     );
@@ -134,9 +189,9 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
     const graph = schema['@graph'];
     assert(Array.isArray(graph), `${path}: JSON-LD graph`);
     const expectedTypes =
-      path === '/'
+      path === '/' || path === '/es/'
         ? ['WebSite', 'SoftwareSourceCode']
-        : path === '/effects/'
+        : path === '/effects/' || path === '/es/effects/'
           ? ['CollectionPage', 'ItemList']
           : ['TechArticle', 'BreadcrumbList'];
     for (const type of expectedTypes) {
@@ -165,22 +220,66 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
       }
     };
     inspect(schema);
-    documents.set(path, { html, links, graph });
+    documents.set(path, { html, links, graph, title, description, imageAlt });
+    for (const tag of [...links, ...tags(html, 'script'), ...tags(html, 'img')]) {
+      const source = tag.href ?? tag.src;
+      if (!source) {
+        continue;
+      }
+      const url = new URL(source, canonical);
+      if (url.origin === new URL(site).origin && /\.[^/]+$/.test(url.pathname)) {
+        assets.add(url.pathname);
+      }
+    }
     for (const anchor of tags(html, 'a')) {
       if (!anchor.href || /^(?:mailto:|tel:|javascript:)/i.test(anchor.href)) {
         continue;
       }
       const href = new URL(anchor.href, canonical);
       if (href.origin === new URL(site).origin) {
+        internalLinks.add(href.pathname);
         assert(
           href.pathname.endsWith('/') || /\.[^/]+$/.test(href.pathname),
           `${path}: noncanonical internal link ${anchor.href}`,
         );
         assert(
-          !['/examples/', '/docs/'].includes(href.pathname),
+          !['/examples/', '/docs/', '/docs/es/'].includes(href.pathname),
           `${path}: internal redirect link ${anchor.href}`,
         );
       }
+    }
+  }
+  for (const link of internalLinks) {
+    if (documents.has(link)) {
+      continue;
+    }
+    if (/\.[^/]+$/.test(link)) {
+      await required(link);
+      continue;
+    }
+    assert(false, `${link}: internal link has no built route`);
+  }
+  for (const asset of assets) {
+    await required(asset);
+  }
+  for (const [path, document] of documents) {
+    const { equivalent } = localeIdentity(path);
+    const englishPath = equivalent;
+    const spanish = spanishPath(englishPath);
+    assert(documents.has(englishPath), `${path}: missing English counterpart`);
+    assert(documents.has(spanish), `${path}: missing Spanish counterpart`);
+    if (path === englishPath) {
+      const counterpart = documents.get(spanish);
+      assert.notEqual(
+        document.description,
+        counterpart.description,
+        `${path}: untranslated description`,
+      );
+      assert.notEqual(
+        document.imageAlt,
+        counterpart.imageAlt,
+        `${path}: untranslated share image alt`,
+      );
     }
   }
   const locations = (xml) =>
@@ -252,7 +351,56 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
       'effect ItemList name/position',
     );
   }
+  const spanishGallery = documents.get('/es/effects/').graph;
+  assert.equal(
+    spanishGallery.find((entry) => entry['@type'] === 'CollectionPage').url,
+    absolute('/es/effects/'),
+    'Spanish CollectionPage URL',
+  );
+  assert.deepEqual(
+    spanishGallery
+      .find((entry) => entry['@type'] === 'ItemList')
+      .itemListElement.map((item) => item.url)
+      .sort(),
+    contentPaths
+      .filter((path) => /^\/docs\/es\/api\/effects\/[^/]+\/$/.test(path))
+      .map(absolute)
+      .sort(),
+    'Spanish ItemList must list exactly all effect references',
+  );
   const full = await required('/llms-full.txt');
+  for (const label of ['English', 'Español']) {
+    assert(index.includes(`## ${label}\n`), `llms.txt: missing ${label} section`);
+    assert(full.includes(`## ${label}\n`), `llms-full.txt: missing ${label} section`);
+  }
+  const sections = Object.fromEntries(
+    index
+      .split(/^## /m)
+      .slice(1)
+      .map((section) => {
+        const newline = section.indexOf('\n');
+        return [section.slice(0, newline), section.slice(newline + 1)];
+      }),
+  );
+  for (const [label, prefix] of [
+    ['English', '/docs/'],
+    ['Español', '/docs/es/'],
+  ]) {
+    const urls = [...sections[label].matchAll(/^- \[[^\]]+\]\((https?:\/\/[^)]+\.md)\):/gm)].map(
+      (match) => match[1].replace(/\.md$/, '/'),
+    );
+    assert.deepEqual(
+      urls.sort(),
+      contentPaths
+        .filter(
+          (path) =>
+            path.startsWith(prefix) && (prefix !== '/docs/' || !path.startsWith('/docs/es/')),
+        )
+        .map(absolute)
+        .sort(),
+      `${label} llms inventory`,
+    );
+  }
   const pages = [...index.matchAll(/^- \[([^\]]+)\]\((https?:\/\/[^)]+\/docs\/[^)]+\.md)\):/gm)];
   assert(pages.length > 0, 'llms.txt must list docs pages');
   assert.deepEqual(
@@ -282,13 +430,20 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
     assert(markdown.startsWith(`# ${title}\n`), `${path}: Markdown heading`);
     const article = graph.find((entry) => entry['@type'] === 'TechArticle');
     assert.equal(article.url, canonical, `${path}: TechArticle URL`);
+    assert.equal(article.mainEntityOfPage, canonical, `${path}: TechArticle page`);
+    assert.equal(
+      article.description,
+      documents.get(path).description,
+      `${path}: TechArticle description`,
+    );
     assert.equal(
       markdown.split('\n\n')[1].trim(),
       article.description,
       `${path}: approved summary first`,
     );
     assert(
-      full.includes(`Source: ${markdownUrl}`) && full.includes(markdown.trim()),
+      full.includes(`${path.startsWith('/docs/es/') ? 'Fuente' : 'Source'}: ${markdownUrl}`) &&
+        full.includes(markdown.trim()),
       `${path}: full Markdown content/source`,
     );
     const prose = markdown.replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[ \t]*(?:\n|$)/gm, '');
@@ -298,6 +453,11 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
     for (const breadcrumb of breadcrumbs.itemListElement) {
       const url = new URL(breadcrumb.item);
       assert.equal(url.origin, new URL(site).origin, `${path}: breadcrumb origin`);
+      assert.equal(
+        localeIdentity(url.pathname).locale,
+        localeIdentity(path).locale,
+        `${path}: breadcrumb language`,
+      );
       const target = await required(url.pathname);
       if (url.hash) {
         assert(
@@ -307,10 +467,10 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
       }
     }
     if (html.includes('data-docs-lab')) {
-      assert(
-        markdown.includes(`[Interactive effect lab: view the live page](${canonical})`),
-        `${path}: live lab link`,
-      );
+      const label = path.startsWith('/docs/es/')
+        ? 'Vista previa interactiva del efecto: abre la página'
+        : 'Interactive effect lab: view the live page';
+      assert(markdown.includes(`[${label}](${canonical})`), `${path}: live lab link`);
       assert(!markdown.includes('data-docs-lab'), `${path}: interactive lab removed`);
     }
     if (path === '/docs/api/effects/fire/') {
@@ -370,7 +530,19 @@ export async function validatePreviewSite({ base, site, indexable }) {
   const docs = [...index.toString().matchAll(/^- \[[^\]]+\]\((https?:\/\/[^)]+\.md)\):/gm)].map(
     (match) => new URL(match[1]).pathname.replace(/\.md$/, '/'),
   );
-  return validateSiteOutput({ read, paths: ['/', '/effects/', ...docs], site, indexable });
+  const result = await validateSiteOutput({
+    read,
+    paths: ['/', '/es/', '/effects/', '/es/effects/', ...docs],
+    site,
+    indexable,
+  });
+  assert.equal(await read('/missing-localized-page/'), null, 'unknown route must return 404');
+  assert.equal(
+    await read('/docs/es/missing-localized-page/'),
+    null,
+    'unknown docs route must return 404',
+  );
+  return result;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

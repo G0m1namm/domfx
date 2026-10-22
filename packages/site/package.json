@@ -16,7 +16,8 @@
     "./public-path": "./src/public-path.mjs",
     "./config": "./src/config.ts",
     "./metadata": "./src/metadata.ts",
-    "./marketing-pages": "./src/marketing-pages.ts"
+    "./marketing-pages": "./src/marketing-pages.ts",
+    "./locale": "./src/locale.ts"
   },
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.mjs"

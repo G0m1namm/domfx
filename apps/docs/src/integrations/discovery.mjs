@@ -32,17 +32,20 @@ function canonicalDocsLinks(html, site) {
       ) {
         return attribute;
       }
-      url.pathname =
-        url.pathname === '/docs' || url.pathname === '/docs/'
-          ? '/docs/introduction/'
-          : `${url.pathname.replace(/\/$/, '')}/`;
+      if (url.pathname === '/docs' || url.pathname === '/docs/') {
+        url.pathname = '/docs/introduction/';
+      } else if (url.pathname === '/docs/es' || url.pathname === '/docs/es/') {
+        url.pathname = '/docs/es/introduction/';
+      } else {
+        url.pathname = `${url.pathname.replace(/\/$/, '')}/`;
+      }
       const canonical = href.startsWith('/') ? `${url.pathname}${url.search}${url.hash}` : url.href;
       return `href=${quote}${canonical}${quote}`;
     }),
   );
 }
 
-function cleanContent(node, canonical) {
+function cleanContent(node, canonical, locale) {
   if (!node.children) {
     return;
   }
@@ -59,7 +62,15 @@ function cleanContent(node, canonical) {
                 type: 'element',
                 tagName: 'a',
                 properties: { href: canonical },
-                children: [{ type: 'text', value: 'Interactive effect lab: view the live page' }],
+                children: [
+                  {
+                    type: 'text',
+                    value:
+                      locale === 'es'
+                        ? 'Vista previa interactiva del efecto: abre la página'
+                        : 'Interactive effect lab: view the live page',
+                  },
+                ],
               },
             ],
           },
@@ -78,7 +89,7 @@ function cleanContent(node, canonical) {
         }
       }
     }
-    cleanContent(child, canonical);
+    cleanContent(child, canonical, locale);
     return [child];
   });
   if (node.tagName === 'td' || node.tagName === 'th') {
@@ -90,10 +101,16 @@ function cleanContent(node, canonical) {
   }
 }
 
-function breadcrumbs(tree, path, canonical, title, site) {
-  const entries = [{ name: 'Docs', item: new URL('/docs/introduction/', site).href }];
-  if (path.startsWith('/docs/api/') && path !== '/docs/api/') {
-    entries.push({ name: 'API', item: new URL('/docs/api/', site).href });
+function breadcrumbs(tree, path, canonical, title, site, locale) {
+  const docsRoot = locale === 'es' ? '/docs/es/' : '/docs/';
+  const entries = [
+    {
+      name: locale === 'es' ? 'Documentación' : 'Docs',
+      item: new URL(`${docsRoot}introduction/`, site).href,
+    },
+  ];
+  if (path.startsWith(`${docsRoot}api/`) && path !== `${docsRoot}api/`) {
+    entries.push({ name: 'API', item: new URL(`${docsRoot}api/`, site).href });
   }
   const category = select('.docs-effect-facts a', tree);
   if (category) {
@@ -139,6 +156,7 @@ export function docsDiscovery() {
             throw new Error(`${file}: docs title and approved description are required.`);
           }
           const path = `/docs/${relative(output, dirname(filename)).split('\\').join('/')}/`;
+          const locale = path.startsWith('/docs/es/') ? 'es' : 'en';
           const canonical = new URL(path, site).href;
           const markdownPath = `${path.slice(0, -1)}.md`;
           const metadata = renderMetadata(
@@ -158,7 +176,7 @@ export function docsDiscovery() {
                 },
                 {
                   '@type': 'BreadcrumbList',
-                  itemListElement: breadcrumbs(tree, path, canonical, title, site),
+                  itemListElement: breadcrumbs(tree, path, canonical, title, site, locale),
                 },
               ],
             },
@@ -174,7 +192,7 @@ export function docsDiscovery() {
                   '',
                 )
                 .replace(/<(?:link|meta)\b[^>]*>/gi, (tag) =>
-                  /(?:rel=["'](?:canonical|sitemap)["']|name=["'](?:description|robots|twitter:[^"']+)["']|property=["']og:[^"']+["']|type=["']text\/markdown["'])/i.test(
+                  /(?:rel=["'](?:canonical|sitemap)["']|hreflang=["'](?:en|es|x-default)["']|name=["'](?:description|robots|twitter:[^"']+)["']|property=["']og:[^"']+["']|type=["']text\/markdown["'])/i.test(
                     tag,
                   )
                     ? ''
@@ -184,7 +202,7 @@ export function docsDiscovery() {
             },
           );
           await writeFile(filename, updated);
-          cleanContent(content, canonical);
+          cleanContent(content, canonical, locale);
           const markdownTree = await markdownPipeline.run({
             type: 'root',
             children: content.children,
@@ -194,6 +212,7 @@ export function docsDiscovery() {
           await mkdir(dirname(markdownFile), { recursive: true });
           await writeFile(markdownFile, markdown);
           pages.push({
+            locale,
             title,
             description,
             canonical,
@@ -201,16 +220,39 @@ export function docsDiscovery() {
             markdown,
           });
         }
+        const sections = [
+          ['en', 'English'],
+          ['es', 'Español'],
+        ];
         const index =
           '# domfx documentation\n\n' +
-          pages
-            .map((page) => `- [${page.title}](${page.markdownUrl}): ${page.description}`)
-            .join('\n') +
+          sections
+            .map(
+              ([locale, label]) =>
+                `## ${label}\n\n` +
+                pages
+                  .filter((page) => page.locale === locale)
+                  .map((page) => `- [${page.title}](${page.markdownUrl}): ${page.description}`)
+                  .join('\n'),
+            )
+            .join('\n\n') +
           '\n';
         await writeFile(join(output, 'llms.txt'), index);
         await writeFile(
           join(output, 'llms-full.txt'),
-          pages.map((page) => `${page.markdown}\nSource: ${page.markdownUrl}`).join('\n\n'),
+          sections
+            .map(
+              ([locale, label]) =>
+                `## ${label}\n\n` +
+                pages
+                  .filter((page) => page.locale === locale)
+                  .map(
+                    (page) =>
+                      `${page.markdown}\n${locale === 'es' ? 'Fuente' : 'Source'}: ${page.markdownUrl}`,
+                  )
+                  .join('\n\n'),
+            )
+            .join('\n\n'),
         );
         const sitemap = 'sitemap-0.xml';
         await writeFile(

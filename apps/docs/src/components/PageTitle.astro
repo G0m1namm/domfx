@@ -2,17 +2,22 @@
 import DefaultPageTitle from '@astrojs/starlight/components/PageTitle.astro';
 
 import { effects } from '@domfx/site/effects';
+import { localeFromPath } from '@domfx/site/locale';
 
-import { documentation } from '../content/documentation';
+import { documentationForLocale } from '../content/documentation';
+import { docsMessages } from '../content/docs-messages';
 
-const slug = Astro.url.pathname.replace(/^\/docs\//, '').replace(/\/$/, '');
+const locale = localeFromPath(Astro.url.pathname);
+const messages = docsMessages(locale);
+const documentation = documentationForLocale(locale);
+const slug = Astro.url.pathname.replace(/^\/docs\/(?:es\/)?/, '').replace(/\/$/, '');
 const page = documentation.find((entry) => entry.slug === slug);
 const groupHome = documentation.find((entry) => entry.group === page?.group);
 const effect = effects.find((entry) => slug === `api/effects/${entry.id}`);
 ---
-<nav class="docs-breadcrumb" aria-label="Breadcrumb">
-  <a href="/docs/introduction/">Docs</a><span aria-hidden="true">/</span>
-  {groupHome && groupHome !== page ? <a href={`/docs/${groupHome.slug}/`}>{page?.group}</a> : <span>{page?.group}</span>}
-  {effect && <><span aria-hidden="true">/</span><span>{effect.category}</span></>}
+<nav class="docs-breadcrumb" aria-label={messages.breadcrumb}>
+  <a href={`/docs/${locale === 'es' ? 'es/' : ''}introduction/`}>{messages.docs}</a><span aria-hidden="true">/</span>
+  {groupHome && groupHome !== page ? <a href={`/docs/${locale === 'es' ? 'es/' : ''}${groupHome.slug}/`}>{page && messages.groups[page.group]}</a> : <span>{page && messages.groups[page.group]}</span>}
+  {effect && <><span aria-hidden="true">/</span><span>{messages.categories[effect.category]}</span></>}
 </nav>
 <DefaultPageTitle />

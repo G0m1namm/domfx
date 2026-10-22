@@ -1,5 +1,8 @@
 import { effectReference } from '@domfx/site/effect-reference';
 import { effectCategories, effects } from '@domfx/site/effects';
+import type { docsSlugs, Locale } from '@domfx/site/locale';
+
+import { effectReferenceEs } from './effect-reference-es';
 
 // Array order defines sidebar order and previous/next pagination.
 export const documentationGroups = [
@@ -104,3 +107,71 @@ export const documentation = [
 }[];
 
 export type DocumentationPage = (typeof documentation)[number];
+
+const authoredSpanish = {
+  introduction: {
+    title: 'Introducción',
+    description:
+      'Efectos con GPU para tu HTML. Conserva tu contenido y añade efectos a sus bordes.',
+  },
+  installation: {
+    title: 'Instalación',
+    description: 'Instala paquetes locales generados con una prueba de publicación verificada.',
+  },
+  standalone: {
+    title: 'Uso independiente',
+    description: 'Aplica un efecto, controla su animación y ajusta un ejemplo interactivo de Fire.',
+  },
+  gsap: {
+    title: 'GSAP',
+    description: 'Controla el tiempo y la intensidad del efecto con una línea de tiempo propia.',
+  },
+  'api/effects': {
+    title: 'Todos los efectos',
+    description: `Explora los ${effects.length} efectos por categoría, con vistas previas interactivas en cada referencia.`,
+  },
+  api: {
+    title: 'Referencia de la API',
+    description: 'Opciones, propiedades y métodos compartidos por todos los efectos.',
+  },
+  'api/shared': {
+    title: 'Opciones y controles compartidos',
+    description: 'Opciones de creación y controles modificables disponibles en todos los efectos.',
+  },
+  'api/effect-handle': {
+    title: 'Instancia de efecto',
+    description: 'Consulta el estado del efecto, actualiza la captura y libera recursos.',
+  },
+  'api/gsap': {
+    title: 'API de GSAP',
+    description:
+      'Anima propiedades con GSAP o usa enlaces opcionales que conservan los valores iniciales y gestionan el ciclo de vida.',
+  },
+  upgrading: {
+    title: 'Actualización',
+    description: 'Actualiza paquetes compatibles y revisa las notas de migración.',
+  },
+  support: {
+    title: 'Compatibilidad con navegadores',
+    description: 'Entornos verificados, límites de captura y casos sin probar.',
+  },
+  troubleshooting: {
+    title: 'Solución de problemas',
+    description:
+      'Lee el motivo informado, corrige la condición y vuelve a intentarlo explícitamente.',
+  },
+} as const satisfies Record<(typeof docsSlugs)[number], { title: string; description: string }>;
+
+export function documentationForLocale(locale: Locale) {
+  if (locale === 'en') {
+    return documentation;
+  }
+  return documentation.map((page) => {
+    if (page.slug.startsWith('api/effects/') && page.slug !== 'api/effects') {
+      const id = page.slug.slice('api/effects/'.length) as keyof typeof effectReferenceEs;
+      return { ...page, description: effectReferenceEs[id].description };
+    }
+    const translated = authoredSpanish[page.slug as keyof typeof authoredSpanish];
+    return { ...page, ...translated };
+  });
+}

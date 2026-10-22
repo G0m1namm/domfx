@@ -17,9 +17,9 @@ const fire = attachFire(target, {
   intensity: 0.8,
 });
 
-// On unmount: fire.dispose();`;
-const sequence = `// effect was created with clock: 'manual'.
-// Use the GSAP timeline you already own.
+// ${locale === 'es' ? 'Al desmontar: fire.dispose();' : 'On unmount: fire.dispose();'}`;
+const sequence = `// ${locale === 'es' ? "effect se creó con clock: 'manual'." : "effect was created with clock: 'manual'."}
+// ${locale === 'es' ? 'Usa tu propia línea de tiempo de GSAP.' : 'Use the GSAP timeline you already own.'}
 timeline.to(effect, {
   time: 4,
   intensity: 0.4,
@@ -27,7 +27,7 @@ timeline.to(effect, {
   ease: 'none',
 }, 'ignite');
 
-// On unmount: kill your tweens and dispose the effect.`;
+// ${locale === 'es' ? 'Al desmontar: detén tus animaciones y libera el efecto.' : 'On unmount: kill your tweens and dispose the effect.'}`;
 ---
 <div class="marketing-story setup-story wrap">
   <section class="story-section">

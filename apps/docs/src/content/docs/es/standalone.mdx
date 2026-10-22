@@ -1,33 +1,35 @@
 ---
 title: "Uso independiente"
-description: "Adjunta un efecto, controla su animación y ajusta un ejemplo interactivo de Fire."
+description: "Aplica un efecto, controla su animación y ajusta un ejemplo interactivo de Fire."
 ---
 
 import { Code } from 'astro:components';
 import DocsEffectLab from "../../../components/DocsEffectLab.astro";
 import { findEffect } from '@domfx/site/effects';
-import { codeTheme, standaloneCode } from "../../examples";
+import { codeTheme, examplesForLocale } from "../../examples";
+
+export const { standaloneCode } = examplesForLocale('es');
 
 export const fire = findEffect('fire');
 
-<p>Esta guía usa Fire para mostrar el ciclo de vida compartido de los efectos. Puedes usar cualquier <a href="/docs/es/api#available-effects">efecto disponible</a> con los mismos controles de tiempo, intensidad y limpieza. Comienza con la <a href="/docs/es/installation">aplicación de prueba</a>. En <code>main.ts</code>, busca el objetivo y su contenedor posicionado después del montaje:</p>
+<p>Esta guía usa Fire para mostrar el ciclo de vida compartido de los efectos. Puedes usar cualquier <a href="/docs/es/api#available-effects">efecto disponible</a> con los mismos controles de tiempo, intensidad y limpieza. Comienza con la <a href="/docs/es/installation">aplicación de prueba</a>. En <code>main.ts</code>, busca el elemento objetivo y su contenedor con posición CSS después de montar el componente:</p>
 
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Busca el objetivo y el contenedor"><Code code={`const host = document.querySelector('#host');
 const target = document.querySelector('#target');
 if (!(host instanceof HTMLElement) || !target) {
-  throw new Error('Missing host or target');
+  throw new Error('Falta el contenedor o el elemento objetivo');
 }`} lang="ts" theme={codeTheme} /></div>
 
 <span id="attach-fire" />
 
-## Adjunta Fire
+## Aplica Fire
 
 <p>Añade el siguiente código al mismo módulo. La animación automática avanza el tiempo del efecto. Las fuentes están listas antes de capturar y la limpieza se registra antes de que termine la inicialización.</p>
 
 <DocsEffectLab effect={fire} subject="text" heading="Ajusta el efecto" description="Todos los efectos comparten la intensidad. La altura de las llamas es exclusiva de Fire y vuelve a crear el efecto cuando cambia. El texto original sigue siendo seleccionable." />
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Ejemplo de animación automática independiente"><Code code={standaloneCode} lang="ts" theme={codeTheme} /></div>
 
-<p>Al desmontar el componente, llama a <code>fire.dispose()</code> y elimina tus propios listeners. El manejador de pagehide cubre la salida de la página; no sustituye la limpieza del framework.</p>
+<p>Al desmontar el componente, llama a <code>fire.dispose()</code> y elimina tus propios controladores de eventos. El controlador de pagehide cubre la salida de la página; no sustituye la limpieza del framework.</p>
 
 <span id="use-another-effect" />
 
@@ -35,7 +37,7 @@ if (!(host instanceof HTMLElement) || !target) {
 
 <p>Sustituye <code>attachFire</code> por una función como <code>attachFrost</code> o <code>attachDither</code> y elimina <code>flameHeight</code>. Las demás opciones y métodos de la instancia son compartidos. La intensidad cambia el aspecto de cada efecto; no es un ajuste universal de altura ni de opacidad.</p>
 
-<p>Libera el efecto existente antes de adjuntar otro al mismo objetivo. Cada <a href="/docs/es/api/effects">referencia de efecto</a> comienza con la misma vista previa interactiva, y la <a href="/es/effects/">galería</a> los compara uno junto a otro.</p>
+<p>Libera el efecto existente antes de aplicar otro al mismo objetivo. Cada <a href="/docs/es/api/effects">referencia de efecto</a> comienza con la misma vista previa interactiva, y la <a href="/es/effects/">galería</a> los compara uno junto a otro.</p>
 
 <span id="control-time" />
 
@@ -43,7 +45,7 @@ if (!(host instanceof HTMLElement) || !target) {
 
 ## Controla el tiempo y la intensidad
 
-<p><code>fire.pause()</code> pausa la animación automática. <code>fire.resume()</code> continúa sin recuperar el tiempo pasado en pausa u oculto. Asigna a <code>fire.intensity</code> un valor entre 0 y 1. Debe ser finito y representable como float32; los valores aceptados fuera del rango se limitan a él.</p>
+<p><code>fire.pause()</code> pausa la animación automática. <code>fire.resume()</code> continúa sin avanzar de golpe el tiempo transcurrido mientras estaba en pausa u oculto. Asigna a <code>fire.intensity</code> un valor entre 0 y 1. Debe ser finito y representable como float32; los valores aceptados fuera del rango se ajustan al límite correspondiente.</p>
 
 <p>Para elegir un tiempo explícito, usa <code>clock: 'manual'</code> al crear el efecto y asigna segundos absolutos a <code>fire.time</code>. Avanzar y retroceder reutiliza la captura. Con control externo, <code>paused</code> sigue siendo true aunque cambie el tiempo; <code>resume()</code> no lo avanza.</p>
 
@@ -51,9 +53,9 @@ if (!(host instanceof HTMLElement) || !target) {
 
 ## Actualiza la captura y libera recursos
 
-<p>Después de cambiar la apariencia capturada, espera a <code>fire.refresh()</code>. Oculta la salida obsoleta y se resuelve cuando se acepta esta captura u otra posterior. Los cambios observados en el objetivo y su tamaño pueden actualizarla automáticamente; los cambios no observados en hojas de estilo, hover o pintura de ancestros requieren una actualización explícita.</p>
+<p>Después de cambiar la apariencia capturada, espera a <code>fire.refresh()</code>. Oculta la salida obsoleta y se resuelve cuando se acepta esta captura u otra posterior. Los cambios detectados en el objetivo y su tamaño pueden actualizarla automáticamente; los cambios no detectados en hojas de estilo, estados de hover o la apariencia de los elementos antecesores requieren una actualización explícita.</p>
 
-<p>Liberar la instancia es seguro varias veces y antes de <code>ready</code>. Eliminar un objetivo o contenedor observado libera el efecto de forma permanente; crea uno nuevo después de volver a montar.</p>
+<p>Puedes liberar la instancia varias veces y antes de que se resuelva <code>ready</code>. Eliminar un objetivo o contenedor observado libera el efecto de forma permanente; crea uno nuevo después de volver a montar el elemento.</p>
 
 <span id="unavailable-output" />
 

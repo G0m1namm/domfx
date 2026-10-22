@@ -97,7 +97,8 @@ const messages = {
       live: 'Activo',
       noGpu:
         'Los efectos no están disponibles en este navegador. El contenido original sigue visible.',
-      reducedMotion: 'La preferencia de movimiento reducido mantiene quieta esta vista previa.',
+      reducedMotion:
+        'La preferencia de movimiento reducido mantiene esta vista previa sin animación.',
       restart: 'Elige Iniciar efecto para reiniciar esta vista previa.',
       preparing: 'Preparando la vista previa…',
       waiting: 'Esperando a que entre en pantalla.',

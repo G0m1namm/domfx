@@ -25,7 +25,7 @@ if (id === 'fire') {
     {image && <img class="effect-subject ring brand-illustration" data-preview={id} src={image.src} width="240" height="180" alt="" />}
     {!image && sample === 1 && <span class="effect-subject letter" data-preview={id}>Aa</span>}
     {!image && sample === 2 && <svg class="effect-subject symbol" data-preview={id} width="130" height="130" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg>}
-    {!image && sample === 3 && <span class="effect-subject word" data-preview={id}>flow.</span>}
+    {!image && sample === 3 && <span class="effect-subject word" data-preview={id}>{m.sampleWord}</span>}
     {!image && sample !== 1 && sample !== 2 && sample !== 3 && <svg class="effect-subject symbol" data-preview={id} width="150" height="150" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" fill-rule="evenodd" d="M80 8A72 72 0 1 1 79.99 8ZM80 44A36 36 0 1 0 80.01 44Z"/><path fill="#E8EAF3" d="M73 0H87V160H73Z"/></svg>}
   </div>
   <div class="card-info"><h3>{name}</h3><div class="card-meta"><span class="category">{categoryLabel}</span></div></div>

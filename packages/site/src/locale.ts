@@ -148,7 +148,7 @@ const spanishDocsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> 
     'añade-el-enlace-opcional-de-gsap',
   ],
   standalone: [
-    'adjunta-fire',
+    'aplica-fire',
     'usa-otro-efecto',
     'controla-el-tiempo-y-la-intensidad',
     'actualiza-la-captura-y-libera-recursos',
@@ -182,7 +182,10 @@ const spanishDocsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> 
     'movimiento-reducido',
   ],
   'api/effect-handle': ['estado-de-solo-lectura', 'métodos', 'comprende-el-estado-informado'],
-  'api/gsap': ['animaciones-nativas-de-propiedades', 'enlaces-opcionales-de-instantánea'],
+  'api/gsap': [
+    'animaciones-nativas-de-propiedades',
+    'enlaces-opcionales-con-valores-iniciales-fijos',
+  ],
   upgrading: [
     'actualiza-paquetes-compatibles',
     'revisa-las-notas-de-migración',

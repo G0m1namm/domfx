@@ -1,11 +1,11 @@
 ---
 title: "Introducción"
-description: "Efectos GPU para HTML real. Conserva tu contenido y añade un borde."
+description: "Efectos con GPU para tu HTML. Conserva tu contenido y añade efectos a sus bordes."
 ---
 
-domfx añade efectos GPU al borde de la forma visible de un elemento DOM. El texto
-sigue siendo seleccionable, los botones conservan sus manejadores y los enlaces
-siguen funcionando. El efecto vive en un canvas separado junto al contenido original.
+domfx añade efectos con GPU al borde de la forma visible de un elemento del DOM. El texto
+sigue siendo seleccionable, los botones conservan sus controladores de eventos y los enlaces
+siguen funcionando. El efecto se dibuja en un canvas separado junto al contenido original.
 
 > domfx es experimental. El ámbito de paquetes @domfx ya está elegido, pero los paquetes
 > aún no se han publicado. Comienza con el [proceso de instalación local](/docs/es/installation).
@@ -15,9 +15,9 @@ siguen funcionando. El efecto vive en un canvas separado junto al contenido orig
 ## Comienza con tu elemento
 
 Elige el **elemento objetivo** exacto: texto, un SVG en línea, una imagen transparente,
-un botón o una tarjeta. Su apariencia capturada determina la **forma visible** (silueta),
+un botón o una tarjeta. La captura de su apariencia determina la **forma visible** (silueta),
 incluidos los huecos y las partes separadas. Una imagen opaca produce un rectángulo;
-la transparencia define el borde. Seleccionar un contenedor captura su pintura combinada.
+la transparencia define el borde. Seleccionar un contenedor captura la apariencia conjunta de su contenido.
 
 Elige un **contenedor del efecto** (`host`) con CSS `position: relative` que contenga
 el objetivo. domfx añade allí la salida decorativa, sin envolver, mover ni reemplazar
@@ -27,9 +27,9 @@ tu contenido.
 
 ## Comienza con GSAP
 
-Si ya usas GSAP, sigue la [guía completa de GSAP](/docs/es/gsap): adjunta un efecto
+Si ya usas GSAP, sigue la [guía completa de GSAP](/docs/es/gsap): aplica un efecto
 a tu propio encabezado, anímalo con una línea de tiempo que controles, avanza o
-retrocede en ella y registra la limpieza. El encabezado sigue siendo HTML real y
+retrocede en ella y registra una función de limpieza. El encabezado sigue siendo HTML real y
 seleccionable. Primero [instala artefactos compatibles](/docs/es/installation);
 la instalación pública desde npm llegará después de una publicación alfa verificada.
 
@@ -49,7 +49,7 @@ la instalación pública desde npm llegará después de una publicación alfa ve
 Elige entre Electricity, Frost, Fire, Slime, Burned paper, Kinetic bloom y los
 efectos de patrón de la [galería de efectos](/es/effects/). Cada función devuelve
 el mismo `EffectHandle` con controles de tiempo, intensidad, actualización de
-captura y liberación. Consulta los [efectos disponibles](/docs/es/api#available-effects)
+captura y liberación de recursos. Consulta los [efectos disponibles](/docs/es/api#available-effects)
 para ver el nombre de cada importación.
 
 La [guía de uso independiente](/docs/es/standalone#attach-fire) usa Fire en su
@@ -66,5 +66,5 @@ Consulta el estado y el código del motivo, y libera el efecto cuando desaparezc
 la página o el componente.
 
 Consulta la [referencia de la API](/docs/es/api) para conocer el contrato público,
-la [compatibilidad del navegador](/docs/es/support) para los límites medidos y
-[solución de problemas](/docs/es/troubleshooting) si no hay salida.
+la [compatibilidad con navegadores](/docs/es/support) para los límites medidos y
+[solución de problemas](/docs/es/troubleshooting) si el efecto no se muestra.

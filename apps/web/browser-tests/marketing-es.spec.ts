@@ -16,10 +16,9 @@ test('Spanish home and all gallery cards render complete copy and localized rout
     'href',
     '/es/effects/',
   );
-  await expect(page.getByRole('link', { name: 'Lee la guía de instalación' })).toHaveAttribute(
-    'href',
-    '/docs/es/standalone/',
-  );
+  await expect(
+    page.getByRole('link', { name: 'Lee la guía de uso independiente' }),
+  ).toHaveAttribute('href', '/docs/es/standalone/');
   await page.goto('/es/effects/');
   await expect(page.locator('[data-card]')).toHaveCount(effects.length);
   for (const effect of effects) {
@@ -59,7 +58,9 @@ test('Spanish preview retains keyboard, fallback, localized reference and execut
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
   await page.goto('/effects/');
   await page.getByRole('button', { name: 'Try Frost' }).click();
-  await expect(page.locator('[data-code]')).toHaveText(spanishCode ?? '');
+  const englishCode = await page.locator('[data-code]').textContent();
+  const withoutComments = (code: string) => code.replace(/\/\/[^\n]*/g, '').trim();
+  expect(withoutComments(spanishCode ?? '')).toBe(withoutComments(englishCode ?? ''));
 });
 
 test('Spanish effect terms and API names find the same gallery effect', async ({ page }) => {

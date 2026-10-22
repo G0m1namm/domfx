@@ -442,7 +442,8 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
       `${path}: approved summary first`,
     );
     assert(
-      full.includes(`Source: ${markdownUrl}`) && full.includes(markdown.trim()),
+      full.includes(`${path.startsWith('/docs/es/') ? 'Fuente' : 'Source'}: ${markdownUrl}`) &&
+        full.includes(markdown.trim()),
       `${path}: full Markdown content/source`,
     );
     const prose = markdown.replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[ \t]*(?:\n|$)/gm, '');
@@ -467,7 +468,7 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
     }
     if (html.includes('data-docs-lab')) {
       const label = path.startsWith('/docs/es/')
-        ? 'Laboratorio interactivo de efectos: ver la página en vivo'
+        ? 'Vista previa interactiva del efecto: abre la página'
         : 'Interactive effect lab: view the live page';
       assert(markdown.includes(`[${label}](${canonical})`), `${path}: live lab link`);
       assert(!markdown.includes('data-docs-lab'), `${path}: interactive lab removed`);

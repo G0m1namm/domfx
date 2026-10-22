@@ -107,7 +107,7 @@ function output(indexable = false) {
   );
   files.set(
     '/llms-full.txt',
-    '## English\n\n# Introduction — domfx\n\nStart with domfx.\n\nSource: https://example.com/docs/introduction.md\n\n## Español\n\n# Introduction — domfx en español\n\nStart with domfx. en español\n\nSource: https://example.com/docs/es/introduction.md\n',
+    '## English\n\n# Introduction — domfx\n\nStart with domfx.\n\nSource: https://example.com/docs/introduction.md\n\n## Español\n\n# Introduction — domfx en español\n\nStart with domfx. en español\n\nFuente: https://example.com/docs/es/introduction.md\n',
   );
   files.set(
     '/robots.txt',

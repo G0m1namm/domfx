@@ -1,6 +1,6 @@
 ---
-title: "Compatibilidad del navegador"
-description: "Entornos medidos, límites de captura y cobertura sin probar."
+title: "Compatibilidad con navegadores"
+description: "Entornos verificados, límites de captura y casos sin probar."
 ---
 
 Este resumen usa el **registro de compatibilidad v1, 2026-09-16 UTC**. Una prueba
@@ -23,13 +23,13 @@ son demostraciones, no evidencia de verificación.
   nativo mediante Apple Metal 3: se superaron 386 casos de desarrollo y producción
   sin omisiones ni reintentos. Ventana de 1280 × 900, DPR 2; captura, galería,
   colocación y desplazamiento también tienen cobertura con DPR 1. Las pruebas de
-  renderizado positivo desactivaron movimiento reducido.
+  renderizado de efectos visibles desactivaron la preferencia de movimiento reducido.
 - **Chrome 152.0.7977.83** en ese equipo: se superó una prueba de producción más
   limitada de captura, SDF, Fire determinista, interacción con el botón original
   y liberación a 1280 × 720, DPR 2. No equivale a la suite completa de Chromium.
-- **Consumidores Vite empaquetados**: el registro versionado contiene resultados
+- **Aplicaciones Vite con paquetes locales**: el registro versionado contiene resultados
   de tipos estrictos, importaciones SSR, salida GPU real y ciclo de vida de
-  consumidores independientes y GSAP instalados desde archivos tar. Esto no
+  aplicaciones de uso independiente y con GSAP que usan paquetes instalados desde archivos tar. Esto no
   establece compatibilidad con otros empaquetadores.
 
 El adaptador informado por el navegador es `apple / metal-3`; los campos de
@@ -46,7 +46,7 @@ dispositivo carecen de cobertura suficiente fuera del alcance explícito del
 registro. SIN PROBAR significa que no hay una observación válida, no que se haya
 superado una prueba ni que exista incompatibilidad.
 
-Las pruebas de ciclo de vida accesible cubren entrada nativa, foco, selección
+Las pruebas de ciclo de vida accesible cubren interacción con controles nativos, foco, selección
 de texto y semántica del canvas decorativo. No son una auditoría de VoiceOver,
 NVDA ni otra tecnología de asistencia. Las mediciones históricas de rendimiento
 tienen pruebas fijas propias; no establecen garantías de frecuencia de fotogramas,
@@ -60,24 +60,24 @@ La captura del objetivo es una instantánea. PNG/JPEG/WebP, el `currentSrc`
 seleccionado, fondos CSS compatibles y fuentes incrustables siguen dependiendo
 de que los recursos estén listos y de CORS. Las pruebas de recursos medidas son
 más limitadas que los formatos aceptados. Se rechazan documentos y referencias
-de imagen SVG, vídeo, iframe/object/embed, raíces shadow abiertas, `image-set()`
-y otras pinturas con URL como máscaras. Las rutas SVG en línea dentro del
+de imagen SVG, vídeo, iframe/object/embed, raíces abiertas de Shadow DOM, `image-set()`
+y otras propiedades visuales con URL, como las máscaras. Las rutas SVG en línea dentro del
 documento son distintas de las imágenes SVG externas.
 
 La traslación y las escalas positivas alineadas con los ejes tienen verificación
 limitada. Se rechazan rotación, inclinación, perspectiva, escala cero o negativa
-y zoom CSS. Los ancestros HTML intermedios con posición pueden tener recortes
-rectangulares de overflow; se rechazan recortes redondeados, clip paths,
-máscaras, contención de pintura, `overflow: clip` e intermediarios fijos.
+y zoom CSS. Los elementos HTML antecesores intermedios con posición CSS pueden tener recortes
+rectangulares por desbordamiento (`overflow`); se rechazan recortes redondeados, rutas de recorte (`clip-path`),
+máscaras, contención de pintura, `overflow: clip` y elementos intermedios con posición fija.
 No están establecidos el apilamiento arbitrario, la capa superior ni la
-composición de shadow/slot.
+composición mediante Shadow DOM y `slot`.
 
 La opacidad del objetivo o de un intermediario distinta de 1, los filtros, los
 filtros de fondo y los modos de mezcla no pueden reproducirse en el canvas
 separado. Los efectos aplicados al contenedor y grupos externos actúan de forma
 nativa sobre el subárbol compartido. Usa un contenedor explícito y un apilamiento
-compatible. Overflow o sombras grandes pueden exceder el margen de captura;
-no infieras fidelidad de pintura ilimitada a partir de las pruebas medidas.
+compatible. El contenido desbordado o las sombras grandes pueden exceder el margen de captura;
+no infieras fidelidad visual ilimitada a partir de las pruebas medidas.
 
 <span id="when-an-effect-is-unavailable"></span>
 
@@ -99,5 +99,5 @@ faltante. Los enlaces al código requieren acceso mientras el repositorio sea pr
 El repositorio es privado actualmente. Los enlaces al código en GitHub requieren
 acceso hasta que el mantenedor lo abra para la versión alfa; las guías de este
 sitio siguen siendo legibles localmente. Después del lanzamiento, informa de un
-caso pequeño reproducible con versiones, entorno y código de motivo mediante
+ejemplo mínimo reproducible con versiones, entorno y código de motivo mediante
 GitHub Issues. Envía los informes de seguridad por el canal privado de informes.

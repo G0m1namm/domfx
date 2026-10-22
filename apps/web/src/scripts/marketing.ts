@@ -473,7 +473,7 @@ function initializeMarketing() {
 
   function attachmentCode() {
     const effect = selectedEffect;
-    return `import { ${effect.exportName} } from '@domfx/browser';\n\nconst effect = ${effect.exportName}(element, { host, clock: 'ambient', intensity: ${(Number(intensity.value) / 100).toFixed(2)} });\n\n// On unmount: effect.dispose();`;
+    return `import { ${effect.exportName} } from '@domfx/browser';\n\nconst effect = ${effect.exportName}(element, { host, clock: 'ambient', intensity: ${(Number(intensity.value) / 100).toFixed(2)} });\n\n${m.disposeComment}`;
   }
 
   // Scale the source and its attached canvas together; zoom never changes intensity.
@@ -621,7 +621,9 @@ function initializeMarketing() {
     target.dataset.dialogTarget = '';
     target.dataset.kind = targetKind;
     if (targetKind === 'text') {
-      target.textContent = previewSubject?.matches('span') ? previewSubject.textContent : 'edge.';
+      target.textContent = previewSubject?.matches('span')
+        ? previewSubject.textContent
+        : m.previewWord;
     } else {
       const selector = targetKind === 'image' ? 'img' : 'svg';
       const template = required<HTMLTemplateElement>(`[data-preview-${targetKind}]`, dialog);

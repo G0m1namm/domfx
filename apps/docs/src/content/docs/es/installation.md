@@ -1,10 +1,10 @@
 ---
 title: "Instalación"
-description: "Comienza con artefactos locales de un ensayo de publicación verificado."
+description: "Instala paquetes locales generados con una prueba de publicación verificada."
 ---
 
-Todavía no existe un comando de instalación desde un registro compatible. Necesitas
-acceso a una copia local compatible del repositorio o a sus archivos tar de core,
+Los paquetes aún no están publicados en un registro como npm. Necesitas
+acceso a una copia local del repositorio o a sus archivos tar de core,
 browser y, opcionalmente, GSAP. Usa Node 22.22.3 y pnpm 11.5.0 para el proceso verificado.
 
 <span id="build-verified-artifacts"></span>
@@ -19,9 +19,9 @@ pnpm --filter @domfx/gpu-tests exec playwright install chromium
 pnpm release:rehearse
 ```
 
-El ensayo necesita acceso al registro para las dependencias, una sesión de escritorio
+La prueba de publicación necesita acceso al registro para las dependencias, una sesión de escritorio
 y Chromium con WebGPU. Muestra la ruta de un directorio fuera del repositorio con
-`artifacts/`, consumidores nuevos de uso independiente y GSAP, registros de comandos,
+`artifacts/`, aplicaciones de prueba de uso independiente y con GSAP, registros de comandos,
 resultados de GPU e imágenes PNG. La falta de acceso al navegador o a la GPU significa
 que la verificación falló; no cuenta como una prueba de renderizado superada.
 
@@ -29,7 +29,7 @@ que la verificación falló; no cuenta como una prueba de renderizado superada.
 
 ## Crea tu aplicación de prueba
 
-Crea un directorio vacío fuera del repositorio. Copia los archivos tar del ensayo en
+Crea un directorio vacío fuera del repositorio. Copia los archivos tar de la prueba en
 un subdirectorio `artifacts/`. Para los artefactos `0.0.0` actuales, guarda esto como
 `package.json`; usa los nombres de archivo reales si cambian las versiones:
 
@@ -60,8 +60,8 @@ overrides:
   '@domfx/core': file:./artifacts/domfx-core-0.0.0.tgz
 ```
 
-Conserva la sustitución aunque core sea una dependencia directa: resuelve la versión
-de core aún no publicada que requiere browser hacia tu artefacto local. Ejecuta
+Conserva la sustitución de `overrides` aunque core sea una dependencia directa:
+hace que browser use tu paquete local de core en lugar de buscar la versión aún no publicada. Ejecuta
 `pnpm install --ignore-scripts`. No necesitas alias de código fuente, copiar shaders
 ni un plugin TypeGPU en la aplicación consumidora; importa las exportaciones públicas
 de los paquetes compilados.
@@ -74,35 +74,35 @@ Crea `index.html`:
 
 ```html
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <meta charset="utf-8" />
-  <title>domfx preview</title>
+  <title>Vista previa de domfx</title>
   <style>
     body { background: #14151B; color: #E8EAF3; font-family: sans-serif; }
     #host { position: relative; padding: 60px; width: 280px; }
     #target { width: 160px; height: 48px; }
   </style>
-  <div id="host"><button id="target">Original content</button></div>
+  <div id="host"><button id="target">Contenido original</button></div>
   <script type="module" src="/main.ts"></script>
 </html>
 ```
 
 El contenedor debe estar conectado al documento, tener posición CSS y contener al
-objetivo como descendiente estricto en el mismo documento. Deja espacio para el efecto
+elemento objetivo. Ambos deben estar en el mismo documento y ser elementos distintos. Deja espacio para el efecto
 y elige un orden de apilamiento que permita que el canvas añadido se superponga al objetivo.
 
 Continúa con [GSAP](/docs/es/gsap) para crear tu propia línea de tiempo o con
 [uso independiente](/docs/es/standalone) para crear `main.ts`.
 Ejecuta `pnpm dev` durante el desarrollo; para producción, ejecuta `pnpm build`
-y luego `pnpm preview`. Abre la URL local indicada en un navegador con WebGPU medido.
+y luego `pnpm preview`. Abre la URL local indicada en uno de los navegadores con WebGPU verificados.
 
 <span id="add-the-optional-gsap-binding"></span>
 
 ## Añade el enlace opcional de GSAP
 
 Para animar propiedades de forma nativa, añade solo `gsap` a tu aplicación.
-El artefacto `@domfx/gsap` solo hace falta para las funciones opcionales de instantánea
-que gestionan el ciclo de vida.
+El artefacto `@domfx/gsap` solo hace falta para las funciones opcionales que conservan los valores iniciales
+y gestionan el ciclo de vida.
 
 Para seguir la guía de GSAP, añade esta dependencia a `package.json`:
 
@@ -110,15 +110,15 @@ Para seguir la guía de GSAP, añade esta dependencia a `package.json`:
 "gsap": "3.15.0"
 ```
 
-Si eliges las [funciones opcionales de instantánea](/docs/es/api/gsap#snapshot-bindings),
+Si eliges las [funciones opcionales que conservan los valores iniciales](/docs/es/api/gsap#snapshot-bindings),
 añade también su artefacto:
 
 ```json
 "@domfx/gsap": "file:./artifacts/domfx-gsap-0.0.0.tgz"
 ```
 
-Ejecuta `pnpm install --ignore-scripts` otra vez. GSAP es una dependencia peer explícita
-que aporta tu aplicación; el paquete browser independiente no lo instala.
+Ejecuta `pnpm install --ignore-scripts` otra vez. GSAP es una dependencia compartida (`peer dependency`) explícita
+que debe aportar tu aplicación; el paquete browser independiente no lo instala.
 
 Las guías usan Fire como ejemplo. La referencia de la API enumera
 [todas las funciones de efecto](/docs/es/api#available-effects) y sus opciones compartidas.

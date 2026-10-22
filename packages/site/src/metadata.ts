@@ -33,7 +33,7 @@ export function renderMetadata(page: PageMetadata, config: DiscoveryConfig): str
   const image = escapeHtml(new URL('/share-card.png', config.site).href);
   const imageAlt = escapeHtml(
     locale === 'es'
-      ? 'domfx — Efectos para tu HTML. Arandela de plata óptica con el efecto Frost.'
+      ? 'domfx — Efectos para tu HTML. Arandela plateada con el efecto Frost.'
       : 'domfx — Effects for your HTML. Optical silver washer with the Frost effect.',
   );
   const graph = { '@context': 'https://schema.org', '@graph': page.structuredData };

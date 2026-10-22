@@ -29,10 +29,12 @@ const hasHeight = effect.id === 'fire';
 const visibility = (kind: Subject) => (kind === subject ? {} : { hidden: true });
 const intensity = 80;
 const height = 32;
-const messages = docsMessages(localeFromPath(Astro.url.pathname)).lab;
+const locale = localeFromPath(Astro.url.pathname);
+const messages = docsMessages(locale).lab;
+const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.name}` : `${effect.name} ${label.toLowerCase()}`;
 ---
 
-<section class="docs-lab not-content" data-docs-lab data-effect={effect.id} data-category={effect.category} data-status="suspended" data-paused="false" aria-labelledby={heading ? `${id}-title` : undefined} aria-label={heading ? undefined : `${effect.name} ${messages.livePreview}`}>
+<section class="docs-lab not-content" data-docs-lab data-effect={effect.id} data-category={effect.category} data-status="suspended" data-paused="false" aria-labelledby={heading ? `${id}-title` : undefined} aria-label={heading ? undefined : effectLabel(messages.livePreview)}>
   {heading && <div class="docs-lab-heading"><h3 id={`${id}-title`}>{heading}</h3>{description && <p>{description}</p>}</div>}
   <div class="docs-lab-stage">
     <div class="docs-lab-host" data-docs-lab-host>
@@ -46,7 +48,7 @@ const messages = docsMessages(localeFromPath(Astro.url.pathname)).lab;
     </div>
   </div>
   <fieldset class="docs-lab-controls" data-docs-lab-controls disabled>
-    <legend class="visually-hidden">{effect.name} {messages.settings}</legend>
+    <legend class="visually-hidden">{effectLabel(messages.settings)}</legend>
     <div class="docs-lab-row">
       <span class="docs-lab-label" id={`${id}-subject`}>{messages.subject}</span>
       <div class="docs-lab-segments" role="radiogroup" aria-labelledby={`${id}-subject`}>
@@ -55,19 +57,19 @@ const messages = docsMessages(localeFromPath(Astro.url.pathname)).lab;
     </div>
     <label class="docs-lab-row">
       <span class="docs-lab-label">{messages.intensity}</span>
-      <input type="range" min="0" max="100" step="1" value={intensity} style={`--fill:${intensity}%`} data-docs-lab-intensity aria-label={`${effect.name} ${messages.intensity.toLowerCase()}`} />
+      <input type="range" min="0" max="100" step="1" value={intensity} style={`--fill:${intensity}%`} data-docs-lab-intensity aria-label={effectLabel(messages.intensity)} />
       <output data-docs-lab-intensity-output>{intensity}%</output>
     </label>
     {hasHeight && <label class="docs-lab-row">
       <span class="docs-lab-label">{messages.flameHeight}</span>
-      <input type="range" min="8" max="64" step="1" value={height} style={`--fill:${((height - 8) / 56) * 100}%`} data-docs-lab-height aria-label={`${effect.name} ${messages.flameHeight.toLowerCase()}`} aria-describedby={`${id}-height-note`} />
+      <input type="range" min="8" max="64" step="1" value={height} style={`--fill:${((height - 8) / 56) * 100}%`} data-docs-lab-height aria-label={effectLabel(messages.flameHeight)} aria-describedby={`${id}-height-note`} />
       <output data-docs-lab-height-output>{height}px</output>
       <small id={`${id}-height-note`} class="docs-lab-note">{messages.flameNote}</small>
     </label>}
   </fieldset>
   <div class="docs-lab-code">
     <div class="docs-lab-code-bar"><span>{messages.currentSettings}</span><button type="button" class="docs-lab-copy" data-docs-lab-copy><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg><span data-docs-lab-copy-label>{messages.copy}</span></button></div>
-    <pre tabindex="0" aria-label={`${effect.name} ${messages.liveSettings}`}><code data-docs-lab-code>{`const effect = ${effect.exportName}(target, {
+    <pre tabindex="0" aria-label={effectLabel(messages.liveSettings)}><code data-docs-lab-code>{`const effect = ${effect.exportName}(target, {
   host, clock: 'auto', motion: 'respect',
   intensity: `}<output data-docs-lab-intensity-code>{intensity / 100}</output>{`,${hasHeight ? '\n  flameHeight: ' : ''}`}{hasHeight && <output data-docs-lab-height-code>{height}</output>}{`${hasHeight ? ',' : ''}
   seed: 314,

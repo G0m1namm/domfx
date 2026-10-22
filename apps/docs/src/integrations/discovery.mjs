@@ -67,7 +67,7 @@ function cleanContent(node, canonical, locale) {
                     type: 'text',
                     value:
                       locale === 'es'
-                        ? 'Laboratorio interactivo de efectos: ver la página en vivo'
+                        ? 'Vista previa interactiva del efecto: abre la página'
                         : 'Interactive effect lab: view the live page',
                   },
                 ],
@@ -246,7 +246,10 @@ export function docsDiscovery() {
                 `## ${label}\n\n` +
                 pages
                   .filter((page) => page.locale === locale)
-                  .map((page) => `${page.markdown}\nSource: ${page.markdownUrl}`)
+                  .map(
+                    (page) =>
+                      `${page.markdown}\n${locale === 'es' ? 'Fuente' : 'Source'}: ${page.markdownUrl}`,
+                  )
                   .join('\n\n'),
             )
             .join('\n\n'),

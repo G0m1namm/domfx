@@ -10,7 +10,7 @@ const isEs = localeFromPath(Astro.url.pathname) === 'es';
   <thead><tr><th scope="col">{isEs ? 'Propiedad' : 'Property'}</th><th scope="col">{isEs ? 'Tipo' : 'Type'}</th></tr></thead>
   <tbody>
     <tr><th scope="row"><code>time</code><p>{isEs ? 'Tiempo del efecto en segundos. Permite avanzar y retroceder, incluso a tiempos negativos.' : 'Effect time in seconds. Supports forward and backward seeking, including negative time.'}</p></th><td><code>number</code></td></tr>
-    <tr><th scope="row"><code>intensity</code><p>{isEs ? 'Fuerza del efecto, limitada a 0–1 después de validar el valor. No es un ajuste universal de altura ni de opacidad.' : 'Effect strength, clamped to 0–1 after validation. It is not a universal height or opacity setting.'}</p></th><td><code>number</code></td></tr>
+    <tr><th scope="row"><code>intensity</code><p>{isEs ? 'Intensidad del efecto, limitada al intervalo de 0 a 1 después de validar el valor. No es un ajuste universal de altura ni de opacidad.' : 'Effect strength, clamped to 0–1 after validation. It is not a universal height or opacity setting.'}</p></th><td><code>number</code></td></tr>
   </tbody>
 </DocsApiTable>
 <p>{isEs ? 'Ambos valores deben ser finitos y representables como float32. Deja estos controles a cargo de las asignaciones directas, una línea de tiempo u otro controlador de animación.' : 'Both values must be finite and representable as float32. Give direct writes, a timeline or another animation driver responsibility for these controls.'}</p>

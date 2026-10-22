@@ -182,9 +182,9 @@ test('Spanish Fire lab retains playback, tuning and valid code', async ({ page }
   await expect(lab.locator('[data-docs-lab-status]')).toHaveText('En pausa');
   await lab.getByRole('button', { name: 'Reanudar efecto' }).click();
   await expect(lab).toHaveAttribute('data-paused', 'false');
-  await lab.getByRole('slider', { name: 'Fire intensidad' }).fill('45');
+  await lab.getByRole('slider', { name: 'Intensidad de Fire' }).fill('45');
   await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
-  await lab.getByRole('slider', { name: 'Fire altura de las llamas' }).fill('40');
+  await lab.getByRole('slider', { name: 'Altura de las llamas de Fire' }).fill('40');
   await expect(lab.locator('[data-docs-lab-height-code]')).toHaveText('40');
   await lab.getByRole('radio', { name: 'SVG' }).check();
   await expect(lab.locator('[data-docs-lab-target="svg"]')).toBeVisible();
@@ -199,7 +199,7 @@ test('Spanish lab explains reduced motion and requires an explicit restart', asy
   await lab.scrollIntoViewIfNeeded();
   await expect(lab).toHaveAttribute('data-reason', 'reduced-motion');
   await expect(lab.locator('[data-docs-lab-status]')).toHaveText(
-    'La preferencia de movimiento reducido mantiene quieta esta vista previa.',
+    'La preferencia de movimiento reducido mantiene esta vista previa sin animación.',
   );
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(lab.locator('[data-docs-lab-status]')).toHaveText(

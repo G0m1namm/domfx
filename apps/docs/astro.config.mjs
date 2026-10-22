@@ -97,7 +97,7 @@ export default defineConfig({
               translations: { es: 'Instancia de efecto' },
               slug: 'api/effect-handle',
             },
-            { label: 'GSAP API', slug: 'api/gsap' },
+            { label: 'GSAP API', translations: { es: 'API de GSAP' }, slug: 'api/gsap' },
           ],
         },
         {
@@ -107,7 +107,7 @@ export default defineConfig({
             { label: 'Upgrading', translations: { es: 'Actualización' }, slug: 'upgrading' },
             {
               label: 'Browser support',
-              translations: { es: 'Compatibilidad del navegador' },
+              translations: { es: 'Compatibilidad con navegadores' },
               slug: 'support',
             },
             {

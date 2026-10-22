@@ -111,16 +111,16 @@ export type DocumentationPage = (typeof documentation)[number];
 const authoredSpanish = {
   introduction: {
     title: 'Introducción',
-    description: 'Efectos GPU para HTML real. Conserva tu contenido y añade un borde.',
+    description:
+      'Efectos con GPU para tu HTML. Conserva tu contenido y añade efectos a sus bordes.',
   },
   installation: {
     title: 'Instalación',
-    description: 'Comienza con artefactos locales de un ensayo de publicación verificado.',
+    description: 'Instala paquetes locales generados con una prueba de publicación verificada.',
   },
   standalone: {
     title: 'Uso independiente',
-    description:
-      'Adjunta un efecto, controla su animación y ajusta un ejemplo interactivo de Fire.',
+    description: 'Aplica un efecto, controla su animación y ajusta un ejemplo interactivo de Fire.',
   },
   gsap: {
     title: 'GSAP',
@@ -145,15 +145,15 @@ const authoredSpanish = {
   'api/gsap': {
     title: 'API de GSAP',
     description:
-      'Animaciones nativas de propiedades y enlaces opcionales de instantánea con control del ciclo de vida.',
+      'Anima propiedades con GSAP o usa enlaces opcionales que conservan los valores iniciales y gestionan el ciclo de vida.',
   },
   upgrading: {
     title: 'Actualización',
     description: 'Actualiza paquetes compatibles y revisa las notas de migración.',
   },
   support: {
-    title: 'Compatibilidad del navegador',
-    description: 'Entornos medidos, límites de captura y cobertura sin probar.',
+    title: 'Compatibilidad con navegadores',
+    description: 'Entornos verificados, límites de captura y casos sin probar.',
   },
   troubleshooting: {
     title: 'Solución de problemas',

@@ -17,7 +17,7 @@ import { codeTheme } from "../../examples";
 
 ## Uso
 
-<p>Importa una función de efecto desde <code>@domfx/browser</code>. Llámala después de montar el objetivo y su contenedor posicionado. Las importaciones son seguras durante SSR; adjuntar y capturar requieren elementos DOM del navegador.</p>
+<p>Importa una función de efecto desde <code>@domfx/browser</code>. Llámala después de montar el objetivo y su contenedor posicionado. Puedes importar el paquete durante el renderizado en el servidor (SSR); aplicar efectos y capturar su apariencia requieren elementos del DOM en el navegador.</p>
 
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Ejemplo de opciones compartidas de efecto"><Code code={`import { attachFrost } from '@domfx/browser';
 import type { AttachmentOptions } from '@domfx/browser';
@@ -29,7 +29,7 @@ intensity: 0.8,
 };
 const effect = attachFrost(target, options);
 
-// Also dispose on component unmount.
+// Libera también el efecto al desmontar el componente.
 window.addEventListener('pagehide', () => effect.dispose(), { once: true });
 await effect.ready;
 if (effect.lifecycle === 'active') {
@@ -60,7 +60,7 @@ effect.time = 2;
 
 ## Controles modificables
 
-<p>Asigna <a href="/docs/es/api/shared#control-playback">tiempo e intensidad</a> directamente o mediante GSAP. El tiempo se mide en segundos; la intensidad es una fuerza específica del efecto entre 0 y 1.</p>
+<p>Asigna <a href="/docs/es/api/shared#control-playback">tiempo e intensidad</a> directamente o mediante GSAP. El tiempo se mide en segundos; la intensidad varía entre 0 y 1 y cambia el aspecto de cada efecto.</p>
 
 <span id="read-state" />
 
@@ -68,7 +68,7 @@ effect.time = 2;
 
 ## Estado de solo lectura
 
-<p>Consulta la <a href="/docs/es/api/effect-handle#read-state">preparación, el estado del efecto y el estado de captura</a>. Que termine la configuración no garantiza una salida visible.</p>
+<p>Consulta la <a href="/docs/es/api/effect-handle#read-state">finalización de la configuración, el estado del efecto y el estado de captura</a>. Que termine la configuración no garantiza una salida visible.</p>
 
 <span id="refresh-retry-and-dispose" />
 
@@ -90,7 +90,7 @@ effect.time = 2;
 
 ## GSAP
 
-<p>Usa <code>gsap.to()</code> y llamadas normales de línea de tiempo sobre una instancia de efecto. La <a href="/docs/es/api/gsap">referencia de GSAP</a> también documenta los enlaces opcionales de instantánea y sus nombres compatibles.</p>
+<p>Usa <code>gsap.to()</code> y llamadas normales de línea de tiempo sobre una instancia de efecto. La <a href="/docs/es/api/gsap">referencia de GSAP</a> también documenta los enlaces opcionales con valores iniciales fijos y sus nombres compatibles.</p>
 
 <span id="package-boundaries" />
 
@@ -102,8 +102,8 @@ effect.time = 2;
   <thead><tr><th scope="col">Paquete</th><th scope="col">Responsabilidad</th></tr></thead>
   <tbody>
     <tr><th scope="row"><code>@domfx/core</code></th><td>Instancias y contratos de captura compartidos, independientes de DOM, GPU y frameworks.</td></tr>
-    <tr><th scope="row"><code>@domfx/browser</code></th><td>Captura DOM, preparación de la silueta, programas GPU y salida decorativa. Los consumidores no necesitan un plugin de shaders ni importaciones privadas del renderizador.</td></tr>
-    <tr><th scope="row"><code>@domfx/gsap</code></th><td>Enlace opcional con una línea de tiempo GSAP del llamante. Los efectos independientes no cargan GSAP.</td></tr>
+    <tr><th scope="row"><code>@domfx/browser</code></th><td>Captura DOM, preparación de la silueta, programas GPU y salida decorativa. Las aplicaciones no necesitan un plugin de shaders ni importaciones privadas del renderizador.</td></tr>
+    <tr><th scope="row"><code>@domfx/gsap</code></th><td>Enlace opcional con una línea de tiempo de GSAP que proporcionas. Los efectos independientes no cargan GSAP.</td></tr>
   </tbody>
 </DocsApiTable>
 <p>Para depurar localmente, consulta los <a href="/docs/es/troubleshooting#trace-an-attachment">registros experimentales de efectos</a>. La entrada de depuración está separada de la API compartida de la aplicación.</p>

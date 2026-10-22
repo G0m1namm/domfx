@@ -50,7 +50,7 @@ export function localizedFooterLinkGroups(locale: 'en' | 'es'): readonly FooterL
       items: [
         ['Todos los efectos', '/es/effects/'],
         ['Documentación', '/docs/es/introduction/'],
-        ['Compatibilidad de navegadores', '/docs/es/support/'],
+        ['Compatibilidad con navegadores', '/docs/es/support/'],
       ],
     },
     {

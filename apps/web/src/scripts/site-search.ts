@@ -28,6 +28,32 @@ interface DocsSearchIndex {
 }
 
 const resultLimit = 10;
+const searchMessages = {
+  en: {
+    browse: 'Effects and documentation',
+    documentation: 'Documentation',
+    loading: 'Searching documentation…',
+    result: 'result',
+    results: 'results',
+    showing: 'showing the first',
+    unavailable: 'Documentation search is unavailable. You can still search effects.',
+    fallback: 'Open Docs.',
+  },
+  es: {
+    browse: 'Efectos y documentación',
+    documentation: 'Documentación',
+    loading: 'Buscando documentación…',
+    result: 'resultado',
+    results: 'resultados',
+    showing: 'se muestran los primeros',
+    unavailable: 'La búsqueda de documentación no está disponible. Puedes seguir buscando efectos.',
+    fallback: 'Abrir la documentación.',
+  },
+} as const;
+
+function normalize(value: string) {
+  return value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+}
 
 function required<T extends Element>(selector: string, root: ParentNode = document): T {
   const element = root.querySelector<T>(selector);
@@ -52,8 +78,10 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
   const groups = Array.from(dialog.querySelectorAll<HTMLElement>('[data-search-group]'));
   const items = Array.from(dialog.querySelectorAll<HTMLElement>('[data-search-item]'));
   const docsIndexPath = dialog.dataset.docsPagefind;
+  const docsFallback = dialog.dataset.docsFallback;
   const docsGroup = required<HTMLElement>('[data-search-group="documentation"]', dialog);
   const docsList = required<HTMLUListElement>('ul', docsGroup);
+  const messages = searchMessages[document.documentElement.lang === 'es' ? 'es' : 'en'];
   let docsIndex: Promise<DocsSearchIndex> | undefined;
   let queryRevision = 0;
   const on = <K extends keyof HTMLElementEventMap>(
@@ -65,7 +93,9 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
   };
 
   function resultCount(count: number) {
-    return `${count} result${count === 1 ? '' : 's'}${count > resultLimit ? ` · showing the first ${resultLimit}` : ''}`;
+    const label = count === 1 ? messages.result : messages.results;
+    const overflow = count > resultLimit ? ` · ${messages.showing} ${resultLimit}` : '';
+    return `${count} ${label}${overflow}`;
   }
 
   function docsResult(result: DocsSearchResult) {
@@ -75,7 +105,7 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
     const title = document.createElement('strong');
     const excerpt = document.createElement('small');
     link.href = result.url;
-    title.textContent = result.meta.title ?? 'Documentation';
+    title.textContent = result.meta.title ?? messages.documentation;
     excerpt.textContent = new DOMParser().parseFromString(
       result.plain_excerpt ?? result.excerpt,
       'text/html',
@@ -116,8 +146,14 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
     } catch {
       if (isCurrent()) {
         empty.hidden = effectCount > 0;
-        status.textContent =
-          'Documentation search is unavailable. You can still search effects or open Docs.';
+        status.textContent = messages.unavailable;
+        if (docsFallback) {
+          const link = document.createElement('a');
+          link.href = docsFallback;
+          link.textContent = messages.fallback;
+          link.style.textDecoration = 'underline';
+          status.append(' ', link);
+        }
       }
     }
   }
@@ -129,10 +165,10 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
       docsGroup.hidden = true;
     }
     const query = input.value.trim().toLowerCase();
-    const terms = query.split(/\s+/).filter(Boolean);
+    const terms = normalize(query).split(/\s+/).filter(Boolean);
     const matches = items.filter((item) =>
       query
-        ? terms.every((term) => item.dataset.keywords?.includes(term))
+        ? terms.every((term) => normalize(item.dataset.keywords ?? '').includes(term))
         : item.dataset.starter === 'true',
     );
     const ranked = query ? [...matches].sort((a, b) => rank(b, query) - rank(a, query)) : matches;
@@ -148,10 +184,10 @@ export function initializeSiteSearch(options: SiteSearchOptions): SiteSearch {
       required('ul', group).append(...groupItems);
     }
     empty.hidden = visible.length > 0;
-    status.textContent = query ? resultCount(matches.length) : 'Effects and documentation';
+    status.textContent = query ? resultCount(matches.length) : messages.browse;
     if (docsIndexPath && query) {
       empty.hidden = true;
-      status.textContent = 'Searching documentation…';
+      status.textContent = messages.loading;
       void updateDocs(docsIndexPath, query, revision, visible.length);
     }
   }

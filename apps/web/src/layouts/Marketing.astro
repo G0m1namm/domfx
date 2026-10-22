@@ -1,6 +1,7 @@
 ---
 import DiscoveryHead from '@domfx/site/components/discovery-head.astro';
 import { marketingPages } from '@domfx/site/marketing-pages';
+import { localeFromPath } from '@domfx/site/locale';
 import washer from '../assets/brand/washer.png';
 import MarketingClosing from '../components/marketing-closing.astro';
 import MarketingStory from '../components/marketing-story.astro';
@@ -13,11 +14,12 @@ import '../styles/marketing.css';
 interface Props { surface?: 'marketing' | 'library' }
 const { surface = 'marketing' } = Astro.props;
 const isLibrary = surface === 'library';
-const page = marketingPages(Astro.site?.href ?? 'http://127.0.0.1:4321')[isLibrary ? 1 : 0];
+const locale = localeFromPath(Astro.url.pathname);
+const page = marketingPages(Astro.site?.href ?? 'http://127.0.0.1:4321', locale)[isLibrary ? 1 : 0];
 
 ---
 <!doctype html>
-<html lang="en">
+<html lang={locale}>
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><DiscoveryHead page={page}/><meta name="theme-color" content="#14151B"/><link rel="icon" href="/favicon.svg"/><link rel="preload" href="/fonts/CabinetGrotesk-Medium.woff2" as="font" type="font/woff2" crossorigin/></head>
 <body class="marketing-page" id="top" data-surface={surface}>
 <PhosphorIcons />

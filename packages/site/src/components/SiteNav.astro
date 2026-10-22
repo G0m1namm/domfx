@@ -1,5 +1,6 @@
 ---
 import SiteSearchTrigger from './site-search-trigger.astro';
+import { localeFromPath, localePath, pageIdentity, siteMessages } from '../locale';
 import '../styles/brand.css';
 import '../styles/site-nav.css';
 
@@ -11,20 +12,44 @@ interface Props {
 }
 
 const { current, decorated = false, as: Tag = 'header' } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const messages = siteMessages[locale];
+const page = pageIdentity(Astro.url.pathname) ?? { kind: 'home' as const };
+const homePath = localePath({ kind: 'home' }, locale);
+const effectsPath = localePath({ kind: 'effects' }, locale);
+const docsPath = localePath({ kind: 'docs', slug: 'introduction' }, locale);
+const englishPath = localePath(page, 'en');
+const spanishPath = localePath(page, 'es');
 ---
 <Tag class="site-nav"><div class="nav-inner">
-  <a class="wordmark" href="/" aria-label="domfx home">domfx<img class="brand-mark" src="/brand-mark.svg" width="30" height="30" alt="" aria-hidden="true" /></a>
-  <nav aria-label="Main"><a href="/effects/" aria-current={current === 'effects' ? 'page' : undefined}>Effects</a><a href="/docs/introduction/" aria-current={current === 'docs' ? 'true' : undefined}>Docs</a></nav>
+  <a class="wordmark" href={homePath} aria-label={messages.homeLabel}>domfx<img class="brand-mark" src="/brand-mark.svg" width="30" height="30" alt="" aria-hidden="true" /></a>
+  <nav aria-label={messages.main}><a href={effectsPath} aria-current={current === 'effects' ? 'page' : undefined}>{messages.effects}</a><a href={docsPath} aria-current={current === 'docs' ? 'true' : undefined}>{messages.docs}</a></nav>
   <slot name="search"><SiteSearchTrigger/></slot>
+  <nav class="language-links" aria-label={messages.language}><a href={englishPath} lang="en" hreflang="en" aria-label="View this page in English" aria-current={locale === 'en' ? 'true' : undefined} data-language-link="en">EN</a><a href={spanishPath} lang="es" hreflang="es" aria-label="Ver esta página en español" aria-current={locale === 'es' ? 'true' : undefined} data-language-link="es">ES</a></nav>
   <a class="nav-cta star-cta" href="https://github.com/G0m1namm/domfx" aria-label="Star on GitHub: domfx" title="Star domfx on GitHub" data-repo-stars><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg><span data-star-label>Star on GitHub</span><span class="star-count" data-star-count hidden></span></a>
-  <button class="nav-menu-button" popovertarget="site-menu" aria-label="Open site menu" title="Menu"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-list"/></svg></button>
+  <button class="nav-menu-button" popovertarget="site-menu" aria-label={messages.openMenu} title={messages.menu}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-list"/></svg></button>
 </div>{decorated && <div class="header-effect-host" aria-hidden="true"><span class="header-effect-line"></span></div>}</Tag>
 <div id="site-menu" class="site-menu" popover>
-  <div class="site-menu-head"><span>Menu</span><button popovertarget="site-menu" popovertargetaction="hide" aria-label="Close site menu"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div>
-  <nav aria-label="Site">
-    <a href="/">Home</a>
-    <a href="/effects/" aria-current={current === 'effects' ? 'page' : undefined}>Effects</a>
-    <a href="/docs/introduction/" aria-current={current === 'docs' ? 'true' : undefined}>Docs</a>
+  <div class="site-menu-head"><span>{messages.menu}</span><button popovertarget="site-menu" popovertargetaction="hide" aria-label={messages.closeMenu}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div>
+  <nav aria-label={messages.site}>
+    <a href={homePath}>{messages.home}</a>
+    <a href={effectsPath} aria-current={current === 'effects' ? 'page' : undefined}>{messages.effects}</a>
+    <a href={docsPath} aria-current={current === 'docs' ? 'true' : undefined}>{messages.docs}</a>
   </nav>
+  <nav class="menu-language-links" aria-label={messages.language}><a href={englishPath} lang="en" hreflang="en" aria-current={locale === 'en' ? 'true' : undefined} data-language-link="en">English</a><a href={spanishPath} lang="es" hreflang="es" aria-current={locale === 'es' ? 'true' : undefined} data-language-link="es">Español</a></nav>
   <a class="nav-cta site-menu-star" href="https://github.com/G0m1namm/domfx"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg>Star on GitHub</a>
 </div>
+<script>
+  import { languageHref } from '@domfx/site/locale';
+
+  for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-language-link]')) {
+    const locale = link.dataset.languageLink;
+    if (locale === 'en' || locale === 'es') {
+      const updateHref = () => {
+        link.href = languageHref(window.location.href, locale) ?? link.href;
+      };
+      updateHref();
+      link.addEventListener('click', updateHref);
+    }
+  }
+</script>

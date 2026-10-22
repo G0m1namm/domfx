@@ -21,7 +21,7 @@ export default defineConfig({
     starlight({
       title: 'domfx docs',
       defaultLocale: 'root',
-      locales: { root: { label: 'English', lang: 'en' } },
+      locales: { root: { label: 'English', lang: 'en' }, es: { label: 'Español', lang: 'es' } },
       disable404Route: true,
       editLink: { baseUrl: 'https://github.com/G0m1namm/domfx/edit/main/apps/docs/' },
       pagination: true,

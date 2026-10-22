@@ -9,14 +9,15 @@ test('rejects a content page missing its title in the built HTML', async () => {
       site: 'https://example.com',
       indexable: false,
       paths: ['/'],
-      read: async () => Buffer.from('<html><head></head><body>domfx</body></html>'),
+      read: async () => Buffer.from('<html lang="en"><head></head><body>domfx</body></html>'),
     }),
     /\/: expected one title/,
   );
 });
 
 test('rejects missing canonical metadata in built HTML', async () => {
-  const html = '<head><title>domfx</title><meta name="description" content="Effects"></head>';
+  const html =
+    '<html lang="en"><head><title>domfx</title><meta name="description" content="Effects"></head></html>';
   await assert.rejects(
     validateSiteOutput({
       site: 'https://example.com',
@@ -70,7 +71,7 @@ function output(indexable = false) {
     }
     files.set(
       path,
-      `<html><head><title>${title}</title>${Object.entries(meta)
+      `<html lang="en"><head><title>${title}</title>${Object.entries(meta)
         .map(([name, content]) => `<meta name="${name}" content="${content}">`)
         .join(
           '',
@@ -130,6 +131,22 @@ test('rejects an indexable page omitted from its child sitemap', async () => {
   const { files, options } = output(true);
   files.set('/sitemap-0.xml', '<urlset></urlset>');
   await assert.rejects(validateSiteOutput(options), /marketing sitemap/);
+});
+
+test('allows fallback metadata only on the equivalent page in another locale', async () => {
+  const { files, options } = output();
+  const spanish = files
+    .get('/')
+    .replace('<html lang="en">', '<html lang="es">')
+    .replace('href="https://example.com/"', 'href="https://example.com/es/"')
+    .replaceAll('content="https://example.com/"', 'content="https://example.com/es/"');
+  files.set('/es/', spanish);
+  options.paths.push('/es/');
+  await validateSiteOutput(options);
+
+  files.set('/es/effects/', spanish);
+  options.paths.push('/es/effects/');
+  await assert.rejects(validateSiteOutput(options), /duplicate title/);
 });
 
 test('rejects a missing Markdown copy linked by the docs HTML and llms index', async () => {

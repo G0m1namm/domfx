@@ -34,14 +34,38 @@ function one(values, message) {
   return values[0];
 }
 
+function localeIdentity(path) {
+  if (path.startsWith('/docs/es/')) {
+    return { locale: 'es', equivalent: path.replace('/docs/es/', '/docs/') };
+  }
+  if (path.startsWith('/es/')) {
+    return { locale: 'es', equivalent: path.replace('/es/', '/') };
+  }
+  return { locale: 'en', equivalent: path };
+}
+
+function uniqueOrEquivalent(seen, value, path, label) {
+  const previous = seen.get(value);
+  if (previous) {
+    const currentIdentity = localeIdentity(path);
+    const previousIdentity = localeIdentity(previous);
+    assert(
+      currentIdentity.locale !== previousIdentity.locale &&
+        currentIdentity.equivalent === previousIdentity.equivalent,
+      `${path}: duplicate ${label}`,
+    );
+  }
+  seen.set(value, path);
+}
+
 export async function validateSiteOutput({ read, paths, site, indexable }) {
   const required = async (path) => {
     const content = await read(path);
     assert(content !== null, `${path}: missing built output`);
     return content.toString();
   };
-  const titles = new Set();
-  const descriptions = new Set();
+  const titles = new Map();
+  const descriptions = new Map();
   const contentPaths = [];
   const documents = new Map();
   for (const path of paths) {
@@ -74,6 +98,8 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
       );
       continue;
     }
+    const { locale } = localeIdentity(path);
+    assert.equal(tags(html, 'html')[0]?.lang, locale, `${path}: HTML language`);
     contentPaths.push(path);
     const title = decode(
       one(
@@ -89,10 +115,8 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
         `${path}: expected one ${key}`,
       );
     const description = value('description');
-    assert(!titles.has(title), `${path}: duplicate title`);
-    assert(!descriptions.has(description), `${path}: duplicate description`);
-    titles.add(title);
-    descriptions.add(description);
+    uniqueOrEquivalent(titles, title, path, 'title');
+    uniqueOrEquivalent(descriptions, description, path, 'description');
     const canonical = new URL(path, site).href;
     assert.equal(
       one(
@@ -134,9 +158,9 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
     const graph = schema['@graph'];
     assert(Array.isArray(graph), `${path}: JSON-LD graph`);
     const expectedTypes =
-      path === '/'
+      path === '/' || path === '/es/'
         ? ['WebSite', 'SoftwareSourceCode']
-        : path === '/effects/'
+        : path === '/effects/' || path === '/es/effects/'
           ? ['CollectionPage', 'ItemList']
           : ['TechArticle', 'BreadcrumbList'];
     for (const type of expectedTypes) {

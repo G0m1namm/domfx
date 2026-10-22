@@ -1,0 +1,12 @@
+---
+import { effects, type Effect } from '@domfx/site/effects';
+import EffectReference from '../../../api/effects/[effect].astro';
+
+export function getStaticPaths() {
+  return effects.map((effect) => ({ params: { effect: effect.id }, props: { effect } }));
+}
+
+interface Props { effect: Effect }
+const { effect } = Astro.props;
+---
+<EffectReference effect={effect} />

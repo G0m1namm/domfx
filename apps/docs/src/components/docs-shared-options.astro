@@ -1,17 +1,21 @@
 ---
+import { localeFromPath } from '@domfx/site/locale';
+
 import DocsApiTable from './DocsApiTable.astro';
+
+const isEs = localeFromPath(Astro.url.pathname) === 'es';
 ---
-  <p>These options implement the exported <code>AttachmentOptions</code> type. Only <code>host</code> is required.</p>
-  <DocsApiTable label="Shared creation options">
-    <thead><tr><th scope="col">Property</th><th scope="col">Type</th><th scope="col">Default</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>host</code><p>An HTML container already on the page, with CSS position other than static. It must contain the target in the same document; it cannot be the target itself.</p></th><td><code>HTMLElement</code></td><td>Required</td></tr>
-      <tr><th scope="row"><code>clock</code><p>Use manual for your code or GSAP to control time; auto advances time automatically. The older spelling ambient remains supported.</p></th><td><code>'manual' | 'auto' | 'ambient'</code></td><td><code>'manual'</code></td></tr>
-      <tr><th scope="row"><code>motion</code><p>respect suppresses output under reduced motion. static always renders a still effect at time zero, under either preference.</p></th><td><code>'respect' | 'static'</code></td><td><code>'respect'</code></td></tr>
-      <tr><th scope="row"><code>seed</code><p>Fixed random seed. Reuses the same pattern at a given time and settings on the same captured target; it is not a randomness amount or a cross-device pixel guarantee.</p></th><td><code>number</code></td><td><code>0</code></td></tr>
-      <tr><th scope="row"><code>time</code><p>Initial effect time in seconds. Negative values are accepted.</p></th><td><code>number</code></td><td><code>0</code></td></tr>
-      <tr><th scope="row"><code>intensity</code><p>Initial effect strength. Accepted values clamp to 0–1; the visual response depends on the effect.</p></th><td><code>number</code></td><td><code>1</code></td></tr>
-    </tbody>
-  </DocsApiTable>
-  <p>Numeric attachment options must be finite and representable as float32. Invalid values throw before clamping. To change a creation option other than <code>time</code> or <code>intensity</code>, dispose the attachment and create a replacement.</p>
-  <p class="docs-api-note">Only one effect can use a target at a time. Invalid host relationships and overlapping targets throw synchronously. Dispose the existing effect before attaching to the same target, its ancestor or a descendant. This restriction describes the element tree, not arbitrary visual overlap.</p>
+<p>{isEs ? 'Estas opciones implementan el tipo exportado' : 'These options implement the exported'} <code>AttachmentOptions</code>{isEs ? '. Solo host es obligatorio.' : ' type. Only host is required.'}</p>
+<DocsApiTable label={isEs ? 'Opciones de creación compartidas' : 'Shared creation options'}>
+  <thead><tr><th scope="col">{isEs ? 'Propiedad' : 'Property'}</th><th scope="col">{isEs ? 'Tipo' : 'Type'}</th><th scope="col">{isEs ? 'Predeterminado' : 'Default'}</th></tr></thead>
+  <tbody>
+    <tr><th scope="row"><code>host</code><p>{isEs ? 'Contenedor HTML ya presente en la página, con una posición CSS distinta de static. Debe contener el elemento objetivo en el mismo documento; no puede ser el propio objetivo.' : 'An HTML container already on the page, with CSS position other than static. It must contain the target in the same document; it cannot be the target itself.'}</p></th><td><code>HTMLElement</code></td><td>{isEs ? 'Obligatorio' : 'Required'}</td></tr>
+    <tr><th scope="row"><code>clock</code><p>{isEs ? 'Usa manual para controlar el tiempo con tu código o GSAP; auto lo avanza automáticamente. La forma anterior ambient sigue admitida.' : 'Use manual for your code or GSAP to control time; auto advances time automatically. The older spelling ambient remains supported.'}</p></th><td><code>'manual' | 'auto' | 'ambient'</code></td><td><code>'manual'</code></td></tr>
+    <tr><th scope="row"><code>motion</code><p>{isEs ? 'respect suprime la salida con movimiento reducido. static siempre dibuja un efecto inmóvil en el tiempo cero, con cualquier preferencia.' : 'respect suppresses output under reduced motion. static always renders a still effect at time zero, under either preference.'}</p></th><td><code>'respect' | 'static'</code></td><td><code>'respect'</code></td></tr>
+    <tr><th scope="row"><code>seed</code><p>{isEs ? 'Semilla aleatoria fija. Reproduce el mismo patrón para un tiempo, ajustes y objetivo capturado dados; no controla la cantidad de aleatoriedad ni garantiza píxeles idénticos entre dispositivos.' : 'Fixed random seed. Reuses the same pattern at a given time and settings on the same captured target; it is not a randomness amount or a cross-device pixel guarantee.'}</p></th><td><code>number</code></td><td><code>0</code></td></tr>
+    <tr><th scope="row"><code>time</code><p>{isEs ? 'Tiempo inicial del efecto en segundos. Acepta valores negativos.' : 'Initial effect time in seconds. Negative values are accepted.'}</p></th><td><code>number</code></td><td><code>0</code></td></tr>
+    <tr><th scope="row"><code>intensity</code><p>{isEs ? 'Fuerza inicial del efecto. Los valores aceptados se limitan a 0–1; la respuesta visual depende del efecto.' : 'Initial effect strength. Accepted values clamp to 0–1; the visual response depends on the effect.'}</p></th><td><code>number</code></td><td><code>1</code></td></tr>
+  </tbody>
+</DocsApiTable>
+<p>{isEs ? 'Las opciones numéricas deben ser finitas y representables como float32. Los valores no válidos producen un error antes de aplicar el límite. Para cambiar una opción de creación distinta de' : 'Numeric attachment options must be finite and representable as float32. Invalid values throw before clamping. To change a creation option other than'} <code>time</code> {isEs ? 'o' : 'or'} <code>intensity</code>{isEs ? ', libera la instancia y crea otra.' : ', dispose the attachment and create a replacement.'}</p>
+<p class="docs-api-note">{isEs ? 'Solo un efecto puede usar un objetivo a la vez. Las relaciones de contenedor no válidas y los objetivos superpuestos generan un error sincrónico. Libera el efecto existente antes de adjuntar otro al mismo objetivo, a uno de sus ancestros o a uno de sus descendientes. Esta restricción se refiere al árbol de elementos, no a cualquier superposición visual.' : 'Only one effect can use a target at a time. Invalid host relationships and overlapping targets throw synchronously. Dispose the existing effect before attaching to the same target, its ancestor or a descendant. This restriction describes the element tree, not arbitrary visual overlap.'}</p>

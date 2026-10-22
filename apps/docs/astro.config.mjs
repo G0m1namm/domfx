@@ -4,10 +4,13 @@ import { defineConfig } from 'astro/config';
 import { siteConfig } from '@domfx/site/config';
 import { sitePublicDir } from '@domfx/site/public-path';
 
+import { docsMessages } from './src/content/docs-messages';
 import { effectsByCategory } from './src/content/documentation';
 import { docsDiscovery } from './src/integrations/discovery.mjs';
+import { validateDocsTranslations } from './src/scripts/check-translations.mjs';
 
 const { site } = siteConfig(process.env);
+validateDocsTranslations();
 
 export default defineConfig({
   site,
@@ -16,7 +19,7 @@ export default defineConfig({
   output: 'static',
   publicDir: sitePublicDir,
   devToolbar: { enabled: false },
-  redirects: { '/': '/docs/introduction/' },
+  redirects: { '/': '/docs/introduction/', '/es/': '/docs/es/introduction/' },
   integrations: [
     starlight({
       title: 'domfx docs',
@@ -44,24 +47,32 @@ export default defineConfig({
       sidebar: [
         {
           label: 'Getting started',
+          translations: { es: 'Primeros pasos' },
           items: [
-            { label: 'Introduction', slug: 'introduction' },
-            { label: 'Installation', slug: 'installation' },
+            { label: 'Introduction', translations: { es: 'Introducción' }, slug: 'introduction' },
+            { label: 'Installation', translations: { es: 'Instalación' }, slug: 'installation' },
           ],
         },
         {
           label: 'Guides',
+          translations: { es: 'Guías' },
           items: [
-            { label: 'Standalone', slug: 'standalone' },
+            { label: 'Standalone', translations: { es: 'Uso independiente' }, slug: 'standalone' },
             { label: 'GSAP', slug: 'gsap' },
           ],
         },
         {
           label: 'Effects',
+          translations: { es: 'Efectos' },
           items: [
-            { label: 'All effects', slug: 'api/effects' },
+            {
+              label: 'All effects',
+              translations: { es: 'Todos los efectos' },
+              slug: 'api/effects',
+            },
             ...effectsByCategory.map(({ category, effects }) => ({
               label: category,
+              translations: { es: docsMessages('es').categories[category] },
               badge: { text: String(effects.length), class: 'docs-nav-count' },
               collapsed: true,
               items: effects.map((effect) => ({
@@ -73,19 +84,37 @@ export default defineConfig({
         },
         {
           label: 'Reference',
+          translations: { es: 'Referencia' },
           items: [
-            { label: 'API reference', slug: 'api' },
-            { label: 'Shared options and controls', slug: 'api/shared' },
-            { label: 'Effect instance', slug: 'api/effect-handle' },
+            { label: 'API reference', translations: { es: 'Referencia de la API' }, slug: 'api' },
+            {
+              label: 'Shared options and controls',
+              translations: { es: 'Opciones y controles compartidos' },
+              slug: 'api/shared',
+            },
+            {
+              label: 'Effect instance',
+              translations: { es: 'Instancia de efecto' },
+              slug: 'api/effect-handle',
+            },
             { label: 'GSAP API', slug: 'api/gsap' },
           ],
         },
         {
           label: 'Help',
+          translations: { es: 'Ayuda' },
           items: [
-            { label: 'Upgrading', slug: 'upgrading' },
-            { label: 'Browser support', slug: 'support' },
-            { label: 'Troubleshooting', slug: 'troubleshooting' },
+            { label: 'Upgrading', translations: { es: 'Actualización' }, slug: 'upgrading' },
+            {
+              label: 'Browser support',
+              translations: { es: 'Compatibilidad del navegador' },
+              slug: 'support',
+            },
+            {
+              label: 'Troubleshooting',
+              translations: { es: 'Solución de problemas' },
+              slug: 'troubleshooting',
+            },
           ],
         },
       ],

@@ -1,0 +1,109 @@
+---
+title: "Referencia de la API"
+description: "Opciones, propiedades y métodos compartidos por todos los efectos."
+---
+
+import { Code } from 'astro:components';
+import DocsEffectIndex from "../../../components/docs-effect-index.astro";
+import DocsApiTable from "../../../components/DocsApiTable.astro";
+import { effects } from '@domfx/site/effects';
+import { codeTheme } from "../../examples";
+
+<p>Los {effects.length} efectos aceptan opciones de creación compartidas y devuelven una instancia (<code>EffectHandle</code>). Comienza por la referencia de un efecto para conocer su importación, aspecto y opciones compatibles.</p>
+
+<span id="create-an-attachment" />
+
+<span id="usage" />
+
+## Uso
+
+<p>Importa una función de efecto desde <code>@domfx/browser</code>. Llámala después de montar el objetivo y su contenedor posicionado. Las importaciones son seguras durante SSR; adjuntar y capturar requieren elementos DOM del navegador.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Ejemplo de opciones compartidas de efecto"><Code code={`import { attachFrost } from '@domfx/browser';
+import type { AttachmentOptions } from '@domfx/browser';
+
+const options: AttachmentOptions = {
+host,
+clock: 'manual',
+intensity: 0.8,
+};
+const effect = attachFrost(target, options);
+
+// Also dispose on component unmount.
+window.addEventListener('pagehide', () => effect.dispose(), { once: true });
+await effect.ready;
+if (effect.lifecycle === 'active') {
+effect.time = 2;
+}`} lang="ts" theme={codeTheme} /></div>
+
+<p>Cada función recibe <code>(target: Element, options)</code> y devuelve de inmediato un <code>EffectHandle</code>. Consulta la <a href="/docs/es/standalone">guía de uso independiente</a> para una configuración completa.</p>
+
+<span id="attachment-options" />
+
+<span id="creation-options" />
+
+## Opciones de creación
+
+<p>Elige el contenedor del objetivo, el control de animación, el comportamiento con movimiento reducido y los valores iniciales en la <a href="/docs/es/api/shared#attachment-options">referencia de opciones compartidas</a>.</p>
+
+<span id="fire-only-options" />
+
+<span id="effect-specific-options" />
+
+### Opciones específicas del efecto
+
+<p><a href="/docs/es/api/effects/fire#effect-options"><code>flameHeight</code> de Fire</a> es actualmente la única opción de creación adicional. Cada efecto tiene su propia referencia para documentar sus controles adicionales cuando sean compatibles.</p>
+
+<span id="control-playback" />
+
+<span id="writable-controls" />
+
+## Controles modificables
+
+<p>Asigna <a href="/docs/es/api/shared#control-playback">tiempo e intensidad</a> directamente o mediante GSAP. El tiempo se mide en segundos; la intensidad es una fuerza específica del efecto entre 0 y 1.</p>
+
+<span id="read-state" />
+
+<span id="read-only-state" />
+
+## Estado de solo lectura
+
+<p>Consulta la <a href="/docs/es/api/effect-handle#read-state">preparación, el estado del efecto y el estado de captura</a>. Que termine la configuración no garantiza una salida visible.</p>
+
+<span id="refresh-retry-and-dispose" />
+
+<span id="methods" />
+
+## Métodos
+
+<p><a href="/docs/es/api/effect-handle#refresh-retry-and-dispose">Pausar, reanudar, actualizar la captura, reintentar y liberar</a> tienen el mismo contrato para todos los efectos.</p>
+
+<span id="available-effects" />
+
+## Efectos disponibles
+
+<DocsEffectIndex />
+
+<span id="bind-gsap" />
+
+<span id="gsap" />
+
+## GSAP
+
+<p>Usa <code>gsap.to()</code> y llamadas normales de línea de tiempo sobre una instancia de efecto. La <a href="/docs/es/api/gsap">referencia de GSAP</a> también documenta los enlaces opcionales de instantánea y sus nombres compatibles.</p>
+
+<span id="package-boundaries" />
+
+<span id="packages" />
+
+## Paquetes
+
+<DocsApiTable label="Responsabilidades de los paquetes">
+  <thead><tr><th scope="col">Paquete</th><th scope="col">Responsabilidad</th></tr></thead>
+  <tbody>
+    <tr><th scope="row"><code>@domfx/core</code></th><td>Instancias y contratos de captura compartidos, independientes de DOM, GPU y frameworks.</td></tr>
+    <tr><th scope="row"><code>@domfx/browser</code></th><td>Captura DOM, preparación de la silueta, programas GPU y salida decorativa. Los consumidores no necesitan un plugin de shaders ni importaciones privadas del renderizador.</td></tr>
+    <tr><th scope="row"><code>@domfx/gsap</code></th><td>Enlace opcional con una línea de tiempo GSAP del llamante. Los efectos independientes no cargan GSAP.</td></tr>
+  </tbody>
+</DocsApiTable>
+<p>Para depurar localmente, consulta los <a href="/docs/es/troubleshooting#trace-an-attachment">registros experimentales de efectos</a>. La entrada de depuración está separada de la API compartida de la aplicación.</p>

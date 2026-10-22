@@ -1,0 +1,37 @@
+---
+title: "Instancia de efecto"
+description: "Consulta el estado del efecto, actualiza la captura y libera recursos."
+---
+
+import DocsEffectMethods from "../../../../components/docs-effect-methods.astro";
+import DocsEffectState from "../../../../components/docs-effect-state.astro";
+
+<p>Cada función devuelve de inmediato una instancia de efecto (<code>EffectHandle</code>). Consérvala para controlar la animación, inspeccionar la configuración y liberar recursos. <a href="/docs/es/api/shared#control-playback">Tiempo e intensidad</a> son sus controles modificables.</p>
+
+<span id="read-state" />
+
+<span id="read-only-state" />
+
+## Estado de solo lectura
+
+<DocsEffectState />
+
+<span id="refresh-retry-and-dispose" />
+
+<span id="methods" />
+
+## Métodos
+
+<DocsEffectMethods />
+
+<span id="independent-state" />
+
+<span id="understand-the-reported-state" />
+
+## Comprende el estado informado
+
+<p><code>lifecycle</code> indica si el efecto puede dibujarse. <code>raster</code> indica si la imagen capturada está actualizada. <code>paused</code> solo indica si la animación automática de domfx está pausada. Estos valores describen aspectos distintos.</p>
+
+<p>Un efecto controlado por GSAP tiene <code>paused: true</code> mientras cambia su tiempo. Un efecto puede tener <code>paused: false</code> aunque temporalmente no pueda dibujarse. Un efecto inmóvil puede estar activo, actualizado y visible.</p>
+
+<p><code>ready</code> describe solo el intento de configuración inicial. El reintento no lo sustituye; tampoco indica que la animación haya terminado ni espera a que acabe la ejecución GPU o aparezca en pantalla. Una configuración correcta envía la salida inicial; consulta el estado para saber si está disponible.</p>

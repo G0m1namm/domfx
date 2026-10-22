@@ -497,8 +497,8 @@ starlight-toc li:has(> a[href='#_top']) {
   .sidebar-pane {
     inset-block-start: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height));
   }
-  .docs-mobile-title {
-    left: calc(var(--docs-gutter) + 5.875rem);
+  :root[lang='es'] .docs-mobile-title {
+    display: none;
   }
 }
 

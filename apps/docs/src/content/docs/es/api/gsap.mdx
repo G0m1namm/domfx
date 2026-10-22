@@ -1,0 +1,28 @@
+---
+title: "API de GSAP"
+description: "Animaciones nativas de propiedades y enlaces opcionales de instantánea con control del ciclo de vida."
+---
+
+import DocsGsapBindings from "../../../../components/docs-gsap-bindings.astro";
+
+<span id="native-tweens" />
+
+<span id="native-property-tweens" />
+
+## Animaciones nativas de propiedades
+
+<p>Usa <code>{'gsap.to(effect, { time, intensity, duration, ease })'}</code> o añade el mismo objetivo a una línea de tiempo. Usa <code>clock: 'manual'</code> al crear el efecto. No necesitas registrar un plugin de domfx ni importar <code>@domfx/gsap</code> para estas propiedades numéricas.</p>
+
+<p>GSAP escribe en los setters públicos del efecto, incluso al buscar tiempos con callbacks suprimidos. Las llamadas encadenadas a <code>.to()</code> resuelven los valores iniciales como las animaciones GSAP normales. <code>.from()</code>, <code>.fromTo()</code>, easing, repeat/yoyo, la sobrescritura de propiedades y <code>gsap.killTweensOf(effect)</code> siguen el comportamiento habitual de GSAP.</p>
+
+<p>Mantén los valores dentro de los <a href="/docs/es/api/shared#control-playback">rangos de control del efecto</a>. La instancia valida las asignaciones; el tipo general de variables de GSAP no impone estos rangos estáticamente. <code>intensity</code> se limita en cada asignación, por lo que las curvas que rebasan el rango pueden recortar la animación.</p>
+
+<p>Detén tus animaciones y libera el efecto durante la limpieza. Detener o completar una animación no libera su objetivo. Registra la limpieza de inmediato, incluso si la configuración aún está pendiente. Consulta la <a href="/docs/es/gsap">guía completa de GSAP</a> para el patrón de ciclo de vida.</p>
+
+<span id="snapshot-bindings" />
+
+<span id="optional-snapshot-bindings" />
+
+## Enlaces opcionales de instantánea
+
+<DocsGsapBindings />

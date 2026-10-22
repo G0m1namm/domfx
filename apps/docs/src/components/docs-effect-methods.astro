@@ -1,15 +1,19 @@
 ---
+import { localeFromPath } from '@domfx/site/locale';
+
 import DocsApiTable from './DocsApiTable.astro';
+
+const isEs = localeFromPath(Astro.url.pathname) === 'es';
 ---
-  <DocsApiTable label="Effect methods">
-    <thead><tr><th scope="col">Method</th><th scope="col">Returns</th></tr></thead>
-    <tbody>
-      <tr><th scope="row"><code>pause()</code><p>Pause automatic animation while retaining the attachment and pending control writes.</p></th><td><code>void</code></td></tr>
-      <tr><th scope="row"><code>resume()</code><p>Resume automatic animation without catching up time spent paused or hidden. Does not advance externally controlled time or a still effect.</p></th><td><code>void</code></td></tr>
-      <tr><th scope="row"><code>refresh()</code><p>Hide out-of-date output and capture again. Resolves when this or a newer requested capture is accepted; it does not wait for screen presentation. It rejects on failure, invalidation, disposal or an unavailable handle.</p></th><td><code>Promise&lt;void&gt;</code></td></tr>
-      <tr><th scope="row"><code>retry()</code><p>Reinitialize with retained controls. Concurrent retries share one attempt. Rejects if disposed; otherwise inspect effect state after it settles.</p></th><td><code>Promise&lt;void&gt;</code></td></tr>
-      <tr><th scope="row"><code>dispose()</code><p>Release resources. Safe to call more than once and before setup finishes.</p></th><td><code>void</code></td></tr>
-      <tr><th scope="row"><code>onDispose(callback)</code><p>Register a <code>() =&gt; void</code> callback that runs once, immediately if already disposed. Returns an unsubscribe function.</p></th><td><code>() =&gt; void</code></td></tr>
-    </tbody>
-  </DocsApiTable>
-  <p>Refresh and control writes cannot recover an unavailable handle. Correct the condition before calling <code>retry()</code>. Call <code>dispose()</code> on component unmount and handle rejected refresh/retry promises within the component's lifetime.</p>
+<DocsApiTable label={isEs ? 'Métodos del efecto' : 'Effect methods'}>
+  <thead><tr><th scope="col">{isEs ? 'Método' : 'Method'}</th><th scope="col">{isEs ? 'Devuelve' : 'Returns'}</th></tr></thead>
+  <tbody>
+    <tr><th scope="row"><code>pause()</code><p>{isEs ? 'Pausa la animación automática sin perder la instancia ni las asignaciones de control pendientes.' : 'Pause automatic animation while retaining the attachment and pending control writes.'}</p></th><td><code>void</code></td></tr>
+    <tr><th scope="row"><code>resume()</code><p>{isEs ? 'Reanuda la animación automática sin recuperar el tiempo pasado en pausa u oculto. No avanza el tiempo controlado externamente ni un efecto inmóvil.' : 'Resume automatic animation without catching up time spent paused or hidden. Does not advance externally controlled time or a still effect.'}</p></th><td><code>void</code></td></tr>
+    <tr><th scope="row"><code>refresh()</code><p>{isEs ? 'Oculta la salida desactualizada y vuelve a capturar. Se resuelve cuando se acepta esta captura u otra posterior; no espera a que aparezca en pantalla. Se rechaza por fallo, invalidación, liberación o una instancia no disponible.' : 'Hide out-of-date output and capture again. Resolves when this or a newer requested capture is accepted; it does not wait for screen presentation. It rejects on failure, invalidation, disposal or an unavailable handle.'}</p></th><td><code>Promise&lt;void&gt;</code></td></tr>
+    <tr><th scope="row"><code>retry()</code><p>{isEs ? 'Reinicializa con los controles conservados. Los reintentos simultáneos comparten un intento. Se rechaza si la instancia fue liberada; en otro caso, consulta su estado al terminar.' : 'Reinitialize with retained controls. Concurrent retries share one attempt. Rejects if disposed; otherwise inspect effect state after it settles.'}</p></th><td><code>Promise&lt;void&gt;</code></td></tr>
+    <tr><th scope="row"><code>dispose()</code><p>{isEs ? 'Libera recursos. Se puede llamar varias veces y antes de terminar la configuración.' : 'Release resources. Safe to call more than once and before setup finishes.'}</p></th><td><code>void</code></td></tr>
+    <tr><th scope="row"><code>onDispose(callback)</code><p>{isEs ? 'Registra una función' : 'Register a'} <code>() =&gt; void</code> {isEs ? 'que se ejecuta una vez, de inmediato si la instancia ya se liberó. Devuelve una función para cancelar la suscripción.' : 'callback that runs once, immediately if already disposed. Returns an unsubscribe function.'}</p></th><td><code>() =&gt; void</code></td></tr>
+  </tbody>
+</DocsApiTable>
+<p>{isEs ? 'La actualización de captura y las asignaciones de control no recuperan una instancia no disponible. Corrige la condición antes de llamar a' : 'Refresh and control writes cannot recover an unavailable handle. Correct the condition before calling'} <code>retry()</code>. {isEs ? 'Llama a' : 'Call'} <code>dispose()</code> {isEs ? 'al desmontar el componente y gestiona las promesas rechazadas de refresh/retry mientras el componente siga activo.' : "on component unmount and handle rejected refresh/retry promises within the component's lifetime."}</p>

@@ -7,6 +7,9 @@ import DocsEffectControls from '../../../components/docs-effect-controls.astro';
 import DocsSharedOptions from '../../../components/docs-shared-options.astro';
 import { effectReference } from '@domfx/site/effect-reference';
 import { effects, type Effect } from '@domfx/site/effects';
+import { localeFromPath } from '@domfx/site/locale';
+import { effectReferenceEs } from '../../../content/effect-reference-es';
+import { docsMessages } from '../../../content/docs-messages';
 import { codeTheme } from '../../../content/examples';
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { repositoryUrl } from '@domfx/site/site-links';
@@ -16,7 +19,11 @@ export function getStaticPaths() {
 }
 interface Props { effect: Effect; }
 const { effect } = Astro.props;
-const reference = effectReference[effect.id];
+const locale = localeFromPath(Astro.url.pathname);
+const isEs = locale === 'es';
+const reference = isEs ? effectReferenceEs[effect.id] : effectReference[effect.id];
+const category = docsMessages(locale).categories[effect.category];
+const docsPrefix = isEs ? '/docs/es' : '/docs';
 const related = effects.filter((entry) => entry.category === effect.category && entry.id !== effect.id);
 const optionsType = effect.category === 'Pattern' && effect.id !== 'dither'
   ? 'PatternOptions'
@@ -39,43 +46,43 @@ if (effect.lifecycle !== 'active') {
 <StarlightPage
   frontmatter={{ title: effect.name, description: reference.description, editUrl: `${repositoryUrl}/edit/main/apps/docs/src/pages/api/effects/%5Beffect%5D.astro` }}
   headings={[
-    { depth: 2, slug: 'usage', text: 'Usage' },
-    { depth: 2, slug: 'effect-options', text: 'Effect options' },
-    { depth: 2, slug: 'shared-options', text: 'Shared options' },
-    { depth: 2, slug: 'controls', text: 'Controls' },
-    { depth: 2, slug: 'limits', text: 'Limits' },
-    { depth: 2, slug: 'related', text: `More ${effect.category.toLowerCase()} effects` },
+    { depth: 2, slug: 'usage', text: isEs ? 'Uso' : 'Usage' },
+    { depth: 2, slug: 'effect-options', text: isEs ? 'Opciones del efecto' : 'Effect options' },
+    { depth: 2, slug: 'shared-options', text: isEs ? 'Opciones compartidas' : 'Shared options' },
+    { depth: 2, slug: 'controls', text: isEs ? 'Controles' : 'Controls' },
+    { depth: 2, slug: 'limits', text: isEs ? 'Límites' : 'Limits' },
+    { depth: 2, slug: 'related', text: isEs ? `Más efectos de ${category.toLowerCase()}` : `More ${effect.category.toLowerCase()} effects` },
   ]}
 >
   <DocsEffectLab effect={effect} />
   <dl class="docs-effect-facts not-content">
-    <div><dt>Category</dt><dd><a href={`/docs/api/effects#${effect.category.toLowerCase()}`}>{effect.category}</a></dd></div>
-    <div><dt>Function</dt><dd><code>{effect.exportName}</code></dd></div>
-    <div><dt>Options</dt><dd><code>{optionsType}</code></dd></div>
-    <div><dt>Package</dt><dd><code>@domfx/browser</code></dd></div>
+    <div><dt>{isEs ? 'Categoría' : 'Category'}</dt><dd><a href={`${docsPrefix}/api/effects#${effect.category.toLowerCase()}`}>{category}</a></dd></div>
+    <div><dt>{isEs ? 'Función' : 'Function'}</dt><dd><code>{effect.exportName}</code></dd></div>
+    <div><dt>{isEs ? 'Opciones' : 'Options'}</dt><dd><code>{optionsType}</code></dd></div>
+    <div><dt>{isEs ? 'Paquete' : 'Package'}</dt><dd><code>@domfx/browser</code></dd></div>
   </dl>
-  <h2 id="usage">Usage</h2>
+  <h2 id="usage">{isEs ? 'Uso' : 'Usage'}</h2>
   <p><code>{`${effect.exportName}(target: Element, options: ${optionsType}): EffectHandle`}</code></p>
-  <p>Returns an effect instance immediately. Imports are safe during server rendering; call the function in the browser after the elements are mounted. The <a href="/docs/standalone">Standalone guide</a> includes the required HTML and CSS.</p>
-  <div class="docs-code-scroll" tabindex="0" role="region" aria-label={`${effect.name} usage`}><Code code={code} lang="ts" theme={codeTheme} /></div>
-  <h2 id="effect-options">Effect options</h2>
+  <p>{isEs ? 'Devuelve una instancia de efecto de inmediato. Las importaciones son seguras durante el renderizado en servidor; llama a la función en el navegador después de montar los elementos. La' : 'Returns an effect instance immediately. Imports are safe during server rendering; call the function in the browser after the elements are mounted. The'} <a href={`${docsPrefix}/standalone`}>{isEs ? 'guía de uso independiente' : 'Standalone guide'}</a> {isEs ? 'incluye el HTML y CSS necesarios.' : 'includes the required HTML and CSS.'}</p>
+  <div class="docs-code-scroll" tabindex="0" role="region" aria-label={isEs ? `Uso de ${effect.name}` : `${effect.name} usage`}><Code code={code} lang="ts" theme={codeTheme} /></div>
+  <h2 id="effect-options">{isEs ? 'Opciones del efecto' : 'Effect options'}</h2>
   {effect.id === 'fire' ? <>
-    <p><code>FireOptions</code> extends <code>AttachmentOptions</code> with the following creation option.</p>
-    <DocsApiTable label="Fire-specific creation options">
-      <thead><tr><th scope="col">Property</th><th scope="col">Type</th><th scope="col">Default</th></tr></thead>
-      <tbody><tr><th scope="row"><code>flameHeight</code><p>Flame scale in target-local CSS pixels, from 8 to 64. This is an artistic scale, not a guaranteed maximum pixel extent. Set at creation; changing it requires a new effect instance.</p></th><td><code>number</code></td><td><code>24</code></td></tr></tbody>
+    <p><code>FireOptions</code> {isEs ? 'amplía' : 'extends'} <code>AttachmentOptions</code> {isEs ? 'con la siguiente opción de creación.' : 'with the following creation option.'}</p>
+    <DocsApiTable label={isEs ? 'Opciones de creación específicas de Fire' : 'Fire-specific creation options'}>
+      <thead><tr><th scope="col">{isEs ? 'Propiedad' : 'Property'}</th><th scope="col">{isEs ? 'Tipo' : 'Type'}</th><th scope="col">{isEs ? 'Predeterminado' : 'Default'}</th></tr></thead>
+      <tbody><tr><th scope="row"><code>flameHeight</code><p>{isEs ? 'Escala de las llamas en píxeles CSS locales al objetivo, de 8 a 64. Es una escala artística, no una extensión máxima garantizada en píxeles. Se fija al crear el efecto; cambiarla requiere otra instancia.' : 'Flame scale in target-local CSS pixels, from 8 to 64. This is an artistic scale, not a guaranteed maximum pixel extent. Set at creation; changing it requires a new effect instance.'}</p></th><td><code>number</code></td><td><code>24</code></td></tr></tbody>
     </DocsApiTable>
-  </> : <p><code>{optionsType}</code> currently accepts only the shared creation options below. This effect has no additional public settings.</p>}
-  <h2 id="shared-options">Shared options</h2>
+  </> : <p><code>{optionsType}</code> {isEs ? 'acepta actualmente solo las opciones de creación compartidas que aparecen abajo. Este efecto no tiene ajustes públicos adicionales.' : 'currently accepts only the shared creation options below. This effect has no additional public settings.'}</p>}
+  <h2 id="shared-options">{isEs ? 'Opciones compartidas' : 'Shared options'}</h2>
   <DocsSharedOptions />
-  <h2 id="controls">Controls</h2>
+  <h2 id="controls">{isEs ? 'Controles' : 'Controls'}</h2>
   <p>{reference.intensity}</p>
   <DocsEffectControls />
-  <p>See <a href="/docs/api/shared#animation-control">automatic animation and external control</a> and the <a href="/docs/gsap">GSAP guide</a>. The <a href="/docs/api/effect-handle">effect instance reference</a> documents state, capture updates and cleanup.</p>
-  <h2 id="limits">Limits</h2>
-  <p>The effect follows the captured visible shape, including holes and disconnected regions. An opaque image has a rectangular shape. The original content remains intact; this is a decorative layer, not a change to the source image or text.</p>
-  <p>Colors, gradients, particle counts and whole-element processing are not public controls. Only the options listed here are supported. WebGPU, capture and composition limits apply; keep the original content usable when output is unavailable. See <a href="/docs/support">browser support</a> and <a href="/docs/troubleshooting">troubleshooting</a>.</p>
-  <h2 id="related">More {effect.category.toLowerCase()} effects</h2>
+  <p>{isEs ? 'Consulta la sección sobre' : 'See'} <a href={`${docsPrefix}/api/shared#animation-control`}>{isEs ? 'animación automática y control externo' : 'automatic animation and external control'}</a> {isEs ? 'y la' : 'and the'} <a href={`${docsPrefix}/gsap`}>{isEs ? 'guía de GSAP' : 'GSAP guide'}</a>. {isEs ? 'La' : 'The'} <a href={`${docsPrefix}/api/effect-handle`}>{isEs ? 'referencia de la instancia de efecto' : 'effect instance reference'}</a> {isEs ? 'documenta el estado, las actualizaciones de captura y la liberación de recursos.' : 'documents state, capture updates and cleanup.'}</p>
+  <h2 id="limits">{isEs ? 'Límites' : 'Limits'}</h2>
+  <p>{isEs ? 'El efecto sigue la forma visible capturada, incluidos los huecos y las regiones separadas. Una imagen opaca tiene una forma rectangular. El contenido original permanece intacto; esta es una capa decorativa, no un cambio en la imagen o el texto de origen.' : 'The effect follows the captured visible shape, including holes and disconnected regions. An opaque image has a rectangular shape. The original content remains intact; this is a decorative layer, not a change to the source image or text.'}</p>
+  <p>{isEs ? 'Los colores, degradados, recuentos de partículas y el procesamiento del elemento completo no son controles públicos. Solo se admiten las opciones aquí enumeradas. Se aplican límites de WebGPU, captura y composición; mantén utilizable el contenido original cuando la salida no esté disponible. Consulta' : 'Colors, gradients, particle counts and whole-element processing are not public controls. Only the options listed here are supported. WebGPU, capture and composition limits apply; keep the original content usable when output is unavailable. See'} <a href={`${docsPrefix}/support`}>{isEs ? 'compatibilidad del navegador' : 'browser support'}</a> {isEs ? 'y' : 'and'} <a href={`${docsPrefix}/troubleshooting`}>{isEs ? 'solución de problemas' : 'troubleshooting'}</a>.</p>
+  <h2 id="related">{isEs ? `Más efectos de ${category.toLowerCase()}` : `More ${effect.category.toLowerCase()} effects`}</h2>
   <DocsEffectLinks effects={related} />
-  <p>Compare every effect side by side in the <a href={`/effects/#${effect.id}`}>gallery</a>.</p>
+  <p>{isEs ? 'Compara todos los efectos en la' : 'Compare every effect side by side in the'} <a href={`${isEs ? '/es' : ''}/effects/#${effect.id}`}>{isEs ? 'galería' : 'gallery'}</a>{isEs ? ', uno junto a otro.' : '.'}</p>
 </StarlightPage>

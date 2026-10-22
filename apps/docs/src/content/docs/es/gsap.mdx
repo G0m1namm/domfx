@@ -1,0 +1,94 @@
+---
+title: "GSAP"
+description: "Controla el tiempo y la intensidad del efecto con una línea de tiempo propia."
+---
+
+import { Code } from 'astro:components';
+import { codeTheme, gsapCode } from "../../examples";
+
+<p>Anima cualquier efecto con animaciones de propiedades GSAP normales. La instancia expone los setters numéricos <code>time</code> e <code>intensity</code>. No necesitas registrar un plugin de domfx ni importar <code>@domfx/gsap</code>.</p>
+
+<p>Sigue la <a href="/docs/es/installation#add-the-optional-gsap-binding">guía de instalación</a> y añade GSAP a tu aplicación. Este ejemplo usa Fire; sustituye su importación y omite <code>flameHeight</code> para usar otro efecto.</p>
+
+<span id="provide-your-elements" />
+
+## Proporciona tus elementos
+
+<p>Ejecuta el código después de montar. En <code>main.ts</code>, busca los elementos del HTML de prueba:</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Busca el objetivo y el contenedor"><Code code={`const host = document.querySelector('#host');
+const target = document.querySelector('#target');
+if (!(host instanceof HTMLElement) || !target) {
+  throw new Error('Missing host or target');
+}`} lang="ts" theme={codeTheme} /></div>
+
+<p>Para usar un encabezado, sustituye el botón de prueba por <code>&lt;h1 id="target"&gt;Your heading&lt;/h1&gt;</code> dentro del contenedor. El texto sigue siendo seleccionable.</p>
+
+<span id="build-your-sequence" />
+
+## Construye tu secuencia
+
+<p>Crea el efecto con <code>clock: 'manual'</code> para que GSAP controle su tiempo. El contenedor aparece durante medio segundo; luego el efecto pasa del tiempo 0 al 4 y de intensidad 0.8 a 0.4 durante cuatro segundos. Anima la opacidad del contenedor para que el objetivo original y el efecto la compartan. Los cambios de opacidad solo en el objetivo no son compatibles.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Ejemplo completo de efecto con control manual y ciclo de vida GSAP"><Code code={gsapCode} lang="ts" theme={codeTheme} /></div>
+
+<span id="seek-and-play" />
+
+## Avanza y reproduce
+
+<p>Usa <code>timeline.play()</code>, <code>pause()</code>, <code>seek()</code> y <code>reverse()</code>. En <code>timeline.seek(2.5)</code>, el tiempo del efecto es 2 y la intensidad 0.6. Retroceder a 1.5 da tiempo 1 e intensidad 0.7. Las búsquedas con callbacks suprimidos también actualizan los setters; no hace falta copiarlos en <code>onUpdate</code>.</p>
+
+<p>Encadena llamadas a <code>.to()</code> para animar desde los destinos anteriores. Usa <code>.from()</code> o <code>.fromTo()</code> para indicar valores iniciales explícitos, teniendo en cuenta su renderizado inmediato predeterminado. Los segmentos <code>.fromTo()</code> posteriores suelen necesitar <code>immediateRender: false</code>. <code>easing</code>, <code>repeat</code>, <code>yoyo</code>, <code>overwrite</code> y <code>timeScale()</code> siguen las convenciones normales de GSAP.</p>
+
+<p><code>gsap.killTweensOf(fire, 'intensity')</code> detiene solo esa propiedad; no libera el efecto ni detiene una animación de tiempo. Usa un controlador por propiedad y mantén los valores dentro de los <a href="/docs/es/api/shared#control-playback">rangos de control</a>.</p>
+
+<span id="own-the-lifetime" />
+
+## Gestiona el ciclo de vida
+
+<p>Llama a <code>cleanup()</code> al desmontar. Elimina el listener de liberación, detiene la línea de tiempo creada en este ejemplo y libera el efecto. Registrarla antes de que termine <code>ready</code> cubre la navegación durante la configuración. El listener también detiene esta línea de tiempo si la eliminación del objetivo libera el efecto.</p>
+
+<p>Si usas una línea de tiempo ajena, conserva y detén solo tus animaciones hijas; su propietario limpia la línea de tiempo y las demás animaciones. Terminar, detener o sobrescribir una animación no libera los recursos del objetivo.</p>
+
+<span id="context-cleanup" />
+
+<span id="gsap-context-cleanup" />
+
+### Limpieza del contexto GSAP
+
+<p>Crea las animaciones dentro de <code>gsap.context()</code> y devuelve una función de limpieza explícita. Regístrala de forma síncrona; un contexto no recoge automáticamente el trabajo creado después por continuaciones arbitrarias de promesas.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Limpieza de recursos del contexto GSAP"><Code code={`const context = gsap.context(() => {
+  const effect = attachFire(target, { host, clock: 'manual' });
+  const tween = gsap.to(effect, {
+    time: 4, intensity: 0.4, duration: 4, ease: 'none',
+  });
+  const unsubscribe = effect.onDispose(() => tween.kill());
+  return () => {
+    unsubscribe();
+    tween.kill();
+    effect.dispose();
+  };
+});
+// On unmount, even before setup finishes:
+context.revert();`} lang="ts" theme={codeTheme} /></div>
+
+<span id="optional-bindings" />
+
+<span id="optional-lifecycle-helpers" />
+
+## Funciones opcionales de ciclo de vida
+
+<p><code>@domfx/gsap</code> proporciona <code>bindEffect</code> y <code>bindEffectAsync</code> para enlaces de instantánea con responsabilidad explícita de limpieza. La función asíncrona libera con seguridad los resultados que llegan después de cancelar. Los nombres compatibles <code>bindFire</code> siguen disponibles para todos los efectos.</p>
+
+<p>Estas funciones capturan los controles iniciales al crearse y animan objetivos proxy privados. Difieren de las llamadas nativas encadenadas a <code>.to()</code>, de detener animaciones por objetivo y de la sobrescritura. Consulta la <a href="/docs/es/api/gsap#snapshot-bindings">referencia de enlaces</a> si necesitas ese contrato; para secuencias normales, prefiere animaciones nativas.</p>
+
+<span id="unavailable-and-retry" />
+
+<span id="unavailable-output-and-retry" />
+
+## Salida no disponible y reintento
+
+<p>El ejemplo principal inicia la reproducción solo cuando el efecto está activo. Si falta soporte GPU o se solicita movimiento reducido, conserva el objetivo original. Corrige la condición, espera a <code>fire.retry()</code>, consulta su estado y reproduce la línea de tiempo existente. El reintento conserva los controles; no necesita otra animación.</p>
+
+<p>Cada <a href="/docs/es/api/effects">referencia de efecto</a> comienza con una vista previa interactiva de los controles compartidos. Consulta la <a href="/docs/es/api/gsap">API de GSAP</a> y <a href="/docs/es/troubleshooting">solución de problemas</a> para más detalles.</p>

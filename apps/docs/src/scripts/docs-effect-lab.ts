@@ -1,7 +1,10 @@
 import type { EffectStatus } from '@domfx/site/effect-slot';
 import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import { findEffect, type Effect } from '@domfx/site/effects';
+import { localeFromPath } from '@domfx/site/locale';
 import { initializePage } from '@domfx/site/page-lifetime';
+
+import { docsMessages } from '../content/docs-messages';
 
 const SEED = 314;
 const COPY_RESET_MS = 2000;
@@ -28,6 +31,7 @@ function initializeLab(
   hasGpu: boolean,
   reducedMotion: MediaQueryList,
 ) {
+  const messages = docsMessages(localeFromPath(location.pathname)).lab;
   const host = required<HTMLElement>('[data-docs-lab-host]', lab);
   const targets = Array.from(
     lab.querySelectorAll<HTMLElement | SVGElement>('[data-docs-lab-target]'),
@@ -89,20 +93,17 @@ function initializeLab(
       if (slot.handle) {
         slot.handle.intensity = intensity();
       }
-      status.textContent = paused ? 'Paused' : 'Live';
+      status.textContent = paused ? messages.paused : messages.live;
     } else if (next.reason === 'no-webgpu') {
-      status.textContent =
-        'Effects are unavailable in this browser. The original content stays visible.';
+      status.textContent = messages.noGpu;
     } else if (next.reason === 'reduced-motion') {
-      status.textContent = reducedMotion.matches
-        ? 'Reduced motion keeps this preview still.'
-        : 'Choose Start effect to restart this preview.';
+      status.textContent = reducedMotion.matches ? messages.reducedMotion : messages.restart;
     } else if (next.lifecycle === 'initializing') {
-      status.textContent = 'Preparing the live preview…';
+      status.textContent = messages.preparing;
     } else if (next.lifecycle === 'suspended') {
-      status.textContent = 'Waiting to enter view.';
+      status.textContent = messages.waiting;
     } else {
-      status.textContent = 'Preview unavailable. The original content stays visible.';
+      status.textContent = messages.unavailable;
     }
     updateToggle();
   }
@@ -115,13 +116,13 @@ function initializeLab(
     toggle.setAttribute('aria-pressed', String(paused));
     let label: string;
     if (!hasGpu) {
-      label = 'Effects unavailable';
+      label = messages.effectsUnavailable;
     } else if (reducedMotion.matches) {
-      label = 'Reduced motion';
+      label = messages.reducedMotionLabel;
     } else if (!handle || handle.lifecycle !== 'active') {
-      label = 'Start effect';
+      label = messages.start;
     } else {
-      label = paused ? 'Resume effect' : 'Pause effect';
+      label = paused ? messages.resume : messages.pause;
     }
     toggle.setAttribute('aria-label', label);
     toggle.title = label;
@@ -154,13 +155,13 @@ function initializeLab(
     window.clearTimeout(copyTimer);
     try {
       await navigator.clipboard.writeText(code.textContent ?? '');
-      copyLabel.textContent = 'Copied';
+      copyLabel.textContent = messages.copied;
     } catch {
       getSelection()?.selectAllChildren(code);
-      copyLabel.textContent = 'Press ⌘/Ctrl+C';
+      copyLabel.textContent = messages.copyManually;
     }
     copyTimer = window.setTimeout(() => {
-      copyLabel.textContent = 'Copy';
+      copyLabel.textContent = messages.copy;
     }, COPY_RESET_MS);
   }
 
@@ -190,9 +191,7 @@ function initializeLab(
 
   updateValues();
   updateToggle();
-  status.textContent = hasGpu
-    ? 'Waiting to enter view.'
-    : 'Effects are unavailable in this browser. The original content stays visible.';
+  status.textContent = hasGpu ? messages.waiting : messages.noGpu;
   lab.dataset.paused = String(paused);
   observer.observe(host);
 

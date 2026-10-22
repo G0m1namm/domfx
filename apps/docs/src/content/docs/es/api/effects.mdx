@@ -1,0 +1,35 @@
+---
+title: "Todos los efectos"
+description: "Explora los 21 efectos por categoría, con vistas previas interactivas en cada referencia."
+---
+
+import DocsEffectLinks from "../../../../components/docs-effect-links.astro";
+import { effectsByCategory } from "../../../documentation";
+
+<p>Cada efecto es una función de <code>@domfx/browser</code> con las mismas <a href="/docs/es/api/shared">opciones y controles</a>. Cada referencia comienza con una vista previa interactiva que puedes ajustar, seguida de sus opciones exactas.</p>
+
+<span id="energy" />
+
+## Energía
+
+Luz y calor que se desplazan hacia fuera de la forma: rayos, llamas y un pulso viajero.
+
+<DocsEffectLinks effects={effectsByCategory[0].effects} />
+
+<span id="material" />
+
+## Material
+
+Capas que se adhieren al borde y se extienden hacia dentro: hielo, gel viscoso y papel quemado.
+
+<DocsEffectLinks effects={effectsByCategory[1].effects} />
+
+<span id="pattern" />
+
+## Patrón
+
+Marcas plateadas y violetas que siguen la silueta, desde puntos ordenados hasta hilos tejidos.
+
+<DocsEffectLinks effects={effectsByCategory[2].effects} />
+
+<p>La <a href="/docs/es/api#available-effects">referencia de la API</a> enumera todos los nombres de importación en una tabla, y la <a href="/es/effects/">galería</a> compara los efectos uno junto a otro.</p>

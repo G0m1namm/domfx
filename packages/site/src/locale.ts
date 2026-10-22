@@ -131,6 +131,80 @@ const docsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> = {
   ],
 };
 
+// Starlight derives translated heading IDs from Spanish text. Each entry matches
+// the equivalent English section above; English IDs also remain as source aliases.
+const spanishDocsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> = {
+  introduction: [
+    'comienza-con-tu-elemento',
+    'comienza-con-gsap',
+    'controla-la-animación',
+    'elige-un-efecto',
+    'mantén-utilizable-el-contenido-original',
+  ],
+  installation: [
+    'genera-artefactos-verificados',
+    'crea-tu-aplicación-de-prueba',
+    'proporciona-el-objetivo-y-el-contenedor',
+    'añade-el-enlace-opcional-de-gsap',
+  ],
+  standalone: [
+    'adjunta-fire',
+    'usa-otro-efecto',
+    'controla-el-tiempo-y-la-intensidad',
+    'actualiza-la-captura-y-libera-recursos',
+    'salida-no-disponible',
+  ],
+  gsap: [
+    'proporciona-tus-elementos',
+    'construye-tu-secuencia',
+    'avanza-y-reproduce',
+    'gestiona-el-ciclo-de-vida',
+    'limpieza-del-contexto-gsap',
+    'funciones-opcionales-de-ciclo-de-vida',
+    'salida-no-disponible-y-reintento',
+  ],
+  api: [
+    'uso',
+    'opciones-de-creación',
+    'opciones-específicas-del-efecto',
+    'controles-modificables',
+    'estado-de-solo-lectura',
+    'métodos',
+    'efectos-disponibles',
+    'gsap',
+    'paquetes',
+  ],
+  'api/effects': ['energía', 'material', 'patrón'],
+  'api/shared': [
+    'opciones-de-creación',
+    'controles-modificables',
+    'controla-la-animación',
+    'movimiento-reducido',
+  ],
+  'api/effect-handle': ['estado-de-solo-lectura', 'métodos', 'comprende-el-estado-informado'],
+  'api/gsap': ['animaciones-nativas-de-propiedades', 'enlaces-opcionales-de-instantánea'],
+  upgrading: [
+    'actualiza-paquetes-compatibles',
+    'revisa-las-notas-de-migración',
+    'nombres-de-animación-y-enlaces',
+  ],
+  support: [
+    'entornos-medidos',
+    'cobertura-sin-probar',
+    'límites-de-captura-y-composición',
+    'cuando-un-efecto-no-está-disponible',
+    'acceso-al-código-y-comentarios',
+  ],
+  troubleshooting: [
+    'salida-ausente-o-suprimida',
+    'salida-mal-colocada-o-rechazada',
+    'captura-fallida-u-obsoleta',
+    'errores-de-instalación-o-shaders',
+    'registra-un-efecto',
+    'recupera-el-efecto-explícitamente',
+  ],
+};
+
 const effectIds = new Set(effects.map((effect) => effect.id));
 const homeEffectIds = new Set(effects.slice(0, 5).map((effect) => effect.id));
 const docsPaths = new Set<string>(docsSlugs);
@@ -178,33 +252,47 @@ export function localePath(page: PageIdentity, locale: Locale): string {
   }
 }
 
-function hasEquivalentAnchor(page: PageIdentity, anchor: string): boolean {
+function equivalentAnchor(
+  page: PageIdentity,
+  anchor: string,
+  sourceLocale: Locale,
+  targetLocale: Locale,
+): string | undefined {
   switch (page.kind) {
     case 'home':
-      return (
-        [
-          'top',
-          'main',
-          'hero-title',
-          'humans-tab',
-          'agents-tab',
-          'humans-panel',
-          'agents-panel',
-          'examples',
-          'collection',
-          'supporting-content',
-          'closing-content',
-          'closing-title',
-        ].includes(anchor) || homeEffectIds.has(anchor)
-      );
+      return [
+        'top',
+        'main',
+        'hero-title',
+        'humans-tab',
+        'agents-tab',
+        'humans-panel',
+        'agents-panel',
+        'examples',
+        'collection',
+        'supporting-content',
+        'closing-content',
+        'closing-title',
+      ].includes(anchor) || homeEffectIds.has(anchor)
+        ? anchor
+        : undefined;
     case 'effects':
-      return (
-        ['top', 'main', 'examples', 'collection', 'closing-content', 'closing-title'].includes(
-          anchor,
-        ) || effectIds.has(anchor)
-      );
+      return ['top', 'main', 'examples', 'collection', 'closing-content', 'closing-title'].includes(
+        anchor,
+      ) || effectIds.has(anchor)
+        ? anchor
+        : undefined;
     case 'docs':
-      return anchor === '_top' || docsAnchors[page.slug].includes(anchor);
+      if (anchor === '_top' || docsAnchors[page.slug].includes(anchor)) {
+        return anchor;
+      }
+      if (sourceLocale === 'es') {
+        const index = spanishDocsAnchors[page.slug].indexOf(anchor);
+        if (index >= 0) {
+          return targetLocale === 'en' ? docsAnchors[page.slug][index] : anchor;
+        }
+      }
+      return undefined;
     case 'effect-reference':
       return [
         '_top',
@@ -214,7 +302,9 @@ function hasEquivalentAnchor(page: PageIdentity, anchor: string): boolean {
         'controls',
         'limits',
         'related',
-      ].includes(anchor);
+      ].includes(anchor)
+        ? anchor
+        : undefined;
   }
 }
 
@@ -230,6 +320,7 @@ export function languageHref(currentUrl: string | URL, locale: Locale): string |
   } catch {
     anchor = '';
   }
-  const hash = anchor && hasEquivalentAnchor(page, anchor) ? url.hash : '';
+  const equivalent = equivalentAnchor(page, anchor, localeFromPath(url.pathname), locale);
+  const hash = equivalent ? (equivalent === anchor ? url.hash : `#${equivalent}`) : '';
   return `${localePath(page, locale)}${url.search}${hash}`;
 }

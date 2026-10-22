@@ -1,2 +1,9 @@
-<a class="docs-back-to-top" href="#_top" data-back-to-top aria-label="Back to top" title="Back to top"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up"/></svg></a>
+---
+import { localeFromPath } from '@domfx/site/locale';
+
+import { docsMessages } from '../content/docs-messages';
+
+const label = docsMessages(localeFromPath(Astro.url.pathname)).backToTop;
+---
+<a class="docs-back-to-top" href="#_top" data-back-to-top aria-label={label} title={label}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up"/></svg></a>
 <script src="../scripts/back-to-top.ts"></script>

@@ -1,18 +1,24 @@
 ---
-import { footerLinkGroups, repositoryUrl } from '@domfx/site/site-links';
+import { localeFromPath, localePath } from '@domfx/site/locale';
+import { localizedFooterLinkGroups, repositoryUrl } from '@domfx/site/site-links';
+
+import { docsMessages } from '../content/docs-messages';
 
 const year = new Date().getFullYear();
+const locale = localeFromPath(Astro.url.pathname);
+const messages = docsMessages(locale);
+const footerLinkGroups = localizedFooterLinkGroups(locale);
 ---
 <footer class="docs-site-footer" role="contentinfo">
   <div class="docs-site-footer-navigation">
     <div class="docs-site-footer-intro">
-      <a class="docs-site-footer-wordmark" href="/">domfx<img class="brand-mark" src="/brand-mark.svg" width="30" height="30" alt="" aria-hidden="true" /></a>
-      <p>Effects for your HTML.</p>
+      <a class="docs-site-footer-wordmark" href={localePath({ kind: 'home' }, locale)}>domfx<img class="brand-mark" src="/brand-mark.svg" width="30" height="30" alt="" aria-hidden="true" /></a>
+      <p>{messages.footerTagline}</p>
     </div>
-    {footerLinkGroups.map((group) => <nav aria-label={`Footer ${group.title}`}><h2>{group.title}</h2>{group.items.map(([label, href]) => <a href={href}>{label}{href.startsWith('https://') && <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up-right"/></svg>}</a>)}</nav>)}
+    {footerLinkGroups.map((group) => <nav aria-label={`${messages.footerLabel} ${group.title}`}><h2>{group.title}</h2>{group.items.map(([label, href]) => <a href={href}>{label}{href.startsWith('https://') && <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up-right"/></svg>}</a>)}</nav>)}
   </div>
   <div class="docs-site-footer-baseline">
-    <span>© {year} domfx · <a href={`${repositoryUrl}/blob/main/LICENSE`}>MIT licensed</a></span>
-    <span>Made by <a href="https://github.com/G0m1namm">Jherson Martelo Medina</a></span>
+    <span>© {year} domfx · <a href={`${repositoryUrl}/blob/main/LICENSE`}>{messages.footerLicense}</a></span>
+    <span>{messages.footerMadeBy} <a href="https://github.com/G0m1namm">Jherson Martelo Medina</a></span>
   </div>
 </footer>

@@ -3,14 +3,19 @@ import EditLink from '@astrojs/starlight/components/EditLink.astro';
 import Pagination from '@astrojs/starlight/components/Pagination.astro';
 
 import { repositoryUrl } from '@domfx/site/site-links';
+import { localeFromPath } from '@domfx/site/locale';
+
+import { docsMessages } from '../content/docs-messages';
 
 const { entry } = Astro.locals.starlightRoute;
+const locale = localeFromPath(Astro.url.pathname);
+const messages = docsMessages(locale);
 const issue = new URL(`${repositoryUrl}/issues/new`);
-issue.searchParams.set('title', `Docs: ${entry.data.title}`);
-issue.searchParams.set('body', `Page: ${Astro.url.pathname}\n\nWhat needs to change?\n`);
+issue.searchParams.set('title', `${locale === 'es' ? 'Documentación' : 'Docs'}: ${entry.data.title}`);
+issue.searchParams.set('body', `${locale === 'es' ? 'Página' : 'Page'}: ${Astro.url.pathname}\n\n${messages.issuePrompt}\n`);
 ---
-<nav class="docs-page-actions" aria-label="Page feedback">
+<nav class="docs-page-actions" aria-label={messages.pageFeedback}>
   <EditLink />
-  <a href={issue.href}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-bug"/></svg>Report an issue</a>
+  <a href={issue.href}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-bug"/></svg>{messages.reportIssue}</a>
 </nav>
 <Pagination />

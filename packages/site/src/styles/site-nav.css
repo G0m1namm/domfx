@@ -1,14 +1,16 @@
 /* Fixed site header shared by marketing and documentation layouts.
    Font and color fallbacks cover both pages' token and @font-face names. */
 :root {
-  --header-height: 64px;
+  --header-height: max(4rem, 64px);
 }
 .site-nav {
   position: fixed;
   inset: 0 0 auto;
   z-index: 50;
+  container-type: inline-size;
   display: flex;
   align-items: center;
+  font-size: 1rem;
   height: var(--header-height);
   margin: auto;
   padding: 0;
@@ -32,6 +34,7 @@
   font-family: Cabinet, 'Cabinet Grotesk', sans-serif;
   font-size: 1.9375rem;
   font-weight: 500;
+  line-height: 1;
   letter-spacing: -1.5px;
 }
 .site-nav nav {
@@ -151,11 +154,8 @@
     gap: 16px;
   }
 }
-/* Keep the desktop links until their font-relative space runs out. */
-@media not all and (min-width: 43.8125em) {
-  :root {
-    --header-height: 56px;
-  }
+/* Query the header's font-relative space so larger default text switches to the menu. */
+@container (width < 43.8125em) {
   .nav-inner {
     gap: 10px;
     padding-inline: 20px;
@@ -171,6 +171,11 @@
   }
   .site-nav .star-cta {
     display: none;
+  }
+}
+@media not all and (min-width: 43.8125em) {
+  :root {
+    --header-height: max(3.5rem, 56px);
   }
 }
 @media (max-width: 380px) {
@@ -278,12 +283,12 @@
   min-height: 48px;
   margin-top: 24px;
 }
-@media not all and (min-width: 43.8125em) {
+@container (width < 43.8125em) {
   .nav-menu-button {
     display: flex;
   }
 }
-@media (min-width: 43.8125em) {
+@container (width >= 43.8125em) {
   .site-menu {
     display: none;
   }

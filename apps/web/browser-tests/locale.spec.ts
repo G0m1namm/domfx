@@ -1,4 +1,29 @@
-import { expect, test } from '@playwright/test';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { chromium, expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+async function expectHeaderControlsFit(page: Page) {
+  const bounds = await page.locator('.nav-inner').evaluate((inner) => {
+    const header = inner.closest('.site-nav')?.getBoundingClientRect();
+    const controls = [...inner.children]
+      .filter((element) => getComputedStyle(element).display !== 'none')
+      .map((element) => element.getBoundingClientRect());
+    return { header, controls };
+  });
+  expect(bounds.header).toBeTruthy();
+  for (const [index, control] of bounds.controls.entries()) {
+    expect(control.left).toBeGreaterThanOrEqual(bounds.header?.left ?? 0);
+    expect(control.right).toBeLessThanOrEqual(bounds.header?.right ?? 0);
+    expect(control.top).toBeGreaterThanOrEqual(bounds.header?.top ?? 0);
+    expect(control.bottom).toBeLessThanOrEqual(bounds.header?.bottom ?? 0);
+    if (index > 0) {
+      expect(control.left).toBeGreaterThanOrEqual(bounds.controls[index - 1].right);
+    }
+  }
+}
 
 test('language links preserve query and matching anchors across marketing and docs', async ({
   page,
@@ -36,20 +61,82 @@ test('language controls fit the approved header widths', async ({ page }) => {
 });
 
 test('language controls remain operable with larger text', async ({ page }) => {
-  for (const width of [320, 768]) {
+  for (const width of [320, 360, 768, 1440]) {
     await page.setViewportSize({ width, height: 800 });
-    await page.goto('/docs/es/introduction/');
-    await page.evaluate(() => {
-      document.documentElement.style.fontSize = '200%';
-    });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
-      width,
-    );
-    if (width === 320) {
-      await expect(page.getByRole('button', { name: 'Abrir menú del sitio' })).toBeVisible();
-    } else {
-      await expect(page.locator('.site-nav .language-links')).toBeVisible();
+    for (const route of ['/es/', '/docs/es/introduction/']) {
+      await page.goto(route);
+      await page.evaluate(() => {
+        document.documentElement.style.fontSize = '200%';
+      });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        width,
+      );
+      await expectHeaderControlsFit(page);
+      const menuButton = page.getByRole('button', { name: 'Abrir menú del sitio' });
+      if (await menuButton.isVisible()) {
+        await menuButton.focus();
+        await page.keyboard.press('Enter');
+        await expect(page.locator('#site-menu [data-language-link="en"]')).toBeVisible();
+        await page.keyboard.press('Escape');
+      } else {
+        await expect(
+          page.locator('.site-nav .language-links [data-language-link="en"]'),
+        ).toBeVisible();
+      }
     }
+  }
+});
+
+test('language controls fit a 32px browser default font', async ({ baseURL }) => {
+  const profile = await mkdtemp(join(tmpdir(), 'domfx-nav-font-'));
+  try {
+    await mkdir(join(profile, 'Default'));
+    await writeFile(
+      join(profile, 'Default', 'Preferences'),
+      JSON.stringify({ webkit: { webprefs: { default_font_size: 32 } } }),
+    );
+    const context = await chromium.launchPersistentContext(profile, {
+      baseURL,
+      javaScriptEnabled: false,
+      viewport: { width: 320, height: 800 },
+    });
+    try {
+      const page = context.pages()[0];
+      for (const width of [320, 360, 768, 1401, 1402, 1403, 1440]) {
+        await page.setViewportSize({ width, height: 800 });
+        for (const route of ['/es/', '/docs/es/introduction/']) {
+          await page.goto(route);
+          await page.evaluate(() => document.fonts.ready);
+          expect(
+            await page.evaluate(() => getComputedStyle(document.documentElement).fontSize),
+          ).toBe('32px');
+          await expectHeaderControlsFit(page);
+          const menuButton = page.getByRole('button', { name: 'Abrir menú del sitio' });
+          if (await menuButton.isVisible()) {
+            await menuButton.focus();
+            await page.keyboard.press('Enter');
+            const english = page.locator('#site-menu [data-language-link="en"]');
+            await expect(english).toBeVisible();
+            await expect(english).toBeInViewport();
+            await english.focus();
+            await expect(english).toBeFocused();
+            await page.keyboard.press('Enter');
+          } else {
+            const english = page.locator('.site-nav .language-links [data-language-link="en"]');
+            await expect(english).toBeVisible();
+            await english.focus();
+            await expect(english).toBeFocused();
+            await page.keyboard.press('Enter');
+          }
+          await expect(page).toHaveURL(route === '/es/' ? /\/$/ : /\/docs\/introduction\/$/);
+          await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+        }
+      }
+    } finally {
+      await context.close();
+    }
+  } finally {
+    await rm(profile, { recursive: true, force: true });
   }
 });
 

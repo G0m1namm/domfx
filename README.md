@@ -2,7 +2,9 @@
 
 GPU edge effects for live DOM elements. Choose from 21 effects, including Electricity, Frost, Fire, Slime, Burned paper, Kinetic bloom and geometric patterns. Animate automatically or control time and intensity with your code or GSAP.
 
-This repository contains a working browser feasibility experiment in a pnpm monorepo. The first `0.1.0-alpha.0` candidate is prepared but not published to npm. The attachment API remains experimental.
+The first `0.1.0-alpha.0` candidate is prepared but not published to npm. The API remains experimental.
+
+Explore the [website and documentation](https://domfx.dev).
 
 ## Quickstart and usage
 
@@ -31,7 +33,7 @@ pnpm check
 pnpm demo
 ```
 
-Open the website in a WebGPU-enabled browser. `apps/web` is the Astro development surface and public examples gallery: edit the library, rebuild packages (`pnpm build`), and restart `pnpm demo`. The original page remains usable when effects are unavailable.
+Open the website in a WebGPU-enabled browser. After library edits, rebuild packages (`pnpm build`) and restart `pnpm demo`. The original page remains usable when effects are unavailable.
 
 Key development commands:
 
@@ -57,16 +59,13 @@ apps/docs       → Starlight documentation, composed into the website under /do
 tests/gpu       → package-private regression fixtures and numerical tests; no demo app
 ```
 
-One workspace lockfile governs dependencies. The three libraries target the `@domfx` npm scope; apps, fixtures and site resources stay private. The website and test fixtures import built package exports, never library source aliases. Rebuild packages after library edits and restart the website.
-
-`tests/gpu` is a package-private workspace for internal regression testing and diagnostic fixtures. It is test infrastructure, not another public gallery or published package.
+The three libraries target the `@domfx` npm scope; apps, fixtures and site resources stay private. The website and test fixtures import built package exports.
 
 ## Contributing and verification
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) defines code conventions, commit formats, dependency boundaries, and the verification process.
 - [HARNESS.md](HARNESS.md) provides executable verification (`pnpm agent:verify`) and task briefs (`pnpm agent:brief`).
 - [Artifact policy](engineering/artifact-policy.md) defines publication boundaries, durable documentation vs. local state, and document formats.
-- The contributor route is fully usable for human developers using standard pnpm commands without requiring an AI client.
 
 CI runs fast repository checks, production builds, and a GPU-independent website smoke suite. Full GPU runs stay local.
 
@@ -75,12 +74,12 @@ CI runs fast repository checks, production builds, and a GPU-independent website
 - [.github/REPOSITORY_SETTINGS.md](.github/REPOSITORY_SETTINGS.md) records branch rules, label taxonomies, security policies, and shared maintenance routines.
 - [RELEASING.md](RELEASING.md) defines the manual first-alpha release and artifact approval process.
 
-Hosted publication remains disabled. The candidate still requires reviewed artifact approval and registry verification. Neither the website nor test fixtures are npm releases.
-
-The website uses [Cloudflare Workers deployment](engineering/website-deployment.md) at `domfx.dev`.
+For website maintenance, see the [Cloudflare deployment guide](engineering/website-deployment.md).
 
 ## License and inspiration
 
 domfx is [MIT licensed](LICENSE). Dependencies retain their own licenses; GSAP is not relicensed by this project. Vendored skills retain their upstream MIT notices; see [skill provenance](engineering/skills.md).
 
 Inspired by [Kugiri](https://github.com/edoardolunardi/kugiri)'s library-and-demo approach. No Kugiri implementation code was copied.
+
+[Yangshun Tay](https://github.com/yangshun)'s work on [Ultrastorage](https://ultrastorage.dev/) also inspired me to build with AI, making tools I previously couldn't create feel possible.

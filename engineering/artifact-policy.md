@@ -66,6 +66,10 @@ review still decides whether artifacts outside the prohibited paths belong in so
 
 ## Document format conventions
 
+- **Reader relevance:** Include only what readers need to use, contribute to or maintain
+  domfx. Prefer brief explanations and links to canonical guidance. Include paths only
+  when needed to act; keep session history, personal setup and task bookkeeping out of
+  reader-facing docs. Check this during the final documentation review.
 - **GLOSSARY.md:** Single canonical domain glossary. Keep definitions concise and include
   `_Avoid_` aliases where domain ambiguity exists. Do not create secondary glossaries.
 - **ADRs (`engineering/adr/NNNN-slug.md`):** Create lazily when a real architectural

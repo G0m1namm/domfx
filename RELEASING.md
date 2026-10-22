@@ -1,23 +1,18 @@
 # Releases
 
-The first alpha uses manual Changesets preparation, a normal reviewed release PR,
-and deliberate publication of verified tarballs. Automatic version PRs can wait
-until several releases establish a useful routine; there is no generated-release
-validator. The three libraries have a prepared `0.1.0-alpha.0` candidate with public
-publication metadata; they are not published yet. All other workspaces remain private. The dispatch-only
-publication workflow is disabled and has no hosted preparation or registry job.
+The first alpha uses Changesets, a reviewed release PR and manual publication of
+verified tarballs. The three libraries have a prepared `0.1.0-alpha.0` candidate;
+they are not published yet. All other workspaces remain private. Hosted publication
+is disabled.
 Repository visibility and npm publication are separate maintainer actions.
 
 ## Packages and versions
 
-- `@domfx/core`, `@domfx/browser` and `@domfx/gsap` use the selected `@domfx` scope. The maintainer reports creating the organization
-  with account `g0m1namm`; verify actual publish permissions for all three packages
-  before approval. Another package named `domfx` does not determine ownership of
-  these scoped names.
+- Verify npm publish permissions for `@domfx/core`, `@domfx/browser` and `@domfx/gsap`
+  before approval.
 - Version libraries independently. Changesets also updates affected internal dependents.
   The workspace root and apps stay private; website deployments are separate.
-- The initial private development phase used patch-only increments. The first
-  candidate is now `0.1.0-alpha.0` for all three libraries. Remain in Changesets
+- The first candidate is `0.1.0-alpha.0` for all three libraries. Remain in Changesets
   `alpha` prerelease mode; subsequent candidate changes require a deliberate bump.
 - Before the first public release, switch to SemVer: patch for compatible fixes, minor for compatible additions, major
   for breaking changes. During `0.x`, use minor for breaking changes and call them
@@ -158,17 +153,11 @@ This technical handoff holds, rather than resolves, release-policy, package-vers
 ownership, credential and registry decisions. Those gates require their separate review before
 any publication path is enabled.
 
-For a local version rehearsal, use a disposable checkout and run
-`pnpm changeset version`, followed by `pnpm install --lockfile-only` and
-`pnpm format`. This consumes changesets and edits versions/changelogs; never run it
-casually in a shared working tree. No version bump is part of this initial setup.
-
 ## Prepare the first alpha manually
 
-The current release branch already contains `0.1.0-alpha.0` manifests, changelogs
-and public metadata for the three libraries. Do not rerun versioning on this candidate
-unless intentionally preparing a new alpha. The commands below describe preparation
-from an unversioned checkout, rather than an additional step for this branch.
+The `0.1.0-alpha.0` candidate is already versioned. The commands below describe its
+initial preparation from an unversioned checkout outside alpha prerelease mode.
+Do not rerun them on this candidate; later alphas stay in the existing prerelease mode.
 
 Finish the implementation checks before freezing release artifacts. Use a clean
 release branch from the reviewed `main` commit; do not version a shared dirty tree.
@@ -206,20 +195,15 @@ without turning a fixture pass into broad support or performance claims.
 For the first **experimental alpha only**, independent developer validation moves
 after publication: the public install/docs route must exist before that round can
 test it. This exception does not waive technical, license or maintainer readiness.
-Reconcile the existing #35/#36/#41 acceptance records when presenting the release;
-do not mark independent onboarding, cleanup or developer value proved yet.
-After registry/docs proof, the maintainer may post a LinkedIn alpha invitation and
-collect comments/issues, with one opt-in round of three developers if available.
-Measure the complete install → own heading → own timeline → seek/reverse → cleanup
-journey only in actual sessions. The 2–5 minute target is a hypothesis, not a CI
-budget or a measured claim. No automated outreach or telemetry is required.
+Independent onboarding and developer value remain unverified until that feedback
+round. Keep its plan and results in the release issue.
 
 ## Held publication approval
 
 Hosted publication remains disabled. The first release uses the existing local
 exact-artifact publisher below, after review and explicit approval of its tested bytes.
 It needs no GitHub npm environment, CI token or trusted publisher. Confirm the npm
-account `g0m1namm` can publish under `@domfx`, has 2FA enabled, and is authenticated
+account can publish all three packages under `@domfx`, has 2FA enabled, and is authenticated
 with npm before execution. Do not put credentials in commands, issues or logs.
 Resolve the readiness decisions in #36, including the documented after-alpha
 developer-feedback exception, before presenting final approval.

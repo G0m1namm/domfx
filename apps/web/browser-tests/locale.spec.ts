@@ -32,15 +32,65 @@ test('language links preserve query and matching anchors across marketing and do
   await page.evaluate(() => {
     window.location.hash = 'controls';
   });
+  await page.locator('.language-switcher summary').click();
   await page.locator('.site-nav .language-links [data-language-link="es"]').click();
   await expect(page).toHaveURL(/\/docs\/es\/api\/effects\/fire\/\?mode=static#controls$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
 
   await page.goto('/es/effects/?category=Energy#missing');
+  await page.locator('.language-switcher summary').click();
   await expect(page.locator('.site-nav .language-links [data-language-link="en"]')).toHaveAttribute(
     'href',
     '/effects/?category=Energy',
   );
+});
+
+test('changing language keeps the header actions and mobile gallery in place', async ({ page }) => {
+  for (const width of [768, 1440]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/es/');
+    await page.evaluate(() => document.fonts.ready);
+    const spanishSearchX = await page
+      .locator('.header-search')
+      .evaluate((element) => element.getBoundingClientRect().x);
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    const englishSearchX = await page
+      .locator('.header-search')
+      .evaluate((element) => element.getBoundingClientRect().x);
+    expect(Math.abs(spanishSearchX - englishSearchX), `${width}px header`).toBeLessThan(1);
+  }
+
+  for (const width of [320, 360]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/es/');
+    await page.evaluate(() => document.fonts.ready);
+    const spanishGalleryY = await page
+      .locator('#collection')
+      .evaluate((element) => element.getBoundingClientRect().y);
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    const englishGalleryY = await page
+      .locator('#collection')
+      .evaluate((element) => element.getBoundingClientRect().y);
+    expect(Math.abs(spanishGalleryY - englishGalleryY), `${width}px gallery`).toBeLessThan(1);
+  }
+});
+
+test('desktop language menu closes with Escape and an outside click', async ({ page }) => {
+  await page.goto('/es/');
+  const switcher = page.locator('.language-switcher');
+  const trigger = switcher.locator('summary');
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(switcher.getByRole('link', { name: 'View this page in English' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(switcher).not.toHaveAttribute('open', '');
+  await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  await page.locator('#hero-title').click();
+  await expect(switcher).not.toHaveAttribute('open', '');
 });
 
 test('language controls fit the approved header widths', async ({ page }) => {
@@ -54,7 +104,7 @@ test('language controls fit the approved header widths', async ({ page }) => {
       if (width < 701) {
         await expect(page.getByRole('button', { name: 'Abrir menú del sitio' })).toBeVisible();
       } else {
-        await expect(page.locator('.site-nav .language-links')).toBeVisible();
+        await expect(page.locator('.site-nav .language-switcher')).toBeVisible();
       }
     }
   }
@@ -79,6 +129,7 @@ test('language controls remain operable with larger text', async ({ page }) => {
         await expect(page.locator('#site-menu [data-language-link="en"]')).toBeVisible();
         await page.keyboard.press('Escape');
       } else {
+        await page.locator('.language-switcher summary').click();
         await expect(
           page.locator('.site-nav .language-links [data-language-link="en"]'),
         ).toBeVisible();
@@ -122,6 +173,8 @@ test('language controls fit a 32px browser default font', async ({ baseURL }) =>
             await expect(english).toBeFocused();
             await page.keyboard.press('Enter');
           } else {
+            await page.locator('.language-switcher summary').focus();
+            await page.keyboard.press('Enter');
             const english = page.locator('.site-nav .language-links [data-language-link="en"]');
             await expect(english).toBeVisible();
             await english.focus();
@@ -146,6 +199,7 @@ test.describe('without JavaScript', () => {
   test('desktop and mobile links reach equivalent pages', async ({ page, request }) => {
     await page.goto('/docs/es/introduction/');
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+    await page.locator('.language-switcher summary').click();
     await page.locator('.site-nav .language-links [data-language-link="en"]').click();
     await expect(page).toHaveURL(/\/docs\/introduction\/$/);
 
@@ -172,6 +226,6 @@ test.describe('without JavaScript', () => {
     await page.setViewportSize({ width: 701, height: 800 });
     await page.keyboard.press('Escape');
     await expect(page.locator('#site-menu')).toBeHidden();
-    await expect(page.locator('.site-nav .language-links')).toBeVisible();
+    await expect(page.locator('.site-nav .language-switcher')).toBeVisible();
   });
 });

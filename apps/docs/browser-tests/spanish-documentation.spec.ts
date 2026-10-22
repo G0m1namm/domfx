@@ -106,6 +106,7 @@ test('Spanish table of contents keeps the equivalent section when changing langu
     .getByRole('link', { name: 'Energía' })
     .click();
   await expect(page).toHaveURL(/#energ%C3%ADa$/);
+  await page.locator('.language-switcher summary').click();
   await page.locator('[data-language-link="en"]').first().click();
   await expect(page).toHaveURL('/docs/api/effects/?from=toc#energy');
   await expect(page.getByRole('heading', { name: 'Energy', level: 2 })).toBeVisible();
@@ -113,6 +114,7 @@ test('Spanish table of contents keeps the equivalent section when changing langu
 
 test('explicit API anchor survives a language switch', async ({ page }) => {
   await page.goto('/docs/api/#create-an-attachment');
+  await page.locator('.language-switcher summary').click();
   await page.locator('[data-language-link="es"]').first().click();
   await expect(page).toHaveURL('/docs/es/api/#create-an-attachment');
   await expect(page.locator('#create-an-attachment')).toBeInViewport();
@@ -163,6 +165,7 @@ test('Spanish documentation links remain usable without JavaScript', async ({ br
   await page.goto('http://127.0.0.1:4347/docs/es/introduction/');
   await page.getByRole('link', { name: 'Instalación', exact: true }).first().click();
   await expect(page).toHaveURL(/\/docs\/es\/installation\/$/);
+  await page.locator('.language-switcher summary').click();
   await page.locator('[data-language-link="en"]').first().click();
   await expect(page).toHaveURL(/\/docs\/installation\/$/);
   await context.close();

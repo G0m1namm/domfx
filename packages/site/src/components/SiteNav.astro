@@ -25,7 +25,7 @@ const spanishPath = localePath(page, 'es');
   <a class="wordmark" href={homePath} aria-label={messages.homeLabel}>domfx<img class="brand-mark" src="/brand-mark.svg" width="30" height="30" alt="" aria-hidden="true" /></a>
   <nav aria-label={messages.main}><a href={effectsPath} aria-current={current === 'effects' ? 'page' : undefined}>{messages.effects}</a><a href={docsPath} aria-current={current === 'docs' ? 'true' : undefined}>{messages.docs}</a></nav>
   <slot name="search"><SiteSearchTrigger locale={locale}/></slot>
-  <nav class="language-links" aria-label={messages.language}><a href={englishPath} lang="en" hreflang="en" aria-label="View this page in English" aria-current={locale === 'en' ? 'true' : undefined} data-language-link="en">English</a><a href={spanishPath} lang="es" hreflang="es" aria-label="Ver esta página en español" aria-current={locale === 'es' ? 'true' : undefined} data-language-link="es">Español</a></nav>
+  <details class="language-switcher"><summary aria-label={`${messages.language}: ${locale === 'es' ? 'Español' : 'English'}`}><span lang={locale}>{locale === 'es' ? 'Español' : 'English'}</span><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-caret-down"/></svg></summary><nav class="language-links" aria-label={messages.language}><a href={englishPath} lang="en" hreflang="en" aria-label="View this page in English" aria-current={locale === 'en' ? 'true' : undefined} data-language-link="en">English<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-check"/></svg></a><a href={spanishPath} lang="es" hreflang="es" aria-label="Ver esta página en español" aria-current={locale === 'es' ? 'true' : undefined} data-language-link="es">Español<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-check"/></svg></a></nav></details>
   <a class="nav-cta star-cta" href="https://github.com/G0m1namm/domfx" aria-label={locale === 'es' ? 'Destacar domfx en GitHub' : 'Star on GitHub: domfx'} title={locale === 'es' ? 'Destacar domfx en GitHub' : 'Star domfx on GitHub'} data-repo-stars><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg><span data-star-label>{locale === 'es' ? 'Destacar en GitHub' : 'Star on GitHub'}</span><span class="star-count" data-star-count hidden></span></a>
   <button class="nav-menu-button" popovertarget="site-menu" aria-label={messages.openMenu} title={messages.menu}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-list"/></svg></button>
 </div>{decorated && <div class="header-effect-host" aria-hidden="true"><span class="header-effect-line"></span></div>}
@@ -36,7 +36,7 @@ const spanishPath = localePath(page, 'es');
     <a href={effectsPath} aria-current={current === 'effects' ? 'page' : undefined}>{messages.effects}</a>
     <a href={docsPath} aria-current={current === 'docs' ? 'true' : undefined}>{messages.docs}</a>
   </nav>
-  <nav class="menu-language-links" aria-label={messages.language}><a href={englishPath} lang="en" hreflang="en" aria-current={locale === 'en' ? 'true' : undefined} data-language-link="en">English</a><a href={spanishPath} lang="es" hreflang="es" aria-current={locale === 'es' ? 'true' : undefined} data-language-link="es">Español</a></nav>
+  <span class="menu-language-title">{messages.language}</span><nav class="menu-language-links" aria-label={messages.language}><a href={englishPath} lang="en" hreflang="en" aria-current={locale === 'en' ? 'true' : undefined} data-language-link="en">English<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-check"/></svg></a><a href={spanishPath} lang="es" hreflang="es" aria-current={locale === 'es' ? 'true' : undefined} data-language-link="es">Español<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-check"/></svg></a></nav>
   <a class="nav-cta site-menu-star" href="https://github.com/G0m1namm/domfx"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg>{locale === 'es' ? 'Destacar en GitHub' : 'Star on GitHub'}</a>
 </div></Tag>
 <script>
@@ -51,5 +51,20 @@ const spanishPath = localePath(page, 'es');
       updateHref();
       link.addEventListener('click', updateHref);
     }
+  }
+
+  const switcher = document.querySelector<HTMLDetailsElement>('.language-switcher');
+  if (switcher) {
+    document.addEventListener('pointerdown', (event) => {
+      if (event.target instanceof Node && !switcher.contains(event.target)) {
+        switcher.open = false;
+      }
+    });
+    switcher.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && switcher.open) {
+        switcher.open = false;
+        switcher.querySelector('summary')?.focus();
+      }
+    });
   }
 </script>

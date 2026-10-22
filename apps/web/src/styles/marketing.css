@@ -2373,16 +2373,21 @@ body.marketing-page {
     font-size: 0.6875rem;
   }
   .hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-top: 14px;
-    flex-wrap: wrap;
   }
   .hero-action,
   .hero-star {
     gap: 8px;
     padding: 10px 12px;
     font-size: 0.75rem;
-    min-height: 44px;
-    white-space: nowrap;
+    justify-content: center;
+    line-height: 1.45;
+    min-height: max(3.5rem, 44px);
+    min-width: 0;
+    text-align: center;
+    white-space: normal;
   }
   .hero-star {
     display: inline-flex;

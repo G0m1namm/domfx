@@ -2,13 +2,17 @@ import type { EffectSlot, EffectStatus } from '@domfx/site/effect-slot';
 import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import type { Effect } from '@domfx/site/effects';
 import { effects, findEffect, patternEffects } from '@domfx/site/effects';
+import { localeFromPath, localePath } from '@domfx/site/locale';
 import { initializePage } from '@domfx/site/page-lifetime';
 
+import { marketingMessages } from '../content/marketing-copy';
 import { initializeSiteSearch } from './site-search';
 
 const savedPattern = { index: 0, elapsed: 0, time: 3.2, paused: false, needsResume: false };
 
 function initializeMarketing() {
+  const locale = localeFromPath(location.pathname);
+  const m = marketingMessages[locale];
   const lifetime = new AbortController();
   let disposed = false;
   let frame = 0;
@@ -113,11 +117,11 @@ function initializeMarketing() {
       button.setAttribute('aria-pressed', String(paused));
       let label: string;
       if (!hasGpu) {
-        label = 'Effects unavailable';
+        label = m.effectsUnavailable;
       } else if (reducedMotion.matches) {
-        label = 'Reduced motion';
+        label = m.reducedMotion;
       } else {
-        label = paused ? 'Resume automatic effects' : 'Pause automatic effects';
+        label = paused ? m.resumeAutomatic : m.pauseAutomatic;
       }
       button.setAttribute('aria-label', label);
       button.innerHTML = `<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-${paused ? 'play' : 'pause'}"/></svg><span>${label}</span>`;
@@ -368,20 +372,20 @@ function initializeMarketing() {
       }
       const count = data.stargazers_count;
       for (const cta of document.querySelectorAll<HTMLAnchorElement>('[data-repo-stars]')) {
-        const label = count >= 50 ? 'Stars' : 'Star on GitHub';
+        const label = count >= 50 ? m.stars : m.star;
         required('[data-star-label]', cta).textContent = label;
         const badge = required<HTMLElement>('[data-star-count]', cta);
         badge.hidden = count < 50;
-        badge.textContent = new Intl.NumberFormat('en', {
+        badge.textContent = new Intl.NumberFormat(locale, {
           notation: 'compact',
           maximumFractionDigits: 1,
         }).format(count);
         const visibleLabel = count >= 50 ? `${label} ${badge.textContent}` : label;
         cta.setAttribute(
           'aria-label',
-          `${visibleLabel}: ${count.toLocaleString('en')} GitHub stars`,
+          `${visibleLabel}: ${count.toLocaleString(locale)} ${m.githubStars}`,
         );
-        cta.title = `${count.toLocaleString('en')} GitHub stars`;
+        cta.title = `${count.toLocaleString(locale)} ${m.githubStars}`;
       }
     } catch {
       /* The native GitHub link remains usable when public stats are unavailable. */
@@ -449,14 +453,12 @@ function initializeMarketing() {
       if (disposed) {
         return;
       }
-      toast.textContent = 'Copied to clipboard';
+      toast.textContent = m.copied;
     } catch {
       if (disposed) {
         return;
       }
-      toast.textContent = inPreview
-        ? 'Clipboard unavailable. Select and copy the attachment code above.'
-        : `Copy it manually: ${text}`;
+      toast.textContent = inPreview ? m.clipboardUnavailable : `${m.copyManually} ${text}`;
     }
     toast.hidden = false;
     if (inPreview) {
@@ -595,18 +597,21 @@ function initializeMarketing() {
     if (dialogSlot.handle) {
       dialogSlot.handle.intensity = Number(intensity.value) / 100;
     }
-    required('[data-preview-status]', dialog).textContent =
-      status.reason === 'reduced-motion'
-        ? 'Animation paused for reduced motion.'
-        : status.reason === 'no-webgpu'
-          ? 'WebGPU is unavailable. Your HTML stays visible.'
-          : status.lifecycle === 'initializing'
-            ? 'Preparing the live preview…'
-            : status.lifecycle === 'active'
-              ? 'Live preview · WebGPU'
-              : status.reason
-                ? `Static content · ${status.reason}`
-                : 'Effect unavailable. Your HTML stays visible.';
+    let message: string;
+    if (status.reason === 'reduced-motion') {
+      message = m.statusReducedMotion;
+    } else if (status.reason === 'no-webgpu') {
+      message = m.statusNoGpu;
+    } else if (status.lifecycle === 'initializing') {
+      message = m.statusPreparing;
+    } else if (status.lifecycle === 'active') {
+      message = m.statusActive;
+    } else if (status.reason && locale === 'en') {
+      message = `${m.statusStatic} · ${status.reason}`;
+    } else {
+      message = m.statusUnavailable;
+    }
+    required('[data-preview-status]', dialog).textContent = message;
   }
 
   function showDialogEffect() {
@@ -632,13 +637,27 @@ function initializeMarketing() {
     }
     dialogStage.replaceChildren(target);
     required('#dialog-title', dialog).textContent = selectedEffect.name;
-    required<HTMLAnchorElement>('[data-effect-reference]', dialog).href =
-      `/docs/api/effects/${selectedEffect.id}/`;
-    required('[data-dialog-category]', dialog).textContent = selectedEffect.category;
+    required<HTMLAnchorElement>('[data-effect-reference]', dialog).href = localePath(
+      { kind: 'effect-reference', effect: selectedEffect.id },
+      locale,
+    );
+    let categoryLabel: string;
+    switch (selectedEffect.category) {
+      case 'Energy':
+        categoryLabel = m.energy;
+        break;
+      case 'Material':
+        categoryLabel = m.material;
+        break;
+      case 'Pattern':
+        categoryLabel = m.patternCategory;
+        break;
+    }
+    required('[data-dialog-category]', dialog).textContent = categoryLabel;
     dialogScene.dataset.effect = selectedEffect.id;
     dialogScene.dataset.category = selectedEffect.category;
     required('[data-code]', dialog).textContent = attachmentCode();
-    required('[data-preview-status]', dialog).textContent = 'Preparing the live preview…';
+    required('[data-preview-status]', dialog).textContent = m.statusPreparing;
     for (const button of dialog.querySelectorAll<HTMLElement>('[data-target]')) {
       button.setAttribute('aria-pressed', String(button.dataset.target === targetKind));
     }
@@ -665,7 +684,7 @@ function initializeMarketing() {
   }
 
   function playbackLabel() {
-    return `<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-${paused ? 'play' : 'pause'}"/></svg><span>${paused ? 'Resume animation' : 'Pause animation'}</span>`;
+    return `<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-${paused ? 'play' : 'pause'}"/></svg><span>${paused ? m.resumeAnimation : m.pauseAnimation}</span>`;
   }
 
   function openPreview(trigger: HTMLElement) {

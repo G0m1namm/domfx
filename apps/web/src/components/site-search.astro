@@ -1,24 +1,31 @@
 ---
-import { effects } from '@domfx/site/effects';
+import { effectDescriptions, effects } from '@domfx/site/effects';
+import type { Locale } from '@domfx/site/locale';
+import { marketingMessages } from '../content/marketing-copy';
 import '@domfx/site/styles/site-search.css';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const m = marketingMessages[locale];
 ---
 <dialog id="site-search" class="site-search-dialog" aria-labelledby="site-search-title" data-docs-pagefind="/docs/pagefind/pagefind.js">
-  <div class="site-search-heading"><h2 id="site-search-title">Search domfx</h2><button data-search-close aria-label="Close search"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div>
-  <label class="site-search-field"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-magnifying-glass"/></svg><input type="search" data-global-search aria-label="Search effects and documentation" placeholder="Try frost, GSAP, or reduced motion" aria-controls="site-search-results" autocomplete="off" autofocus/></label>
-  <p class="site-search-status" role="status" aria-live="polite">Effects and documentation</p>
+  <div class="site-search-heading"><h2 id="site-search-title">{locale === 'es' ? 'Buscar en domfx' : 'Search domfx'}</h2><button data-search-close aria-label={locale === 'es' ? 'Cerrar búsqueda' : 'Close search'}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div>
+  <label class="site-search-field"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-magnifying-glass"/></svg><input type="search" data-global-search aria-label={locale === 'es' ? 'Buscar efectos y documentación' : 'Search effects and documentation'} placeholder={locale === 'es' ? 'Prueba frost, GSAP o movimiento reducido' : 'Try frost, GSAP, or reduced motion'} aria-controls="site-search-results" autocomplete="off" autofocus/></label>
+  <p class="site-search-status" role="status" aria-live="polite">{locale === 'es' ? 'Efectos y documentación' : 'Effects and documentation'}</p>
   <div id="site-search-results" class="site-search-results">
     <section data-search-group="effects" aria-labelledby="search-effects-heading">
-      <h3 id="search-effects-heading">Effects</h3>
-      <ul>{effects.map(({id, name, category}, index) => {
-        const label = <><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-sparkle"/></svg><span><strong>{name}</strong><small>{category}</small></span><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></>;
-        return <li data-search-item data-search-kind="effects" data-title={name.toLowerCase()} data-keywords={`${name} ${category} effect`.toLowerCase()} data-starter={index < 4 ? 'true' : undefined}><button data-search-effect={id} data-id={id} data-name={name} data-category={category}>{label}</button></li>;
+      <h3 id="search-effects-heading">{m.effects}</h3>
+      <ul>{effects.map(({id, name, category, exportName}, index) => {
+        const categoryLabel = category === 'Energy' ? m.energy : category === 'Material' ? m.material : m.patternCategory;
+        const description = effectDescriptions[locale][id];
+        const label = <><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-sparkle"/></svg><span><strong>{name}</strong><small>{categoryLabel}</small></span><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></>;
+        return <li data-search-item data-search-kind="effects" data-title={name.toLowerCase()} data-keywords={`${name} ${exportName} ${category} ${categoryLabel} ${description} effect efecto`.toLowerCase()} data-starter={index < 4 ? 'true' : undefined}><button data-search-effect={id} data-id={id} data-name={name} data-category={category}>{label}</button></li>;
       })}</ul>
     </section>
     <section data-search-group="documentation" aria-labelledby="search-docs-heading">
-      <h3 id="search-docs-heading">Documentation</h3>
+      <h3 id="search-docs-heading">{locale === 'es' ? 'Documentación' : 'Documentation'}</h3>
       <ul></ul>
     </section>
   </div>
-  <p class="site-search-empty" hidden>No matches. Try an effect name or a documentation topic.</p>
-  <div class="site-search-hint"><span>↑ ↓ to move · Enter to open</span><span>Esc to close</span></div>
+  <p class="site-search-empty" hidden>{locale === 'es' ? 'Sin resultados. Prueba el nombre de un efecto o un tema de documentación.' : 'No matches. Try an effect name or a documentation topic.'}</p>
+  <div class="site-search-hint"><span>{locale === 'es' ? '↑ ↓ para moverte · Enter para abrir' : '↑ ↓ to move · Enter to open'}</span><span>{locale === 'es' ? 'Esc para cerrar' : 'Esc to close'}</span></div>
 </dialog>

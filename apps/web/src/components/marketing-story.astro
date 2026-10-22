@@ -1,6 +1,14 @@
 ---
 import { Code } from 'astro:components';
+import { localePath, type Locale } from '@domfx/site/locale';
 import { codeTheme } from '../content/examples';
+import { marketingFaq, marketingMessages } from '../content/marketing-copy';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const m = marketingMessages[locale];
+const questions = marketingFaq[locale];
+const docsPath = (slug: 'introduction' | 'standalone' | 'gsap' | 'api' | 'support') => localePath({ kind: 'docs', slug }, locale);
 const standalone = `import { attachFire } from '@domfx/browser';
 
 const fire = attachFire(target, {
@@ -20,41 +28,35 @@ timeline.to(effect, {
 }, 'ignite');
 
 // On unmount: kill your tweens and dispose the effect.`;
-const questions = [
-  ['Do I need GSAP?', 'No. Automatic animation runs on its own. Use native GSAP tweens to sequence time and intensity.', '/docs/standalone/', 'Standalone guide'],
-  ['Do I need a particular framework?', 'The browser API takes a DOM element. Attach after mount and dispose on unmount in the framework you use.', '/docs/api/', 'Explore the API'],
-  ['What happens without WebGPU?', 'The original HTML stays available. Effects require WebGPU and supported capture conditions; reduced motion suppresses animated output by default.', '/docs/support/', 'Check browser support'],
-  ['How do I install it?', 'Install @domfx/browser from npm. For timeline control, add gsap. The @domfx/gsap lifecycle helpers are optional.', 'https://www.npmjs.com/package/@domfx/browser', 'View the package on npm'],
-];
 ---
 <div class="marketing-story setup-story wrap">
   <section class="story-section">
-    <div class="story-heading"><h2>From the gallery<br/>to your page.</h2><p>Install domfx, choose an element and add your first effect.</p></div>
+    <div class="story-heading"><h2>{m.setupTitle}<br/>{m.setupTitleEnd}</h2><p>{m.setupDescription}</p></div>
     <div class="setup-layout">
       <ol class="setup-steps">
-        <li><h3>Install domfx.</h3><p>Add the browser package to your project.</p><button class="install story-install" data-copy="pnpm add @domfx/browser" aria-label="Copy install command: pnpm add @domfx/browser"><code>pnpm add @domfx/browser</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button></li>
-        <li><h3>Attach the effect.</h3><p>Choose text, an inline SVG or an image. Attach an effect to follow its visible shape.</p></li>
-        <li><h3>Choose how it moves.</h3><p>Let it animate on its own, or control its time and intensity with GSAP.</p><a class="story-link" href="/docs/standalone/">Attach your first effect <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></li>
+        <li><h3>{m.installTitle}</h3><p>{m.installDescription}</p><button class="install story-install" data-copy="pnpm add @domfx/browser" aria-label={m.copyInstall}><code>pnpm add @domfx/browser</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button></li>
+        <li><h3>{m.attachTitle}</h3><p>{m.attachDescription}</p></li>
+        <li><h3>{m.motionTitle}</h3><p>{m.motionDescription}</p><a class="story-link" href={docsPath('standalone')}>{m.firstEffect} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></li>
       </ol>
-      <div class="story-code"><div class="code-heading"><span>Standalone</span><span>TypeScript</span></div><Code code={standalone} lang="ts" theme={codeTheme}/><a href="/docs/standalone/">See the full example <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
+      <div class="story-code"><div class="code-heading"><span>{m.standalone}</span><span>TypeScript</span></div><Code code={standalone} lang="ts" theme={codeTheme}/><a href={docsPath('standalone')}>{m.fullExample} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
     </div>
   </section>
   <section class="story-section motion-feature">
-    <div class="story-heading"><h2 class="gsap-effect-heading" data-effect-host>Your <span class="gsap-effect-word" data-preview="fire">GSAP</span> timeline.<br/>A new layer.</h2><p>Sequence effects alongside your existing animation. Control their time and intensity with the GSAP timeline you already use.</p><a class="story-link" href="/docs/gsap/">Build with GSAP <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
+    <div class="story-heading"><h2 class="gsap-effect-heading" data-effect-host>{m.gsapTitle} <span class="gsap-effect-word" data-preview="fire">GSAP</span> {m.gsapTitleEnd}<br/>{m.gsapTitleNext}</h2><p>{m.gsapDescription}</p><a class="story-link" href={docsPath('gsap')}>{m.buildGsap} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
     <div class="sequence-composition">
-      <div class="sequence-score" role="img" aria-label="Illustrative timeline: entrance from zero to half a second, then Fire from half a second to four and a half seconds.">
+      <div class="sequence-score" role="img" aria-label={m.timelineAlt}>
         <div class="score-ruler"><span>0s</span><span>0.5s</span><span>2.5s</span><span>4.5s</span></div>
-        <div class="score-row"><span>Entrance</span><div><i class="score-entrance"></i></div></div>
-        <div class="score-row"><span>Fire</span><div><i class="score-effect">ignite <span>4 seconds <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></span></i></div></div>
-        <div class="score-caption"><span>One timeline. Both layers.</span><code>timeline.addLabel('ignite', 0.5)</code></div>
+        <div class="score-row"><span>{m.entrance}</span><div><i class="score-entrance"></i></div></div>
+        <div class="score-row"><span>Fire</span><div><i class="score-effect">ignite <span>{m.seconds} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></span></i></div></div>
+        <div class="score-caption"><span>{m.oneTimeline}</span><code>timeline.addLabel('ignite', 0.5)</code></div>
       </div>
-      <div class="story-code"><div class="code-heading"><span>Sequence excerpt</span><span>GSAP</span></div><Code code={sequence} lang="ts" theme={codeTheme}/></div>
+      <div class="story-code"><div class="code-heading"><span>{m.sequenceExcerpt}</span><span>GSAP</span></div><Code code={sequence} lang="ts" theme={codeTheme}/></div>
     </div>
-    <dl class="motion-methods"><div><dt><code>play() / pause()</code></dt><dd>Run the sequence or hold a moment.</dd></div><div><dt><code>seek() / reverse()</code></dt><dd>Move through the effect in either direction.</dd></div><div><dt><code>timeScale()</code></dt><dd>Set the pace with the controls you know.</dd></div></dl>
+    <dl class="motion-methods"><div><dt><code>play() / pause()</code></dt><dd>{m.playPauseDescription}</dd></div><div><dt><code>seek() / reverse()</code></dt><dd>{m.seekReverseDescription}</dd></div><div><dt><code>timeScale()</code></dt><dd>{m.timeScaleDescription}</dd></div></dl>
   </section>
   <section class="native-proof story-section">
-    <div class="proof-stage" data-effect-host><a data-preview="dither" href="/docs/introduction/">Still HTML.</a><span>Select the text. Follow the link.</span></div>
-    <div class="story-copy"><h2>Your HTML stays<br/>interactive.</h2><p>Text stays selectable. Links keep working. domfx adds a decorative layer alongside your element, leaving the original HTML in place.</p><a class="story-link" href="/docs/introduction/">How domfx works <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
+    <div class="proof-stage" data-effect-host><a data-preview="dither" href={docsPath('introduction')}>{m.stillHtml}</a><span>{m.selectText}</span></div>
+    <div class="story-copy"><h2>{m.htmlTitle}<br/>{m.htmlTitleEnd}</h2><p>{m.htmlDescription}</p><a class="story-link" href={docsPath('introduction')}>{m.howItWorks} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
   </section>
-<section class="story-section story-faq"><div><h2>Before you build.</h2></div><div class="faq-list">{questions.map(([question, answer, href, label]) => <details><summary>{question}<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-plus"/></svg></summary><p>{answer}</p><a class="story-link" href={href}>{label} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href={href.startsWith('https://') ? '#ph-arrow-up-right' : '#ph-arrow-right'}/></svg></a></details>)}</div></section>
+<section class="story-section story-faq"><div><h2>{m.faqTitle}</h2></div><div class="faq-list">{questions.map(([question, answer, slug, label]) => { const href = slug === 'npm' ? 'https://www.npmjs.com/package/@domfx/browser' : docsPath(slug as 'standalone' | 'api' | 'support'); return <details><summary>{question}<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-plus"/></svg></summary><p>{answer}</p><a class="story-link" href={href}>{label} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href={slug === 'npm' ? '#ph-arrow-up-right' : '#ph-arrow-right'}/></svg></a></details>; })}</div></section>
 </div>

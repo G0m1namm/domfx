@@ -1,72 +1,76 @@
 ---
 import DiscoveryHead from '@domfx/site/components/discovery-head.astro';
-import { marketingPages } from '@domfx/site/marketing-pages';
-import { localeFromPath } from '@domfx/site/locale';
-import washer from '../assets/brand/washer.png';
-import MarketingClosing from '../components/marketing-closing.astro';
-import MarketingStory from '../components/marketing-story.astro';
-import EffectCard from '../components/effect-card.astro';
 import PhosphorIcons from '@domfx/site/components/phosphor-icons.astro';
 import SiteNav from '@domfx/site/components/SiteNav.astro';
-import SiteSearch from '../components/site-search.astro';
 import { effects } from '@domfx/site/effects';
+import { localeFromPath, localePath } from '@domfx/site/locale';
+import { marketingPages } from '@domfx/site/marketing-pages';
+import washer from '../assets/brand/washer.png';
+import EffectCard from '../components/effect-card.astro';
+import MarketingClosing from '../components/marketing-closing.astro';
+import MarketingStory from '../components/marketing-story.astro';
+import SiteSearch from '../components/site-search.astro';
+import { marketingMessages } from '../content/marketing-copy';
 import '../styles/marketing.css';
+
 interface Props { surface?: 'marketing' | 'library' }
 const { surface = 'marketing' } = Astro.props;
 const isLibrary = surface === 'library';
 const locale = localeFromPath(Astro.url.pathname);
+const m = marketingMessages[locale];
 const page = marketingPages(Astro.site?.href ?? 'http://127.0.0.1:4321', locale)[isLibrary ? 1 : 0];
-
+const docsPath = (slug: 'api' | 'api/effects') => localePath({ kind: 'docs', slug }, locale);
+const panLabels = { left: m.panLeft, right: m.panRight, up: m.panUp, down: m.panDown };
 ---
 <!doctype html>
 <html lang={locale}>
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><DiscoveryHead page={page}/><meta name="theme-color" content="#14151B"/><link rel="icon" href="/favicon.svg"/><link rel="preload" href="/fonts/CabinetGrotesk-Medium.woff2" as="font" type="font/woff2" crossorigin/></head>
 <body class="marketing-page" id="top" data-surface={surface}>
 <PhosphorIcons />
-<a class="skip" href="#main">Skip to content</a>
+<a class="skip" href="#main">{m.skip}</a>
 <SiteNav current={isLibrary ? 'effects' : undefined} decorated />
 <main id="main">
   {!isLibrary && <section class="gallery-hero wrap">
-    <div class="hero-copy"><h1 id="hero-title">Give your HTML<br/>an expressive edge<span class="title-dot">.</span></h1><p>GPU effects for text, images and SVG.<br/>Animate with GSAP or on its own.</p></div>
+    <div class="hero-copy"><h1 id="hero-title">{m.heroTitle}<br/>{m.heroTitleEnd}<span class="title-dot">.</span></h1><p>{m.heroDescription}<br/>{m.heroDescriptionEnd}</p></div>
     <div class="hero-start">
-      <div class="audience-tabs" aria-label="Get started"><a id="humans-tab" href="#humans-panel" data-audience="humans" aria-controls="humans-panel">For humans</a><a id="agents-tab" href="#agents-panel" data-audience="agents" aria-controls="agents-panel">For agents</a></div>
-      <div id="humans-panel" aria-labelledby="humans-tab"><button class="install hero-command" data-copy="pnpm add @domfx/browser" aria-label="Copy package install command: pnpm add @domfx/browser"><code>pnpm add @domfx/browser</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><div class="hero-actions"><a class="button silver hero-action" href="#collection">Find your effect <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-down"/></svg></a><a class="button hero-star" href="https://github.com/G0m1namm/domfx" aria-label="Star on GitHub: domfx" title="Star domfx on GitHub" data-repo-stars><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg><span data-star-label>Star on GitHub</span><span class="star-count" data-star-count hidden></span></a></div></div>
-      <div id="agents-panel" aria-labelledby="agents-tab"><button class="install hero-command" data-copy="pnpm dlx skills add G0m1namm/domfx --skill domfx" aria-label="Copy planned skill command: pnpm dlx skills add G0m1namm/domfx --skill domfx"><code>pnpm dlx skills add G0m1namm/domfx --skill domfx</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><p class="agent-preview-note">Skill command preview. The consumer skill is not published yet.</p><a class="story-link" href="/docs/api/">Read the API guide <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
+      <div class="audience-tabs" aria-label={m.getStarted}><a id="humans-tab" href="#humans-panel" data-audience="humans" aria-controls="humans-panel">{m.humans}</a><a id="agents-tab" href="#agents-panel" data-audience="agents" aria-controls="agents-panel">{m.agents}</a></div>
+      <div id="humans-panel" aria-labelledby="humans-tab"><button class="install hero-command" data-copy="pnpm add @domfx/browser" aria-label={m.copyPackage}><code>pnpm add @domfx/browser</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><div class="hero-actions"><a class="button silver hero-action" href="#collection">{m.findEffect} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-down"/></svg></a><a class="button hero-star" href="https://github.com/G0m1namm/domfx" aria-label={`${m.star}: domfx`} title={`${m.star}: domfx`} data-repo-stars><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg><span data-star-label>{m.star}</span><span class="star-count" data-star-count hidden></span></a></div></div>
+      <div id="agents-panel" aria-labelledby="agents-tab"><button class="install hero-command" data-copy="pnpm dlx skills add G0m1namm/domfx --skill domfx" aria-label={m.copySkill}><code>pnpm dlx skills add G0m1namm/domfx --skill domfx</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><p class="agent-preview-note">{m.skillNote}</p><a class="story-link" href={docsPath('api')}>{m.apiGuide} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
     </div>
   </section>}
   <span id="examples"></span><section id="collection" class:list={['wrap', 'gallery-collection', { 'library-collection': isLibrary }]}>
     <div class="collection-top">
-      {isLibrary ? <h1>Effects<span class="effect-count" data-count>{effects.length}</span></h1> : <h2>Explore the effects</h2>}
+      {isLibrary ? <h1>{m.effects}<span class="effect-count" data-count>{effects.length}</span></h1> : <h2>{m.exploreEffects}</h2>}
     </div>
-    {isLibrary && <div class="collection-tools" data-js-control hidden><div class="filters" aria-label="Effect categories"><button data-filter="All" aria-pressed="true">All effects <span>{effects.length}</span></button><button data-filter="Energy" aria-pressed="false">Energy</button><button data-filter="Material" aria-pressed="false">Material</button><button data-filter="Pattern" aria-pressed="false">Patterns</button></div></div>}
-    <div class="effect-grid spotlight-grid gallery-grid">{(isLibrary ? effects : effects.slice(0, 5)).map((effect, index) => <EffectCard effect={effect} index={index}/>)}</div>
-    {isLibrary ? <p class="empty" hidden>No effects found. Try another category.</p> : <div class="gallery-more"><a class="button" href="/effects/">Explore all {effects.length} effects <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>}
+    {isLibrary && <div class="collection-tools" data-js-control hidden><div class="filters" aria-label={m.categories}><button data-filter="All" aria-pressed="true">{m.allEffects} <span>{effects.length}</span></button><button data-filter="Energy" aria-pressed="false">{m.energy}</button><button data-filter="Material" aria-pressed="false">{m.material}</button><button data-filter="Pattern" aria-pressed="false">{m.patterns}</button></div></div>}
+    <div class="effect-grid spotlight-grid gallery-grid">{(isLibrary ? effects : effects.slice(0, 5)).map((effect, index) => <EffectCard effect={effect} index={index} locale={locale}/>)}</div>
+    {isLibrary ? <p class="empty" hidden>{m.noEffects}</p> : <div class="gallery-more"><a class="button" href={localePath({ kind: 'effects' }, locale)}>{m.exploreAll} {effects.length} {locale === 'es' ? 'efectos' : 'effects'} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>}
   </section>
-{!isLibrary && <div id="supporting-content"><MarketingStory/></div>}
+{!isLibrary && <div id="supporting-content"><MarketingStory locale={locale}/></div>}
 </main>
-<div id="closing-content"><MarketingClosing/></div>
-<noscript><p class="wrap">Enable JavaScript to preview effects and use search. All documentation and setup guides remain available.</p></noscript>
+<div id="closing-content"><MarketingClosing locale={locale}/></div>
+<noscript><p class="wrap">{m.noscript}</p></noscript>
 <dialog class="effect-dialog" aria-labelledby="dialog-title">
 <template data-preview-image><img src={washer.src} width="260" height="260" alt=""/></template>
 <template data-preview-svg><svg width="260" height="260" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg></template>
-<div class="dialog-top"><span>Preview</span><button data-close aria-label="Close preview"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div><div class="dialog-layout"><div class="dialog-viewer">
-  <div class="dialog-scene" tabindex="0" role="region" aria-label="Effect preview. Use plus and minus to zoom, arrow keys to pan, and zero to reset." aria-describedby="preview-zoom-hint">
+<div class="dialog-top"><span>{m.preview}</span><button data-close aria-label={m.closePreview}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div><div class="dialog-layout"><div class="dialog-viewer">
+  <div class="dialog-scene" tabindex="0" role="region" aria-label={m.previewRegion} aria-describedby="preview-zoom-hint">
     <div class="dialog-stage" data-effect-host><span class="dialog-target" data-dialog-target>edge.</span></div>
   </div>
   <div class="preview-toolbar">
-    <p id="preview-zoom-hint"><span class="hover-zoom-hint">Hover to inspect</span><span class="touch-zoom-hint">Zoom to inspect</span></p>
-    <div class="preview-zoom-controls" role="group" aria-label="Preview zoom">
-      <button data-zoom-out aria-label="Zoom out" title="Zoom out" disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-minus"/></svg></button>
+    <p id="preview-zoom-hint"><span class="hover-zoom-hint">{m.hoverInspect}</span><span class="touch-zoom-hint">{m.zoomInspect}</span></p>
+    <div class="preview-zoom-controls" role="group" aria-label={m.previewZoom}>
+      <button data-zoom-out aria-label={m.zoomOut} title={m.zoomOut} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-minus"/></svg></button>
       <span data-zoom-label aria-live="polite" aria-atomic="true">100%</span>
-      <button data-zoom-in aria-label="Zoom in" title="Zoom in"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-plus"/></svg></button>
-      <button data-zoom-reset aria-label="Fit: reset preview zoom" title="Reset preview zoom">Fit</button>
+      <button data-zoom-in aria-label={m.zoomIn} title={m.zoomIn}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-plus"/></svg></button>
+      <button data-zoom-reset aria-label={m.resetZoom} title={m.resetZoom}>{m.fit}</button>
     </div>
-    <div class="preview-zoom-controls preview-pan-controls" role="group" aria-label="Pan preview" hidden>
-      {(['left', 'right', 'up', 'down'] as const).map((direction) => <button data-pan={direction} aria-label={`Pan ${direction}`} title={`Pan ${direction}`}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href={`#ph-arrow-${direction}`}/></svg></button>)}
+    <div class="preview-zoom-controls preview-pan-controls" role="group" aria-label={m.panPreview} hidden>
+      {(['left', 'right', 'up', 'down'] as const).map((direction) => <button data-pan={direction} aria-label={panLabels[direction]} title={panLabels[direction]}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href={`#ph-arrow-${direction}`}/></svg></button>)}
     </div>
   </div>
-</div><div class="dialog-details"><span class="category" data-dialog-category></span><h2 id="dialog-title"></h2><div class="target-options" role="group" aria-label="Preview target"><button data-target="text" aria-pressed="true">Text</button><button data-target="svg" aria-pressed="false">SVG</button><button data-target="image" aria-pressed="false">Image</button></div><label class="intensity-label" for="effect-intensity">Intensity <output>70%</output></label><input id="effect-intensity" type="range" min="0" max="100" value="70"/><button class="button pause-button" data-pause><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg><span>Pause animation</span></button><code data-code></code><button class="button silver" data-copy-code>Copy attachment code <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><p class="preview-status" role="status" data-copy-status></p><p class="preview-status" role="status" data-preview-status></p><a class="plain-link" data-effect-reference href="/docs/api/effects/">Read the effect reference <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up-right"/></svg></a></div></div></dialog>
-<SiteSearch/>
+</div><div class="dialog-details"><span class="category" data-dialog-category></span><h2 id="dialog-title"></h2><div class="target-options" role="group" aria-label={m.previewTarget}><button data-target="text" aria-pressed="true">{m.text}</button><button data-target="svg" aria-pressed="false">SVG</button><button data-target="image" aria-pressed="false">{m.image}</button></div><label class="intensity-label" for="effect-intensity">{m.intensity} <output>70%</output></label><input id="effect-intensity" type="range" min="0" max="100" value="70"/><button class="button pause-button" data-pause><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg><span>{m.pauseAnimation}</span></button><code data-code></code><button class="button silver" data-copy-code>{m.copyCode} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><p class="preview-status" role="status" data-copy-status></p><p class="preview-status" role="status" data-preview-status></p><a class="plain-link" data-effect-reference href={docsPath('api/effects')}>{m.effectReference} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up-right"/></svg></a></div></div></dialog>
+<SiteSearch locale={locale}/>
 <div class="toast" role="status" hidden></div>
 <script src="../scripts/marketing.ts"></script>
 </body></html>

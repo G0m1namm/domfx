@@ -72,8 +72,12 @@ export async function validateSiteOutput({ read, paths, site, indexable }) {
     const html = await required(path);
     const head = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1] ?? html.split(/<body\b/i)[0];
     if (tags(head, 'meta').some((meta) => meta['http-equiv']?.toLowerCase() === 'refresh')) {
-      assert(['/examples/', '/docs/'].includes(path), `${path}: unexpected redirect`);
-      const target = path === '/examples/' ? '/effects/' : '/docs/introduction/';
+      const target = {
+        '/examples/': '/effects/',
+        '/docs/': '/docs/introduction/',
+        '/docs/es/': '/docs/es/introduction/',
+      }[path];
+      assert(target, `${path}: unexpected redirect`);
       assert(
         tags(head, 'meta').some((meta) => meta.name === 'robots' && meta.content === 'noindex'),
         `${path}: redirect must be noindex`,

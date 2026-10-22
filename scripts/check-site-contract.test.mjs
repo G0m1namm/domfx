@@ -127,6 +127,48 @@ function output(indexable = false) {
   };
 }
 
+function redirectHtml(target) {
+  return `<html><head><meta http-equiv="refresh" content="0;url=${target}"><meta name="robots" content="noindex"><link rel="canonical" href="https://example.com${target}"></head></html>`;
+}
+
+for (const [path, target] of [
+  ['/examples/', '/effects/'],
+  ['/docs/', '/docs/introduction/'],
+  ['/docs/es/', '/docs/es/introduction/'],
+]) {
+  test(`accepts ${path} redirect to ${target}`, async () => {
+    const { files, options } = output();
+    files.set(path, redirectHtml(target));
+    options.paths.push(path);
+    assert.deepEqual(await validateSiteOutput(options), { pages: 3 });
+  });
+
+  for (const [name, before, after, expected] of [
+    ['target', `url=${target}`, 'url=/wrong/', /redirect target/],
+    ['noindex', 'content="noindex"', 'content="index, follow"', /redirect must be noindex/],
+    [
+      'canonical',
+      `href="https://example.com${target}"`,
+      'href="https://example.com/wrong/"',
+      /redirect canonical target/,
+    ],
+  ]) {
+    test(`rejects ${path} redirect with wrong ${name}`, async () => {
+      const { files, options } = output();
+      files.set(path, redirectHtml(target).replace(before, after));
+      options.paths.push(path);
+      await assert.rejects(validateSiteOutput(options), expected);
+    });
+  }
+}
+
+test('rejects an unexpected redirect path', async () => {
+  const { files, options } = output();
+  files.set('/unexpected/', redirectHtml('/effects/'));
+  options.paths.push('/unexpected/');
+  await assert.rejects(validateSiteOutput(options), /unexpected redirect/);
+});
+
 test('rejects an indexable page omitted from its child sitemap', async () => {
   const { files, options } = output(true);
   files.set('/sitemap-0.xml', '<urlset></urlset>');

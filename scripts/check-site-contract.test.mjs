@@ -32,7 +32,8 @@ test('rejects missing canonical metadata in built HTML', async () => {
 function output(indexable = false) {
   const site = 'https://example.com';
   const files = new Map();
-  for (const [path, title, description, types] of [
+  const paths = [];
+  for (const [englishPath, englishTitle, englishDescription, types] of [
     ['/', 'domfx', 'GPU effects for HTML', ['WebSite', 'SoftwareSourceCode']],
     ['/effects/', 'Effects — domfx', 'Browse effects', ['CollectionPage', 'ItemList']],
     [
@@ -42,50 +43,71 @@ function output(indexable = false) {
       ['TechArticle', 'BreadcrumbList'],
     ],
   ]) {
-    const meta = {
-      description,
-      robots: indexable ? 'index, follow' : 'noindex, nofollow',
-      'og:title': title,
-      'og:description': description,
-      'og:url': `${site}${path}`,
-      'og:type': path.startsWith('/docs/') ? 'article' : 'website',
-      'og:image': `${site}/share-card.png`,
-      'og:image:width': '1200',
-      'og:image:height': '630',
-      'og:image:alt': 'domfx effect',
-      'twitter:card': 'summary_large_image',
-      'twitter:title': title,
-      'twitter:description': description,
-      'twitter:image': `${site}/share-card.png`,
-      'twitter:image:alt': 'domfx effect',
-    };
-    const graph = types.map((type) => ({ '@type': type, description, url: `${site}${path}` }));
-    if (path === '/') {
-      graph[1].codeRepository = 'https://github.com/G0m1namm/domfx';
+    for (const locale of ['en', 'es']) {
+      let path = englishPath;
+      const spanishPath = englishPath.startsWith('/docs/')
+        ? englishPath.replace('/docs/', '/docs/es/')
+        : englishPath.replace('/', '/es/');
+      if (locale === 'es') {
+        path = spanishPath;
+      }
+      const title = locale === 'es' ? `${englishTitle} en español` : englishTitle;
+      const description = locale === 'es' ? `${englishDescription} en español` : englishDescription;
+      paths.push(path);
+      const meta = {
+        description,
+        robots: indexable ? 'index, follow' : 'noindex, nofollow',
+        'og:title': title,
+        'og:description': description,
+        'og:url': `${site}${path}`,
+        'og:type': path.startsWith('/docs/') ? 'article' : 'website',
+        'og:image': `${site}/share-card.png`,
+        'og:image:width': '1200',
+        'og:image:height': '630',
+        'og:image:alt': locale === 'es' ? 'efecto domfx' : 'domfx effect',
+        'twitter:card': 'summary_large_image',
+        'twitter:title': title,
+        'twitter:description': description,
+        'twitter:image': `${site}/share-card.png`,
+        'twitter:image:alt': locale === 'es' ? 'efecto domfx' : 'domfx effect',
+      };
+      const graph = types.map((type) => ({
+        '@type': type,
+        description,
+        url: `${site}${path}`,
+        mainEntityOfPage: `${site}${path}`,
+      }));
+      if (englishPath === '/') {
+        graph[1].codeRepository = 'https://github.com/G0m1namm/domfx';
+      }
+      if (englishPath === '/effects/') {
+        graph[1].itemListElement = [];
+      }
+      if (path.startsWith('/docs/')) {
+        graph[1].itemListElement = [{ item: `${site}${path}` }, { item: `${site}${path}` }];
+      }
+      files.set(
+        path,
+        `<html lang="${locale}"><head><title>${title}</title>${Object.entries(meta)
+          .map(([name, content]) => `<meta name="${name}" content="${content}">`)
+          .join(
+            '',
+          )}<link rel="canonical" href="${site}${path}"><link rel="alternate" hreflang="en" href="${site}${englishPath}"><link rel="alternate" hreflang="es" href="${site}${spanishPath}"><link rel="alternate" hreflang="x-default" href="${site}${englishPath}">${path.startsWith('/docs/') ? `<link rel="alternate" type="text/markdown" href="${site}${path.slice(0, -1)}.md">` : ''}<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })}</script></head><body><a href="/effects/">Effects</a></body></html>`,
+      );
     }
-    if (path === '/effects/') {
-      graph[1].itemListElement = [];
-    }
-    if (path.startsWith('/docs/')) {
-      graph[1].itemListElement = [{ item: `${site}/` }, { item: `${site}${path}` }];
-    }
-    files.set(
-      path,
-      `<html lang="en"><head><title>${title}</title>${Object.entries(meta)
-        .map(([name, content]) => `<meta name="${name}" content="${content}">`)
-        .join(
-          '',
-        )}<link rel="canonical" href="${site}${path}">${path.startsWith('/docs/') ? `<link rel="alternate" type="text/markdown" href="${site}/docs/introduction.md">` : ''}<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })}</script></head><body><a href="/effects/">Effects</a></body></html>`,
-    );
   }
   files.set(
     '/llms.txt',
-    '# domfx\n- [Introduction](https://example.com/docs/introduction.md): Start with domfx.\n',
+    '# domfx\n\n## English\n\n- [Introduction — domfx](https://example.com/docs/introduction.md): Start with domfx.\n\n## Español\n\n- [Introduction — domfx en español](https://example.com/docs/es/introduction.md): Start with domfx. en español\n',
   );
-  files.set('/docs/introduction.md', '# Introduction\n\nStart with domfx.\n');
+  files.set('/docs/introduction.md', '# Introduction — domfx\n\nStart with domfx.\n');
+  files.set(
+    '/docs/es/introduction.md',
+    '# Introduction — domfx en español\n\nStart with domfx. en español\n',
+  );
   files.set(
     '/llms-full.txt',
-    'Source: https://example.com/docs/introduction.md\n\n# Introduction\n\nStart with domfx.\n',
+    '## English\n\n# Introduction — domfx\n\nStart with domfx.\n\nSource: https://example.com/docs/introduction.md\n\n## Español\n\n# Introduction — domfx en español\n\nStart with domfx. en español\n\nSource: https://example.com/docs/es/introduction.md\n',
   );
   files.set(
     '/robots.txt',
@@ -96,13 +118,19 @@ function output(indexable = false) {
   files.set(
     '/sitemap-0.xml',
     indexable
-      ? '<urlset><url><loc>https://example.com/</loc></url><url><loc>https://example.com/effects/</loc></url></urlset>'
+      ? `<urlset>${paths
+          .filter((path) => !path.startsWith('/docs/'))
+          .map((path) => `<url><loc>${site}${path}</loc></url>`)
+          .join('')}</urlset>`
       : '<urlset></urlset>',
   );
   files.set(
     '/docs/sitemap-0.xml',
     indexable
-      ? '<urlset><url><loc>https://example.com/docs/introduction/</loc></url></urlset>'
+      ? `<urlset>${paths
+          .filter((path) => path.startsWith('/docs/'))
+          .map((path) => `<url><loc>${site}${path}</loc></url>`)
+          .join('')}</urlset>`
       : '<urlset></urlset>',
   );
   if (indexable) {
@@ -121,7 +149,7 @@ function output(indexable = false) {
     options: {
       site,
       indexable,
-      paths: ['/', '/effects/', '/docs/introduction/'],
+      paths,
       read: async (path) => (files.has(path) ? Buffer.from(files.get(path)) : null),
     },
   };
@@ -140,7 +168,7 @@ for (const [path, target] of [
     const { files, options } = output();
     files.set(path, redirectHtml(target));
     options.paths.push(path);
-    assert.deepEqual(await validateSiteOutput(options), { pages: 3 });
+    assert.deepEqual(await validateSiteOutput(options), { pages: 6 });
   });
 
   for (const [name, before, after, expected] of [
@@ -175,20 +203,60 @@ test('rejects an indexable page omitted from its child sitemap', async () => {
   await assert.rejects(validateSiteOutput(options), /marketing sitemap/);
 });
 
-test('allows fallback metadata only on the equivalent page in another locale', async () => {
+test('rejects a missing Spanish counterpart', async () => {
   const { files, options } = output();
-  const spanish = files
-    .get('/')
-    .replace('<html lang="en">', '<html lang="es">')
-    .replace('href="https://example.com/"', 'href="https://example.com/es/"')
-    .replaceAll('content="https://example.com/"', 'content="https://example.com/es/"');
-  files.set('/es/', spanish);
-  options.paths.push('/es/');
-  await validateSiteOutput(options);
+  files.delete('/es/');
+  options.paths.splice(options.paths.indexOf('/es/'), 1);
+  await assert.rejects(validateSiteOutput(options), /missing Spanish counterpart/);
+});
 
-  files.set('/es/effects/', spanish);
-  options.paths.push('/es/effects/');
-  await assert.rejects(validateSiteOutput(options), /duplicate title/);
+test('rejects untranslated Spanish description', async () => {
+  const { files, options } = output();
+  files.set(
+    '/es/',
+    files.get('/es/').replaceAll('GPU effects for HTML en español', 'GPU effects for HTML'),
+  );
+  await assert.rejects(validateSiteOutput(options), /untranslated description/);
+});
+
+test('rejects incorrect Spanish alternate target', async () => {
+  const { files, options } = output();
+  files.set(
+    '/',
+    files
+      .get('/')
+      .replace(
+        'hreflang="es" href="https://example.com/es/"',
+        'hreflang="es" href="https://example.com/"',
+      ),
+  );
+  await assert.rejects(validateSiteOutput(options), /es alternate target/);
+});
+
+test('rejects a localized page in the wrong llms language section', async () => {
+  const { files, options } = output();
+  files.set(
+    '/llms.txt',
+    files
+      .get('/llms.txt')
+      .replace(
+        '## Español\n\n',
+        '## Español\n\n- [Introduction — domfx](https://example.com/docs/introduction.md): Start with domfx.\n',
+      ),
+  );
+  await assert.rejects(validateSiteOutput(options), /Español llms inventory/);
+});
+
+test('rejects an internal link with no built route', async () => {
+  const { files, options } = output();
+  files.set('/', files.get('/').replace('href="/effects/"', 'href="/unknown/"'));
+  await assert.rejects(validateSiteOutput(options), /internal link has no built route/);
+});
+
+test('rejects a missing local image asset', async () => {
+  const { files, options } = output();
+  files.set('/', files.get('/').replace('</body>', '<img src="/missing.png"></body>'));
+  await assert.rejects(validateSiteOutput(options), /missing.png: missing built output/);
 });
 
 test('rejects a missing Markdown copy linked by the docs HTML and llms index', async () => {
@@ -205,7 +273,7 @@ test('rejects an incorrectly sized share card', async () => {
 
 for (const indexable of [false, true]) {
   test(`accepts complete built output with indexing ${indexable ? 'on' : 'off'}`, async () => {
-    assert.deepEqual(await validateSiteOutput(output(indexable).options), { pages: 3 });
+    assert.deepEqual(await validateSiteOutput(output(indexable).options), { pages: 6 });
   });
 }
 

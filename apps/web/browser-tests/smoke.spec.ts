@@ -9,6 +9,21 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
 });
 
+test('missing pages return 404 with working English and Spanish recovery links', async ({
+  page,
+  request,
+}) => {
+  const response = await page.goto('/missing-domfx-route/');
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Go to the homepage' })).toHaveAttribute('href', '/');
+  await expect(page.getByRole('link', { name: 'Ir al inicio' })).toHaveAttribute('href', '/es/');
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
+  for (const route of ['/docs/missing-domfx-route/', '/docs/es/missing-domfx-route/']) {
+    expect((await request.get(route)).status()).toBe(404);
+  }
+});
+
 test('body, control and code text follow the browser default font preference', async ({
   baseURL,
 }, testInfo) => {

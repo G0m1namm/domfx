@@ -30,7 +30,7 @@ que la verificación falló; no cuenta como una prueba de renderizado superada.
 ## Crea tu aplicación de prueba
 
 Crea un directorio vacío fuera del repositorio. Copia los archivos tar de la prueba en
-un subdirectorio `artifacts/`. Para los artefactos `0.0.0` actuales, guarda esto como
+un subdirectorio `artifacts/`. Para los artefactos `0.1.0-alpha.0` actuales, guarda esto como
 `package.json`; usa los nombres de archivo reales si cambian las versiones:
 
 ```json
@@ -44,8 +44,8 @@ un subdirectorio `artifacts/`. Para los artefactos `0.0.0` actuales, guarda esto
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "file:./artifacts/domfx-core-0.0.0.tgz",
-    "@domfx/browser": "file:./artifacts/domfx-browser-0.0.0.tgz"
+    "@domfx/core": "file:./artifacts/domfx-core-0.1.0-alpha.0.tgz",
+    "@domfx/browser": "file:./artifacts/domfx-browser-0.1.0-alpha.0.tgz"
   },
   "devDependencies": { "typescript": "5.9.3", "vite": "7.3.6" }
 }
@@ -57,7 +57,7 @@ Guarda esto como `pnpm-workspace.yaml`:
 autoInstallPeers: false
 strictPeerDependencies: true
 overrides:
-  '@domfx/core': file:./artifacts/domfx-core-0.0.0.tgz
+  '@domfx/core': file:./artifacts/domfx-core-0.1.0-alpha.0.tgz
 ```
 
 Conserva la sustitución de `overrides` aunque core sea una dependencia directa:
@@ -114,7 +114,7 @@ Si eliges las [funciones opcionales que conservan los valores iniciales](/docs/e
 añade también su artefacto:
 
 ```json
-"@domfx/gsap": "file:./artifacts/domfx-gsap-0.0.0.tgz"
+"@domfx/gsap": "file:./artifacts/domfx-gsap-0.1.0-alpha.0.tgz"
 ```
 
 Ejecuta `pnpm install --ignore-scripts` otra vez. GSAP es una dependencia compartida (`peer dependency`) explícita

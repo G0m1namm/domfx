@@ -46,6 +46,11 @@ function workspace(t) {
   ]) {
     write(path, readFileSync(join(repo, path)));
   }
+  // Versioning scenarios start unpublished, independently of the current release candidate.
+  for (const path of ['packages/core', 'packages/domfx', 'packages/gsap']) {
+    const manifest = readJson(join(root, path, 'package.json'));
+    write(`${path}/package.json`, JSON.stringify({ ...manifest, version: '0.0.0', private: true }));
+  }
   // Fixtures reuse installed tools; never let pnpm install into the shared node_modules link.
   write(
     'pnpm-workspace.yaml',

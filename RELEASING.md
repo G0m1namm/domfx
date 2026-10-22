@@ -1,24 +1,19 @@
 # Releases
 
-The first alpha uses manual Changesets preparation, a normal reviewed release PR,
-and deliberate publication of verified tarballs. Automatic version PRs can wait
-until several releases establish a useful routine; there is no generated-release
-validator. All packages currently remain `private: true`. The dispatch-only
-publication workflow is disabled and has no hosted preparation or registry job.
+The first alpha uses Changesets, a reviewed release PR and manual publication of
+verified tarballs. The three libraries have a prepared `0.1.0-alpha.0` candidate;
+they are not published yet. All other workspaces remain private. Hosted publication
+is disabled.
 Repository visibility and npm publication are separate maintainer actions.
 
 ## Packages and versions
 
-- `@domfx/core`, `@domfx/browser` and `@domfx/gsap` use the selected `@domfx` scope. The maintainer reports creating the organization
-  with account `g0m1namm`; verify actual publish permissions for all three packages
-  before approval. Another package named `domfx` does not determine ownership of
-  these scoped names.
+- Verify npm publish permissions for `@domfx/core`, `@domfx/browser` and `@domfx/gsap`
+  before approval.
 - Version libraries independently. Changesets also updates affected internal dependents.
   The workspace root and apps stay private; website deployments are separate.
-- While unpublished, use patch-only development increments: `0.0.1`, `0.0.2`,
-  `0.0.3`. Select `patch` in Changesets for library changes and group tasks into
-  deliberate development releases, not one version per task. Describe breaking
-  changes explicitly even during this private development phase.
+- The first candidate is `0.1.0-alpha.0` for all three libraries. Remain in Changesets
+  `alpha` prerelease mode; subsequent candidate changes require a deliberate bump.
 - Before the first public release, switch to SemVer: patch for compatible fixes, minor for compatible additions, major
   for breaking changes. During `0.x`, use minor for breaking changes and call them
   out explicitly; do not hide breaking changes in patches.
@@ -158,12 +153,11 @@ This technical handoff holds, rather than resolves, release-policy, package-vers
 ownership, credential and registry decisions. Those gates require their separate review before
 any publication path is enabled.
 
-For a local version rehearsal, use a disposable checkout and run
-`pnpm changeset version`, followed by `pnpm install --lockfile-only` and
-`pnpm format`. This consumes changesets and edits versions/changelogs; never run it
-casually in a shared working tree. No version bump is part of this initial setup.
-
 ## Prepare the first alpha manually
+
+The `0.1.0-alpha.0` candidate is already versioned. The commands below describe its
+initial preparation from an unversioned checkout outside alpha prerelease mode.
+Do not rerun them on this candidate; later alphas stay in the existing prerelease mode.
 
 Finish the implementation checks before freezing release artifacts. Use a clean
 release branch from the reviewed `main` commit; do not version a shared dirty tree.
@@ -186,8 +180,8 @@ no extra bump. Preserve real consumer-facing changesets in feature PRs. Review t
 actual versions, pre-state, changelogs and packed dependency graph. Keep `alpha`
 prerelease mode until deliberately graduating; never publish this alpha as `latest`.
 
-In that release PR, remove `private` only from the three approved libraries,
-retain `publishConfig.access: public`, and change Changesets access to `public`.
+The release PR removes `private` only from the three approved libraries,
+retains `publishConfig.access: public`, and changes Changesets access to `public`.
 Root, fixtures, website and any other package stay private. This preparation does not
 publish; publication remains a separate approval of tested bytes.
 
@@ -201,24 +195,48 @@ without turning a fixture pass into broad support or performance claims.
 For the first **experimental alpha only**, independent developer validation moves
 after publication: the public install/docs route must exist before that round can
 test it. This exception does not waive technical, license or maintainer readiness.
-Reconcile the existing #35/#36/#41 acceptance records when presenting the release;
-do not mark independent onboarding, cleanup or developer value proved yet.
-After registry/docs proof, the maintainer may post a LinkedIn alpha invitation and
-collect comments/issues, with one opt-in round of three developers if available.
-Measure the complete install → own heading → own timeline → seek/reverse → cleanup
-journey only in actual sessions. The 2–5 minute target is a hypothesis, not a CI
-budget or a measured claim. No automated outreach or telemetry is required.
+Independent onboarding and developer value remain unverified until that feedback
+round. Keep its plan and results in the release issue.
 
 ## Held publication approval
 
-There is no executable publication workflow or approved registry procedure. Do not set
-`DOMFX_PUBLISH_ENABLED`, dispatch the disabled workflow, configure a trusted publisher or
-run `--publish`. #36 must resolve the separate readiness, ownership, package-version,
-license, credential and registry decisions before a new publication path is designed and
-reviewed. That later path must consume the archived evidence above without rebuilding or
-repacking it, verify the same clean revision and hashes, and stop for inspection if a
-partially published version, integrity value or alpha tag differs. Published versions are
-immutable; repair any bad release with a new version.
+Hosted publication remains disabled. The first release uses the existing local
+exact-artifact publisher below, after review and explicit approval of its tested bytes.
+It needs no GitHub npm environment, CI token or trusted publisher. Confirm the npm
+account can publish all three packages under `@domfx`, has 2FA enabled, and is authenticated
+with npm before execution. Do not put credentials in commands, issues or logs.
+Resolve the readiness decisions in #36, including the documented after-alpha
+developer-feedback exception, before presenting final approval.
+
+From the clean, reviewed and merged release revision, run the required checks and
+`pnpm release:rehearse`, archive its output, then perform the receiver handoff above.
+Review the three versions, source revision, SHA-256/SHA-512 values and consumer
+results. With separate maintainer approval of those exact artifacts:
+
+```sh
+node scripts/check-release-artifacts.mjs --publish <tested-evidence-directory> <approved-commit>
+pnpm release:verify:registry <tested-evidence-directory> <approved-commit>
+```
+
+The publisher verifies the clean source and evidence, then publishes the unchanged
+core, browser and GSAP tarballs in dependency order with public access, `alpha` and
+lifecycle scripts disabled. It never rebuilds or repacks. Existing versions are
+accepted only when their integrity and `alpha` tag match the tested artifact.
+Network/auth failures, mismatched bytes or tags stop execution. A partial release
+can resume with the same approved evidence within its seven-day validity window;
+inspect any mismatch instead of overwriting tags or skipping a package. Keep `latest`
+untouched. Published versions are immutable; corrections require a new version.
+
+The registry verifier must pass before installation/upgrade pages claim a public
+release. It proves consumers can resolve dependencies without local overrides and
+checks registry integrity against the approved bytes. After that proof, record the
+versions, create matching package version tags and GitHub release notes from the
+approved commit, and update the public installation route. Configure OIDC trusted
+publishing only as a separately reviewed future hosted publication path.
+
+The website deploys through the dashboard-configured GitHub connection using the
+[Cloudflare deployment guide](engineering/website-deployment.md). Website deployment
+and rollback do not publish packages or enable search indexing.
 
 ## Verify the public installation route
 

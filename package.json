@@ -47,6 +47,8 @@
     "test:browser:evidence": "node scripts/browser-session.mjs node tests/gpu/scripts/browser-regression.mjs",
     "web": "pnpm build && pnpm --filter @domfx/web dev",
     "build:web": "pnpm build && pnpm build:web:built",
+    "build:site": "node scripts/build-site.mjs",
+    "site:verify": "DOMFX_SITE_URL=https://domfx.dev node scripts/check-site-contract.mjs",
     "build:docs:preview": "pnpm build && pnpm build:docs:preview:built",
     "build:docs:preview:built": "DOMFX_SITE_PREVIEW=true DOMFX_SITE_URL=http://127.0.0.1:4347 pnpm --filter @domfx/web build && DOMFX_SITE_PREVIEW=true DOMFX_SITE_URL=http://127.0.0.1:4347 pnpm --filter @domfx/docs build && node scripts/compose-site.mjs --preview",
     "preview:docs": "pnpm --filter @domfx/web exec astro preview --config astro.docs-preview.config.mjs --host 127.0.0.1 --port 4347",

@@ -28,7 +28,7 @@ const spanishPath = localePath(page, 'es');
   <nav class="language-links" aria-label={messages.language}><a href={englishPath} lang="en" hreflang="en" aria-label="View this page in English" aria-current={locale === 'en' ? 'true' : undefined} data-language-link="en">English</a><a href={spanishPath} lang="es" hreflang="es" aria-label="Ver esta página en español" aria-current={locale === 'es' ? 'true' : undefined} data-language-link="es">Español</a></nav>
   <a class="nav-cta star-cta" href="https://github.com/G0m1namm/domfx" aria-label={locale === 'es' ? 'Destacar domfx en GitHub' : 'Star on GitHub: domfx'} title={locale === 'es' ? 'Destacar domfx en GitHub' : 'Star domfx on GitHub'} data-repo-stars><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg><span data-star-label>{locale === 'es' ? 'Destacar en GitHub' : 'Star on GitHub'}</span><span class="star-count" data-star-count hidden></span></a>
   <button class="nav-menu-button" popovertarget="site-menu" aria-label={messages.openMenu} title={messages.menu}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-list"/></svg></button>
-</div>{decorated && <div class="header-effect-host" aria-hidden="true"><span class="header-effect-line"></span></div>}</Tag>
+</div>{decorated && <div class="header-effect-host" aria-hidden="true"><span class="header-effect-line"></span></div>}
 <div id="site-menu" class="site-menu" popover>
   <div class="site-menu-head"><span>{messages.menu}</span><button popovertarget="site-menu" popovertargetaction="hide" aria-label={messages.closeMenu}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div>
   <nav aria-label={messages.site}>
@@ -38,7 +38,7 @@ const spanishPath = localePath(page, 'es');
   </nav>
   <nav class="menu-language-links" aria-label={messages.language}><a href={englishPath} lang="en" hreflang="en" aria-current={locale === 'en' ? 'true' : undefined} data-language-link="en">English</a><a href={spanishPath} lang="es" hreflang="es" aria-current={locale === 'es' ? 'true' : undefined} data-language-link="es">Español</a></nav>
   <a class="nav-cta site-menu-star" href="https://github.com/G0m1namm/domfx"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-star"/></svg>{locale === 'es' ? 'Destacar en GitHub' : 'Star on GitHub'}</a>
-</div>
+</div></Tag>
 <script>
   import { languageHref } from '@domfx/site/locale';
 

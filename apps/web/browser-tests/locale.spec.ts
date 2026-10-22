@@ -77,6 +77,45 @@ test('changing language keeps the header actions and mobile gallery in place', a
   }
 });
 
+test('Home does not shift its gallery when the translated page starts', async ({ page }) => {
+  for (const width of [360, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.addInitScript(() => {
+      const shifts: number[] = [];
+      (window as Window & { __homeLayoutShifts?: number[] }).__homeLayoutShifts = shifts;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries() as (PerformanceEntry & {
+          value: number;
+          hadRecentInput: boolean;
+        })[]) {
+          if (!entry.hadRecentInput) {
+            shifts.push(entry.value);
+          }
+        }
+      }).observe({ type: 'layout-shift', buffered: true });
+    });
+    for (const audience of ['', '?audience=agents']) {
+      await page.goto(`/${audience}`);
+      if (width === 360) {
+        await page.locator('.nav-menu-button').click();
+        await page.locator('.menu-language-links [data-language-link="es"]').click();
+      } else {
+        await page.locator('.language-switcher summary').click();
+        await page.locator('.language-switcher [data-language-link="es"]').click();
+      }
+      await expect(page).toHaveURL(new RegExp(`/es/${audience.replace('?', '\\?')}$`));
+      await page.waitForTimeout(100);
+      const shifts = await page.evaluate(
+        () => (window as Window & { __homeLayoutShifts?: number[] }).__homeLayoutShifts ?? [],
+      );
+      expect(
+        shifts.reduce((sum, value) => sum + value, 0),
+        `${width}px startup CLS ${audience}`,
+      ).toBeLessThan(0.02);
+    }
+  }
+});
+
 test('desktop language menu closes with Escape and an outside click', async ({ page }) => {
   await page.goto('/es/');
   const switcher = page.locator('.language-switcher');

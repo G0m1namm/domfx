@@ -311,6 +311,7 @@ function initializeMarketing() {
     }
     required<HTMLElement>('#humans-panel', main).hidden = audience !== 'humans';
     required<HTMLElement>('#agents-panel', main).hidden = audience !== 'agents';
+    delete document.documentElement.dataset.initialAudience;
     const url = new URL(location.href);
     if (audience === 'agents') {
       url.searchParams.set('audience', audience);

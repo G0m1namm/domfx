@@ -24,7 +24,7 @@ const panLabels = { left: m.panLeft, right: m.panRight, up: m.panUp, down: m.pan
 ---
 <!doctype html>
 <html lang={locale}>
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><DiscoveryHead page={page}/><meta name="theme-color" content="#14151B"/><link rel="icon" href="/favicon.svg"/><link rel="preload" href="/fonts/CabinetGrotesk-Medium.woff2" as="font" type="font/woff2" crossorigin/></head>
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><DiscoveryHead page={page}/><meta name="theme-color" content="#14151B"/><link rel="icon" href="/favicon.svg"/><link rel="preload" href="/fonts/CabinetGrotesk-Medium.woff2" as="font" type="font/woff2" crossorigin/><script is:inline>document.documentElement.dataset.initialAudience = new URLSearchParams(location.search).get('audience') === 'agents' ? 'agents' : 'humans';</script></head>
 <body class="marketing-page" id="top" data-surface={surface}>
 <PhosphorIcons />
 <a class="skip" href="#main">{m.skip}</a>

@@ -2118,6 +2118,10 @@ body.marketing-page {
 .hero-start [hidden] {
   display: none;
 }
+html[data-initial-audience='humans'] #agents-panel,
+html[data-initial-audience='agents'] #humans-panel {
+  display: none;
+}
 .agent-preview-note {
   font-size: 0.6875rem;
   line-height: 1.6;

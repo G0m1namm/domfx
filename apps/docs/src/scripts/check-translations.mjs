@@ -24,10 +24,14 @@ function translationFreshnessCheck(repositoryRoot) {
   if (!existsSync(resolve(repositoryRoot, '.git'))) {
     return undefined;
   }
+  const gitEnvironment = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_')),
+  );
   const git = (args) =>
     execFileSync('git', ['-C', repositoryRoot, ...args], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
+      env: gitEnvironment,
     }).trim();
   const shallow = git(['rev-parse', '--is-shallow-repository']) === 'true';
   const working = git(['diff', '--name-only', 'HEAD']);

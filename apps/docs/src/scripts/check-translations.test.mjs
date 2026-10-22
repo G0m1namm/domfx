@@ -15,8 +15,14 @@ test('English source updates require corresponding Spanish source changes', () =
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, content);
   };
+  const gitEnvironment = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !name.startsWith('GIT_')),
+  );
   const git = (...args) =>
-    execFileSync('git', ['-C', repositoryRoot, ...args], { stdio: 'ignore' });
+    execFileSync('git', ['-C', repositoryRoot, ...args], {
+      stdio: 'ignore',
+      env: gitEnvironment,
+    });
   const guide = 'apps/docs/src/content/docs/introduction.md';
   const spanishGuide = 'apps/docs/src/content/docs/es/introduction.md';
   const reference = 'packages/site/src/effect-reference.ts';

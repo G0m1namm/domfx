@@ -8,11 +8,13 @@ export function marketingPages(site: string, locale: Locale = 'en'): readonly Pa
   const galleryPath = localePath({ kind: 'effects' }, locale);
   const home = new URL(homePath, site).href;
   const gallery = new URL(galleryPath, site).href;
+  const spanish = locale === 'es';
   return [
     {
-      title: 'Effects for your HTML',
-      description:
-        'GPU effects for text, images and SVG. Explore the gallery, attach an effect to your HTML, and animate with GSAP or on its own.',
+      title: spanish ? 'Efectos para tu HTML' : 'Effects for your HTML',
+      description: spanish
+        ? 'Efectos GPU para texto, imágenes y SVG. Explora la galería, adjunta un efecto a tu HTML y anímalo con GSAP o de forma independiente.'
+        : 'GPU effects for text, images and SVG. Explore the gallery, attach an effect to your HTML, and animate with GSAP or on its own.',
       path: homePath,
       type: 'website',
       structuredData: [
@@ -21,13 +23,14 @@ export function marketingPages(site: string, locale: Locale = 'en'): readonly Pa
       ],
     },
     {
-      title: 'Effects',
-      description:
-        'Give your HTML an expressive edge. GPU effects with native HTML and optional GSAP controls.',
+      title: spanish ? 'Efectos' : 'Effects',
+      description: spanish
+        ? 'Dale a tu HTML un borde expresivo. Efectos GPU para HTML nativo con controles opcionales de GSAP.'
+        : 'Give your HTML an expressive edge. GPU effects with native HTML and optional GSAP controls.',
       path: galleryPath,
       type: 'website',
       structuredData: [
-        { '@type': 'CollectionPage', name: 'Effects', url: gallery },
+        { '@type': 'CollectionPage', name: spanish ? 'Efectos' : 'Effects', url: gallery },
         {
           '@type': 'ItemList',
           itemListElement: effects.map((effect, index) => ({

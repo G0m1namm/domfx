@@ -1,13 +1,19 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { createServer } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 import { validateBuiltSite, validatePreviewSite } from './check-site-contract.mjs';
 
 const root = new URL('..', import.meta.url);
-const base = 'http://127.0.0.1:4348';
+const listener = createServer();
+listener.listen(0, '127.0.0.1');
+await once(listener, 'listening');
+const base = `http://127.0.0.1:${listener.address().port}`;
+listener.close();
+await once(listener, 'close');
 const cleanEnvironment = { ...process.env };
 for (const name of [
   'DOMFX_SITE_URL',
@@ -41,7 +47,15 @@ async function run(args, env, expectedFailure) {
 async function preview(site, indexable, env) {
   const child = spawn(
     process.execPath,
-    ['node_modules/astro/bin/astro.mjs', 'preview', '--host', '127.0.0.1', '--port', '4348'],
+    [
+      'node_modules/astro/bin/astro.mjs',
+      'preview',
+      '--ignore-lock',
+      '--host',
+      '127.0.0.1',
+      '--port',
+      new URL(base).port,
+    ],
     {
       cwd: new URL('../apps/web', import.meta.url),
       env,

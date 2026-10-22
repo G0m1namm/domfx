@@ -4,7 +4,87 @@ The original DOM remains the source of content and input. These checks cover nam
 fixtures and site scenarios; they do not certify a host application's accessibility
 or establish universal assistive-technology support.
 
+## Keyboard and A/AA review — 2026-10-21 UTC
+
+The bounded [#87](https://github.com/G0m1namm/domfx/issues/87) review covers `/`,
+`/effects/`, `/docs/` (redirecting to Introduction), `/docs/standalone/` and
+`/docs/api/effects/frost/`. Keyboard navigation, visible scrolling, narrow layouts
+and the named controls worked in the conditions below after the scoped fixes.
+**This is not a full WCAG conformance claim.** Flashing thresholds remain held;
+additional screen-reader, physical-device and broad engine/lifecycle checks are
+excluded from this issue's narrowed completion gate, not recorded as passes.
+
+### Findings and dispositions
+
+| Finding                                                                                                            | Disposition and verification                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Selected category/subject borders were too faint: marketing 1.55:1 and docs 2.29:1 against the selected fill.      | **FIXED:** use DESIGN's `#8E91A8` control border; 4.58:1 against `#292A35`. The contrasting perimeter distinguishes selection without relying on text color alone. Computed-color regressions cover filters, preview subjects and docs radios.                                                                                                                                    |
+| Zoomed touch previews required dragging to pan; keyboard arrows alone did not provide a pointer alternative.       | **FIXED:** four labeled 44×44 CSS-pixel pan buttons appear above 100% preview zoom. Click and Enter move the original target and decorative layer together; Fit resets. This is preview magnification, not browser zoom.                                                                                                                                                          |
+| Copy commands, Fit, repository stars and artwork playback overrode visible labels with different accessible names. | **FIXED:** names contain the visible command/label, including dynamic star counts and playback states. Verified through browser-computed accessible names; no new speech run.                                                                                                                                                                                                     |
+| Footer Pause froze header/artwork but automatic card/story effects kept moving, including recreated cards.         | **FIXED:** the existing footer control pauses/resumes all automatic marketing effects and applies the pause when a slot becomes ready. A real Fire output regression first establishes changing frames, then stable frames after pause/offscreen recreation, independent moving dialog output, and changing frames after Resume. Attachment lifetimes and clocks remain separate. |
+| Outside-click preview dismissal was added to the issue.                                                            | **PASS:** both routes close only when a primary-button gesture starts and ends on the backdrop. Interior/control clicks and inside-to-outside or outside-to-inside gestures keep it open; Escape, close-button cleanup and trigger focus return remain available.                                                                                                                 |
+| Earlier default-font and reduced-motion control failures.                                                          | **RESOLVED before this review:** [#143 / PR #153](https://github.com/G0m1namm/domfx/pull/153), `f168bb4`, and [#144 / PR #151](https://github.com/G0m1namm/domfx/pull/151), `1fc7baa`. Their original failures below remain historical observations.                                                                                                                              |
+
+### Applicable criteria
+
+Results are scenario dispositions under the [WCAG 2.2 A/AA quick reference](https://www.w3.org/WAI/WCAG22/quickref/),
+not automatic whole-criterion passes from a clean scan.
+
+| Criteria                                                                      | Result, method and boundary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.1.1; 1.3.1–1.3.3                                                            | **PASS, sampled DOM/content review:** one main heading and header/main/footer per route; meaningful heading, list and table structure; labeled controls and regions; original content carries meaning. Decorative icons/artwork/canvases are excluded from reading and input. Sensory effect examples have nearby effect names; instructions do not depend solely on shape, position or color.                                                                                                                                                                                                                               |
+| 1.3.4                                                                         | **PASS, bounded layouts:** no authored orientation restriction; narrow, wide and the existing short landscape preview cases retain actions. This is desktop viewport testing, not a physical-device orientation result.                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 1.4.1; 1.4.11                                                                 | **PASS, sampled states after fixes:** selection has a contrasting border, tabs an underline, status words accompany dots, controls have names/icons and visible focus. Selected borders measure 4.58:1; accent/silver focus indicators are visible against the adjacent dark surfaces. Decorative hairlines and disabled controls are not used as evidence of necessary control boundaries.                                                                                                                                                                                                                                  |
+| 1.4.3                                                                         | **PASS, sampled solid text:** computed foreground/background checks, including alpha-composed solid ancestors, found a minimum 6.68:1 among the sampled enabled text runs. Code, muted labels and silver-button text were included. **UNTESTED:** exhaustive gradient/pseudo-element and animated-canvas pixel contrast across every effect/time/intensity; solid-background calculations do not establish those results.                                                                                                                                                                                                    |
+| 1.4.4                                                                         | **PASS, bounded resizing:** actual Chromium profile defaults of 16/24/32px exercise body, control and code growth plus preview/navigation containment in the existing regression. Native 200% page zoom is reused only from [PR #153](https://github.com/G0m1namm/domfx/pull/153) on `f168bb4`; this review did not change native zoom. Text-only browser zoom remains untested.                                                                                                                                                                                                                                             |
+| 1.4.10; 1.4.12                                                                | **PASS, sampled reflow/spacing:** all five routes at 320/360/768/1440 CSS px fit without page-wide horizontal overflow. Overrides use line-height 1.5, paragraph spacing 2em, letter spacing .12em and word spacing .16em. Search/preview and docs navigation, labs, code and tables remain available; intrinsically wide code/tables scroll within their own regions. Changed pan controls were also inspected with spacing overrides at 320/700/1000px; the longer footer playback label fits at 320px with actual 16/32px font preferences. A 320px viewport is the reduced-viewport reflow method, not native 400% zoom. |
+| 1.4.13                                                                        | **PASS, reviewed interactions:** native title tooltips are browser-controlled; authored card illumination adds no content. Preview hover magnifies the existing subject, ends on pointer exit, and has explicit zoom/Fit alternatives; Escape closes the preview. No hover-only action is required.                                                                                                                                                                                                                                                                                                                          |
+| 2.1.1–2.1.2; 2.1.4; 2.4.1; 2.4.3; 2.4.7; 2.4.11                               | **PASS, bounded keyboard review:** forward/reverse Tab, skip navigation, Enter/Space, subject radios and range arrows, tabs, search arrows/Enter/Escape, preview zoom/pan, drawer Escape and trigger return. Focused centers were visible/unobscured in the route traversal; large scrolling regions need not have their entire outline onscreen. Native modal focus containment has an Escape exit. Character zoom/pan keys act only on the focused preview; global search requires Cmd/Ctrl. No complete installed-Safari keyboard pass is inferred.                                                                       |
+| 2.4.2; 2.4.4–2.4.6; 3.1.1; 3.2.1–3.2.4; 3.2.6                                 | **PASS, sampled navigation/content:** descriptive page titles, English document language, named links/headings, consistent header/footer/docs navigation and docs feedback order, and links plus search to find pages. Focus/input changes do not unexpectedly navigate; activating a result/link does.                                                                                                                                                                                                                                                                                                                      |
+| 2.2.2; project reduced motion                                                 | **PASS, named controls after page-pause fix:** automatic marketing effects have a persistent Pause/Resume choice; dialogs/labs have separate playback controls. Existing recovery tests establish stopped output under reduced motion and explicit restart afterward. Controlled WebGPU absence retains original content and understandable disabled/status states; it is not a physical GPU-loss result.                                                                                                                                                                                                                    |
+| 2.5.1–2.5.3; 2.5.7–2.5.8                                                      | **PASS, sampled pointer/name review after fixes:** no multipoint/path gesture is required; sliders accept track clicks and previews offer zoom/pan/Fit buttons. Activation occurs on release/click and backdrop cancellation is covered. New pan controls are 44×44; other sampled controls meet the 24px minimum or spacing exception, and inline prose links use the inline exception. This does not establish physical touch behavior.                                                                                                                                                                                    |
+| 3.3.2; 4.1.2–4.1.3                                                            | **PASS, DOM/control checks:** input labels, group names, selected/pressed/expanded states, values and disabled states are exposed. Copy success/failure, search counts/failure and lab availability use text/status/live regions. Actual announcement timing is not inferred; the dated speech evidence below retains its own scope.                                                                                                                                                                                                                                                                                         |
+| 2.3.1                                                                         | **UNTESTED / HELD:** no formal temporal luminance, red-flash, area or frequency assessment was performed across the effects. Appearance, Pause and reduced-motion support do not establish a flashing-threshold pass.                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 1.2.1–1.2.5; 1.3.5; 1.4.2; 2.2.1; 2.5.4; 3.1.2; 3.3.1/3.3.3–3.3.4/3.3.7–3.3.8 | **NOT APPLICABLE to these surfaces:** no audio/video media, personal-data input, authored time limit, motion-actuation control, language passage needing a different language tag, submitted validation/legal/financial transaction, redundant data entry or authentication. Search no-match/network and clipboard failure messages were still reviewed.                                                                                                                                                                                                                                                                     |
+| 1.4.5                                                                         | **NOT APPLICABLE beyond exemptions:** informational prose/code remains text; logos and sensory effect specimens are not replacements for ordinary text content.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+
+### Source, methods and reuse
+
+Reviewed baseline: `63599d0ace42fe291339f8df89f690373d0f1eec`, plus this review's
+scoped UI fixes. Final UI source SHA-256: `b7f72443fe9f42166ca2169ff7be4b6c8b3a8941b0a3f18e193c54c2b05de18a`;
+composed production build SHA-256: `81352993ca44b7fdee46d7cbed7104c5dcff0790428db5512f8ccd3eeb05ac26`;
+lockfile SHA-256: `0fbf0fdbe9db80994088f9123380e1c0ed3158f60f810a702fabee2577a62514`.
+UI/build digests hash compact JSON mapping sorted relative file paths to content
+SHA-256 values; UI paths are tracked files under `apps/web/src`, `apps/docs/src`
+and `packages/site/src`, and build paths are under `apps/web/dist`.
+
+New checks used Playwright 1.63.0 bundled Chromium **153.0.8010.12**, headless on
+macOS **26.6.2 (25G83)**, arm64 / Apple M5 Pro, 24 GB RAM; Node 22.22.3,
+pnpm 11.5.0. Route probes used DPR 1, 100% default page zoom, visible pages,
+320/360/768/1440×900 CSS px and reduced motion emulated on to inspect stable
+content. Baseline route/spacing probes ran on `63599d0`; changed-control regressions and visual checks ran on the UI/build digests above. Focus/scroll probes recorded actual key events and scroll offsets:
+standalone code, Frost usage and its options table each moved horizontally by
+40px with ArrowRight while focused and visible. Search arrows traversed actual
+results; drawer Escape restored the invoker. These are browser automation results,
+not installed-browser manual, spoken-output or physical-device observations.
+
+To reproduce, run `pnpm agent:verify`, `pnpm test:web` and `pnpm test:docs`.
+The focused regressions are in `apps/web/browser-tests/accessibility.spec.ts`;
+the existing smoke suite uses fresh browser profiles for actual font preferences.
+For gap checks, build/serve the composed site, apply the spacing values above,
+walk both Tab directions, open/close search/preview/drawer, and focus code/table
+regions before pressing horizontal arrows. Inspect both controls and text; a
+page-width measurement alone cannot prove usable reflow.
+
+Earlier source-specific navigation, no-JavaScript, reduced-motion, unavailable-output,
+speech and lifecycle observations below are reused only for their stated scenarios.
+The #141/#142 lifecycle cohorts and #153 font/zoom cohort were not repeated as a
+new broad matrix. Final verification: website **85 passed / 3 expected metadata skips** (development and production); docs **30 passed** (production).
+
 ## Current-site observations — 2026-10-20 UTC
+
+This source-specific cohort is historical; later fixes and the bounded review are
+recorded above.
 
 Verified October 20–21 for [#87](https://github.com/G0m1namm/domfx/issues/87) on
 runtime [fcf7532](https://github.com/G0m1namm/domfx/commit/fcf753206814a77d16f3709e3eacd13165c765ea).
@@ -51,18 +131,19 @@ diagnostic panel. It recorded viewport/DPR, motion, visibility, trusted events a
 scroll offsets without cancelling input. The panel was excluded from application
 reading/focus judgments. GPU API presence was recorded, not adapter identity.
 
-### Known failures and remaining checks
+### Historical defects and broader coverage limits
 
-- [#143](https://github.com/G0m1namm/domfx/issues/143): body text ignores larger browser default fonts.
-- [#144](https://github.com/G0m1namm/domfx/issues/144): an intermittent bundled-Chromium development check left the artwork playback control enabled under reduced motion despite zero canvases. Later passes do not resolve it.
-- **Untested:** complete native keyboard order, visible foreground code/table scrolling,
+- [#143](https://github.com/G0m1namm/domfx/issues/143): the historical default-font failure was resolved by PR #153 (`f168bb4`).
+- [#144](https://github.com/G0m1namm/domfx/issues/144): the historical reduced-motion control failure was resolved by PR #151 (`1fc7baa`); unrelated later passes were not the resolution evidence.
+- **Untested in installed Safari:** complete native keyboard order, visible foreground code/table scrolling,
   complete zoomed lab usability, Safari public-API refresh/disposal/reattachment,
   AT history, other browser/screen-reader pairings, braille, switch and voice control.
 - **Unavailable in this cohort:** physical mobile and a second OS/GPU. Real-device
   access is needed for touch, pan and selection checks; desktop emulation is insufficient.
 - **Held:** Linux/SwiftShader; see the [support limits](browser-support.md#missing-coverage).
 
-[#87](https://github.com/G0m1namm/domfx/issues/87) remains open for these gaps.
+These broader environment/AT gaps remain coverage limits, outside #87's narrowed
+remaining review. The current review's explicit holds are listed above.
 
 ## Verify the current site
 

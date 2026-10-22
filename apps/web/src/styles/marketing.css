@@ -689,7 +689,7 @@ footer nav a {
     color 0.15s;
 }
 .filters button[aria-pressed='true'] {
-  border-color: #454754c0;
+  border-color: var(--control-border);
   background: #292a35;
   box-shadow:
     inset 0 1px #e8eaf309,
@@ -771,7 +771,7 @@ footer nav a {
   padding-inline: 12px;
 }
 .target-options button[aria-pressed='true'] {
-  border-color: #454754;
+  border-color: var(--control-border);
   background: #292a35;
 }
 .dialog-top button {
@@ -2255,6 +2255,10 @@ body.marketing-page {
   margin-left: 6px;
   border-left-color: #45475480;
   border-radius: 0;
+}
+.preview-pan-controls {
+  flex-basis: 100%;
+  justify-content: flex-end;
 }
 .touch-zoom-hint {
   display: none;

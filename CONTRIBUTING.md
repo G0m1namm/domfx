@@ -162,8 +162,9 @@ Before proposing a change:
 
 CI runs `pnpm check`, the production website build, a GPU-independent website smoke
 suite and release metadata validation. Expensive GPU, soak and performance runs are
-local opt-in checks. The publication workflow remains disabled; its existing GPU
-preparation must be revised before enabling publication on hosted runners.
+local opt-in checks. The publication workflow remains disabled. Release execution
+must consume the exact locally verified tarballs through the read-only handoff in
+[RELEASING.md](RELEASING.md); a hosted rebuild cannot replace that evidence.
 
 Browser test and measurement commands reserve one session across linked worktrees
 and clean up their process group on exit (macOS/Linux). A busy session reports its

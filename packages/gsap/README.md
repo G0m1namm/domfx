@@ -3,8 +3,8 @@
 Start with the [consumer quickstart](https://github.com/G0m1namm/domfx/blob/main/QUICKSTART.md)
 for local installation and a tested GSAP walkthrough.
 
-Optional, private workspace binding for a manual domfx attachment and a caller-owned
-GSAP 3.15 timeline. The package name is provisional; nothing is published to npm.
+Optional, experimental binding for a manual domfx attachment and a caller-owned
+GSAP 3.15 timeline. The `0.1.0-alpha.0` candidate is prepared but not published to npm.
 GSAP is a peer dependency supplied by the consumer. Core and browser imports remain
 GSAP-free. This adapter imports only core types and GSAP, with no browser/GPU internals.
 

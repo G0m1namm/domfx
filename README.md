@@ -2,7 +2,7 @@
 
 GPU edge effects for live DOM elements. Choose from 21 effects, including Electricity, Frost, Fire, Slime, Burned paper, Kinetic bloom and geometric patterns. Animate automatically or control time and intensity with your code or GSAP.
 
-This repository contains a working browser feasibility experiment in a pnpm monorepo. Packages are private and experimental; the manual attachment API is experimental and there is no published npm package yet.
+This repository contains a working browser feasibility experiment in a pnpm monorepo. The first `0.1.0-alpha.0` candidate is prepared but not published to npm. The attachment API remains experimental.
 
 ## Quickstart and usage
 
@@ -11,7 +11,7 @@ Start with the [consumer quickstart](QUICKSTART.md) for verified standalone and 
 Package-specific contracts and API references live in their respective package guides:
 
 - [`@domfx/core`](packages/core/README.md) — DOM/framework/GPU-independent contracts and computation
-- [`@domfx/domfx`](packages/domfx/README.md) — browser capture and internal TypeGPU renderer
+- [`@domfx/browser`](packages/domfx/README.md) — browser capture and internal TypeGPU renderer
 - [`@domfx/gsap`](packages/gsap/README.md) — optional GSAP lifecycle helpers
 
 ## Support limits
@@ -57,7 +57,7 @@ apps/docs       → Starlight documentation, composed into the website under /do
 tests/gpu       → package-private regression fixtures and numerical tests; no demo app
 ```
 
-One workspace lockfile governs dependencies. All packages remain private and experimental; the selected npm scope is `@domfx`. The website and test fixtures import built package exports, never library source aliases. Rebuild packages after library edits and restart the website.
+One workspace lockfile governs dependencies. The three libraries target the `@domfx` npm scope; apps, fixtures and site resources stay private. The website and test fixtures import built package exports, never library source aliases. Rebuild packages after library edits and restart the website.
 
 `tests/gpu` is a package-private workspace for internal regression testing and diagnostic fixtures. It is test infrastructure, not another public gallery or published package.
 
@@ -75,7 +75,9 @@ CI runs fast repository checks, production builds, and a GPU-independent website
 - [.github/REPOSITORY_SETTINGS.md](.github/REPOSITORY_SETTINGS.md) records branch rules, label taxonomies, security policies, and shared maintenance routines.
 - [RELEASING.md](RELEASING.md) defines the manual first-alpha release and artifact approval process.
 
-Publication remains disabled, and neither the website nor test fixtures are npm releases.
+Hosted publication remains disabled. The candidate still requires reviewed artifact approval and registry verification. Neither the website nor test fixtures are npm releases.
+
+The maintainer handles [manual Cloudflare deployment](engineering/website-deployment.md) to `domfx.dev`.
 
 ## License and inspiration
 

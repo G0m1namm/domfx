@@ -25,7 +25,7 @@ Missing browser or GPU access is a failed verification, not a rendering pass.
 ## Create your preview app
 
 Create an empty directory outside the checkout. Copy the rehearsal's tarballs into
-an `artifacts/` subdirectory. For the current `0.0.0` artifacts, save this as
+an `artifacts/` subdirectory. For the current `0.1.0-alpha.0` artifacts, save this as
 `package.json`; use the actual filenames if the versions change:
 
 ```json
@@ -39,8 +39,8 @@ an `artifacts/` subdirectory. For the current `0.0.0` artifacts, save this as
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "file:./artifacts/domfx-core-0.0.0.tgz",
-    "@domfx/browser": "file:./artifacts/domfx-browser-0.0.0.tgz"
+    "@domfx/core": "file:./artifacts/domfx-core-0.1.0-alpha.0.tgz",
+    "@domfx/browser": "file:./artifacts/domfx-browser-0.1.0-alpha.0.tgz"
   },
   "devDependencies": { "typescript": "5.9.3", "vite": "7.3.6" }
 }
@@ -52,7 +52,7 @@ Save this as `pnpm-workspace.yaml`:
 autoInstallPeers: false
 strictPeerDependencies: true
 overrides:
-  '@domfx/core': file:./artifacts/domfx-core-0.0.0.tgz
+  '@domfx/core': file:./artifacts/domfx-core-0.1.0-alpha.0.tgz
 ```
 
 Keep the override even though core is a direct dependency: it resolves the browser
@@ -102,7 +102,7 @@ If you choose the [optional snapshot helpers](/docs/api/gsap#snapshot-bindings),
 also add their artifact:
 
 ```json
-"@domfx/gsap": "file:./artifacts/domfx-gsap-0.0.0.tgz"
+"@domfx/gsap": "file:./artifacts/domfx-gsap-0.1.0-alpha.0.tgz"
 ```
 
 Run `pnpm install --ignore-scripts` again. GSAP is an explicit peer supplied by

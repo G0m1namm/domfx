@@ -2,9 +2,9 @@
 
 Attach decorative effects to an element's visible shape while keeping the original
 DOM as the content and interaction surface. The API is experimental and the packages
-are private. This guide uses **local release tarballs**, not a registry installation.
-There is no supported `pnpm add @domfx/browser` registry command yet; names and the
-first release version remain provisional.
+are not published yet. This guide uses **local release tarballs**, not a registry installation.
+There is no supported `pnpm add @domfx/browser` registry command yet.
+The first release is being prepared as `0.1.0-alpha.0`.
 
 ## Run the verified consumers
 
@@ -41,7 +41,7 @@ use the page below to keep an effect visible.
 ## Start a separate preview app
 
 Create an empty directory **outside the checkout**. Copy the tarballs from the printed
-rehearsal's `artifacts/` into an `artifacts/` subdirectory. For the current `0.0.0`
+rehearsal's `artifacts/` into an `artifacts/` subdirectory. For the current `0.1.0-alpha.0`
 artifacts, create these two files (use the actual filenames if versions change):
 
 ```json
@@ -51,8 +51,8 @@ artifacts, create these two files (use the actual filenames if versions change):
   "type": "module",
   "scripts": { "dev": "vite --host 127.0.0.1", "build": "vite build", "preview": "vite preview --host 127.0.0.1" },
   "dependencies": {
-    "@domfx/core": "file:./artifacts/domfx-core-0.0.0.tgz",
-    "@domfx/browser": "file:./artifacts/domfx-browser-0.0.0.tgz"
+    "@domfx/core": "file:./artifacts/domfx-core-0.1.0-alpha.0.tgz",
+    "@domfx/browser": "file:./artifacts/domfx-browser-0.1.0-alpha.0.tgz"
   },
   "devDependencies": { "typescript": "5.9.3", "vite": "7.3.6" }
 }
@@ -64,7 +64,7 @@ Save that as `package.json`, and this as `pnpm-workspace.yaml`:
 autoInstallPeers: false
 strictPeerDependencies: true
 overrides:
-  '@domfx/core': file:./artifacts/domfx-core-0.0.0.tgz
+  '@domfx/core': file:./artifacts/domfx-core-0.1.0-alpha.0.tgz
 ```
 
 The override resolves the browser package's unpublished core version to the local

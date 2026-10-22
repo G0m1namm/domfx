@@ -60,7 +60,9 @@ maintainer policy are listed separately below.
 
 Enable visibility-dependent settings at launch. Hooks alone cannot protect `main`.
 
-Packages remain `private: true` until packed-consumer, browser and release gates pass.
+Only core, browser and GSAP have public publication metadata for the alpha candidate;
+other workspaces stay private. Candidate metadata does not authorize publication.
+The [exact-artifact release gates](../RELEASING.md) still apply.
 Future PRs add squash commits; do not keep rewriting public history into one commit.
 
 ## Maintenance routine

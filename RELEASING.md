@@ -250,7 +250,7 @@ versions, create matching package version tags and GitHub release notes from the
 approved commit, and update the public installation route. Configure OIDC trusted
 publishing only as a separately reviewed future hosted publication path.
 
-The maintainer deploys the website manually using the
+The website deploys through the dashboard-configured GitHub connection using the
 [Cloudflare deployment guide](engineering/website-deployment.md). Website deployment
 and rollback do not publish packages or enable search indexing.
 

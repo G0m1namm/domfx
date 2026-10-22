@@ -1,9 +1,10 @@
 # Website deployment
 
-The maintainer deploys the static website to Cloudflare manually. Package publication
-is separate; there is no deployment workflow or Cloudflare credential in this repository.
-The intended production origin is `https://domfx.dev`. Record the actual deployment
-identifier, source revision and live checks in #91 after deployment.
+The static website runs on Cloudflare Workers at `https://domfx.dev`. Its GitHub
+connection is configured through the Cloudflare dashboard; production builds follow
+`main`. Package publication is separate. No Cloudflare credential or GitHub deployment
+workflow is stored in this repository. Record deployment identifiers, source revisions
+and live checks in #91.
 
 ## Build
 
@@ -23,22 +24,33 @@ repository root is the deployment artifact. No Astro SSR adapter or server is ne
 metadata and disables indexing even if the shell sets `DOMFX_INDEXING=true`.
 Previews stay unindexed too. #140 owns enabling indexing later.
 
-## Manual Cloudflare setup
+## Cloudflare Worker setup
 
-For a dashboard upload, create a **Pages Direct Upload** project and upload the
-composed directory. Choose the project name in your own Cloudflare account. For a
-Git-connected Pages project instead, keep the repository root as the build root;
-use `pnpm install --frozen-lockfile && pnpm build:site` and output `apps/web/dist`.
-Set `NODE_VERSION=22.22.3` and `PNPM_VERSION=11.5.0`. Restrict production deployment
-to reviewed `main` revisions; configure branch deployment controls as intended.
-Neither path needs npm publishing credentials. A Direct Upload project cannot later
-switch to Git integration, so choose that project type deliberately.
+The `domfx` Worker connects to `G0m1namm/domfx`, with repository root `/`, production
+branch `main` and preview builds disabled. Set the build variable
+`PNPM_VERSION=11.5.0`; `.nvmrc` selects Node 22.22.3. The dashboard uses this
+composed build command:
 
-Add `domfx.dev` through the project's **Custom domains** settings. For an apex
-domain on Pages, its zone must use Cloudflare nameservers; follow the dashboard's
-DNS and certificate instructions. Wait for HTTPS to work before treating it as live.
-Do not add a catch-all SPA rewrite. The build includes a root `404.html` so missing
-paths return an actual 404 while existing directory routes retain trailing slashes.
+```sh
+pnpm install --frozen-lockfile && DOMFX_SITE_URL=https://domfx.dev DOMFX_SITE_PRODUCTION=true DOMFX_INDEXING=false pnpm build:web
+```
+
+Deploy command:
+
+```sh
+pnpm --allow-build=workerd dlx wrangler@4.151.3 deploy --assets apps/web/dist --name domfx --compatibility-date 2026-10-22 --no-autoconfig
+```
+
+This uploads the composed static assets without adding an SSR adapter or changing
+the Astro applications. Keep the deployment token in Cloudflare's build settings.
+Its automatic token has broad account permissions; creating or expanding that
+access requires maintainer approval. Never copy its value into source or logs.
+
+In the Worker's **Domains** tab, add `domfx.dev` as a production custom domain,
+leaving the optional subdomain empty. Cloudflare manages the domain's DNS record
+and certificate. Wait for verified HTTPS before treating it as live. Keep ordinary
+static routing: directory URLs retain trailing slashes and unknown paths return
+404, without a catch-all SPA rewrite. Verify the result on the deployed origin.
 
 ## Verify the live deployment
 
@@ -69,14 +81,15 @@ registry-consumer proof in [RELEASING.md](../RELEASING.md).
 
 ## Roll back
 
-In Pages **Deployments**, select the last verified production deployment and use
-**Rollback to this deployment**. Re-run the live checks and record its identifier.
-Retain the built output and source commit for each manual upload so it can also be
-rebuilt and redeployed. Website rollback does not change immutable npm versions.
+In the Worker's **Deployments** tab, roll back to the last verified version.
+Re-run the live checks and record its identifier. Preserve its source commit and
+build settings so it can also be rebuilt and redeployed. Website rollback does
+not change immutable npm versions. The first deployment has no earlier verified
+version to restore.
 
-References: [Astro on Pages](https://developers.cloudflare.com/pages/framework-guides/deploy-an-astro-site/),
-[Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/),
-[build image](https://developers.cloudflare.com/pages/configuration/build-image/),
-[custom domains](https://developers.cloudflare.com/pages/configuration/custom-domains/),
-[routing and 404s](https://developers.cloudflare.com/pages/configuration/serving-pages/),
-[rollback](https://developers.cloudflare.com/pages/configuration/rollbacks/).
+References: [Workers static assets](https://developers.cloudflare.com/workers/static-assets/),
+[build settings and token permissions](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/),
+[build image](https://developers.cloudflare.com/workers/ci-cd/builds/build-image/),
+[custom domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/),
+[routing and 404s](https://developers.cloudflare.com/workers/static-assets/routing/static-site-generation/),
+[rollback](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/rollbacks/).

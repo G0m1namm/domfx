@@ -77,7 +77,7 @@ CI runs fast repository checks, production builds, and a GPU-independent website
 
 Hosted publication remains disabled. The candidate still requires reviewed artifact approval and registry verification. Neither the website nor test fixtures are npm releases.
 
-The maintainer handles [manual Cloudflare deployment](engineering/website-deployment.md) to `domfx.dev`.
+The website uses [Cloudflare Workers deployment](engineering/website-deployment.md) at `domfx.dev`.
 
 ## License and inspiration
 

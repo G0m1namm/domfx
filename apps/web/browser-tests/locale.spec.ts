@@ -163,4 +163,15 @@ test.describe('without JavaScript', () => {
     expect((await request.get('/es/unknown/')).status()).toBe(404);
     expect((await request.get('/docs/es/unknown/')).status()).toBe(404);
   });
+
+  test('open mobile menu remains dismissible after widening the viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 700, height: 800 });
+    await page.goto('/es/effects/');
+    await page.getByRole('button', { name: 'Abrir menú del sitio' }).click();
+    await expect(page.locator('#site-menu')).toBeVisible();
+    await page.setViewportSize({ width: 701, height: 800 });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#site-menu')).toBeHidden();
+    await expect(page.locator('.site-nav .language-links')).toBeVisible();
+  });
 });

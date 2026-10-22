@@ -111,6 +111,13 @@ test('Spanish table of contents keeps the equivalent section when changing langu
   await expect(page.getByRole('heading', { name: 'Energy', level: 2 })).toBeVisible();
 });
 
+test('explicit API anchor survives a language switch', async ({ page }) => {
+  await page.goto('/docs/api/#create-an-attachment');
+  await page.locator('[data-language-link="es"]').first().click();
+  await expect(page).toHaveURL('/docs/es/api/#create-an-attachment');
+  await expect(page.locator('#create-an-attachment')).toBeInViewport();
+});
+
 test('every Spanish guide TOC section has an equivalent English anchor', async ({
   page,
   request,
@@ -127,6 +134,25 @@ test('every Spanish guide TOC section has an equivalent English anchor', async (
       expect(equivalent, `${slug}${fragment}`).toContain('#');
       const anchor = equivalent?.split('#')[1];
       expect(english, `${slug}${fragment} → ${anchor}`).toContain(`id="${anchor}"`);
+    }
+  }
+});
+
+test('every shared explicit docs anchor survives both language switches', async ({ request }) => {
+  for (const slug of docsSlugs) {
+    const english = await (await request.get(`/docs/${slug}/`)).text();
+    const spanish = await (await request.get(`/docs/es/${slug}/`)).text();
+    const explicitAnchors = [...english.matchAll(/<span id="([^"]+)"/g)].map((match) => match[1]);
+    for (const anchor of explicitAnchors) {
+      if (!spanish.includes(`id="${anchor}"`)) {
+        continue;
+      }
+      expect(languageHref(`https://domfx.dev/docs/${slug}/#${anchor}`, 'es')).toBe(
+        `/docs/es/${slug}/#${anchor}`,
+      );
+      expect(languageHref(`https://domfx.dev/docs/es/${slug}/#${anchor}`, 'en')).toBe(
+        `/docs/${slug}/#${anchor}`,
+      );
     }
   }
 });

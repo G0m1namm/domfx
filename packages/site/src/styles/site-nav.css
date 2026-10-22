@@ -288,8 +288,3 @@
     display: flex;
   }
 }
-@container (width >= 43.8125em) {
-  .site-menu {
-    display: none;
-  }
-}

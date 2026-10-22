@@ -52,3 +52,38 @@ test('Spanish documentation headings map to equivalent English sections', () => 
     '/docs/es/introduction/#start-with-your-element',
   );
 });
+
+test('language links preserve explicit docs anchors shared by both languages', () => {
+  for (const [slug, anchors] of Object.entries({
+    api: [
+      'create-an-attachment',
+      'attachment-options',
+      'fire-only-options',
+      'control-playback',
+      'read-state',
+      'refresh-retry-and-dispose',
+      'bind-gsap',
+      'package-boundaries',
+    ],
+    standalone: ['control-time'],
+    gsap: ['context-cleanup', 'optional-bindings', 'unavailable-and-retry'],
+    'api/shared': ['attachment-options', 'control-playback', 'animation-control'],
+    'api/effect-handle': ['read-state', 'refresh-retry-and-dispose', 'independent-state'],
+    'api/gsap': ['native-tweens', 'snapshot-bindings'],
+  })) {
+    for (const anchor of anchors) {
+      for (const [source, target] of [
+        ['en', 'es'],
+        ['es', 'en'],
+      ]) {
+        const prefix = source === 'es' ? '/docs/es' : '/docs';
+        const targetPrefix = target === 'es' ? '/docs/es' : '/docs';
+        assert.equal(
+          languageHref(`https://domfx.dev${prefix}/${slug}/#${anchor}`, target),
+          `${targetPrefix}/${slug}/#${anchor}`,
+          `${source} → ${target}: ${slug}#${anchor}`,
+        );
+      }
+    }
+  }
+});

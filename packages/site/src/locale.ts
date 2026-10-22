@@ -205,6 +205,25 @@ const spanishDocsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> 
   ],
 };
 
+// Explicit source IDs are present in both languages alongside translated headings.
+const sharedDocsAnchors: Partial<Record<(typeof docsSlugs)[number], readonly string[]>> = {
+  standalone: ['control-time'],
+  gsap: ['context-cleanup', 'optional-bindings', 'unavailable-and-retry'],
+  api: [
+    'create-an-attachment',
+    'attachment-options',
+    'fire-only-options',
+    'control-playback',
+    'read-state',
+    'refresh-retry-and-dispose',
+    'bind-gsap',
+    'package-boundaries',
+  ],
+  'api/shared': ['attachment-options', 'control-playback', 'animation-control'],
+  'api/effect-handle': ['read-state', 'refresh-retry-and-dispose', 'independent-state'],
+  'api/gsap': ['native-tweens', 'snapshot-bindings'],
+};
+
 const effectIds = new Set(effects.map((effect) => effect.id));
 const homeEffectIds = new Set(effects.slice(0, 5).map((effect) => effect.id));
 const docsPaths = new Set<string>(docsSlugs);
@@ -283,7 +302,11 @@ function equivalentAnchor(
         ? anchor
         : undefined;
     case 'docs':
-      if (anchor === '_top' || docsAnchors[page.slug].includes(anchor)) {
+      if (
+        anchor === '_top' ||
+        docsAnchors[page.slug].includes(anchor) ||
+        sharedDocsAnchors[page.slug]?.includes(anchor)
+      ) {
         return anchor;
       }
       if (sourceLocale === 'es') {
@@ -321,6 +344,9 @@ export function languageHref(currentUrl: string | URL, locale: Locale): string |
     anchor = '';
   }
   const equivalent = equivalentAnchor(page, anchor, localeFromPath(url.pathname), locale);
-  const hash = equivalent ? (equivalent === anchor ? url.hash : `#${equivalent}`) : '';
+  let hash = '';
+  if (equivalent) {
+    hash = equivalent === anchor ? url.hash : `#${equivalent}`;
+  }
   return `${localePath(page, locale)}${url.search}${hash}`;
 }

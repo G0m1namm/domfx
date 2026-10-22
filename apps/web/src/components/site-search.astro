@@ -16,7 +16,7 @@ const m = marketingMessages[locale];
     <section data-search-group="effects" aria-labelledby="search-effects-heading">
       <h3 id="search-effects-heading">{m.effects}</h3>
       <ul>{effects.map(({id, name, category, exportName}, index) => {
-        const categoryLabel = category === 'Energy' ? m.energy : category === 'Material' ? m.material : m.patternCategory;
+        const categoryLabel = { Energy: m.energy, Material: m.material, Pattern: m.patternCategory }[category];
         const description = effectDescriptions[locale][id];
         const label = <><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-sparkle"/></svg><span><strong>{name}</strong><small>{categoryLabel}</small></span><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></>;
         return <li data-search-item data-search-kind="effects" data-title={name.toLowerCase()} data-keywords={`${name} ${exportName} ${categoryLabel} ${description} ${locale === 'es' ? 'efecto' : 'effect'}`.toLowerCase()} data-starter={index < 4 ? 'true' : undefined}><button data-search-effect={id} data-id={id} data-name={name} data-category={category}>{label}</button></li>;

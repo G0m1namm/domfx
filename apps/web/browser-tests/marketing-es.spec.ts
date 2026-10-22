@@ -24,7 +24,9 @@ test('Spanish home and all gallery cards render complete copy and localized rout
   await expect(page.locator('[data-card]')).toHaveCount(effects.length);
   for (const effect of effects) {
     const card = page.getByRole('button', { name: `Probar ${effect.name}` });
-    await expect(card.locator('p')).not.toBeEmpty();
+    await expect(card.locator('.card-info h3')).toHaveText(effect.name);
+    await expect(card.locator('.card-info .category')).toBeVisible();
+    await expect(card.locator('.card-info p')).toHaveCount(0);
   }
   await expect(page.getByRole('button', { name: 'Energía' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Patrones' })).toBeVisible();

@@ -3,9 +3,8 @@ title: "Actualización"
 description: "Actualiza paquetes compatibles y revisa las notas de migración."
 ---
 
-domfx es experimental y no está publicado. Todavía no existe un comando de
-actualización desde un registro. Usa artefactos verificados y compatibles de la
-[guía de instalación](/docs/es/installation).
+La versión experimental `0.1.0-alpha.0` está disponible en npm.
+Consulta las versiones exactas en la [guía de instalación](/docs/es/installation).
 
 <span id="upgrade-compatible-packages"></span>
 
@@ -18,8 +17,7 @@ la compatibilidad. No presupongas que los números de versión son iguales.
 Fija las versiones exactas o los archivos tar que verificaste e incluye el
 lockfile de tu aplicación en el control de versiones.
 
-Con artefactos locales, sustituye juntos los archivos tar de browser y core
-y la sustitución de core. Actualiza el artefacto GSAP opcional cuando cambien
+Actualiza browser y core a versiones compatibles. Actualiza el paquete GSAP opcional cuando cambien
 su compatibilidad o comportamiento; la integración independiente no necesita
 GSAP como dependencia. Ejecuta la instalación de tu gestor de paquetes y luego
 la compilación y comprobación de tipos de la aplicación.
@@ -28,7 +26,8 @@ la compilación y comprobación de tipos de la aplicación.
 
 ## Revisa las notas de migración
 
-Las pruebas públicas usarán la etiqueta opcional `alpha` en lugar de `latest`.
+Las etiquetas `alpha` y `latest` apuntan actualmente a `0.1.0-alpha.0`; ninguna indica una versión estable.
+Fija versiones exactas en lugar de depender de una etiqueta que puede cambiar.
 Durante `0.x`, los cambios incompatibles requieren una versión menor con notas
 de migración explícitas. Las API alfa pueden cambiar; un parche compatible debe
 conservar el contrato documentado.

@@ -3,8 +3,8 @@ title: "Upgrading"
 description: "Update compatible packages and check migration notes."
 ---
 
-domfx is experimental and unpublished. There is no registry upgrade command yet.
-Use matching verified artifacts from the [installation guide](/docs/installation).
+The experimental `0.1.0-alpha.0` release is available on npm.
+See the [installation guide](/docs/installation) for exact versions.
 
 ## Upgrade compatible packages
 
@@ -13,14 +13,15 @@ notes before updating; the browser package's core dependency range and the GSAP
 binding's peer range determine compatibility. Do not assume equal version numbers.
 Pin the exact versions or tarballs you verified and commit your app's lockfile.
 
-For local artifacts, replace the browser/core tarballs and the core override together.
-Update the optional GSAP artifact when its compatibility or behavior changes; the
+Update browser and core to compatible versions.
+Update the optional GSAP package when its compatibility or behavior changes; the
 standalone integration needs no GSAP dependency. Run your package manager's install,
 then the app's build and type checks.
 
 ## Check migration notes
 
-Public testing will use the opt-in `alpha` tag rather than `latest`. During `0.x`,
+Both `alpha` and `latest` currently point to `0.1.0-alpha.0`; neither means stable.
+Pin exact versions rather than relying on a moving tag. During `0.x`,
 breaking changes require a minor release with explicit migration notes. Alpha APIs
 may change; a compatible patch should preserve the documented contract.
 

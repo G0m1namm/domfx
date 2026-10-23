@@ -7,8 +7,8 @@ domfx adds GPU edge effects to the visible shape of a DOM element. Your text
 stays selectable, your buttons keep their handlers, and your links keep working.
 The effect lives in a separate canvas alongside the original content.
 
-> domfx is experimental. The @domfx package scope is selected and the packages are
-> unpublished. Start with the [local installation workflow](/docs/installation).
+> domfx is experimental. Version `0.1.0-alpha.0` is available on npm.
+> Start with the [installation guide](/docs/installation).
 
 ## Start with your element
 
@@ -24,8 +24,7 @@ decorative output there, without wrapping, moving or replacing your content.
 
 If you already use GSAP, follow the [complete GSAP recipe](/docs/gsap): attach an effect
 to your own heading, animate it with a timeline you own, seek/reverse and register cleanup.
-Your heading remains real, selectable HTML. [Install matching artifacts](/docs/installation)
-first; the public npm route will be added after verified alpha publication.
+Your heading remains real, selectable HTML. [Install the alpha](/docs/installation) first.
 
 ## Control animation
 

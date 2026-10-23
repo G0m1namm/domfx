@@ -1,8 +1,7 @@
 # Releases
 
 The first alpha uses Changesets, a reviewed release PR and manual publication of
-verified tarballs. The three libraries have a prepared `0.1.0-alpha.0` candidate;
-they are not published yet. All other workspaces remain private. Hosted publication
+verified tarballs. The three libraries are published as experimental `0.1.0-alpha.0`. All other workspaces remain private. Hosted publication
 is disabled.
 Repository visibility and npm publication are separate maintainer actions.
 
@@ -18,7 +17,9 @@ Repository visibility and npm publication are separate maintainer actions.
   for breaking changes. During `0.x`, use minor for breaking changes and call them
   out explicitly; do not hide breaking changes in patches.
 - First public testing should use an opt-in prerelease such as `0.1.0-alpha.0`
-  with an `alpha` distribution tag, not `latest`. A prerelease is still public.
+  with an `alpha` distribution tag. A prerelease is still public.
+  npm also assigned `latest` on first publication; the maintainer accepted both tags.
+  Neither tag makes this release stable. Pin exact versions in consumer instructions.
 
 ## Contributor workflow
 
@@ -94,7 +95,7 @@ readiness. Run `pnpm agent:verify` separately for the full repository gate.
 
 ## Exact-artifact handoff
 
-Publication is disabled: `.github/workflows/publish.yml` intentionally has no hosted
+Hosted publication is disabled: `.github/workflows/publish.yml` intentionally has no hosted
 preparation, upload or registry job. A hosted Linux build cannot stand in for the locally
 GPU-verified tarballs. On the WebGPU-capable machine, start from a clean checkout of the
 approved revision, run the local rehearsal, then verify the retained directory before
@@ -178,7 +179,7 @@ The empty changeset records metadata-only version/changelog/lockfile preparation
 so the ordinary PR check passes after release changesets are consumed; it requests
 no extra bump. Preserve real consumer-facing changesets in feature PRs. Review the
 actual versions, pre-state, changelogs and packed dependency graph. Keep `alpha`
-prerelease mode until deliberately graduating; never publish this alpha as `latest`.
+prerelease mode until deliberately graduating.
 
 The release PR removes `private` only from the three approved libraries,
 retains `publishConfig.access: public`, and changes Changesets access to `public`.
@@ -198,7 +199,7 @@ test it. This exception does not waive technical, license or maintainer readines
 Independent onboarding and developer value remain unverified until that feedback
 round. Keep its plan and results in the release issue.
 
-## Held publication approval
+## Manual publication approval
 
 Hosted publication remains disabled. The first release uses the existing local
 exact-artifact publisher below, after review and explicit approval of its tested bytes.
@@ -224,8 +225,10 @@ lifecycle scripts disabled. It never rebuilds or repacks. Existing versions are
 accepted only when their integrity and `alpha` tag match the tested artifact.
 Network/auth failures, mismatched bytes or tags stop execution. A partial release
 can resume with the same approved evidence within its seven-day validity window;
-inspect any mismatch instead of overwriting tags or skipping a package. Keep `latest`
-untouched. Published versions are immutable; corrections require a new version.
+inspect any mismatch instead of overwriting tags or skipping a package. Review actual
+distribution tags after publication; npm assigned both `alpha` and `latest` to the
+first alpha. Do not change tags without maintainer authorization. Published versions
+are immutable; corrections require a new version.
 
 The registry verifier must pass before installation/upgrade pages claim a public
 release. It proves consumers can resolve dependencies without local overrides and
@@ -256,8 +259,7 @@ Only after that pass, update site installation/upgrade instructions and the conc
 Prompt with exact verified versions and public docs. Run the exact rendered recipe
 on a real selectable heading and caller-owned timeline; retain button interaction,
 seek/reverse, unavailable/reduced-motion and early/late cleanup checks. Verify public
-source/docs links anonymously. Then invite feedback. Until then the site says
-unpublished and links to matching local artifacts, never an invented npm command.
+source/docs links anonymously. Then invite feedback. Do not advertise a registry installation before verifying it.
 
 References: [Changesets configuration](https://changesets.dev/guide/config),
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).

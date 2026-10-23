@@ -1,32 +1,25 @@
 ---
 title: "Installation"
-description: "Start with local artifacts from a verified release rehearsal."
+description: "Install the experimental alpha from npm."
 ---
 
-There is no supported registry installation command yet. You need access to a
-compatible local checkout or its core, browser and optional GSAP tarballs.
-Use Node 22.22.3 and pnpm 11.5.0 for the verified workflow.
+Install the experimental `0.1.0-alpha.0` release from npm. Use Node 22.22.3
+and pnpm 11.5.0 for the verified workflow.
 
-## Build verified artifacts
+<span id="build-verified-artifacts"></span>
 
-From the repository checkout:
+## Install the alpha
 
 ```sh
-pnpm install --frozen-lockfile
-pnpm --filter @domfx/gpu-tests exec playwright install chromium
-pnpm release:rehearse
+pnpm add -E @domfx/browser@0.1.0-alpha.0
 ```
 
-The rehearsal needs registry access for dependencies, a desktop session and
-WebGPU-capable Chromium. It prints a directory outside the checkout containing
-`artifacts/`, fresh standalone/GSAP consumers, command logs, GPU results and PNGs.
-Missing browser or GPU access is a failed verification, not a rendering pass.
+Core is installed automatically. GSAP is optional. Pin exact versions and keep
+your lockfile; the API is experimental even when npm's `latest` tag points to it.
 
 ## Create your preview app
 
-Create an empty directory outside the checkout. Copy the rehearsal's tarballs into
-an `artifacts/` subdirectory. For the current `0.1.0-alpha.0` artifacts, save this as
-`package.json`; use the actual filenames if the versions change:
+For a new preview app, create an empty directory and save this as `package.json`:
 
 ```json
 {
@@ -39,10 +32,10 @@ an `artifacts/` subdirectory. For the current `0.1.0-alpha.0` artifacts, save th
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "file:./artifacts/domfx-core-0.1.0-alpha.0.tgz",
-    "@domfx/browser": "file:./artifacts/domfx-browser-0.1.0-alpha.0.tgz"
+    "@domfx/core": "0.1.0-alpha.0",
+    "@domfx/browser": "0.1.0-alpha.0"
   },
-  "devDependencies": { "typescript": "5.9.3", "vite": "7.3.6" }
+  "devDependencies": { "typescript": "5.9.3", "vite": "7.3.7" }
 }
 ```
 
@@ -51,14 +44,10 @@ Save this as `pnpm-workspace.yaml`:
 ```yaml
 autoInstallPeers: false
 strictPeerDependencies: true
-overrides:
-  '@domfx/core': file:./artifacts/domfx-core-0.1.0-alpha.0.tgz
 ```
 
-Keep the override even though core is a direct dependency: it resolves the browser
-package's unpublished core version to your local artifact. Run
-`pnpm install --ignore-scripts`. No source alias, shader copy or consumer TypeGPU
-plugin is required; import the public built package exports.
+Run `pnpm install --ignore-scripts`. Import the public built package exports;
+no source alias, shader copy or consumer TypeGPU plugin is required.
 
 ## Provide the target and host
 
@@ -90,7 +79,7 @@ Open the printed loopback URL in a measured WebGPU-capable browser.
 ## Add the optional GSAP binding
 
 For native property tweens, add only `gsap` to your app. The `@domfx/gsap`
-artifact is needed only for the optional lifecycle-aware snapshot helpers.
+package is needed only for the optional lifecycle-aware snapshot helpers.
 
 For the GSAP walkthrough, add this dependency to `package.json`:
 
@@ -99,10 +88,10 @@ For the GSAP walkthrough, add this dependency to `package.json`:
 ```
 
 If you choose the [optional snapshot helpers](/docs/api/gsap#snapshot-bindings),
-also add their artifact:
+also add the package:
 
 ```json
-"@domfx/gsap": "file:./artifacts/domfx-gsap-0.1.0-alpha.0.tgz"
+"@domfx/gsap": "0.1.0-alpha.0"
 ```
 
 Run `pnpm install --ignore-scripts` again. GSAP is an explicit peer supplied by
@@ -110,5 +99,5 @@ your app; the standalone browser package does not install it.
 
 The guides use Fire as a worked example. The API reference lists
 [all attachment functions](/docs/api#available-effects) and their shared options.
-`flameHeight` is a Fire-only creation option. Use matching current artifacts for
+`flameHeight` is a Fire-only creation option. Use compatible package versions for
 the documented exports; do not mix older declarations with newer examples.

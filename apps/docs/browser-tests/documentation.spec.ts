@@ -261,6 +261,8 @@ test('@smoke docs search uses Pagefind from the shared header and opens an effec
   await expect(frost).toHaveAttribute('href', '/docs/api/effects/frost/');
   await frost.click();
   await expect(page).toHaveURL(/\/docs\/api\/effects\/frost\/$/);
+  // URL navigation can finish before Starlight registers the new page's shortcut.
+  await expect(trigger).toBeEnabled();
   await page.keyboard.press('ControlOrMeta+k');
   await expect(
     page.getByRole('dialog', { name: 'Search effects and documentation' }),

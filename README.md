@@ -2,13 +2,13 @@
 
 GPU edge effects for live DOM elements. Choose from 21 effects, including Electricity, Frost, Fire, Slime, Burned paper, Kinetic bloom and geometric patterns. Animate automatically or control time and intensity with your code or GSAP.
 
-The first `0.1.0-alpha.0` candidate is prepared but not published to npm. The API remains experimental.
+The first experimental alpha, `0.1.0-alpha.0`, is available on npm. The API may change.
 
 Explore the [website and documentation](https://domfx.dev).
 
 ## Quickstart and usage
 
-Start with the [consumer quickstart](QUICKSTART.md) for verified standalone and GSAP examples, local tarball installation, lifecycle ownership, and support limits.
+Start with the [consumer quickstart](QUICKSTART.md) for verified standalone and GSAP examples, npm installation, lifecycle ownership, and support limits.
 
 Package-specific contracts and API references live in their respective package guides:
 

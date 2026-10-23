@@ -1,7 +1,30 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { validateSiteOutput } from './check-site-contract.mjs';
+import { validatePreviewSite, validateSiteOutput } from './check-site-contract.mjs';
+
+for (const [name, body, expected] of [
+  ['empty response', '', /not-found HTML/],
+  ['missing recovery links', '<html><h1>Not found</h1></html>', /recovery link/],
+  ['bilingual recovery page', '<html><a href="/">Home</a><a href="/es/">Inicio</a></html>', null],
+]) {
+  test(`HTTP missing routes: ${name}`, async (t) => {
+    const { files, options } = output();
+    t.mock.method(globalThis, 'fetch', async (url) => {
+      const content = files.get(new URL(url).pathname);
+      return new Response(content ?? body, {
+        status: content === undefined ? 404 : 200,
+        headers: { 'Content-Type': 'text/html' },
+      });
+    });
+    const result = validatePreviewSite({ base: options.site, ...options });
+    if (expected) {
+      await assert.rejects(result, expected);
+    } else {
+      assert.deepEqual(await result, { pages: 6 });
+    }
+  });
+}
 
 test('rejects a content page missing its title in the built HTML', async () => {
   await assert.rejects(

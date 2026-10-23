@@ -115,6 +115,25 @@ for (const width of [320, 360, 768, 1440]) {
   });
 }
 
+for (const path of ['/', '/es/']) {
+  test(`${path} install commands fit at 320px with enlarged text`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto(path);
+    // CSS text resizing exercises wrapping; this is not native browser zoom.
+    await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+    const commands = page.locator('[data-copy="pnpm add -E @domfx/browser@0.1.0-alpha.0"]');
+    await expect(commands).toHaveCount(3);
+    for (const button of await commands.all()) {
+      await button.scrollIntoViewIfNeeded();
+      await expect(button).toBeVisible();
+      expect(
+        await button.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+      ).toBe(true);
+    }
+  });
+}
+
 for (const viewport of [
   { width: 320, height: 568 },
   { width: 667, height: 375 },
@@ -206,7 +225,7 @@ test('copy reports success only after a write and supplies a manual fallback', a
   await page.getByRole('button', { name: 'Copy package install command' }).click();
   await expect(page.locator('.toast')).toHaveText('Copied to clipboard');
   expect(await page.evaluate(() => sessionStorage.getItem('copied'))).toBe(
-    'pnpm add @domfx/browser',
+    'pnpm add -E @domfx/browser@0.1.0-alpha.0',
   );
   await page.evaluate(() =>
     Object.defineProperty(navigator, 'clipboard', {
@@ -218,7 +237,9 @@ test('copy reports success only after a write and supplies a manual fallback', a
     }),
   );
   await page.getByRole('button', { name: 'Copy package install command' }).click();
-  await expect(page.locator('.toast')).toContainText('Copy it manually: pnpm add @domfx/browser');
+  await expect(page.locator('.toast')).toContainText(
+    'Copy it manually: pnpm add -E @domfx/browser@0.1.0-alpha.0',
+  );
   await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
   await page.getByRole('button', { name: 'Copy attachment code' }).click();
   const feedback = page.getByRole('dialog').locator('[data-copy-status]');

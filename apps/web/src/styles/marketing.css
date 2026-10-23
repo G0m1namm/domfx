@@ -1458,6 +1458,10 @@ body {
   gap: 24px;
   flex-wrap: wrap;
 }
+.closing-actions code {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
 .closing-footer {
   display: block;
   border: 0;

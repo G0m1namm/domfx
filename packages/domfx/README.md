@@ -3,12 +3,12 @@
 Experimental DOM capture and internal TypeGPU renderer for domfx.
 
 See the [consumer quickstart](https://github.com/G0m1namm/domfx/blob/main/QUICKSTART.md)
-for local installation and a tested standalone/GSAP walkthrough.
+for npm installation and a tested standalone/GSAP walkthrough.
 
-The `0.1.0-alpha.0` candidate is prepared but not published yet. The `/experimental` entry is
-a feasibility-test interface, not a stable public API. There is no supported npm
-installation command yet. Browser/GPU requirements and broader lifecycle support
-are still being verified.
+Install the experimental alpha with `pnpm add -E @domfx/browser@0.1.0-alpha.0`.
+The `/experimental` entry is reserved for regression fixtures, not a stable public API.
+See the [browser support record](https://github.com/G0m1namm/domfx/blob/main/engineering/browser-support.md)
+for measured environments and limits.
 
 ## Packed ESM consumption
 
@@ -67,9 +67,9 @@ allocation ledger excludes pipelines, browser/driver caches and canvas backing s
 it is not a total VRAM measurement.
 
 From the repository, run `pnpm exec playwright install chromium` once, then
-`pnpm test:packed` on a machine with a display and WebGPU. This packs both private
+`pnpm test:packed` on a machine with a display and WebGPU. This packs the core and browser
 libraries and installs their tarballs in fresh temporary consumers outside the
-workspace. A local pnpm override resolves the unpublished core dependency to its
+workspace. A local pnpm override resolves the core dependency to its
 tarball; it does not alias source. The consumers use plain Vite without a config.
 
 The test copies the private GPU fixtures and test-only oracle, runs development and

@@ -66,7 +66,7 @@ decisions in `DESIGN.md` without requiring exploration artifacts.
 
 Consumer-facing library changes include a changeset (`pnpm changeset`); tooling,
 fixture-only and contributor-doc changes need no package bump. See
-[RELEASING.md](RELEASING.md). Publishing remains disabled.
+[RELEASING.md](RELEASING.md). Hosted publishing remains disabled.
 
 ## Dependency boundaries
 

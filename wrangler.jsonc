@@ -1,0 +1,8 @@
+{
+  "name": "domfx",
+  "compatibility_date": "2026-10-22",
+  "assets": {
+    "directory": "./apps/web/dist",
+    "not_found_handling": "404-page",
+  },
+}

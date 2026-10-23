@@ -1,48 +1,31 @@
 # Consumer quickstart
 
 Attach decorative effects to an element's visible shape while keeping the original
-DOM as the content and interaction surface. The API is experimental and the packages
-are not published yet. This guide uses **local release tarballs**, not a registry installation.
-There is no supported `pnpm add @domfx/browser` registry command yet.
-The first release is being prepared as `0.1.0-alpha.0`.
-
-## Run the verified consumers
-
-Use Node 22.22.3 and pnpm 11.5.0. From a checkout of this repository:
+DOM as the content and interaction surface. Install the experimental
+`0.1.0-alpha.0` release from npm. The API may change.
 
 ```sh
-pnpm install --frozen-lockfile
-pnpm --filter @domfx/gpu-tests exec playwright install chromium
-pnpm release:rehearse
+pnpm add -E @domfx/browser@0.1.0-alpha.0
 ```
 
-Registry access is needed for dependencies. The rehearsal requires a desktop session
-and WebGPU-capable Chromium; it opens a visible browser with reduced motion disabled
-for the positive checks. `DOMFX_BROWSER_EXECUTABLE` can select an existing Chromium
-executable. Missing browser/GPU support fails; it is never counted as a rendering pass.
+Core installs automatically; GSAP is optional. The verified workflow uses Node 22.22.3
+and pnpm 11.5.0. Keep exact versions and commit your lockfile.
 
-The printed `domfx-release-…` directory is outside the workspace. It contains:
+For contributor tarball checks, see [the release rehearsal](RELEASING.md#local-artifact-rehearsal).
 
-- `artifacts/`: the same core/browser/GSAP tarballs used by both consumers.
-- `standalone/` and `gsap/`: independently installed Vite consumers. Their
-  `quickstart.ts` is copied directly from the examples below; `main.ts` and
-  `lifecycle.ts` execute and assert their lifecycle operations.
-- `report.json`, command logs, built assets and per-stage PNGs: actual install paths,
-  artifact hashes, browser/GPU identity, checks and results.
+## Prompt for your coding assistant
 
-The standalone install excludes GSAP. Both examples compile under strict NodeNext
-and Bundler resolution with declaration checking enabled, then run as production
-builds with real capture and GPU output. The rehearsal tests forward/backward seek,
-zero/restored intensity, changed-silhouette refresh, unavailable cleanup, explicit
-retry, retained controls/binding, disposal, reattachment and original-button input.
-The self-test intentionally disposes all effects when finished; inspect its PNGs or
-use the page below to keep an effect visible.
+```text
+Use @domfx/browser 0.1.0-alpha.0 and https://domfx.dev/docs/installation/.
+Attach an effect to my existing HTML inside a positioned host. Preserve the original
+content when WebGPU is unavailable or reduced motion is requested. Register cleanup
+before async setup finishes and dispose on unmount. For GSAP, use my own timeline,
+manual effect time and explicit cleanup. Follow the documented API and support limits.
+```
 
 ## Start a separate preview app
 
-Create an empty directory **outside the checkout**. Copy the tarballs from the printed
-rehearsal's `artifacts/` into an `artifacts/` subdirectory. For the current `0.1.0-alpha.0`
-artifacts, create these two files (use the actual filenames if versions change):
+Create an empty directory and save these two files:
 
 ```json
 {
@@ -51,10 +34,10 @@ artifacts, create these two files (use the actual filenames if versions change):
   "type": "module",
   "scripts": { "dev": "vite --host 127.0.0.1", "build": "vite build", "preview": "vite preview --host 127.0.0.1" },
   "dependencies": {
-    "@domfx/core": "file:./artifacts/domfx-core-0.1.0-alpha.0.tgz",
-    "@domfx/browser": "file:./artifacts/domfx-browser-0.1.0-alpha.0.tgz"
+    "@domfx/core": "0.1.0-alpha.0",
+    "@domfx/browser": "0.1.0-alpha.0"
   },
-  "devDependencies": { "typescript": "5.9.3", "vite": "7.3.6" }
+  "devDependencies": { "typescript": "5.9.3", "vite": "7.3.7" }
 }
 ```
 
@@ -63,14 +46,10 @@ Save that as `package.json`, and this as `pnpm-workspace.yaml`:
 ```yaml
 autoInstallPeers: false
 strictPeerDependencies: true
-overrides:
-  '@domfx/core': file:./artifacts/domfx-core-0.1.0-alpha.0.tgz
 ```
 
-The override resolves the browser package's unpublished core version to the local
-tarball. Keep it even though core is also a direct dependency. It is not a source
-alias. No repository lockfile, patch, ambient WebGPU types or TypeGPU plugin is needed.
-Install with `pnpm install --ignore-scripts`.
+Install with `pnpm install --ignore-scripts`. No source alias, repository patch,
+ambient WebGPU types or consumer TypeGPU plugin is needed.
 
 Create `index.html`:
 
@@ -176,7 +155,7 @@ target/host permanently disposes the effect; create a new attachment after remou
 
 In the same independent app, add `"gsap": "3.15.0"` to `dependencies`, then run `pnpm install --ignore-scripts` again.
 GSAP is supplied by your app; the browser package alone does not install it.
-The optional `@domfx/gsap` artifact is needed only for snapshot lifecycle helpers.
+The optional `@domfx/gsap` package is needed only for snapshot lifecycle helpers.
 
 Replace `quickstart.ts` with [gsap.ts](examples/quickstart/gsap.ts). Keep the same HTML
 and element lookup; replace `const effect = startFire(target, host)` in `main.ts` with:
@@ -296,13 +275,12 @@ evidence; quickstart passes do not establish frame-rate, total VRAM or long-sess
   target or subtree `content-visibility: auto` also rejects to prevent source mutation
   by the capture adapter. Use a border or attach before focusing an outlined target.
   Consult [asset limits](packages/domfx/README.md#capture-asset-readiness) for exact codes.
-- **Shader metadata error:** build and repack the browser package, then reinstall its
-  tarball. Its package build owns the TypeGPU transform and embeds WGSL/metadata. A
-  consumer needs no shader copy or TypeGPU plugin. Do not import `src`, private `dist`
-  paths or untransformed sources. The tested consumer is ESM Vite; CommonJS is unverified.
-- **Install tries the registry for core:** retain the `pnpm-workspace.yaml` override
-  and ensure all tarball paths exist. Future registry instructions must wait for approved
-  package names and publication; local rehearsal does not grant release approval.
+- **Shader metadata error:** use the built public package exports. Do not import
+  `src`, private `dist` paths or untransformed sources. A consumer needs no shader
+  copy or TypeGPU plugin. The tested consumer is ESM Vite; CommonJS is unverified.
+- **Dependency mismatch:** check the installed versions and lockfile against the
+  [installation guide](https://domfx.dev/docs/installation/). Update compatible
+  packages together; do not mix local artifacts with unrelated registry versions.
 
 ## Execution record
 

@@ -30,6 +30,7 @@
     "dist-demo/**",
     "docs/**",
     ".scratch/**",
+    "**/.wrangler/**",
     ".agents/**",
     "**/.pnpm-store/**",
     "**/.astro/**"

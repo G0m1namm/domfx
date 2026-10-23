@@ -59,7 +59,7 @@ Use `pause()` and `resume()`; resuming does not catch up hidden or paused time.
 For seeking or GSAP, pass `clock: 'manual'` at attachment. Write `effect.time`
 in absolute seconds, forward or backward; `resume()` does not advance manual time.
 Manual `paused` stays true even while setters change. Use one driver per property.
-Time must be finite and float32-representable; finite intensity clamps to 0–1.
+Time and intensity must be finite and float32-representable; accepted intensity clamps to 0–1.
 Control writes are batched for the next frame and do not recapture the target.
 
 For a caller-owned GSAP sequence, read [GSAP ownership](references/gsap.md).

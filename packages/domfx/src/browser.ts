@@ -151,7 +151,9 @@ export async function captureElementWithReservation(
   } finally {
     canvas.width = 0;
     canvas.height = 0;
-    image.removeAttribute('src');
+    // Keep src present: removing it creates fallback shadow nodes retained by
+    // Chromium's document-owned image viewport listener, even for detached images.
+    image.src = '';
   }
   let released = false;
   return {

@@ -127,6 +127,42 @@ for (const location of ['imported', 'nested', 'unreadable'] as const) {
   });
 }
 
+test('counter-only text rejects failed embedding of a loaded full-range font and cleans up', async ({
+  page,
+}) => {
+  const font = await readFile(new URL('../public/asset-fixtures/block.ttf', import.meta.url));
+  await page.route('**/counter.ttf', (route) =>
+    route.fulfill({ body: font, contentType: 'font/ttf' }),
+  );
+  await page.goto('/assets.html');
+  const loaded = await page.evaluate(async () => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @font-face { font-family: "Counter Fixture"; src: url("/counter.ttf"); }
+      #target { font-family: "Counter Fixture", sans-serif; counter-reset: step; }
+      #target::before { counter-increment: step; content: counter(step, upper-alpha); }
+    `;
+    document.head.append(style);
+    return (await document.fonts.load('40px "Counter Fixture"', 'A')).length;
+  });
+  expect(loaded).toBe(1);
+  let embeddingRequests = 0;
+  await page.route('**/counter.ttf', (route) => {
+    embeddingRequests += 1;
+    return route.fulfill({ status: 404, body: '' });
+  });
+  const result = await page.evaluate(async () => {
+    const result = await window.assets.capture();
+    return {
+      result,
+      temporary: document.querySelectorAll('#snapdom-sandbox, [data-snapdom-internal]').length,
+    };
+  });
+  expect(embeddingRequests).toBeGreaterThan(0);
+  expect(result.result.code).toBe('font-embed-failed');
+  expect(result.temporary).toBe(0);
+});
+
 test('unicode-range counter pseudo content keeps fresh font discovery', async ({ page }) => {
   const font = await readFile(new URL('../public/asset-fixtures/block.ttf', import.meta.url));
   await page.route('**/counter.ttf', (route) =>

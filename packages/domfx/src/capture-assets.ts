@@ -226,7 +226,6 @@ export async function prepareCaptureAssets(target: Element) {
       // discovery when their rendered glyphs cannot be passed to FontFaceSet.load.
       if (pseudo && !/^"(?:[^"\\]|\\.)*"$/s.test(paint.content)) {
         hasUnresolvedText = true;
-        continue;
       }
       const text = pseudo
         ? paint.content.slice(1, -1)

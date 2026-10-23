@@ -33,8 +33,8 @@ Run `mkdir my-domfx-preview`, then `cd my-domfx-preview`. Save this as `package.
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "0.1.0-alpha.0",
-    "@domfx/browser": "0.1.0-alpha.0"
+    "@domfx/core": "0.1.0-alpha.1",
+    "@domfx/browser": "0.1.0-alpha.1"
   },
   "devDependencies": { "typescript": "5.9.3", "vite": "7.3.7" }
 }
@@ -155,7 +155,7 @@ container and animates effect time and intensity with a timeline you own.
 The guide includes seeking, reverse playback and cleanup during setup.
 
 Native property tweens need only GSAP and `@domfx/browser`. Install
-`@domfx/gsap@0.1.0-alpha.0` only if you need its
+`@domfx/gsap@0.1.0-alpha.1` only if you need its
 [optional snapshot helpers](https://domfx.dev/docs/api/gsap/#snapshot-bindings).
 A borrowed timeline stays with its owner; remove only your own child tweens.
 

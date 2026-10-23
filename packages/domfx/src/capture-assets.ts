@@ -1,5 +1,7 @@
 import type { CaptureContext } from '@zumer/snapdom';
 
+import { captureImageResources, imageFreshUntil } from './capture-images.js';
+
 export type CaptureErrorCode =
   | 'asset-timeout'
   | 'image-load-failed'
@@ -57,23 +59,27 @@ function matchesFontFace(style: CSSStyleDeclaration, face: FontFace) {
   );
 }
 
-/** Fresh paint and image data per capture; only validated font data can be reused. */
+/** Fresh paint per capture, with validated font data and HTTP-fresh image reuse. */
 export async function prepareCaptureAssets(target: Element) {
   const document = target.ownerDocument;
   const view = document.defaultView!;
   const images = new Map<Node, string>();
   const backgrounds = new Map<Node, string>();
   const resources = new Map<string, string>();
+  const reusableImages = captureImageResources(document);
   const fonts = new Set<FontFace>();
   const hidden = new Set<Element>();
   let hasNativeText = false;
 
   async function imageData(url: string): Promise<string> {
-    const cached = resources.get(url);
+    const cached = resources.get(url) ?? reusableImages.get(url);
     if (cached) {
       return cached;
     }
     let blob: Blob;
+    let expires = 0;
+    const revision = reusableImages.revision;
+    const started = Date.now();
     try {
       const response = await view.fetch(url, {
         mode: 'cors',
@@ -83,6 +89,7 @@ export async function prepareCaptureAssets(target: Element) {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
+      expires = imageFreshUntil(response, started);
       blob = await response.blob();
     } catch (cause) {
       throw new CaptureError('asset-fetch-failed', url, cause);
@@ -108,9 +115,10 @@ export async function prepareCaptureAssets(target: Element) {
       }
       throw new CaptureError('image-load-failed', url, cause);
     } finally {
-      image.removeAttribute('src');
+      image.src = '';
     }
     resources.set(url, data);
+    reusableImages.put(url, data, expires, revision);
     return data;
   }
 
@@ -237,6 +245,7 @@ export async function prepareCaptureAssets(target: Element) {
         }
         throw new CaptureError('image-load-failed', element.currentSrc || element.src, cause);
       }
+      reusableImages.track(element);
       images.set(element, await imageData(element.currentSrc || element.src));
     }
   }
@@ -289,10 +298,27 @@ export async function prepareCaptureAssets(target: Element) {
   }
   const reuseFonts = fonts.size > 0 && reusableCSS.length === fonts.size;
 
-  function embedImages({ nodeMap }: CaptureContext) {
+  function embedImages({ nodeMap, styleCache }: CaptureContext) {
     for (const [clone, original] of nodeMap ?? []) {
       if (!(clone instanceof view.Element)) {
         continue;
+      }
+      const background = backgrounds.get(original);
+      if (background && (clone instanceof view.HTMLElement || clone instanceof view.SVGElement)) {
+        clone.style.setProperty('background-image', background, 'important');
+        // SnapDOM 2.24.15 embeds backgrounds from its source-style cache after
+        // afterClone. Replace only that capture's style entry to avoid a second fetch.
+        if (styleCache instanceof view.WeakMap) {
+          const sourceStyle: unknown = styleCache.get(original);
+          if (sourceStyle instanceof view.CSSStyleDeclaration) {
+            const embeddedStyle = document.createElement('span').style;
+            for (const property of sourceStyle) {
+              embeddedStyle.setProperty(property, sourceStyle.getPropertyValue(property));
+            }
+            embeddedStyle.setProperty('background-image', background);
+            styleCache.set(original, embeddedStyle);
+          }
+        }
       }
       const data = images.get(original);
       if (data) {

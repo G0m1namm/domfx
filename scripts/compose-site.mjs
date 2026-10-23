@@ -25,6 +25,8 @@ export function composeSite({ web, docs, output }) {
   }
   rmSync(join(output, 'site-contract.json'));
   rmSync(join(output, 'docs/site-contract.json'));
+  // Cloudflare reads the shared header rules at the composed site's root.
+  rmSync(join(output, 'docs/_headers'), { force: true });
   rmSync(join(output, 'docs/sitemap-index.xml'), { force: true });
   rmSync(join(output, 'sitemap-index.xml'), { force: true });
   if (indexable && sitemap) {

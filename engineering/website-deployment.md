@@ -45,6 +45,11 @@ routing: directory URLs retain trailing slashes. `wrangler.jsonc` sets
 recovery page with HTTP 404. Update the dashboard deploy command to the command
 above when adopting this configuration.
 
+Fingerprinted assets under `/_astro/` and `/docs/_astro/` use a one-year immutable
+browser cache. Their URLs change with their contents. HTML and unversioned public
+assets retain Cloudflare's revalidation policy. The shared `_headers` file supplies
+these [static asset headers](https://developers.cloudflare.com/workers/static-assets/headers/).
+
 ## Verify the live deployment
 
 ```sh

@@ -41,7 +41,23 @@ function familyName(value: string) {
   return value.replace(/^["']|["']$/g, '').toLowerCase();
 }
 
-/** Per-capture data only: no shared resource cache or source DOM mutations. */
+// Weak keys tie embedded data to the browser's loaded font lifetime, not captures.
+// Changing a CSS font's src creates a new FontFace; other descriptor edits change cssText.
+const embeddedFonts = new WeakMap<FontFace, { declaration: string; css: string }>();
+
+function matchesFontFace(style: CSSStyleDeclaration, face: FontFace) {
+  return (
+    familyName(style.getPropertyValue('font-family')) === familyName(face.family) &&
+    (style.getPropertyValue('font-weight') || 'normal').replace('normal', '400') ===
+      face.weight.replace('normal', '400') &&
+    (style.getPropertyValue('font-style') || 'normal') === face.style &&
+    (style.getPropertyValue('font-stretch') || 'normal').replace('100%', 'normal') ===
+      face.stretch.replace('100%', 'normal') &&
+    (style.getPropertyValue('unicode-range') || 'U+0-10FFFF') === face.unicodeRange
+  );
+}
+
+/** Fresh paint and image data per capture; only validated font data can be reused. */
 export async function prepareCaptureAssets(target: Element) {
   const document = target.ownerDocument;
   const view = document.defaultView!;
@@ -50,6 +66,7 @@ export async function prepareCaptureAssets(target: Element) {
   const resources = new Map<string, string>();
   const fonts = new Set<FontFace>();
   const hidden = new Set<Element>();
+  let hasNativeText = false;
 
   async function imageData(url: string): Promise<string> {
     const cached = resources.get(url);
@@ -145,6 +162,10 @@ export async function prepareCaptureAssets(target: Element) {
       hidden.add(element);
       continue;
     }
+    // Native controls and list markers can paint text without a text node.
+    if (element.matches('input, textarea, select') || style.display === 'list-item') {
+      hasNativeText = true;
+    }
     if (
       element.matches('iframe, object, embed, video, image, use, feImage, input[type="image"]') ||
       element.shadowRoot
@@ -224,6 +245,35 @@ export async function prepareCaptureAssets(target: Element) {
     await waitForAsset(document.fonts.ready, 'document fonts');
   }
 
+  // Cache only unambiguous, readable top-level declarations. Imported, nested and
+  // cross-origin declarations keep SnapDOM's discovery/validation path.
+  const declarations = new Map<FontFace, string>();
+  const reusableCSS: string[] = [];
+  if (fonts.size && !hasNativeText) {
+    const rules = [...document.styleSheets].flatMap((sheet) => {
+      try {
+        return [...sheet.cssRules].filter(
+          (rule): rule is CSSFontFaceRule => rule instanceof view.CSSFontFaceRule,
+        );
+      } catch {
+        return [];
+      }
+    });
+    for (const face of fonts) {
+      const matches = rules.filter((rule) => matchesFontFace(rule.style, face));
+      if (matches.length !== 1) {
+        continue;
+      }
+      const declaration = matches[0]!.cssText;
+      declarations.set(face, declaration);
+      const cached = embeddedFonts.get(face);
+      if (cached?.declaration === declaration) {
+        reusableCSS.push(cached.css);
+      }
+    }
+  }
+  const reuseFonts = fonts.size > 0 && reusableCSS.length === fonts.size;
+
   function embedImages({ nodeMap }: CaptureContext) {
     for (const [clone, original] of nodeMap ?? []) {
       if (!(clone instanceof view.Element)) {
@@ -239,6 +289,7 @@ export async function prepareCaptureAssets(target: Element) {
   }
 
   return {
+    embedFonts: (fonts.size > 0 || hasNativeText) && !reuseFonts,
     embedImages,
     async beforeRender(context: CaptureContext) {
       for (const [clone, original] of context.nodeMap ?? []) {
@@ -250,22 +301,17 @@ export async function prepareCaptureAssets(target: Element) {
       if (!fonts.size) {
         return;
       }
+      if (reuseFonts) {
+        context.fontsCSS = reusableCSS.join('\n');
+        return;
+      }
       const sheet = new view.CSSStyleSheet();
       sheet.replaceSync(context.fontsCSS ?? '');
       const embedded = [...sheet.cssRules].filter(
         (rule): rule is CSSFontFaceRule => rule instanceof view.CSSFontFaceRule,
       );
       for (const face of fonts) {
-        const rule = embedded.find(
-          ({ style }) =>
-            familyName(style.getPropertyValue('font-family')) === familyName(face.family) &&
-            (style.getPropertyValue('font-weight') || 'normal').replace('normal', '400') ===
-              face.weight.replace('normal', '400') &&
-            (style.getPropertyValue('font-style') || 'normal') === face.style &&
-            (style.getPropertyValue('font-stretch') || 'normal').replace('100%', 'normal') ===
-              face.stretch.replace('100%', 'normal') &&
-            (style.getPropertyValue('unicode-range') || 'U+0-10FFFF') === face.unicodeRange,
-        );
+        const rule = embedded.find(({ style }) => matchesFontFace(style, face));
         const source = rule?.style.getPropertyValue('src') ?? '';
         const urls = [...source.matchAll(/url\("([^"]*)"\)/g)];
         if (
@@ -277,6 +323,10 @@ export async function prepareCaptureAssets(target: Element) {
         }
         try {
           await waitForAsset(new view.FontFace(face.family, source).load(), face.family);
+          const declaration = declarations.get(face);
+          if (declaration && rule) {
+            embeddedFonts.set(face, { declaration, css: rule.cssText });
+          }
         } catch (cause) {
           throw new CaptureError('font-embed-failed', face.family, cause);
         }

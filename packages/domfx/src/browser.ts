@@ -46,7 +46,7 @@ export async function captureElementWithReservation(
     outerShadows: true,
     fast: true,
     reconcile: true,
-    embedFonts: true,
+    embedFonts: assets.embedFonts,
     cache: 'disabled',
     compress: false,
     placeholders: false,

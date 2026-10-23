@@ -6,6 +6,162 @@ import { expect, test } from '@playwright/test';
 
 import type {} from '../src/assets.js';
 
+for (const kind of ['shape', 'image', 'svg'] as const) {
+  test(`${kind} captures do not fetch inherited fonts and still refresh paint`, async ({
+    page,
+  }) => {
+    await page.goto('/assets.html');
+    await page.evaluate(async (kind) => {
+      window.assets.setup('font', '/asset-fixtures/block.ttf');
+      await document.fonts.load('40px "Asset Fixture"', 'AA');
+      const target = document.querySelector<HTMLElement>('#target')!;
+      target.replaceChildren();
+      if (kind === 'image') {
+        window.assets.setup('image', '/asset-fixtures/split.png');
+      } else if (kind === 'svg') {
+        target.innerHTML =
+          '<svg width="40" height="40"><rect width="40" height="40" fill="red" /></svg>';
+      }
+    }, kind);
+    const fontRequests: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().endsWith('/block.ttf')) {
+        fontRequests.push(request.url());
+      }
+    });
+
+    for (const red of [64, 128, 192]) {
+      const result = await page.evaluate(async (red) => {
+        document.querySelector<HTMLElement>('#target')!.style.backgroundColor = `rgb(${red}, 0, 0)`;
+        const result = await window.assets.capture();
+        const frame = document.querySelector<HTMLCanvasElement>('#frame')!;
+        const pixel = frame.getContext('2d')!.getImageData(frame.width - 1, frame.height - 1, 1, 1);
+        return { result, pixel: [...pixel.data] };
+      }, red);
+      expect(result).toEqual({
+        result: { code: 'ready', released: true },
+        pixel: [red, 0, 0, 255],
+      });
+    }
+    expect(fontRequests).toEqual([]);
+  });
+}
+
+test('repeated text captures reuse fonts while repainting changed content', async ({ page }) => {
+  await page.goto('/assets.html');
+  await page.evaluate(() => window.assets.setup('font', '/asset-fixtures/block.ttf'));
+  const requests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/block.ttf') && request.resourceType() === 'fetch') {
+      requests.push(request.url());
+    }
+  });
+  const frames: string[] = [];
+  for (const text of ['A', 'AA', 'A']) {
+    const result = await page.evaluate(async (text) => {
+      document.querySelector('#target')!.textContent = text;
+      const result = await window.assets.capture();
+      return { result, frame: document.querySelector<HTMLCanvasElement>('#frame')!.toDataURL() };
+    }, text);
+    expect(result.result).toEqual({ code: 'ready', released: true });
+    frames.push(result.frame);
+  }
+  expect(frames[0]).not.toBe(frames[1]);
+  expect(frames[0]).toBe(frames[2]);
+  expect(requests).toHaveLength(1);
+});
+
+test('a changed font source cannot reuse the previous embedded font', async ({ page }) => {
+  await page.route('**/replacement-font', (route) =>
+    route.fulfill({ body: 'broken font', contentType: 'font/ttf' }),
+  );
+  await page.goto('/assets.html');
+  const result = await page.evaluate(async () => {
+    window.assets.setup('font', '/asset-fixtures/block.ttf');
+    const first = await window.assets.capture();
+    const sheet = [...document.styleSheets].find((sheet) =>
+      [...sheet.cssRules].some((rule) => rule instanceof CSSFontFaceRule),
+    )!;
+    const rule = [...sheet.cssRules].find(
+      (rule): rule is CSSFontFaceRule => rule instanceof CSSFontFaceRule,
+    )!;
+    rule.style.setProperty('src', 'url("/replacement-font")');
+    return { first, second: await window.assets.capture() };
+  });
+  expect(result.first.code).toBe('ready');
+  expect(result.second.code).toBe('font-load-failed');
+});
+
+test('font descriptor edits invalidate embedded data without freezing subsequent paint', async ({
+  page,
+}) => {
+  await page.goto('/assets.html');
+  const requests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/block.ttf') && request.resourceType() === 'fetch') {
+      requests.push(request.url());
+    }
+  });
+  const frames = await page.evaluate(async () => {
+    window.assets.setup('font', '/asset-fixtures/block.ttf');
+    await window.assets.capture();
+    const frame = document.querySelector<HTMLCanvasElement>('#frame')!;
+    const first = frame.toDataURL();
+    const sheet = [...document.styleSheets].find((sheet) =>
+      [...sheet.cssRules].some((rule) => rule instanceof CSSFontFaceRule),
+    )!;
+    const rule = [...sheet.cssRules].find(
+      (rule): rule is CSSFontFaceRule => rule instanceof CSSFontFaceRule,
+    )!;
+    rule.style.setProperty('font-weight', '700');
+    document.querySelector<HTMLElement>('#target')!.style.fontWeight = '700';
+    document.querySelector('#target')!.textContent = 'A';
+    const changed = await window.assets.capture();
+    const second = frame.toDataURL();
+    const repeated = await window.assets.capture();
+    return { first, second, third: frame.toDataURL(), changed, repeated };
+  });
+  expect(frames.changed.code).toBe('ready');
+  expect(frames.repeated.code).toBe('ready');
+  expect(frames.first).not.toBe(frames.second);
+  expect(frames.second).toBe(frames.third);
+  expect(requests).toHaveLength(2);
+});
+
+for (const kind of ['input', 'textarea', 'marker'] as const) {
+  test(`${kind} keeps font embedding for native text without text nodes`, async ({ page }) => {
+    await page.goto('/assets.html');
+    await page.evaluate(async (kind) => {
+      window.assets.setup('font', '/asset-fixtures/block.ttf');
+      await document.fonts.load('40px "Asset Fixture"', 'AA');
+      const target = document.querySelector<HTMLElement>('#target')!;
+      target.replaceChildren();
+      if (kind === 'marker') {
+        const marker = document.createElement('li');
+        marker.style.listStyleType = 'upper-alpha';
+        marker.style.listStylePosition = 'inside';
+        target.append(marker);
+      } else {
+        const input = document.createElement(kind);
+        input.placeholder = 'AA';
+        input.style.font = 'inherit';
+        target.append(input);
+      }
+    }, kind);
+    const fontRequests: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().endsWith('/block.ttf')) {
+        fontRequests.push(request.url());
+      }
+    });
+    expect(await page.evaluate(() => window.assets.capture())).toEqual({
+      code: 'ready',
+      released: true,
+    });
+    expect(fontRequests.length).toBeGreaterThan(0);
+  });
+}
+
 for (const kind of ['image', 'background', 'font'] as const) {
   test(`delayed ${kind} waits and matches visible target paint`, async ({
     page,

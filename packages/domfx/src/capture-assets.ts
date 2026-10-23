@@ -1,5 +1,7 @@
 import type { CaptureContext } from '@zumer/snapdom';
 
+import { captureImageResources, imageFreshUntil } from './capture-images.js';
+
 export type CaptureErrorCode =
   | 'asset-timeout'
   | 'image-load-failed'
@@ -41,22 +43,62 @@ function familyName(value: string) {
   return value.replace(/^["']|["']$/g, '').toLowerCase();
 }
 
-/** Per-capture data only: no shared resource cache or source DOM mutations. */
+// Weak keys tie embedded data to the browser's loaded font lifetime, not captures.
+// Changing a CSS font's src creates a new FontFace; other descriptor edits change cssText.
+const embeddedFonts = new WeakMap<FontFace, { declaration: string; css: string }>();
+
+function fontKey(face: Pick<FontFace, 'family' | 'weight' | 'style' | 'stretch' | 'unicodeRange'>) {
+  return JSON.stringify([
+    familyName(face.family),
+    face.weight.replace('normal', '400'),
+    face.style,
+    face.stretch.replace('100%', 'normal'),
+    face.unicodeRange,
+  ]);
+}
+
+function indexFontRules(rules: Iterable<CSSFontFaceRule>) {
+  const index = new Map<string, { rule: CSSFontFaceRule; count: number }>();
+  for (const rule of rules) {
+    const key = fontKey({
+      family: rule.style.getPropertyValue('font-family'),
+      weight: rule.style.getPropertyValue('font-weight') || 'normal',
+      style: rule.style.getPropertyValue('font-style') || 'normal',
+      stretch: rule.style.getPropertyValue('font-stretch') || 'normal',
+      unicodeRange: rule.style.getPropertyValue('unicode-range') || 'U+0-10FFFF',
+    });
+    const match = index.get(key);
+    if (match) {
+      match.count += 1;
+    } else {
+      // Preserve the first declaration for validation; duplicates cannot be reused.
+      index.set(key, { rule, count: 1 });
+    }
+  }
+  return index;
+}
+
+/** Fresh paint per capture, with validated font data and HTTP-fresh image reuse. */
 export async function prepareCaptureAssets(target: Element) {
   const document = target.ownerDocument;
   const view = document.defaultView!;
   const images = new Map<Node, string>();
   const backgrounds = new Map<Node, string>();
   const resources = new Map<string, string>();
+  const reusableImages = captureImageResources(document);
   const fonts = new Set<FontFace>();
   const hidden = new Set<Element>();
+  let hasUnresolvedText = false;
 
   async function imageData(url: string): Promise<string> {
-    const cached = resources.get(url);
+    const cached = resources.get(url) ?? reusableImages.get(url);
     if (cached) {
       return cached;
     }
     let blob: Blob;
+    let expires = 0;
+    const revision = reusableImages.revision;
+    const started = Date.now();
     try {
       const response = await view.fetch(url, {
         mode: 'cors',
@@ -66,6 +108,7 @@ export async function prepareCaptureAssets(target: Element) {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
+      expires = imageFreshUntil(response, started);
       blob = await response.blob();
     } catch (cause) {
       throw new CaptureError('asset-fetch-failed', url, cause);
@@ -91,9 +134,10 @@ export async function prepareCaptureAssets(target: Element) {
       }
       throw new CaptureError('image-load-failed', url, cause);
     } finally {
-      image.removeAttribute('src');
+      image.src = '';
     }
     resources.set(url, data);
+    reusableImages.put(url, data, expires, revision);
     return data;
   }
 
@@ -145,6 +189,10 @@ export async function prepareCaptureAssets(target: Element) {
       hidden.add(element);
       continue;
     }
+    // Native controls and list markers can paint text without a text node.
+    if (element.matches('input, textarea, select') || style.display === 'list-item') {
+      hasUnresolvedText = true;
+    }
     if (
       element.matches('iframe, object, embed, video, image, use, feImage, input[type="image"]') ||
       element.shadowRoot
@@ -193,6 +241,11 @@ export async function prepareCaptureAssets(target: Element) {
         }
         backgrounds.set(element, embedded);
       }
+      // CSSOM leaves counters, quotes and mixed content unresolved. Keep fresh
+      // discovery when their rendered glyphs cannot be passed to FontFaceSet.load.
+      if (pseudo && !/^"(?:[^"\\]|\\.)*"$/s.test(paint.content)) {
+        hasUnresolvedText = true;
+      }
       const text = pseudo
         ? paint.content.slice(1, -1)
         : [...element.childNodes]
@@ -216,6 +269,7 @@ export async function prepareCaptureAssets(target: Element) {
         }
         throw new CaptureError('image-load-failed', element.currentSrc || element.src, cause);
       }
+      reusableImages.track(element);
       images.set(element, await imageData(element.currentSrc || element.src));
     }
   }
@@ -224,10 +278,80 @@ export async function prepareCaptureAssets(target: Element) {
     await waitForAsset(document.fonts.ready, 'document fonts');
   }
 
-  function embedImages({ nodeMap }: CaptureContext) {
+  // Cache only unambiguous, readable top-level declarations. Imported, nested and
+  // cross-origin declarations keep SnapDOM's discovery/validation path.
+  const declarations = new Map<FontFace, string>();
+  const reusableCSS: string[] = [];
+  if (fonts.size && !hasUnresolvedText) {
+    let complete = true;
+    const rules: CSSFontFaceRule[] = [];
+    function collectRules(cssRules: CSSRuleList, topLevel: boolean): boolean {
+      for (const rule of cssRules) {
+        if (rule instanceof view.CSSFontFaceRule) {
+          if (topLevel) {
+            rules.push(rule);
+          } else {
+            return false;
+          }
+        } else if (rule instanceof view.CSSImportRule) {
+          return false;
+        } else if (rule instanceof view.CSSGroupingRule) {
+          if (!collectRules(rule.cssRules, false)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    for (const sheet of document.styleSheets) {
+      try {
+        complete = collectRules(sheet.cssRules, true);
+      } catch {
+        complete = false;
+      }
+      if (!complete) {
+        break;
+      }
+    }
+    if (complete) {
+      const index = indexFontRules(rules);
+      for (const face of fonts) {
+        const match = index.get(fontKey(face));
+        if (match?.count !== 1) {
+          continue;
+        }
+        const declaration = match.rule.cssText;
+        declarations.set(face, declaration);
+        const cached = embeddedFonts.get(face);
+        if (cached?.declaration === declaration) {
+          reusableCSS.push(cached.css);
+        }
+      }
+    }
+  }
+  const reuseFonts = fonts.size > 0 && reusableCSS.length === fonts.size;
+
+  function embedImages({ nodeMap, styleCache }: CaptureContext) {
     for (const [clone, original] of nodeMap ?? []) {
       if (!(clone instanceof view.Element)) {
         continue;
+      }
+      const background = backgrounds.get(original);
+      if (background && (clone instanceof view.HTMLElement || clone instanceof view.SVGElement)) {
+        clone.style.setProperty('background-image', background, 'important');
+        // SnapDOM 2.24.15 embeds backgrounds from its source-style cache after
+        // afterClone. Replace only that capture's style entry to avoid a second fetch.
+        if (styleCache instanceof view.WeakMap) {
+          const sourceStyle: unknown = styleCache.get(original);
+          if (sourceStyle instanceof view.CSSStyleDeclaration) {
+            const embeddedStyle = document.createElement('span').style;
+            for (const property of sourceStyle) {
+              embeddedStyle.setProperty(property, sourceStyle.getPropertyValue(property));
+            }
+            embeddedStyle.setProperty('background-image', background);
+            styleCache.set(original, embeddedStyle);
+          }
+        }
       }
       const data = images.get(original);
       if (data) {
@@ -239,6 +363,7 @@ export async function prepareCaptureAssets(target: Element) {
   }
 
   return {
+    embedFonts: (fonts.size > 0 || hasUnresolvedText) && !reuseFonts,
     embedImages,
     async beforeRender(context: CaptureContext) {
       for (const [clone, original] of context.nodeMap ?? []) {
@@ -250,22 +375,20 @@ export async function prepareCaptureAssets(target: Element) {
       if (!fonts.size) {
         return;
       }
+      if (reuseFonts) {
+        context.fontsCSS = reusableCSS.join('\n');
+        return;
+      }
       const sheet = new view.CSSStyleSheet();
       sheet.replaceSync(context.fontsCSS ?? '');
-      const embedded = [...sheet.cssRules].filter(
-        (rule): rule is CSSFontFaceRule => rule instanceof view.CSSFontFaceRule,
+      const embedded = indexFontRules(
+        [...sheet.cssRules].filter(
+          (rule): rule is CSSFontFaceRule => rule instanceof view.CSSFontFaceRule,
+        ),
       );
       for (const face of fonts) {
-        const rule = embedded.find(
-          ({ style }) =>
-            familyName(style.getPropertyValue('font-family')) === familyName(face.family) &&
-            (style.getPropertyValue('font-weight') || 'normal').replace('normal', '400') ===
-              face.weight.replace('normal', '400') &&
-            (style.getPropertyValue('font-style') || 'normal') === face.style &&
-            (style.getPropertyValue('font-stretch') || 'normal').replace('100%', 'normal') ===
-              face.stretch.replace('100%', 'normal') &&
-            (style.getPropertyValue('unicode-range') || 'U+0-10FFFF') === face.unicodeRange,
-        );
+        const match = embedded.get(fontKey(face));
+        const rule = match?.rule;
         const source = rule?.style.getPropertyValue('src') ?? '';
         const urls = [...source.matchAll(/url\("([^"]*)"\)/g)];
         if (
@@ -277,6 +400,10 @@ export async function prepareCaptureAssets(target: Element) {
         }
         try {
           await waitForAsset(new view.FontFace(face.family, source).load(), face.family);
+          const declaration = declarations.get(face);
+          if (declaration && rule && match.count === 1) {
+            embeddedFonts.set(face, { declaration, css: rule.cssText });
+          }
         } catch (cause) {
           throw new CaptureError('font-embed-failed', face.family, cause);
         }

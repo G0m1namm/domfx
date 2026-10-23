@@ -42,6 +42,8 @@ export const fire = findEffect('fire');
 
 <p>After changing captured paint, await <code>fire.refresh()</code>. It hides stale output and resolves once this or a newer requested capture is accepted. Observed target mutations and resize can refresh automatically; unobserved stylesheet, hover or ancestor paint changes still need explicit refresh.</p>
 
+<p>Refreshing recaptures the target's appearance without bypassing image caching. For changing image content, use versioned URLs or server cache headers that require revalidation.</p>
+
 <p>Call <code>cleanup()</code> on component unmount; <code>pagehide</code> only covers leaving the page. It is safe to call more than once, including while fonts or <code>ready</code> are pending. Register it synchronously in your framework’s teardown hook before calling <code>setup()</code>. On remount, run the module’s setup and ownership code again with fresh variables and elements; a disposed effect cannot be reused.</p>
 
 ## Unavailable output

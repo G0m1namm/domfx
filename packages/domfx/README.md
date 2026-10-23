@@ -156,7 +156,15 @@ Data/blob URLs are subject to the same MIME/decode checks. No proxy, credential 
 external service, placeholder, or asset repair is used. Lazy image sources must already
 be selected by the browser; capture does not rewrite `src`, loading attributes or styles.
 Resource fetch/decode/font waits have a ten-second bound per wait. No automatic retry
-or persistent domfx asset cache is created.
+is created. Validated embedded font data can be reused while its loaded `FontFace`
+and readable top-level declaration remain unchanged; weak references do not retain
+removed fonts. Other font declarations follow fresh discovery. Validated same-origin
+raster data can be reused while explicitly fresh under HTTP cache headers, with at
+most 32 entries and 16 MiB of encoded data per Document. Image reloads and source
+changes invalidate reuse; responses without usable freshness are fetched again.
+`refresh()` recaptures target content and styles without bypassing image caching.
+For changing image content, use versioned URLs or server cache headers that require
+revalidation.
 
 Capture rejects with exported `CaptureError`; branch on its `code`, inspect `asset`
 and `cause` for diagnostics. Codes are `asset-timeout`, `image-load-failed`,

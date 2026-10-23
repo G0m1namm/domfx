@@ -1,0 +1,5 @@
+# Astro changes these URLs when their content changes.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+/docs/_astro/*
+  Cache-Control: public, max-age=31536000, immutable

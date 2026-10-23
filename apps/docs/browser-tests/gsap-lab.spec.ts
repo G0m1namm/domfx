@@ -309,11 +309,14 @@ test('GSAP manual Fire renders different samples and reproduces a sample after b
       .toBuffer();
   await seek(lab, 1.5, 1, 0.7);
   let first = await pixels();
-  // Establish a settled paused frame before using it as the within-run reference.
+  // Composited screenshots can vary by one channel level even without new GPU output.
+  // Use the same tolerance as backward-seek reproduction to establish the paused reference.
   await expect
     .poll(async () => {
       const next = await pixels();
-      const settled = first.equals(next);
+      const settled =
+        next.length === first.length &&
+        next.every((value, index) => Math.abs(value - first[index]) <= 2);
       first = next;
       return settled;
     })

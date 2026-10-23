@@ -91,13 +91,20 @@ test('marketing controls work after an actual back/forward-cache restore', async
 
 test('header and closing artwork share timing with a stronger closing effect', async ({ page }) => {
   const errors: string[] = [];
+  const fontRequests: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('request', (request) => {
+    if (/\/fonts\/.*\.(woff2?|ttf|otf)(?:\?|$)/.test(request.url())) {
+      fontRequests.push(request.url());
+    }
+  });
   await page.goto('/');
   const header = page.locator('.header-effect-host');
   const closing = page.locator('#closing-content');
   await expect(header).toHaveAttribute('data-status', 'active');
   await page.locator('[data-closing-target]').scrollIntoViewIfNeeded();
   await expect(closing.locator('[data-closing-host]')).toHaveAttribute('data-status', 'active');
+  const initialFontRequests = [...fontRequests];
   const snapshot = () =>
     page.evaluate(() => {
       const header = document.querySelector<HTMLElement>('.header-effect-host')!;
@@ -115,6 +122,9 @@ test('header and closing artwork share timing with a stronger closing effect', a
   expect(Number(state.header[2])).toBeLessThan(1);
   const first = state.header[0];
   await expect.poll(async () => (await snapshot()).header[0], { timeout: 16000 }).not.toBe(first);
+  await expect(header).toHaveAttribute('data-status', 'active');
+  await expect(closing.locator('[data-closing-host]')).toHaveAttribute('data-status', 'active');
+  expect(fontRequests).toEqual(initialFontRequests);
   await page.locator('[data-closing-pause]').click();
   await expect(page.locator('[data-closing-pause]')).toHaveAttribute('aria-pressed', 'true');
   state = await snapshot();
@@ -129,7 +139,30 @@ test('header and closing artwork share timing with a stronger closing effect', a
   state = await snapshot();
   expect(state.closing.slice(0, 2)).toEqual(state.header.slice(0, 2));
   expect(Number(state.closing[2])).toBeGreaterThanOrEqual(Number(state.header[2]));
+  expect(fontRequests).toEqual(initialFontRequests);
   expect(errors).toEqual([]);
+});
+
+test('scrolling restores text effects without fetching warmed fonts again', async ({ page }) => {
+  const fonts: string[] = [];
+  page.on('request', (request) => {
+    if (/\/fonts\/.*\.woff2(?:\?|$)/.test(request.url())) {
+      fonts.push(request.url());
+    }
+  });
+  await page.goto('/');
+  const textHost = page.locator('.gsap-effect-heading');
+  for (let pass = 0; pass < 2; pass += 1) {
+    await textHost.scrollIntoViewIfNeeded();
+    await expect(textHost).toHaveAttribute('data-status', 'active');
+    const warmed = [...fonts];
+    await page.locator('#hero-title').scrollIntoViewIfNeeded();
+    await expect(textHost.locator('canvas')).toHaveCount(0);
+    await textHost.scrollIntoViewIfNeeded();
+    await expect(textHost).toHaveAttribute('data-status', 'active');
+    await expect(textHost.locator('canvas')).toHaveCount(1);
+    expect(fonts).toEqual(warmed);
+  }
 });
 
 test('reduced motion removes output and requires explicit resume after recovery', async ({

@@ -85,7 +85,8 @@ async function expectReflow(page: Page, lab: Locator) {
     expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(
       page.viewportSize()?.width ?? 0,
     );
-    expect(bounds?.height).toBeGreaterThanOrEqual(44);
+    // Allow floating-point noise around the 44px design floor.
+    expect(bounds?.height).toBeGreaterThanOrEqual(44 - 0.001);
   }
 }
 

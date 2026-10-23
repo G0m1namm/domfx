@@ -1,10 +1,11 @@
 import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import type { gsap } from 'gsap';
 import sharp from 'sharp';
-import { build } from 'vite';
+import { build, transformWithEsbuild } from 'vite';
 
 import type { EffectHandle } from '@domfx/browser';
 import * as browserEffects from '@domfx/browser';
@@ -32,7 +33,6 @@ declare global {
     };
     disclosureReady: Promise<void>;
     releaseDisclosureGpu?: () => void;
-    disclosureClicks: number;
     disclosureGpu?: { vendor: string; architecture: string; device: string; description: string };
   }
 }
@@ -440,7 +440,7 @@ test('the docs lab works after an actual back/forward-cache restore', async ({ p
   await expect(lab.locator('canvas')).toHaveCount(1);
 });
 
-// Bundle the rendered code verbatim with only its caller-provided DOM and exports.
+// Compile the rendered TypeScript verbatim, appending only readiness waits and exports.
 // No copied example, package alias, capture mock or renderer transform is involved.
 async function loadDisclosure(page: Page, kind: keyof typeof disclosures, path: string) {
   await page.addInitScript(() => sessionStorage.setItem('domfx-playback', 'off'));
@@ -451,6 +451,7 @@ async function loadDisclosure(page: Page, kind: keyof typeof disclosures, path: 
     .textContent();
   expect(source).toBeTruthy();
   const result = await build({
+    root: fileURLToPath(new URL('..', import.meta.url)),
     configFile: false,
     logLevel: 'error',
     plugins: [
@@ -461,14 +462,20 @@ async function loadDisclosure(page: Page, kind: keyof typeof disclosures, path: 
             return '\0rendered-disclosure';
           }
         },
-        load(id) {
+        async load(id) {
           if (id !== '\0rendered-disclosure') {
             return;
           }
-          return `const host = document.getElementById('disclosure-host');
-const target = document.getElementById('disclosure-target');
-${source}
-export { fire${kind === 'gsap' ? ', timeline, cleanup' : ''} };`;
+          const transformed = await transformWithEsbuild(
+            `${source}
+await document.fonts.ready;
+if (!fire) { throw new Error('The rendered example did not create an effect'); }
+await fire.ready;
+export { fire, cleanup${kind === 'gsap' ? ', timeline' : ''} };`,
+            'rendered-disclosure.ts',
+            { loader: 'ts', target: 'esnext' },
+          );
+          return transformed.code;
         },
       },
     ],
@@ -513,20 +520,19 @@ export { fire${kind === 'gsap' ? ', timeline, cleanup' : ''} };`;
         };
       }
       const host = document.createElement('div');
-      host.id = 'disclosure-host';
+      host.id = 'host';
       host.style.cssText = 'position:relative;z-index:100;margin:128px;width:160px;';
       const target = document.createElement(heading ? 'h1' : 'button');
-      target.id = 'disclosure-target';
+      target.id = 'target';
       target.textContent = heading ? 'Your own heading' : 'Original button';
       target.style.cssText = heading
         ? 'margin:0;font:24px sans-serif;color:#C2C5DB;user-select:text'
         : 'width:160px;height:48px;background:#C2C5DB;color:#191920;';
-      window.disclosureClicks = 0;
-      target.addEventListener('click', () => {
-        window.disclosureClicks += 1;
-      });
+      const clicks = document.createElement('output');
+      clicks.id = 'clicks';
+      clicks.textContent = '0';
       host.append(target);
-      document.body.prepend(host);
+      document.body.prepend(host, clicks);
     },
     kind === 'gsap' && path === '/docs/gsap/',
   );
@@ -538,7 +544,7 @@ export { fire${kind === 'gsap' ? ', timeline, cleanup' : ''} };`;
 }
 
 async function assertNativeTarget(page: Page, heading: boolean) {
-  const target = page.locator('#disclosure-target');
+  const target = page.locator('#target');
   if (heading) {
     const text = await target.evaluate((element) => {
       const range = document.createRange();
@@ -555,7 +561,7 @@ async function assertNativeTarget(page: Page, heading: boolean) {
   } else {
     await target.click();
     await target.press('Enter');
-    expect(await page.evaluate(() => window.disclosureClicks)).toBe(2);
+    await expect(page.locator('#clicks')).toHaveText('2');
   }
 }
 
@@ -688,6 +694,8 @@ test('every website link resolves to a native route, anchor or documented reposi
       'https://github.com/G0m1namm',
       'https://www.npmjs.com/package/@domfx/browser',
       `${repo}/blob/main/LICENSE`,
+      `${repo}/blob/main/SECURITY.md`,
+      `${repo}/issues`,
       `${repo}/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md`,
     ].sort(),
   );
@@ -712,7 +720,7 @@ for (const { kind, path } of [
         .toBeGreaterThan(0.1);
     }
     await expect.poll(() => page.evaluate(() => window.disclosure.fire.lifecycle)).toBe('active');
-    const canvas = page.locator('#disclosure-host canvas');
+    const canvas = page.locator('#host canvas');
     await expect(canvas).toHaveCount(1);
     await expect(canvas).toHaveAttribute('aria-hidden', 'true');
     await expect(canvas).toHaveCSS('pointer-events', 'none');
@@ -799,7 +807,7 @@ for (const { kind, path } of [
       await startDisclosure(page, url);
       await page.evaluate(() => window.disclosureReady);
       expect(await page.evaluate(() => window.disclosure.fire.reason)).toBe(unavailable);
-      await expect(page.locator('#disclosure-host canvas')).toHaveCount(0);
+      await expect(page.locator('#host canvas')).toHaveCount(0);
       await assertNativeTarget(page, kind === 'gsap' && path === '/docs/gsap/');
       if (kind === 'gsap') {
         expect(await page.evaluate(() => window.disclosure.timeline?.paused())).toBe(true);
@@ -829,7 +837,7 @@ for (const { kind, path } of [
     });
     await page.evaluate(() => window.disclosureReady);
     expect(await page.evaluate(() => window.disclosure.fire.lifecycle)).toBe('disposed');
-    await expect(page.locator('#disclosure-host canvas')).toHaveCount(0);
+    await expect(page.locator('#host canvas')).toHaveCount(0);
     if (kind === 'gsap') {
       expect(await page.evaluate(() => window.disclosure.timeline?.isActive())).toBe(false);
     }

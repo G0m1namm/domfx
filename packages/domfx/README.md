@@ -162,7 +162,9 @@ removed fonts. Other font declarations follow fresh discovery. Validated same-or
 raster data can be reused while explicitly fresh under HTTP cache headers, with at
 most 32 entries and 16 MiB of encoded data per Document. Image reloads and source
 changes invalidate reuse; responses without usable freshness are fetched again.
-Target content and styles are captured anew.
+`refresh()` recaptures target content and styles without bypassing image caching.
+For changing image content, use versioned URLs or server cache headers that require
+revalidation.
 
 Capture rejects with exported `CaptureError`; branch on its `code`, inspect `asset`
 and `cause` for diagnostics. Codes are `asset-timeout`, `image-load-failed`,

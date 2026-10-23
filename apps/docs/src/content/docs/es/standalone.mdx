@@ -52,6 +52,8 @@ export const fire = findEffect('fire');
 
 <p>Después de cambiar la apariencia capturada, espera a <code>fire.refresh()</code>. Oculta la salida obsoleta y se resuelve cuando se acepta esta captura u otra posterior. Los cambios detectados en el objetivo y su tamaño pueden actualizarla automáticamente; los cambios no detectados en hojas de estilo, estados de hover o la apariencia de los elementos antecesores requieren una actualización explícita.</p>
 
+<p>Actualizar la captura no omite la caché de imágenes. Si el contenido de una imagen cambia, usa una URL versionada o cabeceras de caché del servidor que exijan revalidación.</p>
+
 <p>Llama a <code>cleanup()</code> al desmontar el componente; <code>pagehide</code> solo cubre la salida de la página. Puedes llamarla varias veces, incluso mientras esperas las fuentes o <code>ready</code>. Regístrala de forma síncrona en el mecanismo de limpieza de tu framework antes de llamar a <code>setup()</code>. Al volver a montar, ejecuta de nuevo el código con variables y elementos nuevos; un efecto liberado no se puede reutilizar.</p>
 
 <span id="unavailable-output" />

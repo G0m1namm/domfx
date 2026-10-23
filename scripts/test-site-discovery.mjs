@@ -94,27 +94,13 @@ await run(
   /DOMFX_SITE_URL/,
 );
 
-for (const [label, variables, site, indexable] of [
-  [
-    'indexing on',
-    {
-      DOMFX_SITE_URL: 'https://example.com',
-      DOMFX_SITE_PRODUCTION: 'true',
-      DOMFX_INDEXING: 'true',
-    },
-    'https://example.com',
-    true,
-  ],
-  [
-    'preview override',
-    { DOMFX_SITE_URL: 'https://example.com', DOMFX_INDEXING: 'true', DOMFX_SITE_PREVIEW: 'true' },
-    'https://example.com',
-    false,
-  ],
-  ['default off', {}, 'http://127.0.0.1:4321', false],
+for (const [label, command, variables, site, indexable] of [
+  ['production launch', 'build:site', {}, 'https://domfx.dev', true],
+  ['preview override', 'build:site', { DOMFX_SITE_PREVIEW: 'true' }, 'https://domfx.dev', false],
+  ['default off', 'build:web:built', {}, 'http://127.0.0.1:4321', false],
 ]) {
   const env = { ...cleanEnvironment, ...variables };
-  await run(['build:web:built'], env);
+  await run([command], env);
   await validateBuiltSite({
     output: fileURLToPath(new URL('../apps/web/dist', import.meta.url)),
     site,

@@ -95,7 +95,7 @@ function cleanup() {
   fire?.dispose();
 }
 
-// Also register cleanup on component unmount, before calling setup.
+// Before calling setup, also register cleanup to run on component unmount.
 window.addEventListener('pagehide', cleanup, { once: true });
 
 const setup = async () => {

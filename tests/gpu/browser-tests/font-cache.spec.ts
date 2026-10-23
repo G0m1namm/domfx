@@ -126,3 +126,102 @@ for (const location of ['imported', 'nested', 'unreadable'] as const) {
     expect(frames[0]).toBe(frames[1]);
   });
 }
+
+test('unicode-range counter pseudo content keeps fresh font discovery', async ({ page }) => {
+  const font = await readFile(new URL('../public/asset-fixtures/block.ttf', import.meta.url));
+  await page.route('**/counter.ttf', (route) =>
+    route.fulfill({ body: font, contentType: 'font/ttf' }),
+  );
+  await page.goto('/assets.html');
+  const baseline = await page.evaluate(async () => {
+    const style = document.createElement('style');
+    style.id = 'counter-font';
+    style.textContent = `
+      @font-face {
+        font-family: "Counter Fixture";
+        src: url("/counter.ttf");
+        unicode-range: U+0041;
+      }
+      #target { font-family: "Counter Fixture", sans-serif; counter-reset: step; }
+      #target::before { counter-increment: step; content: "A"; }
+    `;
+    document.head.append(style);
+    const result = await window.assets.capture();
+    return { result, frame: document.querySelector<HTMLCanvasElement>('#frame')!.toDataURL() };
+  });
+  expect(baseline.result).toEqual({ code: 'ready', released: true });
+  const eligibility = await page.evaluate(async () => {
+    const style = document.createElement('style');
+    style.textContent = '#target::before { content: counter(step, upper-alpha); }';
+    document.head.append(style);
+    const content = getComputedStyle(document.querySelector('#target')!, '::before').content;
+    return {
+      content,
+      keywordFaces: (await document.fonts.load('40px "Counter Fixture"', content.slice(1, -1)))
+        .length,
+      glyphFaces: (await document.fonts.load('40px "Counter Fixture"', 'A')).length,
+    };
+  });
+  expect(eligibility).toEqual({
+    content: 'counter(step, upper-alpha)',
+    keywordFaces: 0,
+    glyphFaces: 1,
+  });
+  const requests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/counter.ttf') && request.resourceType() === 'fetch') {
+      requests.push(request.url());
+    }
+  });
+  for (let capture = 0; capture < 2; capture += 1) {
+    const before = requests.length;
+    const result = await page.evaluate(async () => {
+      const result = await window.assets.capture();
+      return {
+        result,
+        frame: document.querySelector<HTMLCanvasElement>('#frame')!.toDataURL(),
+        temporary: document.querySelectorAll('#snapdom-sandbox, [data-snapdom-internal]').length,
+      };
+    });
+    expect(result.result).toEqual({ code: 'ready', released: true });
+    expect(result.temporary).toBe(0);
+    expect(result.frame === baseline.frame).toBe(true);
+    expect(requests.length).toBeGreaterThan(before);
+  }
+});
+
+for (const content of ['""', '"A"']) {
+  test(`${content} literal pseudo content keeps font work reusable`, async ({ page }) => {
+    const font = await readFile(new URL('../public/asset-fixtures/block.ttf', import.meta.url));
+    await page.route('**/literal.ttf', (route) =>
+      route.fulfill({ body: font, contentType: 'font/ttf' }),
+    );
+    await page.goto('/assets.html');
+    await page.evaluate((content) => {
+      const style = document.createElement('style');
+      style.textContent = `
+        @font-face { font-family: "Literal Fixture"; src: url("/literal.ttf"); }
+        #target { font-family: "Literal Fixture", sans-serif; }
+        #target::before { content: ${content}; }
+      `;
+      document.head.append(style);
+    }, content);
+    const requests: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().endsWith('/literal.ttf') && request.resourceType() === 'fetch') {
+        requests.push(request.url());
+      }
+    });
+    const frames: string[] = [];
+    for (let capture = 0; capture < 2; capture += 1) {
+      const result = await page.evaluate(async () => {
+        const result = await window.assets.capture();
+        return { result, frame: document.querySelector<HTMLCanvasElement>('#frame')!.toDataURL() };
+      });
+      expect(result.result).toEqual({ code: 'ready', released: true });
+      frames.push(result.frame);
+      expect(requests.length).toBe(content === '""' ? 0 : 1);
+    }
+    expect(frames[0] === frames[1]).toBe(true);
+  });
+}

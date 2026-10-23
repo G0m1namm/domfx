@@ -69,7 +69,7 @@ export async function prepareCaptureAssets(target: Element) {
   const reusableImages = captureImageResources(document);
   const fonts = new Set<FontFace>();
   const hidden = new Set<Element>();
-  let hasNativeText = false;
+  let hasUnresolvedText = false;
 
   async function imageData(url: string): Promise<string> {
     const cached = resources.get(url) ?? reusableImages.get(url);
@@ -172,7 +172,7 @@ export async function prepareCaptureAssets(target: Element) {
     }
     // Native controls and list markers can paint text without a text node.
     if (element.matches('input, textarea, select') || style.display === 'list-item') {
-      hasNativeText = true;
+      hasUnresolvedText = true;
     }
     if (
       element.matches('iframe, object, embed, video, image, use, feImage, input[type="image"]') ||
@@ -222,6 +222,12 @@ export async function prepareCaptureAssets(target: Element) {
         }
         backgrounds.set(element, embedded);
       }
+      // CSSOM leaves counters, quotes and mixed content unresolved. Keep fresh
+      // discovery when their rendered glyphs cannot be passed to FontFaceSet.load.
+      if (pseudo && !/^"(?:[^"\\]|\\.)*"$/s.test(paint.content)) {
+        hasUnresolvedText = true;
+        continue;
+      }
       const text = pseudo
         ? paint.content.slice(1, -1)
         : [...element.childNodes]
@@ -258,7 +264,7 @@ export async function prepareCaptureAssets(target: Element) {
   // cross-origin declarations keep SnapDOM's discovery/validation path.
   const declarations = new Map<FontFace, string>();
   const reusableCSS: string[] = [];
-  if (fonts.size && !hasNativeText) {
+  if (fonts.size && !hasUnresolvedText) {
     let complete = true;
     const rules: CSSFontFaceRule[] = [];
     function collectRules(cssRules: CSSRuleList, topLevel: boolean) {
@@ -330,7 +336,7 @@ export async function prepareCaptureAssets(target: Element) {
   }
 
   return {
-    embedFonts: (fonts.size > 0 || hasNativeText) && !reuseFonts,
+    embedFonts: (fonts.size > 0 || hasUnresolvedText) && !reuseFonts,
     embedImages,
     async beforeRender(context: CaptureContext) {
       for (const [clone, original] of context.nodeMap ?? []) {

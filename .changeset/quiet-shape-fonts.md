@@ -2,4 +2,4 @@
 '@domfx/browser': patch
 ---
 
-Avoid repeated font fetches during effect recapture: skip embedding for shapes and images, and reuse validated font data for unchanged, readable top-level font declarations. Preserve fresh text, style and image capture.
+Reduce repeated asset work during effect recapture. Skip fonts for shapes and images, reuse validated unchanged fonts, and retain fresh raster data within a bounded HTTP-aware cache. Preserve changed content and image reloads. Fix temporary image cleanup that retained detached fallback nodes in Chromium.

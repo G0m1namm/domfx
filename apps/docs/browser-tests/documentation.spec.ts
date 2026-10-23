@@ -241,37 +241,51 @@ test('@smoke docs retain edit, issue, pagination and shared footer actions', asy
   }
 });
 
-test('@smoke docs search uses Pagefind from the shared header and opens an effect reference', async ({
-  page,
-}) => {
-  await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
-  await page.goto('/docs/installation/');
-  const trigger = page.getByRole('button', {
-    name: 'Search effects and documentation',
-    exact: true,
+for (const locale of ['en', 'es'] as const) {
+  test(`@smoke ${locale} docs search uses Pagefind from the shared header and opens an effect reference`, async ({
+    page,
+  }) => {
+    await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
+    const prefix = locale === 'es' ? '/docs/es' : '/docs';
+    const label =
+      locale === 'es' ? 'Buscar efectos y documentación' : 'Search effects and documentation';
+    const title =
+      locale === 'es'
+        ? 'Buscar efectos y documentación (⌘K / Ctrl+K)'
+        : 'Search effects and docs (⌘K / Ctrl+K)';
+    await page.goto(`${prefix}/installation/`);
+    const trigger = page.getByRole('button', { name: label, exact: true });
+    await expect(trigger).toHaveAttribute('title', title);
+    expect(await trigger.evaluate((element) => element.getBoundingClientRect().width)).toBe(44);
+    await trigger.click();
+    const search = page.getByRole('dialog', { name: label });
+    const input = search.getByRole('textbox');
+    await expect(input).toBeVisible();
+    await input.fill('frost');
+    const frost = search.getByRole('link', { name: 'Frost', exact: true }).first();
+    await expect(frost).toHaveAttribute('href', `${prefix}/api/effects/frost/`);
+    await frost.click();
+    await expect(page).toHaveURL(`${prefix}/api/effects/frost/`);
+    // URL navigation can finish before Starlight registers the new page's shortcut.
+    await expect(trigger).toBeEnabled();
+    await page.keyboard.press('ControlOrMeta+k');
+    await expect(search).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(search).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    // Pagefind initializes on idle; also reopen once its input exists.
+    await expect(page.locator('site-search input')).toBeAttached();
+    await page
+      .getByRole('link', { name: locale === 'es' ? 'Inicio de domfx' : 'domfx home', exact: true })
+      .focus();
+    await page.keyboard.press('ControlOrMeta+k');
+    await expect(input).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(search).toBeHidden();
+    await expect(trigger).toBeFocused();
   });
-  await expect(trigger).toHaveAttribute('title', 'Search effects and docs (⌘K / Ctrl+K)');
-  expect(await trigger.evaluate((element) => element.getBoundingClientRect().width)).toBe(44);
-  await trigger.click();
-  const search = page.getByRole('dialog', { name: 'Search effects and documentation' });
-  const input = search.getByRole('textbox');
-  await expect(input).toBeVisible();
-  await input.fill('frost');
-  const frost = search.getByRole('link', { name: 'Frost', exact: true }).first();
-  await expect(frost).toHaveAttribute('href', '/docs/api/effects/frost/');
-  await frost.click();
-  await expect(page).toHaveURL(/\/docs\/api\/effects\/frost\/$/);
-  // URL navigation can finish before Starlight registers the new page's shortcut.
-  await expect(trigger).toBeEnabled();
-  await page.keyboard.press('ControlOrMeta+k');
-  await expect(
-    page.getByRole('dialog', { name: 'Search effects and documentation' }),
-  ).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(
-    page.getByRole('button', { name: 'Search effects and documentation', exact: true }),
-  ).toBeFocused();
-});
+}
 
 test('@smoke component API sections appear in the page table of contents', async ({ page }) => {
   await page.goto('/docs/api/effect-handle/');

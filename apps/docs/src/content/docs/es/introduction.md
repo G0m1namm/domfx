@@ -7,8 +7,8 @@ domfx añade efectos con GPU al borde de la forma visible de un elemento del DOM
 sigue siendo seleccionable, los botones conservan sus controladores de eventos y los enlaces
 siguen funcionando. El efecto se dibuja en un canvas separado junto al contenido original.
 
-> domfx es experimental. El ámbito de paquetes @domfx ya está elegido, pero los paquetes
-> aún no se han publicado. Comienza con el [proceso de instalación local](/docs/es/installation).
+> domfx es experimental. La versión `%DOMFX_BROWSER_VERSION%` está disponible en npm.
+> Comienza con la [guía de instalación](/docs/es/installation).
 
 <span id="start-with-your-element"></span>
 
@@ -30,8 +30,7 @@ tu contenido.
 Si ya usas GSAP, sigue la [guía completa de GSAP](/docs/es/gsap): aplica un efecto
 a tu propio encabezado, anímalo con una línea de tiempo que controles, avanza o
 retrocede en ella y registra una función de limpieza. El encabezado sigue siendo HTML real y
-seleccionable. Primero [instala artefactos compatibles](/docs/es/installation);
-la instalación pública desde npm llegará después de una publicación alfa verificada.
+seleccionable. Primero [instala la versión alfa](/docs/es/installation).
 
 <span id="control-animation"></span>
 

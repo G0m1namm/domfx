@@ -33,14 +33,17 @@ pnpm install --frozen-lockfile && DOMFX_SITE_URL=https://domfx.dev DOMFX_SITE_PR
 Deploy command:
 
 ```sh
-pnpm --allow-build=workerd dlx wrangler@4.151.3 deploy --assets apps/web/dist --name domfx --compatibility-date 2026-10-22 --no-autoconfig
+pnpm --allow-build=workerd dlx wrangler@4.151.3 deploy --config wrangler.jsonc --no-autoconfig
 ```
 
 Keep credentials in Cloudflare's build settings. Changes to token permissions
 require maintainer approval.
 
 Use `domfx.dev` as the production custom domain with verified HTTPS. Keep static
-routing: directory URLs retain trailing slashes and unknown paths return 404.
+routing: directory URLs retain trailing slashes. `wrangler.jsonc` sets
+`assets.not_found_handling` to `404-page` so unknown paths return the bilingual
+recovery page with HTTP 404. Update the dashboard deploy command to the command
+above when adopting this configuration.
 
 ## Verify the live deployment
 

@@ -29,7 +29,7 @@ export const documentation = [
     slug: 'installation',
     title: 'Installation',
     group: 'Getting started',
-    description: 'Start with local artifacts from a verified release rehearsal.',
+    description: 'Install the experimental alpha from npm.',
   },
   {
     slug: 'standalone',
@@ -116,7 +116,7 @@ const authoredSpanish = {
   },
   installation: {
     title: 'Instalación',
-    description: 'Instala paquetes locales generados con una prueba de publicación verificada.',
+    description: 'Instala la versión alfa experimental desde npm.',
   },
   standalone: {
     title: 'Uso independiente',

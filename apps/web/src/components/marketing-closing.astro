@@ -1,4 +1,5 @@
 ---
+import { browserInstallCommand } from '@domfx/site/published-versions';
 import { localePath, type Locale } from '@domfx/site/locale';
 import { localizedFooterLinkGroups } from '@domfx/site/site-links';
 import asterisk from '../assets/brand/asterisk.png';
@@ -14,7 +15,7 @@ const year = new Date().getFullYear();
     <div class="closing-word-stage" data-closing-host aria-hidden="true"><img data-closing-target class="closing-artwork" src={asterisk.src} width="380" height="285" alt="" /></div>
     <h2 id="closing-title">{m.closingTitle}<br/>{m.closingTitleEnd}</h2>
     <p>{m.closingDescription}</p>
-    <div class="closing-actions"><button class="button silver" data-copy="pnpm add @domfx/browser" aria-label={m.copyInstall}><code>pnpm add @domfx/browser</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><a class="closing-link" href={localePath({ kind: 'docs', slug: 'standalone' }, locale)}>{m.setupGuide} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
+    <div class="closing-actions"><button class="button silver" data-copy={browserInstallCommand} aria-label={m.copyInstall}><code>{browserInstallCommand}</code><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><a class="closing-link" href={localePath({ kind: 'docs', slug: 'standalone' }, locale)}>{m.setupGuide} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-right"/></svg></a></div>
   </section>
   <footer class="closing-footer wrap">
     <div class="footer-navigation"><div class="footer-intro"><a class="wordmark" href={localePath({ kind: 'home' }, locale)}>domfx<img class="brand-mark" src="/brand-mark.svg" width="30" height="30" alt="" aria-hidden="true" /></a><p>{m.footerTagline}</p><button class="closing-playback" data-closing-pause data-js-control hidden aria-label={m.pauseAutomatic} aria-pressed="false"><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg><span>{m.pauseAutomatic}</span></button></div>{localizedFooterLinkGroups(locale).map(group=><nav aria-label={`${m.footer} ${group.title}`}><h3>{group.title}</h3>{group.items.map(([label, href])=><a href={href}>{label}{href.startsWith('https://') && <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up-right"/></svg>}</a>)}</nav>)}</div>

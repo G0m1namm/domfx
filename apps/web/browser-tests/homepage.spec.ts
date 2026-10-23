@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { effects } from '@domfx/site/effects';
+import { browserInstallCommand } from '@domfx/site/published-versions';
 
 test('a card opens its own artwork and offers text, SVG and image previews', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -115,6 +116,25 @@ for (const width of [320, 360, 768, 1440]) {
   });
 }
 
+for (const path of ['/', '/es/']) {
+  test(`${path} install commands fit at 320px with enlarged text`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto(path);
+    // CSS text resizing exercises wrapping; this is not native browser zoom.
+    await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+    const commands = page.locator(`[data-copy="${browserInstallCommand}"]`);
+    await expect(commands).toHaveCount(3);
+    for (const button of await commands.all()) {
+      await button.scrollIntoViewIfNeeded();
+      await expect(button).toBeVisible();
+      expect(
+        await button.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+      ).toBe(true);
+    }
+  });
+}
+
 for (const viewport of [
   { width: 320, height: 568 },
   { width: 667, height: 375 },
@@ -205,9 +225,7 @@ test('copy reports success only after a write and supplies a manual fallback', a
   await page.goto('/');
   await page.getByRole('button', { name: 'Copy package install command' }).click();
   await expect(page.locator('.toast')).toHaveText('Copied to clipboard');
-  expect(await page.evaluate(() => sessionStorage.getItem('copied'))).toBe(
-    'pnpm add @domfx/browser',
-  );
+  expect(await page.evaluate(() => sessionStorage.getItem('copied'))).toBe(browserInstallCommand);
   await page.evaluate(() =>
     Object.defineProperty(navigator, 'clipboard', {
       value: {
@@ -218,7 +236,7 @@ test('copy reports success only after a write and supplies a manual fallback', a
     }),
   );
   await page.getByRole('button', { name: 'Copy package install command' }).click();
-  await expect(page.locator('.toast')).toContainText('Copy it manually: pnpm add @domfx/browser');
+  await expect(page.locator('.toast')).toContainText(`Copy it manually: ${browserInstallCommand}`);
   await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
   await page.getByRole('button', { name: 'Copy attachment code' }).click();
   const feedback = page.getByRole('dialog').locator('[data-copy-status]');

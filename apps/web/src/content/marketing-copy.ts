@@ -1,4 +1,5 @@
 import type { Locale } from '@domfx/site/locale';
+import { browserInstallCommand } from '@domfx/site/published-versions';
 
 const en = {
   skip: 'Skip to content',
@@ -9,7 +10,7 @@ const en = {
   getStarted: 'Get started',
   humans: 'For humans',
   agents: 'For agents',
-  copyPackage: 'Copy package install command: pnpm add @domfx/browser',
+  copyPackage: `Copy package install command: ${browserInstallCommand}`,
   findEffect: 'Find your effect',
   star: 'Star on GitHub',
   stars: 'Stars',
@@ -71,7 +72,7 @@ const en = {
   setupDescription: 'Install domfx, choose an element and add your first effect.',
   installTitle: 'Install domfx.',
   installDescription: 'Add the browser package to your project.',
-  copyInstall: 'Copy install command: pnpm add @domfx/browser',
+  copyInstall: `Copy install command: ${browserInstallCommand}`,
   attachTitle: 'Attach the effect.',
   attachDescription:
     'Choose text, an inline SVG or an image. Attach an effect to follow its visible shape.',
@@ -128,7 +129,7 @@ export const marketingMessages = {
     getStarted: 'Comenzar',
     humans: 'Para personas',
     agents: 'Para agentes',
-    copyPackage: 'Copiar comando de instalación: pnpm add @domfx/browser',
+    copyPackage: `Copiar comando de instalación: ${browserInstallCommand}`,
     findEffect: 'Encuentra tu efecto',
     star: 'Dar una estrella',
     stars: 'Estrellas',
@@ -193,7 +194,7 @@ export const marketingMessages = {
     setupDescription: 'Instala domfx, elige un elemento y añade tu primer efecto.',
     installTitle: 'Instala domfx.',
     installDescription: 'Añade el paquete para navegador a tu proyecto.',
-    copyInstall: 'Copiar comando de instalación: pnpm add @domfx/browser',
+    copyInstall: `Copiar comando de instalación: ${browserInstallCommand}`,
     attachTitle: 'Aplica el efecto.',
     attachDescription:
       'Elige texto, un SVG en línea o una imagen. Aplica un efecto que siga su forma visible.',

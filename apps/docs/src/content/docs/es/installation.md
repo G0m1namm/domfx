@@ -1,37 +1,29 @@
 ---
 title: "Instalación"
-description: "Instala paquetes locales generados con una prueba de publicación verificada."
+description: "Instala la versión alfa experimental desde npm."
 ---
 
-Los paquetes aún no están publicados en un registro como npm. Necesitas
-acceso a una copia local del repositorio o a sus archivos tar de core,
-browser y, opcionalmente, GSAP. Usa Node 22.22.3 y pnpm 11.5.0 para el proceso verificado.
+Instala la versión experimental `%DOMFX_BROWSER_VERSION%` desde npm. Usa Node 22.22.3
+y pnpm 11.5.0 para el proceso verificado.
 
 <span id="build-verified-artifacts"></span>
+<span id="genera-artefactos-verificados"></span>
+<span id="install-the-alpha"></span>
 
-## Genera artefactos verificados
-
-Desde la copia del repositorio:
+## Instala la versión alfa
 
 ```sh
-pnpm install --frozen-lockfile
-pnpm --filter @domfx/gpu-tests exec playwright install chromium
-pnpm release:rehearse
+%DOMFX_BROWSER_INSTALL%
 ```
 
-La prueba de publicación necesita acceso al registro para las dependencias, una sesión de escritorio
-y Chromium con WebGPU. Muestra la ruta de un directorio fuera del repositorio con
-`artifacts/`, aplicaciones de prueba de uso independiente y con GSAP, registros de comandos,
-resultados de GPU e imágenes PNG. La falta de acceso al navegador o a la GPU significa
-que la verificación falló; no cuenta como una prueba de renderizado superada.
+Core se instala automáticamente. GSAP es opcional. Fija versiones exactas y conserva
+el lockfile; la API es experimental aunque la etiqueta `latest` de npm apunte a ella.
 
 <span id="create-your-preview-app"></span>
 
 ## Crea tu aplicación de prueba
 
-Crea un directorio vacío fuera del repositorio. Copia los archivos tar de la prueba en
-un subdirectorio `artifacts/`. Para los artefactos `0.1.0-alpha.0` actuales, guarda esto como
-`package.json`; usa los nombres de archivo reales si cambian las versiones:
+Para una aplicación de prueba nueva, crea un directorio vacío y guarda esto como `package.json`:
 
 ```json
 {
@@ -44,10 +36,10 @@ un subdirectorio `artifacts/`. Para los artefactos `0.1.0-alpha.0` actuales, gua
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "file:./artifacts/domfx-core-0.1.0-alpha.0.tgz",
-    "@domfx/browser": "file:./artifacts/domfx-browser-0.1.0-alpha.0.tgz"
+    "@domfx/core": "%DOMFX_CORE_VERSION%",
+    "@domfx/browser": "%DOMFX_BROWSER_VERSION%"
   },
-  "devDependencies": { "typescript": "5.9.3", "vite": "7.3.6" }
+  "devDependencies": { "typescript": "5.9.3", "vite": "7.3.7" }
 }
 ```
 
@@ -56,15 +48,10 @@ Guarda esto como `pnpm-workspace.yaml`:
 ```yaml
 autoInstallPeers: false
 strictPeerDependencies: true
-overrides:
-  '@domfx/core': file:./artifacts/domfx-core-0.1.0-alpha.0.tgz
 ```
 
-Conserva la sustitución de `overrides` aunque core sea una dependencia directa:
-hace que browser use tu paquete local de core en lugar de buscar la versión aún no publicada. Ejecuta
-`pnpm install --ignore-scripts`. No necesitas alias de código fuente, copiar shaders
-ni un plugin TypeGPU en la aplicación consumidora; importa las exportaciones públicas
-de los paquetes compilados.
+Ejecuta `pnpm install --ignore-scripts`. Importa las exportaciones públicas de los
+paquetes compilados; no necesitas alias de código fuente, copiar shaders ni un plugin TypeGPU.
 
 <span id="provide-the-target-and-host"></span>
 
@@ -101,7 +88,7 @@ y luego `pnpm preview`. Abre la URL local indicada en uno de los navegadores con
 ## Añade el enlace opcional de GSAP
 
 Para animar propiedades de forma nativa, añade solo `gsap` a tu aplicación.
-El artefacto `@domfx/gsap` solo hace falta para las funciones opcionales que conservan los valores iniciales
+El paquete `@domfx/gsap` solo hace falta para las funciones opcionales que conservan los valores iniciales
 y gestionan el ciclo de vida.
 
 Para seguir la guía de GSAP, añade esta dependencia a `package.json`:
@@ -111,10 +98,10 @@ Para seguir la guía de GSAP, añade esta dependencia a `package.json`:
 ```
 
 Si eliges las [funciones opcionales que conservan los valores iniciales](/docs/es/api/gsap#snapshot-bindings),
-añade también su artefacto:
+añade también el paquete:
 
 ```json
-"@domfx/gsap": "file:./artifacts/domfx-gsap-0.1.0-alpha.0.tgz"
+"@domfx/gsap": "%DOMFX_GSAP_VERSION%"
 ```
 
 Ejecuta `pnpm install --ignore-scripts` otra vez. GSAP es una dependencia compartida (`peer dependency`) explícita
@@ -122,6 +109,6 @@ que debe aportar tu aplicación; el paquete browser independiente no lo instala.
 
 Las guías usan Fire como ejemplo. La referencia de la API enumera
 [todas las funciones de efecto](/docs/es/api#available-effects) y sus opciones compartidas.
-`flameHeight` es una opción de creación exclusiva de Fire. Usa artefactos actuales
+`flameHeight` es una opción de creación exclusiva de Fire. Usa versiones de paquetes
 compatibles entre sí para las exportaciones documentadas; no combines declaraciones
 antiguas con ejemplos nuevos.

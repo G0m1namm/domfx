@@ -17,7 +17,8 @@
     "./config": "./src/config.ts",
     "./metadata": "./src/metadata.ts",
     "./marketing-pages": "./src/marketing-pages.ts",
-    "./locale": "./src/locale.ts"
+    "./locale": "./src/locale.ts",
+    "./published-versions": "./src/published-versions.ts"
   },
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.mjs"

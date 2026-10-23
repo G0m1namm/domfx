@@ -74,6 +74,7 @@ const docsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> = {
   ],
   installation: [
     'build-verified-artifacts',
+    'install-the-alpha',
     'create-your-preview-app',
     'provide-the-target-and-host',
     'add-the-optional-gsap-binding',
@@ -143,6 +144,7 @@ const spanishDocsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> 
   ],
   installation: [
     'genera-artefactos-verificados',
+    'instala-la-versión-alfa',
     'crea-tu-aplicación-de-prueba',
     'proporciona-el-objetivo-y-el-contenedor',
     'añade-el-enlace-opcional-de-gsap',

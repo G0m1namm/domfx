@@ -4,16 +4,15 @@ Owner: `G0m1namm/domfx`. Source visibility and npm publication are separate deci
 
 ## Current GitHub settings
 
-Read-only REST snapshot: 2026-10-18 20:53 UTC. Source-controlled workflow settings and
+Verified REST snapshot: 2026-10-23 UTC. Source-controlled workflow settings and
 maintainer policy are listed separately below.
 
-- Repository is private; `main` is the default and only currently advertised branch.
+- Repository is public; `main` is the default branch.
 - Squash merges only; merge commits and rebase merges disabled. Merged branches are
   deleted automatically.
 - Issues enabled, wiki disabled.
 - Description set to `GPU edge effects for live DOM elements`. Topics configured:
-  `animation`, `browser`, `gsap`, `typescript`, `webgpu`. Homepage is left unset
-  until a verified public deployment exists.
+  `animation`, `browser`, `gsap`, `typescript`, `webgpu`. Homepage is `https://domfx.dev`, verified after deployment.
 - Actions default to read-only permissions and cannot approve PRs. Action SHA pinning
   is enforced (`sha_pinning_required: true`).
 
@@ -32,9 +31,9 @@ maintainer policy are listed separately below.
   CI installs Chromium for a small website smoke suite with WebGPU unavailable;
   full GPU, visual and performance suites remain local. Superseded runs are cancelled.
 
-## Before public launch
+## Public launch checks
 
-- [ ] Review tracked content and history for secrets, private notes and redistribution
+- [x] Review tracked content and history for secrets, private notes and redistribution
       rights. Keep `PROJECT_CONTEXT.md`, `/docs/` and `.scratch/` out of Git.
       Assess reachability and sensitivity of historical notes: distinguish harmless
       historical documentation from sensitive material. Do not rewrite history or
@@ -42,26 +41,29 @@ maintainer policy are listed separately below.
       remediation for confirmed secrets, credential leaks, privacy exposure, or
       redistribution violations — each requiring explicit owner authorization. Retain
       both MIT notices.
-- [ ] Owner explicitly approves changing visibility to public.
-- [ ] Enable GitHub private vulnerability reporting; keep the existing email
+- [x] Owner explicitly approves changing visibility to public.
+- [x] Enable GitHub private vulnerability reporting; keep the existing email
       channel available. Do not solicit sensitive reports through public issues.
-- [ ] Require approval for **all external contributors** before fork PR workflows run.
-      (Setting returns 422 while private; enable when public.)
-- [ ] Obtain a successful `Check / workspace` run; local checks do not replace
+- [x] Require approval for **all external contributors** before fork PR workflows run.
+
+- [x] Obtain a successful `Check / workspace` run; local checks do not replace
       server-side enforcement.
-- [ ] Enable a ruleset targeting `main`: require PRs, resolved conversations,
+- [x] Enable a ruleset targeting `main`: require PRs, resolved conversations,
       linear history and the successful workspace check; block force pushes and
       deletion. Select the actual check from a successful run before requiring it.
       Require no peer approvals while there is only one maintainer; require one
       independent approval once a second reviewer is available. Keep any emergency
-      admin bypass explicit and limited. (Rulesets API returns 403 on private Free plan;
-      enable immediately after visibility becomes public.)
-- [ ] Enable available free secret scanning/push protection; review security settings.
+      admin bypass explicit and limited. The active ruleset `25686876` has no bypass.
+- [x] Enable available free secret scanning/push protection; review security settings.
 
-Enable visibility-dependent settings at launch. Hooks alone cannot protect `main`.
+Private vulnerability reporting, all-external-contributor workflow approval, vulnerability
+alerts, secret scanning and push protection are enabled. The `main` ruleset requires
+the `workspace` check from GitHub Actions (integration 15368), with strict updates.
+Hooks alone cannot protect `main`. The bounded history review is recorded in #91;
+it is not a comprehensive security guarantee.
 
-Only core, browser and GSAP have public publication metadata for the alpha candidate;
-other workspaces stay private. Candidate metadata does not authorize publication.
+Core, browser and GSAP are public on npm at experimental `0.1.0-alpha.0`;
+other workspaces stay private. Future publication requires separate approval.
 The [exact-artifact release gates](../RELEASING.md) still apply.
 Future PRs add squash commits; do not keep rewriting public history into one commit.
 

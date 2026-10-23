@@ -18,3 +18,4 @@ demo/
 /.agents/product-marketing.md
 /apps/web/browser-tests/visual-baselines/*/
 .pnpm-store/
+.wrangler/

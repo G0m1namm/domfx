@@ -536,12 +536,18 @@ export async function validatePreviewSite({ base, site, indexable }) {
     site,
     indexable,
   });
-  assert.equal(await read('/missing-localized-page/'), null, 'unknown route must return 404');
-  assert.equal(
-    await read('/docs/es/missing-localized-page/'),
-    null,
-    'unknown docs route must return 404',
-  );
+  for (const path of ['/missing-localized-page/', '/docs/es/missing-localized-page/']) {
+    const response = await fetch(new URL(path, base));
+    assert.equal(response.status, 404, `${path}: unknown route must return 404`);
+    const html = await response.text();
+    assert(
+      response.headers.get('content-type')?.includes('text/html') && /<html\b/i.test(html),
+      `${path}: expected not-found HTML`,
+    );
+    for (const home of ['/', '/es/']) {
+      assert(html.includes(`href="${home}"`), `${path}: missing recovery link to ${home}`);
+    }
+  }
   return result;
 }
 

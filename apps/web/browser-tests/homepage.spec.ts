@@ -85,8 +85,9 @@ for (const path of ['/', '/effects/']) {
       if (path === '/') {
         await page.getByRole('link', { name: 'For agents', exact: true }).click();
         await expect(page.locator('#agents-panel')).toBeVisible();
-        await expect(page.locator('#agents-panel')).toContainText(
-          'consumer skill is not published',
+        await expect(page.locator('#agents-panel [data-copy]')).toHaveAttribute(
+          'data-copy',
+          'pnpm dlx skills add G0m1namm/domfx --skill domfx',
         );
       }
     } finally {
@@ -103,7 +104,10 @@ for (const width of [320, 360, 768, 1440]) {
     await expect(page.locator('#hero-title')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     await page.getByRole('tab', { name: 'For agents' }).click();
-    await expect(page.locator('#agents-panel')).toContainText('consumer skill is not published');
+    await expect(page.locator('#agents-panel [data-copy]')).toBeVisible();
+    await expect(page.locator('#agents-panel [data-copy]')).toHaveText(
+      'pnpm dlx skills add G0m1namm/domfx --skill domfx',
+    );
     await expect(page.getByRole('tab', { name: 'For agents' })).toHaveAttribute(
       'aria-selected',
       'true',

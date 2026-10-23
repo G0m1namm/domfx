@@ -8,7 +8,7 @@ import { codeTheme, examplesForLocale } from "../../examples";
 
 export const { gsapCode } = examplesForLocale('es');
 
-<p>Anima cualquier efecto con animaciones de propiedades habituales de GSAP. La instancia permite modificar las propiedades numéricas <code>time</code> e <code>intensity</code>. No necesitas registrar un plugin de domfx ni importar <code>@domfx/gsap</code>.</p>
+<p>Un tween de GSAP es un objeto de animación que cambia propiedades con el tiempo. Usa estas animaciones nativas con cualquier efecto de domfx y una línea de tiempo para ordenarlas. La instancia permite modificar las propiedades numéricas <code>time</code> e <code>intensity</code>. No necesitas registrar un plugin de domfx ni importar <code>@domfx/gsap</code>.</p>
 
 <p>Sigue la <a href="/docs/es/installation#add-the-optional-gsap-binding">guía de instalación</a> y añade GSAP a tu aplicación. Este ejemplo usa Fire; sustituye su importación y omite <code>flameHeight</code> para usar otro efecto.</p>
 
@@ -16,15 +16,7 @@ export const { gsapCode } = examplesForLocale('es');
 
 ## Proporciona tus elementos
 
-<p>Ejecuta el código después de montar el componente. En <code>main.ts</code>, busca los elementos del HTML de prueba:</p>
-
-<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Busca el objetivo y el contenedor"><Code code={`const host = document.querySelector('#host');
-const target = document.querySelector('#target');
-if (!(host instanceof HTMLElement) || !target) {
-  throw new Error('Falta el contenedor o el elemento objetivo');
-}`} lang="ts" theme={codeTheme} /></div>
-
-<p>Para usar un encabezado, sustituye el botón de prueba por <code>&lt;h1 id="target"&gt;Tu encabezado&lt;/h1&gt;</code> dentro del contenedor. El texto sigue siendo seleccionable.</p>
+<p>Usa el <code>index.html</code> de <a href="/docs/es/installation#provide-the-target-and-host">instalación</a>, incluido el contador de clics. Sustituye todo el contenido de <code>main.ts</code> por el siguiente módulo. En un componente, ejecútalo después de montar los elementos.</p>
 
 <span id="build-your-sequence" />
 
@@ -34,13 +26,15 @@ if (!(host instanceof HTMLElement) || !target) {
 
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Ejemplo completo de efecto con control manual y ciclo de vida GSAP"><Code code={gsapCode} lang="ts" theme={codeTheme} /></div>
 
+<p>Ejecuta <code>pnpm dev</code> y abre la URL indicada. El botón aparece con llamas que cambian durante cuatro segundos; pulsarlo aumenta el contador. Para producción, ejecuta <code>pnpm build</code> y después <code>pnpm preview</code>.</p>
+
 <span id="seek-and-play" />
 
 ## Avanza y reproduce
 
-<p>Usa <code>timeline.play()</code>, <code>pause()</code>, <code>seek()</code> y <code>reverse()</code>. En <code>timeline.seek(2.5)</code>, el tiempo del efecto es 2 y la intensidad 0.6. Retroceder a 1.5 da tiempo 1 e intensidad 0.7. Los saltos a un punto de la línea de tiempo también actualizan estas propiedades, aunque no ejecuten las funciones de devolución de llamada (callbacks); no hace falta copiar sus valores en <code>onUpdate</code>.</p>
+<p>Después de preparar el efecto, usa <code>timeline.play()</code>, <code>pause()</code>, <code>seek()</code> y <code>reverse()</code>. En <code>timeline.seek(2.5)</code>, el tiempo del efecto es 2 y la intensidad 0.6. Retroceder a 1.5 da tiempo 1 e intensidad 0.7. Los saltos a un punto de la línea de tiempo también actualizan estas propiedades, aunque no ejecuten las funciones de devolución de llamada (callbacks); no hace falta copiar sus valores en <code>onUpdate</code>.</p>
 
-<p>Encadena llamadas a <code>.to()</code> para animar desde los destinos anteriores. Usa <code>.from()</code> o <code>.fromTo()</code> para indicar valores iniciales explícitos, teniendo en cuenta su renderizado inmediato predeterminado. Los segmentos <code>.fromTo()</code> posteriores suelen necesitar <code>immediateRender: false</code>. <code>ease</code>, <code>repeat</code>, <code>yoyo</code>, <code>overwrite</code> y <code>timeScale()</code> siguen las convenciones normales de GSAP.</p>
+<p>Encadena llamadas a <code>.to()</code> para animar desde los destinos anteriores. Usa <code>.from()</code> o <code>.fromTo()</code> para indicar valores iniciales explícitos, teniendo en cuenta su renderizado inmediato predeterminado. Los segmentos <code>.fromTo()</code> posteriores suelen necesitar <code>immediateRender: false</code>. <code>ease</code> define cómo varía la velocidad de la animación. <code>ease</code>, <code>repeat</code>, <code>yoyo</code>, <code>overwrite</code> y <code>timeScale()</code> siguen las convenciones normales de GSAP.</p>
 
 <p><code>gsap.killTweensOf(fire, 'intensity')</code> detiene solo esa propiedad; no libera el efecto ni detiene una animación de tiempo. Usa un controlador por propiedad y mantén los valores dentro de los <a href="/docs/es/api/shared#control-playback">rangos de control</a>.</p>
 
@@ -48,7 +42,7 @@ if (!(host instanceof HTMLElement) || !target) {
 
 ## Gestiona el ciclo de vida
 
-<p>Llama a <code>cleanup()</code> al desmontar. Elimina la suscripción de liberación, detiene la línea de tiempo creada en este ejemplo y libera el efecto. Registrarla antes de que termine <code>ready</code> cubre la navegación durante la configuración. La función suscrita también detiene esta línea de tiempo si la eliminación del objetivo libera el efecto.</p>
+<p>Registra <code>cleanup()</code> en el mecanismo de desmontaje de tu framework antes de llamar a <code>setup()</code>. Elimina los controladores de eventos, revierte y detiene la línea de tiempo propia y libera el efecto. Funciona incluso si las fuentes o <code>ready</code> siguen pendientes. La suscripción de liberación también restaura la opacidad si se elimina el objetivo. Al volver a montar, crea variables, efecto y línea de tiempo nuevos.</p>
 
 <p>Si usas una línea de tiempo ajena, conserva y detén solo tus animaciones hijas; su propietario limpia la línea de tiempo y las demás animaciones. Terminar, detener o sobrescribir una animación no libera los recursos del objetivo.</p>
 
@@ -60,20 +54,7 @@ if (!(host instanceof HTMLElement) || !target) {
 
 <p>Crea las animaciones dentro de <code>gsap.context()</code> y devuelve una función de limpieza explícita. Regístrala de forma síncrona; el contexto no registra automáticamente el trabajo creado después en funciones que esperan promesas.</p>
 
-<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Limpieza de recursos del contexto GSAP"><Code code={`const context = gsap.context(() => {
-  const effect = attachFire(target, { host, clock: 'manual' });
-  const tween = gsap.to(effect, {
-    time: 4, intensity: 0.4, duration: 4, ease: 'none',
-  });
-  const unsubscribe = effect.onDispose(() => tween.kill());
-  return () => {
-    unsubscribe();
-    tween.kill();
-    effect.dispose();
-  };
-});
-// Al desmontar, incluso antes de que termine la configuración:
-context.revert();`} lang="ts" theme={codeTheme} /></div>
+<p>Si adaptas este ejemplo a un contexto, devuelve <code>cleanup</code> desde su función de configuración y llama a <code>context.revert()</code> al desmontar.</p>
 
 <span id="optional-bindings" />
 

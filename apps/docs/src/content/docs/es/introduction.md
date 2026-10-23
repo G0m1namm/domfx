@@ -14,23 +14,19 @@ siguen funcionando. El efecto se dibuja en un canvas separado junto al contenido
 
 ## Comienza con tu elemento
 
-Elige el **elemento objetivo** exacto: texto, un SVG en línea, una imagen transparente,
-un botón o una tarjeta. La captura de su apariencia determina la **forma visible** (silueta),
-incluidos los huecos y las partes separadas. Una imagen opaca produce un rectángulo;
-la transparencia define el borde. Seleccionar un contenedor captura la apariencia conjunta de su contenido.
+El **elemento objetivo** es el texto, botón, imagen o tarjeta cuya forma recibe
+el efecto. El **contenedor del efecto** (`host`) contiene ese elemento y el canvas
+decorativo; usa `position: relative` en su CSS. domfx conserva el contenido original.
 
-Elige un **contenedor del efecto** (`host`) con CSS `position: relative` que contenga
-el objetivo. domfx añade allí la salida decorativa, sin envolver, mover ni reemplazar
-tu contenido.
+Sigue [instalación](/docs/es/installation) y [uso independiente](/docs/es/standalone)
+para crear una aplicación completa: un botón con llamas y un contador de clics.
 
 <span id="start-with-gsap"></span>
 
 ## Comienza con GSAP
 
 Si ya usas GSAP, sigue la [guía completa de GSAP](/docs/es/gsap): aplica un efecto
-a tu propio encabezado, anímalo con una línea de tiempo que controles, avanza o
-retrocede en ella y registra una función de limpieza. El encabezado sigue siendo HTML real y
-seleccionable. Primero [instala la versión alfa](/docs/es/installation).
+al mismo botón, anímalo con tu propia línea de tiempo, avanza o retrocede y libera los recursos. Primero [instala la versión alfa](/docs/es/installation).
 
 <span id="control-animation"></span>
 
@@ -47,7 +43,7 @@ seleccionable. Primero [instala la versión alfa](/docs/es/installation).
 
 Elige entre Electricity, Frost, Fire, Slime, Burned paper, Kinetic bloom y los
 efectos de patrón de la [galería de efectos](/es/effects/). Cada función devuelve
-el mismo `EffectHandle` con controles de tiempo, intensidad, actualización de
+una instancia (`EffectHandle`) con controles de tiempo, intensidad, actualización de
 captura y liberación de recursos. Consulta los [efectos disponibles](/docs/es/api#available-effects)
 para ver el nombre de cada importación.
 

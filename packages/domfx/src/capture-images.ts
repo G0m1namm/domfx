@@ -8,7 +8,7 @@ type ImageResources = {
 
 // Document ownership avoids sharing credentials or data between browsing contexts.
 const documents = new WeakMap<Document, ImageResources>();
-const maxBytes = 8 * 1024 * 1024;
+const maxBytes = 16 * 1024 * 1024;
 const maxEntries = 32;
 
 export function captureImageResources(document: Document) {
@@ -51,7 +51,8 @@ export function captureImageResources(document: Document) {
         };
         image.addEventListener('load', invalidate);
         image.addEventListener('error', invalidate);
-      } else if (previous !== source) {
+      }
+      if (previous !== source) {
         remove(url);
         state.revision += 1;
       }

@@ -118,6 +118,141 @@ test('same URL image reload and source attributes invalidate fresh data', async 
   expect(fetches).toBe(4);
 });
 
+test('already loaded replacement invalidates fresh data for the same URL', async ({ page }) => {
+  let fetches = 0;
+  let imageBody = body;
+  await page.route('**/replacement.png', (route) => {
+    if (route.request().resourceType() === 'fetch') {
+      fetches += 1;
+    }
+    return route.fulfill({
+      body: imageBody,
+      contentType: 'image/png',
+      headers: { 'Cache-Control': 'max-age=60' },
+    });
+  });
+  await page.goto('/assets.html');
+  expect(
+    await page.evaluate(async () => {
+      window.assets.setup('image', '/replacement.png');
+      return (await window.assets.capture()).code;
+    }),
+  ).toBe('ready');
+  imageBody = Buffer.from(
+    await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 40;
+      const context = canvas.getContext('2d')!;
+      context.fillStyle = 'lime';
+      context.fillRect(0, 0, 40, 40);
+      return canvas.toDataURL().split(',')[1]!;
+    }),
+    'base64',
+  );
+  const result = await page.evaluate(async () => {
+    await (await fetch('/replacement.png', { cache: 'reload' })).arrayBuffer();
+    const previous = document.querySelector('#target img')!;
+    const image = document.createElement('img');
+    image.src = '/replacement.png';
+    await image.decode();
+    previous.replaceWith(image);
+    const live = document.createElement('canvas').getContext('2d')!;
+    live.drawImage(image, 0, 0);
+    const livePixel = [...live.getImageData(10, 10, 1, 1).data];
+    const first = await window.assets.capture();
+    const frame = document.querySelector<HTMLCanvasElement>('#frame')!;
+    const targetBounds = document.querySelector('#target')!.getBoundingClientRect();
+    const imageBounds = image.getBoundingClientRect();
+    const x = (imageBounds.x - targetBounds.x + 10) * devicePixelRatio;
+    const y = (imageBounds.y - targetBounds.y + 10) * devicePixelRatio;
+    const capturedPixel = [...frame.getContext('2d')!.getImageData(x, y, 1, 1).data];
+    const second = await window.assets.capture();
+    return { first, second, livePixel, capturedPixel };
+  });
+  expect(result.first.code).toBe('ready');
+  expect(result.second.code).toBe('ready');
+  expect(result.livePixel).toEqual([0, 255, 0, 255]);
+  expect(result.capturedPixel).toEqual(result.livePixel);
+  // Initial capture, explicit HTTP refresh, replacement capture; then reuse.
+  expect(fetches).toBe(3);
+});
+
+test('first tracking prevents an older in-flight response from repopulating fresh data', async ({
+  page,
+}) => {
+  await page.goto('/assets.html');
+  const green = Buffer.from(
+    await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 40;
+      const context = canvas.getContext('2d')!;
+      context.fillStyle = 'lime';
+      context.fillRect(0, 0, 40, 40);
+      return canvas.toDataURL().split(',')[1]!;
+    }),
+    'base64',
+  );
+  let release = () => {};
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let fetches = 0;
+  await page.route('**/racing.png', async (route) => {
+    let imageBody = green;
+    if (route.request().resourceType() === 'fetch') {
+      fetches += 1;
+      if (fetches === 1) {
+        imageBody = body;
+        await pending;
+      }
+    }
+    await route.fulfill({
+      body: imageBody,
+      contentType: 'image/png',
+      headers: { 'Cache-Control': 'max-age=60' },
+    });
+  });
+  const older = page.evaluate(async () => {
+    const target = document.createElement('div');
+    target.style.cssText = 'width:40px;height:40px;background-image:url(/racing.png)';
+    document.body.append(target);
+    try {
+      const frame = await window.assets.captureElement(target, { paddingCss: 0 });
+      frame.release();
+    } finally {
+      target.remove();
+    }
+  });
+  try {
+    await expect.poll(() => fetches).toBe(1);
+    expect(
+      await page.evaluate(async () => {
+        window.assets.setup('image', '/racing.png');
+        await document.querySelector<HTMLImageElement>('#target img')!.decode();
+        return (await window.assets.capture()).code;
+      }),
+    ).toBe('ready');
+  } finally {
+    release();
+    await older;
+  }
+  const result = await page.evaluate(async () => {
+    const capture = await window.assets.capture();
+    const frame = document.querySelector<HTMLCanvasElement>('#frame')!;
+    const targetBounds = document.querySelector('#target')!.getBoundingClientRect();
+    const imageBounds = document.querySelector('#target img')!.getBoundingClientRect();
+    const x = (imageBounds.x - targetBounds.x + 10) * devicePixelRatio;
+    const y = (imageBounds.y - targetBounds.y + 10) * devicePixelRatio;
+    return {
+      capture,
+      pixel: [...frame.getContext('2d')!.getImageData(x, y, 1, 1).data],
+    };
+  });
+  expect(result.capture.code).toBe('ready');
+  expect(result.pixel).toEqual([0, 255, 0, 255]);
+  expect(fetches).toBe(2);
+});
+
 test('expiry observes changed same URL paint and later HTTP failures', async ({ page }) => {
   await page.clock.install();
   let fetches = 0;
@@ -239,10 +374,40 @@ for (const headers of uncachedHeaders) {
   });
 }
 
+test('four large fresh images remain reusable across repeated sweeps', async ({ page }) => {
+  let fetches = 0;
+  // Four valid PNGs with trailing bytes retain about 10.7 MiB as data URLs.
+  const large = Buffer.concat([body, Buffer.alloc(1024 * 1024)]);
+  await page.route('**/sweep*.png', (route) => {
+    if (route.request().resourceType() === 'fetch') {
+      fetches += 1;
+    }
+    return route.fulfill({
+      body: large,
+      contentType: 'image/png',
+      headers: { 'Cache-Control': 'max-age=60' },
+    });
+  });
+  await page.goto('/assets.html');
+  const codes = await page.evaluate(async () => {
+    const target = document.querySelector<HTMLElement>('#target')!;
+    const codes = [];
+    for (let sweep = 0; sweep < 3; sweep += 1) {
+      for (let index = 0; index < 4; index += 1) {
+        target.style.backgroundImage = `url("/sweep${index}.png")`;
+        codes.push((await window.assets.capture()).code);
+      }
+    }
+    return codes;
+  });
+  expect(codes).toEqual(Array(12).fill('ready'));
+  expect(fetches).toBe(4);
+});
+
 test('oversized embedded image is validated but never retained', async ({ page }) => {
   let fetches = 0;
   // PNG decoders permit trailing bytes; the retained data URL exceeds the byte bound.
-  const large = Buffer.concat([body, Buffer.alloc(4 * 1024 * 1024)]);
+  const large = Buffer.concat([body, Buffer.alloc(8 * 1024 * 1024)]);
   await page.route('**/oversized.png', (route) => {
     if (route.request().resourceType() === 'fetch') {
       fetches += 1;

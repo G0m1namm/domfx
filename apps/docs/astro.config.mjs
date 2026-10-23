@@ -1,3 +1,4 @@
+import { unified } from '@astrojs/markdown-remark';
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
@@ -7,6 +8,7 @@ import { sitePublicDir } from '@domfx/site/public-path';
 import { docsMessages } from './src/content/docs-messages';
 import { effectsByCategory } from './src/content/documentation';
 import { docsDiscovery } from './src/integrations/discovery.mjs';
+import { remarkPublishedVersions } from './src/integrations/published-versions';
 import { validateDocsTranslations } from './src/scripts/check-translations.mjs';
 
 const { site } = siteConfig(process.env);
@@ -19,6 +21,7 @@ export default defineConfig({
   output: 'static',
   publicDir: sitePublicDir,
   devToolbar: { enabled: false },
+  markdown: { processor: unified({ remarkPlugins: [remarkPublishedVersions] }) },
   redirects: { '/': '/docs/introduction/', '/es/': '/docs/es/introduction/' },
   integrations: [
     starlight({

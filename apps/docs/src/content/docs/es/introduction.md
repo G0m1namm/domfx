@@ -7,7 +7,7 @@ domfx añade efectos con GPU al borde de la forma visible de un elemento del DOM
 sigue siendo seleccionable, los botones conservan sus controladores de eventos y los enlaces
 siguen funcionando. El efecto se dibuja en un canvas separado junto al contenido original.
 
-> domfx es experimental. La versión `0.1.0-alpha.0` está disponible en npm.
+> domfx es experimental. La versión `%DOMFX_BROWSER_VERSION%` está disponible en npm.
 > Comienza con la [guía de instalación](/docs/es/installation).
 
 <span id="start-with-your-element"></span>

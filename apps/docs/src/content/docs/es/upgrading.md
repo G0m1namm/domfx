@@ -3,7 +3,7 @@ title: "Actualización"
 description: "Actualiza paquetes compatibles y revisa las notas de migración."
 ---
 
-La versión experimental `0.1.0-alpha.0` está disponible en npm.
+La versión experimental `%DOMFX_BROWSER_VERSION%` está disponible en npm.
 Consulta las versiones exactas en la [guía de instalación](/docs/es/installation).
 
 <span id="upgrade-compatible-packages"></span>
@@ -26,7 +26,7 @@ la compilación y comprobación de tipos de la aplicación.
 
 ## Revisa las notas de migración
 
-Las etiquetas `alpha` y `latest` apuntan actualmente a `0.1.0-alpha.0`; ninguna indica una versión estable.
+Las etiquetas de npm pueden cambiar; `latest` no garantiza una API estable.
 Fija versiones exactas en lugar de depender de una etiqueta que puede cambiar.
 Durante `0.x`, los cambios incompatibles requieren una versión menor con notas
 de migración explícitas. Las API alfa pueden cambiar; un parche compatible debe

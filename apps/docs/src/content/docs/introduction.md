@@ -7,7 +7,7 @@ domfx adds GPU edge effects to the visible shape of a DOM element. Your text
 stays selectable, your buttons keep their handlers, and your links keep working.
 The effect lives in a separate canvas alongside the original content.
 
-> domfx is experimental. Version `0.1.0-alpha.0` is available on npm.
+> domfx is experimental. Version `%DOMFX_BROWSER_VERSION%` is available on npm.
 > Start with the [installation guide](/docs/installation).
 
 ## Start with your element

@@ -3,7 +3,7 @@ title: "Installation"
 description: "Install the experimental alpha from npm."
 ---
 
-Install the experimental `0.1.0-alpha.0` release from npm. Use Node 22.22.3
+Install the experimental `%DOMFX_BROWSER_VERSION%` release from npm. Use Node 22.22.3
 and pnpm 11.5.0 for the verified workflow.
 
 <span id="build-verified-artifacts"></span>
@@ -11,7 +11,7 @@ and pnpm 11.5.0 for the verified workflow.
 ## Install the alpha
 
 ```sh
-pnpm add -E @domfx/browser@0.1.0-alpha.0
+%DOMFX_BROWSER_INSTALL%
 ```
 
 Core is installed automatically. GSAP is optional. Pin exact versions and keep
@@ -32,8 +32,8 @@ For a new preview app, create an empty directory and save this as `package.json`
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "0.1.0-alpha.0",
-    "@domfx/browser": "0.1.0-alpha.0"
+    "@domfx/core": "%DOMFX_CORE_VERSION%",
+    "@domfx/browser": "%DOMFX_BROWSER_VERSION%"
   },
   "devDependencies": { "typescript": "5.9.3", "vite": "7.3.7" }
 }
@@ -91,7 +91,7 @@ If you choose the [optional snapshot helpers](/docs/api/gsap#snapshot-bindings),
 also add the package:
 
 ```json
-"@domfx/gsap": "0.1.0-alpha.0"
+"@domfx/gsap": "%DOMFX_GSAP_VERSION%"
 ```
 
 Run `pnpm install --ignore-scripts` again. GSAP is an explicit peer supplied by

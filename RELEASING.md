@@ -261,6 +261,14 @@ on a real selectable heading and caller-owned timeline; retain button interactio
 seek/reverse, unavailable/reduced-motion and early/late cleanup checks. Verify public
 source/docs links anonymously. Then invite feedback. Do not advertise a registry installation before verifying it.
 
+For the website, update each package's verified version in
+`packages/site/src/published-versions.ts`, then rebuild. Marketing install commands,
+English/Spanish docs, code blocks and Markdown exports use that record at build time;
+candidate package manifests never update it automatically. Docs use
+`%DOMFX_CORE_VERSION%`, `%DOMFX_BROWSER_VERSION%`, `%DOMFX_GSAP_VERSION%` and
+`%DOMFX_BROWSER_INSTALL%` placeholders. Review release-status wording and update
+GitHub READMEs and the Quickstart separately; those files are not templated.
+
 References: [Changesets configuration](https://changesets.dev/guide/config),
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
 

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { effects } from '@domfx/site/effects';
+import { browserInstallCommand } from '@domfx/site/published-versions';
 
 test('a card opens its own artwork and offers text, SVG and image previews', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -122,7 +123,7 @@ for (const path of ['/', '/es/']) {
     await page.goto(path);
     // CSS text resizing exercises wrapping; this is not native browser zoom.
     await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
-    const commands = page.locator('[data-copy="pnpm add -E @domfx/browser@0.1.0-alpha.0"]');
+    const commands = page.locator(`[data-copy="${browserInstallCommand}"]`);
     await expect(commands).toHaveCount(3);
     for (const button of await commands.all()) {
       await button.scrollIntoViewIfNeeded();
@@ -224,9 +225,7 @@ test('copy reports success only after a write and supplies a manual fallback', a
   await page.goto('/');
   await page.getByRole('button', { name: 'Copy package install command' }).click();
   await expect(page.locator('.toast')).toHaveText('Copied to clipboard');
-  expect(await page.evaluate(() => sessionStorage.getItem('copied'))).toBe(
-    'pnpm add -E @domfx/browser@0.1.0-alpha.0',
-  );
+  expect(await page.evaluate(() => sessionStorage.getItem('copied'))).toBe(browserInstallCommand);
   await page.evaluate(() =>
     Object.defineProperty(navigator, 'clipboard', {
       value: {
@@ -237,9 +236,7 @@ test('copy reports success only after a write and supplies a manual fallback', a
     }),
   );
   await page.getByRole('button', { name: 'Copy package install command' }).click();
-  await expect(page.locator('.toast')).toContainText(
-    'Copy it manually: pnpm add -E @domfx/browser@0.1.0-alpha.0',
-  );
+  await expect(page.locator('.toast')).toContainText(`Copy it manually: ${browserInstallCommand}`);
   await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
   await page.getByRole('button', { name: 'Copy attachment code' }).click();
   const feedback = page.getByRole('dialog').locator('[data-copy-status]');

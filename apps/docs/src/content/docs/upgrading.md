@@ -3,7 +3,7 @@ title: "Upgrading"
 description: "Update compatible packages and check migration notes."
 ---
 
-The experimental `0.1.0-alpha.0` release is available on npm.
+The experimental `%DOMFX_BROWSER_VERSION%` release is available on npm.
 See the [installation guide](/docs/installation) for exact versions.
 
 ## Upgrade compatible packages
@@ -20,7 +20,7 @@ then the app's build and type checks.
 
 ## Check migration notes
 
-Both `alpha` and `latest` currently point to `0.1.0-alpha.0`; neither means stable.
+npm distribution tags can change; a `latest` tag does not guarantee a stable API.
 Pin exact versions rather than relying on a moving tag. During `0.x`,
 breaking changes require a minor release with explicit migration notes. Alpha APIs
 may change; a compatible patch should preserve the documented contract.

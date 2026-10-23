@@ -3,7 +3,7 @@ title: "Instalación"
 description: "Instala la versión alfa experimental desde npm."
 ---
 
-Instala la versión experimental `0.1.0-alpha.0` desde npm. Usa Node 22.22.3
+Instala la versión experimental `%DOMFX_BROWSER_VERSION%` desde npm. Usa Node 22.22.3
 y pnpm 11.5.0 para el proceso verificado.
 
 <span id="build-verified-artifacts"></span>
@@ -13,7 +13,7 @@ y pnpm 11.5.0 para el proceso verificado.
 ## Instala la versión alfa
 
 ```sh
-pnpm add -E @domfx/browser@0.1.0-alpha.0
+%DOMFX_BROWSER_INSTALL%
 ```
 
 Core se instala automáticamente. GSAP es opcional. Fija versiones exactas y conserva
@@ -36,8 +36,8 @@ Para una aplicación de prueba nueva, crea un directorio vacío y guarda esto co
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "0.1.0-alpha.0",
-    "@domfx/browser": "0.1.0-alpha.0"
+    "@domfx/core": "%DOMFX_CORE_VERSION%",
+    "@domfx/browser": "%DOMFX_BROWSER_VERSION%"
   },
   "devDependencies": { "typescript": "5.9.3", "vite": "7.3.7" }
 }
@@ -101,7 +101,7 @@ Si eliges las [funciones opcionales que conservan los valores iniciales](/docs/e
 añade también el paquete:
 
 ```json
-"@domfx/gsap": "0.1.0-alpha.0"
+"@domfx/gsap": "%DOMFX_GSAP_VERSION%"
 ```
 
 Ejecuta `pnpm install --ignore-scripts` otra vez. GSAP es una dependencia compartida (`peer dependency`) explícita

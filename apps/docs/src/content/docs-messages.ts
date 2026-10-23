@@ -17,16 +17,9 @@ const messages = {
       time: 'Effect time (s)',
       intensity: 'Intensity',
       seconds: 'seconds',
-      help: 'Scrubbing pauses playback. Restart plays from the beginning. Reverse plays backward, starting at the end if the position is zero.',
+      help: 'Seeking pauses playback.',
       fade: 'Container fade',
       effect: 'Effect animation',
-      fadeExplanation:
-        '0–0.5 s: the container fades in; effect time stays at 0 and intensity at 0.8.',
-      effectExplanation:
-        '0.5–4.5 s: effect time increases from 0 to 4 while intensity decreases from 0.8 to 0.4, linearly.',
-      meanings:
-        'Timeline position coordinates both stages. Effect time selects the sampled frame; intensity controls effect strength. GSAP drives time because the clock is manual.',
-      checkpoints: 'Checkpoints: timeline → effect time / intensity',
       source: 'Shared sequence',
       sourceNote:
         'This is the sequence the player executes. The complete example below adds application setup and cleanup; the player adds its own controls and lifecycle.',
@@ -114,16 +107,9 @@ const messages = {
       time: 'Tiempo del efecto (s)',
       intensity: 'Intensidad',
       seconds: 'segundos',
-      help: 'Mover el control pausa la reproducción. Reiniciar reproduce desde el principio. Reproducir hacia atrás comienza desde el final si la posición es cero.',
+      help: 'Cambiar la posición pausa la reproducción.',
       fade: 'Aparición del contenedor',
       effect: 'Animación del efecto',
-      fadeExplanation:
-        '0–0.5 s: el contenedor aparece gradualmente; el tiempo del efecto sigue en 0 y la intensidad en 0.8.',
-      effectExplanation:
-        '0.5–4.5 s: el tiempo del efecto aumenta de 0 a 4 y la intensidad baja de 0.8 a 0.4 de forma lineal.',
-      meanings:
-        'La posición en la línea de tiempo coordina ambas etapas. El tiempo del efecto selecciona el fotograma; la intensidad controla la fuerza del efecto. GSAP controla el tiempo porque el reloj es manual.',
-      checkpoints: 'Puntos de referencia: línea de tiempo → tiempo del efecto / intensidad',
       source: 'Secuencia compartida',
       sourceNote:
         'Esta es la secuencia que ejecuta el reproductor. El ejemplo completo de abajo añade la preparación y limpieza de la aplicación; el reproductor añade sus propios controles y ciclo de vida.',

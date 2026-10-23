@@ -32,21 +32,15 @@ const id = 'docs-gsap';
       <input id={`${id}-position`} type="range" min="0" max="4.5" step="0.01" value="0" style="--fill:0%" data-gsap-position aria-describedby={`${id}-help`} disabled />
       <output for={`${id}-position`} data-gsap-position-output aria-live="off">0.00</output>
     </label>
-    <p class="docs-gsap-help" id={`${id}-help`}>{messages.help}</p>
+    <p class="visually-hidden" id={`${id}-help`}>{messages.help}</p>
     <div class="docs-gsap-tracks">
       <div><span>{messages.fade} · 0–0.5 s</span><span class="docs-gsap-track docs-gsap-track-fade" aria-hidden="true"></span></div>
       <div><span>{messages.effect} · 0.5–4.5 s</span><span class="docs-gsap-track docs-gsap-track-effect" aria-hidden="true"></span></div>
     </div>
-    <p data-gsap-segment>{messages.fadeExplanation}</p>
     <dl class="docs-gsap-values">
       <div><dt>{messages.time}</dt><dd><output data-gsap-time-output aria-live="off">0.00</output></dd></div>
       <div><dt>{messages.intensity}</dt><dd><output data-gsap-intensity-output aria-live="off">0.80</output></dd></div>
     </dl>
-    <p>{messages.meanings}</p>
-    <p>{messages.checkpoints}</p>
-    <ul class="docs-gsap-checkpoints">
-      <li>0.5 → 0 / 0.8</li><li>1.5 → 1 / 0.7</li><li>2.5 → 2 / 0.6</li><li>4.5 → 4 / 0.4</li>
-    </ul>
   </div>
   <div class="docs-lab-code">
     <div class="docs-lab-code-bar">{messages.source}</div>

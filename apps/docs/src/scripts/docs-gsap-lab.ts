@@ -29,7 +29,6 @@ function initializeLab(lab: HTMLElement) {
   const timeOutput = required<HTMLOutputElement>('[data-gsap-time-output]', lab);
   const intensityOutput = required<HTMLOutputElement>('[data-gsap-intensity-output]', lab);
   const status = required<HTMLElement>('[data-gsap-status]', lab);
-  const segment = required<HTMLElement>('[data-gsap-segment]', lab);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const hasGpu = Boolean('gpu' in navigator && navigator.gpu);
   const originalOpacity = host.style.opacity;
@@ -65,8 +64,6 @@ function initializeLab(lab: HTMLElement) {
     timeOutput.value = fire.time.toFixed(2);
     intensityOutput.value = fire.intensity.toFixed(2);
     position.setAttribute('aria-valuetext', `${playback.position.toFixed(2)} ${messages.seconds}`);
-    segment.textContent =
-      playback.position < 0.5 ? messages.fadeExplanation : messages.effectExplanation;
     // Keep the original button readable at the stopped first frame.
     if (playback.position === 0 && playback.paused) {
       restoreOpacity();

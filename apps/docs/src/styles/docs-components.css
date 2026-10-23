@@ -243,7 +243,6 @@
   font-size: 0.875rem;
 }
 .docs-gsap-status,
-.docs-gsap-help,
 .docs-gsap-source-note {
   color: var(--muted);
 }
@@ -290,8 +289,7 @@
 .docs-gsap-track-effect {
   background: linear-gradient(to right, var(--raised) 11.111%, var(--silver) 11.111%);
 }
-.docs-gsap-values,
-.docs-gsap-checkpoints {
+.docs-gsap-values {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem 1.5rem;
@@ -309,9 +307,6 @@
 .docs-gsap-position output {
   font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
-}
-.docs-gsap-checkpoints {
-  list-style: none;
 }
 .docs-gsap-lab .docs-code-scroll {
   margin: 0;

@@ -250,18 +250,33 @@ export async function prepareCaptureAssets(target: Element) {
   const declarations = new Map<FontFace, string>();
   const reusableCSS: string[] = [];
   if (fonts.size && !hasNativeText) {
-    const rules = [...document.styleSheets].flatMap((sheet) => {
-      try {
-        return [...sheet.cssRules].filter(
-          (rule): rule is CSSFontFaceRule => rule instanceof view.CSSFontFaceRule,
-        );
-      } catch {
-        return [];
+    let complete = true;
+    const rules: CSSFontFaceRule[] = [];
+    function collectRules(cssRules: CSSRuleList, topLevel: boolean) {
+      for (const rule of cssRules) {
+        if (rule instanceof view.CSSFontFaceRule) {
+          if (topLevel) {
+            rules.push(rule);
+          } else {
+            complete = false;
+          }
+        } else if (rule instanceof view.CSSImportRule) {
+          complete = false;
+        } else if (rule instanceof view.CSSGroupingRule) {
+          collectRules(rule.cssRules, false);
+        }
       }
-    });
+    }
+    for (const sheet of document.styleSheets) {
+      try {
+        collectRules(sheet.cssRules, true);
+      } catch {
+        complete = false;
+      }
+    }
     for (const face of fonts) {
       const matches = rules.filter((rule) => matchesFontFace(rule.style, face));
-      if (matches.length !== 1) {
+      if (!complete || matches.length !== 1) {
         continue;
       }
       const declaration = matches[0]!.cssText;
@@ -311,7 +326,8 @@ export async function prepareCaptureAssets(target: Element) {
         (rule): rule is CSSFontFaceRule => rule instanceof view.CSSFontFaceRule,
       );
       for (const face of fonts) {
-        const rule = embedded.find(({ style }) => matchesFontFace(style, face));
+        const matches = embedded.filter(({ style }) => matchesFontFace(style, face));
+        const rule = matches[0];
         const source = rule?.style.getPropertyValue('src') ?? '';
         const urls = [...source.matchAll(/url\("([^"]*)"\)/g)];
         if (
@@ -324,7 +340,7 @@ export async function prepareCaptureAssets(target: Element) {
         try {
           await waitForAsset(new view.FontFace(face.family, source).load(), face.family);
           const declaration = declarations.get(face);
-          if (declaration && rule) {
+          if (declaration && rule && matches.length === 1) {
             embeddedFonts.set(face, { declaration, css: rule.cssText });
           }
         } catch (cause) {

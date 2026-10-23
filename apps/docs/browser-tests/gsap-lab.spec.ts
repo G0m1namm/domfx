@@ -20,7 +20,7 @@ const locales = [
     reverse: 'Reproducir hacia atrás',
     restart: 'Reiniciar',
     position: 'Posición en la línea de tiempo (s)',
-    unavailable: /no disponibles|no están disponibles/i,
+    unavailable: /WebGPU no está disponible/i,
     reducedMotion: /movimiento reducido/i,
   },
 ] as const;
@@ -190,7 +190,41 @@ for (const locale of locales) {
     await expect.poll(async () => Number(await position.inputValue())).toBeGreaterThan(0.1);
     await play.click();
   });
+
+  test(`${locale.path} GSAP controls survive enlarged text with the target offscreen`, async ({
+    page,
+  }) => {
+    const lab = await activeLab(page, locale.path);
+    await seek(lab, 1.5, 1, 0.7);
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = '200%';
+    });
+    await lab.locator('[data-gsap-position]').scrollIntoViewIfNeeded();
+    await expect(lab.locator('[data-gsap-target]')).not.toBeInViewport();
+    await seek(lab, 2.5, 2, 0.6);
+    await expectReflow(page, lab);
+    await lab.locator('[data-gsap-target]').scrollIntoViewIfNeeded();
+    await expect(lab).toHaveAttribute('data-status', 'active');
+    await expect(lab.locator('canvas')).toBeVisible();
+    await expectSample(lab, 2.5, 2, 0.6);
+  });
 }
+
+test('GSAP first entry at the source keeps controls usable and captures when the target enters', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto('/docs/gsap/');
+  const lab = page.locator('[data-docs-gsap-lab]');
+  await lab.locator('.docs-lab-code').scrollIntoViewIfNeeded();
+  await expect(lab.locator('[data-gsap-target]')).not.toBeInViewport();
+  await expect(lab).toHaveAttribute('data-status', 'active');
+  await seek(lab, 1.5, 1, 0.7);
+  await lab.locator('[data-gsap-target]').scrollIntoViewIfNeeded();
+  await expect(lab.locator('canvas')).toBeVisible();
+  await expectSample(lab, 1.5, 1, 0.7);
+});
 
 test('@smoke GSAP keeps controls disabled when WebGPU exists but no adapter is available', async ({
   page,
@@ -329,6 +363,8 @@ test('GSAP releases offscreen and on pagehide, then restores one paused sample w
   await expect(lab.locator('[data-gsap-host]')).toHaveCSS('opacity', '1');
   await lab.scrollIntoViewIfNeeded();
   await expect(lab).toHaveAttribute('data-status', 'active');
+  await expectSample(lab, 1.5, 1, 0.7);
+  await lab.locator('[data-gsap-target]').scrollIntoViewIfNeeded();
   await expect(lab.locator('canvas')).toHaveCount(1);
   await expectSample(lab, 1.5, 1, 0.7);
   await expect(lab).toHaveAttribute('data-paused', 'true');

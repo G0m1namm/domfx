@@ -43,6 +43,7 @@ function initializeLab(lab: HTMLElement) {
     ...savedPlayback.get(lab),
   };
   let visible = false;
+  let targetVisible = false;
   let revision = 0;
   let fire: EffectHandle | undefined;
   let timeline: gsap.core.Timeline | undefined;
@@ -122,7 +123,12 @@ function initializeLab(lab: HTMLElement) {
     restoreOpacity();
   }
 
-  function unavailable() {
+  function unavailable(error?: unknown) {
+    console.error('GSAP lab effect unavailable', {
+      reason: fire?.reason,
+      detail: fire?.reasonDetail,
+      error,
+    });
     release();
     playback.paused = true;
     publish('unavailable', messages.unavailable);
@@ -133,6 +139,24 @@ function initializeLab(lab: HTMLElement) {
     timeline?.pause();
     updateValues();
     publishPlayback();
+  }
+
+  function refreshVisibleTarget() {
+    const next = fire;
+    if (!next || !targetVisible || document.hidden || next.raster !== 'stale') {
+      return;
+    }
+    const request = revision;
+    void next.refresh().catch((error: unknown) => {
+      // Leaving view can invalidate this refresh; only terminal failures disable playback.
+      if (
+        request === revision &&
+        !signal.aborted &&
+        (next.lifecycle === 'unavailable' || next.lifecycle === 'disposed')
+      ) {
+        unavailable(error);
+      }
+    });
   }
 
   async function attach() {
@@ -180,15 +204,7 @@ function initializeLab(lab: HTMLElement) {
         return;
       }
       function checkEffect() {
-        // Scrolling from the stage to its controls can hide only the target.
-        // Native visibility suspension retains writes until the target re-enters.
-        if (next.lifecycle === 'suspended' && next.reason === 'target-not-visible') {
-          if (!timeline) {
-            publish('suspended', messages.waiting);
-          }
-          return;
-        }
-        if (next.lifecycle !== 'active') {
+        if (next.lifecycle === 'unavailable' || next.lifecycle === 'disposed') {
           unavailable();
           return;
         }
@@ -217,14 +233,17 @@ function initializeLab(lab: HTMLElement) {
         publishPlayback();
       }
       checkEffect();
+      // ready also settles for cancelled capture. Suspended handles retain setters,
+      // so controls remain usable while the target is above the visible panel.
+      refreshVisibleTarget();
       // The public handle has no state-change subscription. Detect failures even
       // while GSAP is paused, when onUpdate cannot report them.
       if (current()) {
         healthTimer = window.setInterval(checkEffect, 250);
       }
-    } catch {
+    } catch (error) {
       if (current()) {
-        unavailable();
+        unavailable(error);
       }
     }
   }
@@ -305,16 +324,26 @@ function initializeLab(lab: HTMLElement) {
     },
     { threshold: Number.EPSILON },
   );
+  const targetObserver = new IntersectionObserver(
+    ([entry]) => {
+      targetVisible = entry.isIntersecting && entry.intersectionRatio > 0;
+      // A capture cancelled while offscreen needs an explicit new revision.
+      refreshVisibleTarget();
+    },
+    { threshold: Number.EPSILON },
+  );
   if (reducedMotion.matches) {
     playback.paused = true;
     playback.needsResume = true;
   }
   void attach();
   observer.observe(lab);
+  targetObserver.observe(target);
 
   return () => {
     lifetime.abort();
     observer.disconnect();
+    targetObserver.disconnect();
     release();
     savedPlayback.set(lab, { ...playback });
     publish('suspended', messages.waiting);

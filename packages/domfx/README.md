@@ -160,7 +160,7 @@ is created. Validated embedded font data can be reused while its loaded `FontFac
 and readable top-level declaration remain unchanged; weak references do not retain
 removed fonts. Other font declarations follow fresh discovery. Validated same-origin
 raster data can be reused while explicitly fresh under HTTP cache headers, with at
-most 32 entries and 8 MiB of encoded data per Document. Image reloads and source
+most 32 entries and 16 MiB of encoded data per Document. Image reloads and source
 changes invalidate reuse; responses without usable freshness are fetched again.
 Target content and styles are captured anew.
 

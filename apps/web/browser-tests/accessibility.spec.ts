@@ -96,9 +96,9 @@ test('accessible names retain visible command, Fit, playback and star labels', a
   await page.goto('/');
   await expect(page.locator('.site-nav [data-repo-stars]')).toHaveAccessibleName(/Stars.*78/);
   await expect(page.locator('#humans-panel [data-copy]')).toHaveAccessibleName(
-    /pnpm add @domfx\/browser/,
+    /pnpm add -E @domfx\/browser@/,
   );
-  await expect(page.locator('.story-install')).toHaveAccessibleName(/pnpm add @domfx\/browser/);
+  await expect(page.locator('.story-install')).toHaveAccessibleName(/pnpm add -E @domfx\/browser@/);
   await page.getByRole('tab', { name: 'For agents' }).click();
   await expect(page.locator('#agents-panel [data-copy]')).toHaveAccessibleName(
     /pnpm dlx skills add G0m1namm\/domfx --skill domfx/,

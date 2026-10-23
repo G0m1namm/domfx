@@ -12,19 +12,17 @@ The effect lives in a separate canvas alongside the original content.
 
 ## Start with your element
 
-Choose the exact **target element**: text, an inline SVG, a transparent image, a
-button or a card. Its captured appearance determines the **visible shape** (silhouette), including
-holes and disconnected shapes. An opaque image produces a rectangle; transparency
-defines the edge. Selecting a container captures its combined paint.
+The **target element** is the text, button, image or card whose shape receives
+the effect. The **effect container** (`host`) holds that element and the decorative
+canvas; give it CSS `position: relative`. domfx keeps the original content in place.
 
-Choose an **effect container** (`host`) with CSS `position: relative` that contains your target. domfx appends its
-decorative output there, without wrapping, moving or replacing your content.
+Follow [Installation](/docs/installation) and [Standalone](/docs/standalone) to
+build a complete app: a button with flames and a working click counter.
 
 ## Start with GSAP
 
 If you already use GSAP, follow the [complete GSAP recipe](/docs/gsap): attach an effect
-to your own heading, animate it with a timeline you own, seek/reverse and register cleanup.
-Your heading remains real, selectable HTML. [Install the alpha](/docs/installation) first.
+to the same button, animate it with your own timeline, seek, reverse and clean up. [Install the alpha](/docs/installation) first.
 
 ## Control animation
 
@@ -36,8 +34,8 @@ Your heading remains real, selectable HTML. [Install the alpha](/docs/installati
 ## Choose an effect
 
 Choose from Electricity, Frost, Fire, Slime, Burned paper, Kinetic bloom and the
-pattern effects in [the effects gallery](/effects/). Every attachment returns the
-same `EffectHandle` with time, intensity, refresh and disposal controls. See
+pattern effects in [the effects gallery](/effects/). Every attachment returns an
+effect instance (`EffectHandle`) with time, intensity, refresh and disposal controls. See
 [available attachments](/docs/api#available-effects) for each import name.
 
 The [Standalone guide](/docs/standalone#attach-fire) uses Fire for its interactive

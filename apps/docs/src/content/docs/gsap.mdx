@@ -6,21 +6,13 @@ description: "Control effect time and intensity with a timeline you own."
 import { Code } from 'astro:components';
 import { codeTheme, gsapCode } from "../examples";
 
-<p>Animate any effect with ordinary GSAP property tweens. The effect instance exposes numeric <code>time</code> and <code>intensity</code> setters. No domfx plugin registration or <code>@domfx/gsap</code> import is needed.</p>
+<p>A GSAP tween animates properties over time. Use native tweens to animate any domfx effect, and a timeline to sequence them. The effect instance exposes numeric <code>time</code> and <code>intensity</code> setters. No domfx plugin registration or <code>@domfx/gsap</code> import is needed.</p>
 
 <p>Follow the <a href="/docs/installation#add-the-optional-gsap-binding">installation guide</a> and add GSAP to your app. This example uses Fire; replace its import and omit <code>flameHeight</code> to use another effect.</p>
 
 ## Provide your elements
 
-<p>Run after mount. In <code>main.ts</code>, find the elements from the preview HTML:</p>
-
-<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Find the target and host"><Code code={`const host = document.querySelector('#host');
-const target = document.querySelector('#target');
-if (!(host instanceof HTMLElement) || !target) {
-  throw new Error('Missing host or target');
-}`} lang="ts" theme={codeTheme} /></div>
-
-<p>For a heading, replace the preview button with <code>&lt;h1 id="target"&gt;Your heading&lt;/h1&gt;</code> inside the container. The text remains selectable.</p>
+<p>Use the <code>index.html</code> from <a href="/docs/installation#provide-the-target-and-host">installation</a>, including the click counter. Replace all of <code>main.ts</code> with the module below. In a component, run it after the elements mount.</p>
 
 ## Build your sequence
 
@@ -28,17 +20,19 @@ if (!(host instanceof HTMLElement) || !target) {
 
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Full manual attachment and GSAP lifecycle example"><Code code={gsapCode} lang="ts" theme={codeTheme} /></div>
 
+<p>Run <code>pnpm dev</code> and open the printed URL. The button fades in, then its flames change over four seconds; clicking it increases the counter. For production, run <code>pnpm build</code>, then <code>pnpm preview</code>.</p>
+
 ## Seek and play
 
-<p>Use <code>timeline.play()</code>, <code>pause()</code>, <code>seek()</code> and <code>reverse()</code>. At <code>timeline.seek(2.5)</code>, effect time is 2 and intensity is 0.6. Seeking backward to 1.5 gives time 1 and intensity 0.7. Callback-suppressed seeks still update the setters; an <code>onUpdate</code> copy is unnecessary.</p>
+<p>After setup, use <code>timeline.play()</code>, <code>pause()</code>, <code>seek()</code> and <code>reverse()</code>. At <code>timeline.seek(2.5)</code>, effect time is 2 and intensity is 0.6. Seeking backward to 1.5 gives time 1 and intensity 0.7. Callback-suppressed seeks still update the setters; an <code>onUpdate</code> copy is unnecessary.</p>
 
-<p>Chain <code>.to()</code> calls to animate from preceding destinations. Use <code>.from()</code> or <code>.fromTo()</code> for explicit starting values, remembering their default immediate rendering. Later <code>.fromTo()</code> segments commonly need <code>immediateRender: false</code>. Easing, <code>repeat</code>, <code>yoyo</code>, <code>overwrite</code> and <code>timeScale()</code> follow normal GSAP conventions.</p>
+<p>Chain <code>.to()</code> calls to animate from preceding destinations. Use <code>.from()</code> or <code>.fromTo()</code> for explicit starting values, remembering their default immediate rendering. Later <code>.fromTo()</code> segments commonly need <code>immediateRender: false</code>. Easing controls the rate of change. Easing, <code>repeat</code>, <code>yoyo</code>, <code>overwrite</code> and <code>timeScale()</code> follow normal GSAP conventions.</p>
 
 <p><code>gsap.killTweensOf(fire, 'intensity')</code> stops only that property; it does not dispose the effect or stop a time tween. Keep one driver per property and keep values within the <a href="/docs/api/shared#control-playback">control ranges</a>.</p>
 
 ## Own the lifetime
 
-<p>Call <code>cleanup()</code> on unmount. It removes the disposal listener, kills the timeline this example created and disposes the effect. Registration before <code>ready</code> settles covers navigation during setup. The disposal listener also stops this timeline if removing the target disposes the effect.</p>
+<p>Register <code>cleanup()</code> in your framework’s unmount hook before calling <code>setup()</code>. It removes listeners, reverts and kills this example’s timeline, and disposes the effect. This works while fonts or <code>ready</code> are pending. The disposal listener also restores opacity if the target is removed. On remount, create fresh variables, an effect and a timeline.</p>
 
 <p>When borrowing a timeline, retain and kill only your child tweens; its owner cleans up the timeline and siblings. Finishing, killing or overwriting a tween does not release its target's resources.</p>
 
@@ -48,20 +42,7 @@ if (!(host instanceof HTMLElement) || !target) {
 
 <p>Create tweens inside <code>gsap.context()</code> and return explicit resource cleanup. Register synchronously; a context does not automatically collect work created later by arbitrary promise continuations.</p>
 
-<div class="docs-code-scroll" tabindex="0" role="region" aria-label="GSAP context resource cleanup"><Code code={`const context = gsap.context(() => {
-  const effect = attachFire(target, { host, clock: 'manual' });
-  const tween = gsap.to(effect, {
-    time: 4, intensity: 0.4, duration: 4, ease: 'none',
-  });
-  const unsubscribe = effect.onDispose(() => tween.kill());
-  return () => {
-    unsubscribe();
-    tween.kill();
-    effect.dispose();
-  };
-});
-// On unmount, even before setup finishes:
-context.revert();`} lang="ts" theme={codeTheme} /></div>
+<p>When adapting this example to a context, return <code>cleanup</code> from its setup function and call <code>context.revert()</code> on unmount.</p>
 
 <span id="optional-bindings" />
 

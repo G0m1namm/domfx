@@ -10,22 +10,19 @@ import { codeTheme, standaloneCode } from "../examples";
 
 export const fire = findEffect('fire');
 
-<p>This guide uses Fire to demonstrate the shared attachment lifecycle. You can use any <a href="/docs/api#available-effects">available effect</a> with the same time, intensity and cleanup controls. Start with the <a href="/docs/installation">preview app</a>. In <code>main.ts</code>, find your target and its positioned host after mount:</p>
-
-<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Find the target and host"><Code code={`const host = document.querySelector('#host');
-const target = document.querySelector('#target');
-if (!(host instanceof HTMLElement) || !target) {
-  throw new Error('Missing host or target');
-}`} lang="ts" theme={codeTheme} /></div>
+<p>Add animated flames to a button while keeping its interaction. Create the files in the <a href="/docs/installation">installation guide</a>, then save the complete module below as <code>main.ts</code>.</p>
 
 ## Attach Fire
 
-<p>Add the following code to the same module. Automatic animation advances effect time. Fonts are ready before capture, and teardown is registered before initialization settles.</p>
+<p><code>clock: 'auto'</code> advances effect time automatically. Cleanup is registered before waiting for fonts and preparing Fire, so leaving during loading cannot create a late effect.</p>
 
-<DocsEffectLab effect={fire} subject="text" heading="Tune the attachment" description="Intensity is shared by all effects. Flame height is specific to Fire and recreates the effect when changed. The original text remains selectable." />
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Standalone automatic animation example"><Code code={standaloneCode} lang="ts" theme={codeTheme} /></div>
 
-<p>On component unmount, call <code>fire.dispose()</code> and remove your own listeners. The pagehide handler covers leaving the page; it does not replace framework teardown.</p>
+<p>Run <code>pnpm dev</code> and open the printed loopback URL. Flames surround the button; clicking it increases the counter. To try the production build, run <code>pnpm build</code>, then <code>pnpm preview</code>.</p>
+
+<p>If the effect is unavailable, the button still works. Check the console reason and <a href="#unavailable-output">Unavailable output</a> below.</p>
+
+<DocsEffectLab effect={fire} subject="text" heading="Tune the attachment" description="Intensity is shared by all effects. Flame height is specific to Fire and recreates the effect when changed. The original text remains selectable." />
 
 ## Use another effect
 
@@ -37,7 +34,7 @@ if (!(host instanceof HTMLElement) || !target) {
 
 ## Control time and intensity
 
-<p><code>fire.pause()</code> pauses automatic animation. <code>fire.resume()</code> continues without catching up time spent paused or hidden. Set <code>fire.intensity</code> to a value between 0 and 1. It must be finite and representable as float32; accepted out-of-range values clamp.</p>
+<p><code>fire.pause()</code> pauses automatic animation. <code>fire.resume()</code> continues without catching up time spent paused or hidden. Set <code>fire.intensity</code> to a value between 0 and 1. See the <a href="/docs/api/shared#control-playback">control reference</a> for accepted values.</p>
 
 <p>For explicit seeking, choose <code>clock: 'manual'</code> at creation and write <code>fire.time</code> in absolute seconds. Forward and backward seeks reuse the capture. With external control, <code>paused</code> stays true even while time changes; <code>resume()</code> does not advance it.</p>
 
@@ -45,7 +42,7 @@ if (!(host instanceof HTMLElement) || !target) {
 
 <p>After changing captured paint, await <code>fire.refresh()</code>. It hides stale output and resolves once this or a newer requested capture is accepted. Observed target mutations and resize can refresh automatically; unobserved stylesheet, hover or ancestor paint changes still need explicit refresh.</p>
 
-<p>Disposal is safe to call more than once and safe before <code>ready</code>. Removing an observed target or host permanently disposes the effect; create a new attachment after remounting.</p>
+<p>Call <code>cleanup()</code> on component unmount; <code>pagehide</code> only covers leaving the page. It is safe to call more than once, including while fonts or <code>ready</code> are pending. Register it synchronously in your framework’s teardown hook before calling <code>setup()</code>. On remount, run the module’s setup and ownership code again with fresh variables and elements; a disposed effect cannot be reused.</p>
 
 ## Unavailable output
 

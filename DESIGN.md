@@ -239,6 +239,16 @@ attach only while visible, release on pagehide, respect reduced motion, never cl
 the host's output and leave the original subject and disabled controls in place
 without JavaScript or WebGPU. They are demonstrations, not verification evidence.
 
+The GSAP guide includes a compact interactive sequence in English and Spanish,
+using the same graphite preview and control styling. Keep the original clickable
+target beside Play/Pause, Restart, Reverse and a labeled seconds slider. Show
+timeline position, effect time and intensity separately, with two stages: the
+container appears over 0.5 seconds, then effect time and intensity change together
+over four seconds. Start paused; seeking pauses playback. Keep the executed
+sequence and displayed source aligned, with readable code and explanations when
+JavaScript or GPU output is unavailable. Respect reduced motion and release owned
+animations and effects when the lesson leaves view or the page closes.
+
 Documentation uses the same fixed site header component as the marketing pages
 (wordmark, Effects and Docs links, search and the GitHub link) without the animated
 pattern line. Content edges align with the header. The sticky

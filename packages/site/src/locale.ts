@@ -78,6 +78,7 @@ const docsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> = {
     'create-your-preview-app',
     'provide-the-target-and-host',
     'add-the-optional-gsap-binding',
+    'set-up-your-coding-agent',
   ],
   standalone: [
     'attach-fire',
@@ -148,6 +149,7 @@ const spanishDocsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> 
     'crea-tu-aplicación-de-prueba',
     'proporciona-el-objetivo-y-el-contenedor',
     'añade-el-enlace-opcional-de-gsap',
+    'configura-tu-agente-de-programación',
   ],
   standalone: [
     'aplica-fire',

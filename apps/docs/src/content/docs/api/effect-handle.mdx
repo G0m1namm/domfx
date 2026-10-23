@@ -6,7 +6,7 @@ description: "Read effect state, update the captured image and release resources
 import DocsEffectMethods from "../../../components/docs-effect-methods.astro";
 import DocsEffectState from "../../../components/docs-effect-state.astro";
 
-<p>An effect instance (<code>EffectHandle</code>) is returned immediately by every effect function. Keep it to control animation, inspect setup results and release resources. <a href="/docs/api/shared#control-playback">Time and intensity</a> are its writable controls.</p>
+<p>An effect instance (<code>EffectHandle</code>) is returned immediately by every effect function. Keep it to control animation, check setup results and release resources. <a href="/docs/api/shared#control-playback">Time and intensity</a> are its writable controls.</p>
 
 <span id="read-state" />
 
@@ -28,4 +28,4 @@ import DocsEffectState from "../../../components/docs-effect-state.astro";
 
 <p>A GSAP-controlled effect has <code>paused: true</code> while its time changes. An effect can have <code>paused: false</code> while temporarily unable to render. A still effect can be active, up to date and visible.</p>
 
-<p><code>ready</code> describes the initial setup attempt only. It is not replaced by retry, does not mean an animation finished, and does not wait for completed GPU execution or screen presentation. Successful setup submits the initial output; inspect state for availability.</p>
+<p>Await <code>ready</code> for the initial setup attempt, <code>refresh()</code> for an updated capture, or <code>retry()</code> for a new setup attempt after correcting a problem. Retry keeps the original <code>ready</code> promise. None of these promises signals animation completion or completed GPU execution/screen presentation; inspect state for availability.</p>

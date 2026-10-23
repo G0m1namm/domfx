@@ -1,80 +1,69 @@
 ---
 title: "Browser support"
-description: "Measured environments, capture limits and untested coverage."
+description: "Tested browsers and limits for capture, placement and effects."
 ---
 
-This summary uses **support record v1, 2026-09-16 UTC**. A pass applies to its
-named environment, fixtures and source snapshot. It does not establish a minimum
-browser version, browser-family support or release approval.
+domfx requires WebGPU in a secure context, such as HTTPS or localhost. When an
+effect cannot render, the original content remains visible and interactive.
 
-All [available effects](/docs/api#available-effects) share the browser capture,
-placement and composition limits below. The historical record includes Fire
-fixtures; it does not establish the same visual or performance coverage for every
-effect. The Standalone guide uses Fire as one example of the shared API, and the
-live previews on effect references are demonstrations, not verification evidence.
+All [21 effects](/docs/api#available-effects) share the capture and placement
+limits below. Browser checks do not establish equal visual or performance
+coverage for every effect.
 
 ## Measured environments
 
-- **Chromium 153.0.8010.12**, macOS 26.6.2 on the measured Apple M5 Pro, native
-  Apple Metal 3 WebGPU: 386 development/production cases passed without skips or
-  retries. Viewport 1280 × 900, DPR 2; capture, gallery, placement and scrolling
-  also have DPR 1 coverage. Positive rendering disabled reduced motion.
-- **Chrome 152.0.7977.83** on that machine: a narrower production capture, SDF,
-  deterministic Fire, original-button interaction and disposal run passed at
-  1280 × 720, DPR 2. It is not the full Chromium suite.
-- **Packed Vite consumers**: standalone and GSAP tarball consumers have recorded
-  strict types, SSR imports, real GPU output and lifecycle results in the versioned
-  record. These results do not establish other bundler support.
+The **support record v1, dated 2026-09-16 UTC**, covers Chromium 153.0.8010.12
+and a narrower Chrome 152.0.7977.83 run on macOS 26.6.2, Apple M5 Pro, with
+native Metal WebGPU. It includes capture, placement, Fire rendering, original
+interaction and cleanup. Vite applications using packed standalone and GSAP
+packages also have recorded type, SSR-import and GPU checks.
 
-The browser-reported adapter is `apple / metal-3`; its device and description
-fields were empty. No wider device identity is inferred from those fields.
+These are tested environments, not minimum supported browser versions. See the
+[versioned support record](https://github.com/G0m1namm/domfx/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md)
+for exact cases and measurements.
 
 ## Untested coverage
 
-Safari, Firefox, Edge, mobile, Windows/Linux native GPUs, other macOS GPUs,
-fractional DPR, other bundlers and physical device loss lack qualifying coverage
-beyond the record's explicit scope. UNTESTED means no qualifying observation,
-not a pass or an incompatibility finding.
+Safari, Firefox, Edge, mobile devices, Windows/Linux GPUs, other macOS GPUs,
+fractional device pixel ratios, other bundlers and physical device loss lack
+qualifying coverage in that record. Untested does not mean incompatible.
 
-Accessibility lifecycle fixtures cover native input, focus, text selection and
-decorative canvas semantics. They are not a VoiceOver, NVDA or other assistive
-technology audit. Historical performance measurements have their own fixed
-fixtures; they do not establish a frame-rate, total VRAM or long-session guarantee.
+Native input, focus, text selection and decorative canvas semantics have been
+checked. This is not an assistive-technology audit or a guarantee of frame rate,
+GPU memory use or long-session performance.
 
 ## Capture and composition limits
 
-The captured target is a snapshot. PNG/JPEG/WebP, selected `currentSrc`, supported
-CSS backgrounds and embeddable fonts still depend on asset readiness and CORS.
-Measured asset fixtures are narrower than the accepted paths. SVG image documents
-and references, video, iframe/object/embed, open shadow roots, `image-set()` and
-other URL-bearing paint such as masks are rejected. Inline SVG paths within the
-document are distinct from external SVG image assets.
+The effect uses a snapshot of the target element. PNG, JPEG, WebP, the selected
+`currentSrc`, supported CSS backgrounds and embeddable fonts depend on asset
+readiness and CORS. Accepted formats have broader scope than the tested assets.
 
-Translation and positive axis-aligned scales have bounded verification. Rotation,
-skew, perspective, zero/negative scale and CSS zoom reject. Positioned intermediate
-HTML ancestors can have rectangular overflow clips; rounded clips, clip paths,
-masks, paint containment, `overflow: clip` and fixed intermediates reject.
-Arbitrary stacking, top-layer and shadow/slot composition are not established.
-
-Target or intermediate opacity other than 1, filters, backdrop filters and blending
-cannot be reproduced by the separate canvas. Host and outer group effects apply
-natively to the shared subtree. Keep an explicit host and compatible stacking.
-Larger overflow or shadows can exceed capture padding; do not infer unlimited paint
-fidelity from the measured fixtures.
+- External SVG images and SVG image references, video, `iframe`, `object`, `embed`,
+  open shadow roots, `image-set()` and URL-based paint such as masks are rejected.
+  Inline SVG paths are distinct from external SVG images.
+- Translation and positive axis-aligned scales have limited verification. Rotation,
+  skew, perspective, zero or negative scale, and CSS zoom are rejected.
+- Positioned HTML ancestors between the target and its effect container can have
+  rectangular overflow clips. Rounded clips, `clip-path`, masks, paint containment,
+  `overflow: clip` and fixed-position intermediates are rejected. Arbitrary stacking,
+  top-layer content and shadow/slot composition are not established.
+- Target or intermediate opacity other than 1, filters, backdrop filters and
+  blending cannot be reproduced by the separate canvas. Apply group effects to
+  the effect container or its ancestors so they affect the shared subtree.
+- Large shadows or overflowing content can exceed the capture margin. Keep an
+  explicit effect container and compatible stacking; capture fidelity is bounded.
 
 ## When an effect is unavailable
 
-The original DOM remains the content and interaction surface. Reduced motion
-suppresses animated output by default. Check the reason code and use
-[explicit recovery](/docs/troubleshooting) after correcting the condition.
-
-The [versioned browser/device record](https://github.com/G0m1namm/domfx/blob/afcfd626eea273d7881048eb03b21973e10cce40/engineering/browser-support.md)
-retains full fixture, accessibility, performance and missing-coverage evidence.
-Repository source links require access while the repository is private.
+Check `effect.reason` and `effect.reasonDetail`, correct the condition, then
+[retry explicitly](/docs/troubleshooting#recover-explicitly). Reduced motion
+suppresses output by default; choose `motion: 'static'` at creation for a still
+decoration. See [reduced motion](/docs/api/shared#reduced-motion).
 
 ## Source and feedback access
 
-The repository is currently private. GitHub source links require access until the
-maintainer opens it for the alpha; the guides on this site remain readable locally.
-After launch, report a small reproduction with versions, environment and the typed
-reason through GitHub issues. Keep security reports in the private reporting channel.
+The [source repository](https://github.com/G0m1namm/domfx) is public.
+[Report a problem](https://github.com/G0m1namm/domfx/issues) with a small
+reproduction, package versions, browser/device details and the reported reason.
+Use the repository's [security policy](https://github.com/G0m1namm/domfx/blob/main/SECURITY.md)
+for security reports.

@@ -42,6 +42,6 @@ import DocsSharedOptions from "../../../../components/docs-shared-options.astro"
 
 <p>El valor predeterminado <code>motion: 'respect'</code> suprime la salida cuando la persona solicita movimiento reducido. Cuando la preferencia vuelva a cambiar, llama explícitamente a <code>retry()</code>. No sustituye automáticamente la animación por un fotograma inmóvil.</p>
 
-<p><code>motion: 'static'</code> siempre dibuja un efecto inmóvil en el tiempo cero, con cualquier preferencia. Los cambios de tiempo siguen siendo legibles, pero no alteran el fotograma dibujado. La intensidad y las actualizaciones de captura siguen funcionando. <code>resume()</code> no lo anima.</p>
+<p><code>motion: 'static'</code> siempre dibuja un efecto inmóvil en el tiempo cero, con cualquier preferencia. Puedes seguir leyendo el valor asignado a <code>time</code>, pero no cambia el fotograma dibujado. La intensidad y las actualizaciones de captura siguen funcionando. <code>resume()</code> no lo anima.</p>
 
 <p>Consulta <a href="/docs/es/api/effect-handle">estado y métodos del efecto</a> para preparación, pausa, reanudación, actualización de captura, reintento y limpieza.</p>

@@ -12,7 +12,7 @@ Consulta las versiones exactas en la [guía de instalación](/docs/es/installati
 
 Los paquetes tienen versiones independientes. Consulta sus registros de cambios
 y notas de publicación, el rango de core que requiere browser y los rangos de
-dependencias compartidas del adaptador GSAP. Que los números de versión coincidan
+`peerDependencies` del adaptador GSAP. Que los números de versión coincidan
 no basta para establecer compatibilidad.
 
 Fija las versiones que verificaste y guarda el archivo de bloqueo de dependencias

@@ -6,7 +6,7 @@ description: "Browse all 21 effects by category, with live previews on each refe
 import DocsEffectLinks from "../../../components/docs-effect-links.astro";
 import { effectsByCategory } from "../../documentation";
 
-<p>Every effect is an attachment function from <code>@domfx/browser</code> with the same <a href="/docs/api/shared">options and controls</a>. Each reference opens with a live preview you can tune, followed by its exact options.</p>
+<p>Import any effect from <code>@domfx/browser</code> and use the same <a href="/docs/api/shared">options and controls</a>. Open its reference to try a live preview and see its settings.</p>
 ## Energy
 
 Light and heat that move outward from the shape: lightning, flames and a travelling pulse.
@@ -21,7 +21,7 @@ Coatings that cling to the edge and spread inward: ice, slime and scorched paper
 
 ## Pattern
 
-Silver-violet marks that trace the silhouette, from ordered dots to woven strands.
+Silver-violet marks that trace the visible shape, from ordered dots to woven strands.
 
 <DocsEffectLinks effects={effectsByCategory[2].effects} />
 

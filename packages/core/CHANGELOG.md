@@ -1,5 +1,11 @@
 # @domfx/core
 
+## 0.1.0-alpha.1
+
+### Patch Changes
+
+- Update the package guides to describe the published alpha and link to npm installation instructions.
+
 ## 0.1.0-alpha.0
 
 ### Minor Changes

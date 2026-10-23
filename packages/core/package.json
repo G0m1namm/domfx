@@ -1,6 +1,6 @@
 {
   "name": "@domfx/core",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "DOM-independent domfx contracts and alpha classification.",
   "license": "MIT",
   "repository": {

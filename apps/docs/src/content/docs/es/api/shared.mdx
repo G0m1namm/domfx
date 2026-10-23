@@ -30,11 +30,11 @@ import DocsSharedOptions from "../../../../components/docs-shared-options.astro"
 
 ## Controla la animación
 
-<p>Usa <code>clock: 'auto'</code> para la animación automática. domfx avanza el tiempo mientras puede dibujar el efecto, sin avanzar de golpe el tiempo transcurrido mientras estaba en pausa, oculto o fuera de pantalla. <code>'ambient'</code> es la forma anterior del mismo comportamiento y sigue admitida. La propiedad de solo lectura <code>clock</code> conserva el valor que proporcionaste.</p>
+<p>Usa <code>clock: 'auto'</code> para la animación automática. domfx avanza el tiempo mientras puede dibujar el efecto, sin contar el tiempo en pausa, oculto o fuera de pantalla. <code>'ambient'</code> es la forma anterior del mismo comportamiento y sigue admitida. La propiedad de solo lectura <code>clock</code> conserva el valor que proporcionaste.</p>
 
-<p>Usa <code>clock: 'manual'</code> para el control externo mediante tu código o GSAP. domfx nunca avanza el tiempo en este modo, ni siquiera después de <code>resume()</code>. Sigue programando el renderizado y observando el objetivo; el control manual no implica renderizado síncrono.</p>
+<p>Usa <code>clock: 'manual'</code> para el control externo mediante tu código o GSAP. domfx nunca avanza el tiempo en este modo, ni siquiera después de <code>resume()</code>. Sigue observando el objetivo y programa el renderizado para el siguiente fotograma.</p>
 
-<p><code>time</code> elige un punto de la animación en segundos. No es un progreso de 0 a 1 ni el tiempo real transcurrido. Puedes retroceder o asignar valores negativos. Deja cada propiedad modificable a cargo de un único controlador de animación.</p>
+<p><code>time</code> elige un punto de la animación en segundos. No es un progreso de 0 a 1 ni el tiempo real transcurrido. Puedes retroceder o usar valores negativos. Deja cada propiedad a cargo de un solo controlador de animación.</p>
 
 <span id="reduced-motion" />
 

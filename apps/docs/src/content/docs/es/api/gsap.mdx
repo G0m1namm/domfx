@@ -1,6 +1,6 @@
 ---
 title: "API de GSAP"
-description: "Anima propiedades con GSAP o usa enlaces opcionales que conservan los valores iniciales y gestionan el ciclo de vida."
+description: "Anima propiedades con GSAP o usa enlaces opcionales con valores iniciales fijos."
 ---
 
 import DocsGsapBindings from "../../../../components/docs-gsap-bindings.astro";
@@ -11,18 +11,20 @@ import DocsGsapBindings from "../../../../components/docs-gsap-bindings.astro";
 
 ## Animaciones nativas de propiedades
 
-<p>Usa <code>{'gsap.to(effect, { time, intensity, duration, ease })'}</code> o añade el mismo objetivo a una línea de tiempo. Usa <code>clock: 'manual'</code> al crear el efecto. No necesitas registrar un plugin de domfx ni importar <code>@domfx/gsap</code> para estas propiedades numéricas.</p>
+<p>Un <em>tween</em> es una animación que cambia los valores de las propiedades con el tiempo. Usa <code>{'gsap.to(effect, { time, intensity, duration, ease })'}</code> o añade el mismo objetivo a una línea de tiempo. Usa <code>clock: 'manual'</code> al crear el efecto. No necesitas registrar un plugin de domfx ni importar <code>@domfx/gsap</code> para estas propiedades numéricas.</p>
 
-<p>GSAP actualiza las propiedades públicas del efecto, incluso al saltar a un punto de la línea de tiempo sin ejecutar las funciones de devolución de llamada (callbacks). Las llamadas encadenadas a <code>.to()</code> resuelven los valores iniciales como las animaciones GSAP normales. <code>.from()</code>, <code>.fromTo()</code>, las curvas de aceleración (<code>ease</code>), <code>repeat</code>/<code>yoyo</code>, la sobrescritura de propiedades y <code>gsap.killTweensOf(effect)</code> siguen el comportamiento habitual de GSAP.</p>
+<p>GSAP actualiza las propiedades públicas del efecto, incluso al saltar a un punto de la línea de tiempo sin ejecutar las funciones asociadas a sus eventos (<em>callbacks</em>). Las llamadas encadenadas a <code>.to()</code> parten de los valores anteriores. <code>.from()</code>, <code>.fromTo()</code>, las curvas de aceleración (<code>ease</code>, que definen el ritmo del cambio), <code>repeat</code>/<code>yoyo</code>, la sobrescritura de propiedades y <code>gsap.killTweensOf(effect)</code> siguen el comportamiento habitual de GSAP.</p>
 
-<p>Mantén los valores dentro de los <a href="/docs/es/api/shared#control-playback">rangos de control del efecto</a>. La instancia valida las asignaciones; el tipo general de variables de GSAP no impone estos rangos estáticamente. <code>intensity</code> se limita en cada asignación, por lo que las curvas que rebasan el rango pueden hacer que la intensidad permanezca en uno de sus límites.</p>
+<p>Mantén los valores dentro de los <a href="/docs/es/api/shared#control-playback">rangos de control del efecto</a>. La instancia valida las asignaciones al ejecutarse; los tipos de GSAP no imponen estos rangos. <code>intensity</code> se limita en cada asignación, por lo que las curvas que rebasan el rango pueden hacer que la intensidad permanezca en uno de sus límites.</p>
 
-<p>Detén tus animaciones y libera el efecto durante la limpieza. Detener o completar una animación no libera su objetivo. Registra la limpieza de inmediato, incluso si la configuración aún está pendiente. Consulta la <a href="/docs/es/gsap">guía completa de GSAP</a> para el patrón de ciclo de vida.</p>
+<p>Detén tus animaciones y libera el efecto durante la limpieza. Detener o completar una animación no libera su objetivo. Registra la limpieza de inmediato, incluso si la configuración aún está pendiente. Consulta la <a href="/docs/es/gsap">guía completa de GSAP</a> para ver cómo hacerlo.</p>
 
 <span id="snapshot-bindings" />
 
 <span id="optional-snapshot-bindings" />
 
 ## Enlaces opcionales con valores iniciales fijos
+
+<p>Elige un enlace si necesitas valores iniciales fijos o sus funciones de limpieza. Para secuencias habituales, usa las animaciones nativas anteriores.</p>
 
 <DocsGsapBindings />

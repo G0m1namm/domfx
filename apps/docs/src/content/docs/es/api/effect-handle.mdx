@@ -6,7 +6,7 @@ description: "Consulta el estado del efecto, actualiza la captura y libera recur
 import DocsEffectMethods from "../../../../components/docs-effect-methods.astro";
 import DocsEffectState from "../../../../components/docs-effect-state.astro";
 
-<p>Cada función devuelve de inmediato una instancia de efecto (<code>EffectHandle</code>). Consérvala para controlar la animación, inspeccionar la configuración y liberar recursos. <a href="/docs/es/api/shared#control-playback">Tiempo e intensidad</a> son sus controles modificables.</p>
+<p>Cada función devuelve de inmediato una instancia de efecto (<code>EffectHandle</code>). Consérvala para controlar la animación, comprobar el resultado de la configuración y liberar recursos. <a href="/docs/es/api/shared#control-playback">Tiempo e intensidad</a> son sus controles modificables.</p>
 
 <span id="read-state" />
 
@@ -34,4 +34,4 @@ import DocsEffectState from "../../../../components/docs-effect-state.astro";
 
 <p>Un efecto controlado por GSAP tiene <code>paused: true</code> mientras cambia su tiempo. Un efecto puede tener <code>paused: false</code> aunque temporalmente no pueda dibujarse. Un efecto inmóvil puede estar activo, actualizado y visible.</p>
 
-<p><code>ready</code> describe solo el intento de configuración inicial. El reintento no lo sustituye; tampoco indica que la animación haya terminado ni espera a que acabe la ejecución en la GPU o aparezca en pantalla. Una configuración correcta envía la salida inicial; consulta el estado para saber si está disponible.</p>
+<p>Espera a <code>ready</code> para el intento de configuración inicial, a <code>refresh()</code> para actualizar la captura o a <code>retry()</code> para un nuevo intento de configuración después de corregir un problema. El reintento conserva la promesa <code>ready</code> original. Ninguna de estas promesas indica que terminó la animación, la ejecución en la GPU o la presentación en pantalla; consulta el estado para saber si está disponible.</p>

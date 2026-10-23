@@ -24,11 +24,11 @@ import DocsSharedOptions from "../../../components/docs-shared-options.astro";
 
 ## Control animation
 
-<p>Use <code>clock: 'auto'</code> for automatic animation. domfx advances effect time while it can render, without catching up time spent paused, hidden or offscreen. <code>'ambient'</code> is the older spelling of the same behavior and remains supported. The instance's read-only <code>clock</code> preserves the spelling you supplied.</p>
+<p>Use <code>clock: 'auto'</code> for automatic animation. domfx advances effect time while it can render, skipping time spent paused, hidden or offscreen. <code>'ambient'</code> is the older spelling of the same behavior and remains supported. The instance's read-only <code>clock</code> preserves the spelling you supplied.</p>
 
-<p>Use <code>clock: 'manual'</code> for external control through your code or GSAP. domfx never advances time in this mode, including after <code>resume()</code>. It still schedules rendering and observes the target; manual control does not mean immediate rendering.</p>
+<p>Use <code>clock: 'manual'</code> for external control through your code or GSAP. domfx never advances time in this mode, including after <code>resume()</code>. It still observes the target and schedules rendering for the next frame.</p>
 
-<p><code>time</code> selects a point in the effect's animation in seconds. It is neither progress from 0 to 1 nor elapsed wall-clock time. You can seek backward or write negative values. Give one animation driver responsibility for each writable property.</p>
+<p><code>time</code> selects a point in the effect's animation in seconds. It is neither progress from 0 to 1 nor elapsed wall-clock time. You can seek backward or use negative values. Let only one animation driver write each property.</p>
 
 ## Reduced motion
 

@@ -7,7 +7,7 @@ export const effectReference = {
     intensity: 'Increases the reach and brightness of the electrical strands.',
   },
   frost: {
-    description: 'An icy white-blue coating, pale smoke and small frost particles.',
+    description: 'A white-blue ice coating with pale smoke and small frost particles.',
     intensity: 'Extends the frost inward and strengthens the smoke and particles.',
   },
   fire: {
@@ -20,8 +20,8 @@ export const effectReference = {
     intensity: 'Increases dot density, inward coverage and outward reach.',
   },
   slime: {
-    description: 'A glossy green coating with stretching, falling drips.',
-    intensity: 'Strengthens the coating and dripping material.',
+    description: 'A glossy green coating with drips that stretch and fall.',
+    intensity: 'Strengthens the coating and drips.',
   },
   kinetic: {
     description:
@@ -34,59 +34,59 @@ export const effectReference = {
       'Spreads the scorching inward while keeping the outer rim narrow. The original content remains intact.',
   },
   halftone: {
-    description: 'A halftone dot pattern follows the edge.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    description: 'Halftone dots follow the edge.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   stipple: {
-    description: 'Scattered stipple marks trace the visible shape.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    description: 'Scattered dots trace the visible shape.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   scanlines: {
-    description: 'Fine horizontal bands form an animated edge treatment.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    description: 'Fine horizontal bands move along the edge.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   crosshatch: {
-    description: 'Crossing lines build a hatched edge treatment.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    description: 'Crossing lines form a hatched pattern along the edge.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   diamonds: {
     description: 'A diamond lattice follows the visible shape.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   'contour-echoes': {
     description: 'Repeated outlines echo the edge of the visible shape.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   engraving: {
-    description: 'Engraved linework forms a textured edge treatment.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    description: 'Fine engraved lines texture the edge.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   'woven-mesh': {
     description: 'Interlaced strands create a woven edge texture.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   hexagons: {
     description: 'A hexagonal grid follows the visible shape.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   interference: {
     description: 'Overlapping waves form an interference pattern around the edge.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   shards: {
-    description: 'Angular fragments form a geometric edge treatment.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    description: 'Angular fragments cluster along the edge.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   circuits: {
     description: 'Circuit-like paths trace the visible shape.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   'star-shimmer': {
     description: 'Small star-shaped highlights shimmer along the edge.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
   'brush-fringe': {
     description: 'Brush-like marks form a fringe along the visible shape.',
-    intensity: 'Strengthens the patterned coating and its reach.',
+    intensity: 'Strengthens the pattern and extends its reach.',
   },
 } satisfies Record<EffectId, { description: string; intensity: string }>;

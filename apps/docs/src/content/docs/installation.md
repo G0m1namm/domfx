@@ -101,3 +101,22 @@ pnpm add -E @domfx/gsap@%DOMFX_GSAP_VERSION%
 ```
 
 Your app supplies GSAP; `@domfx/browser` does not install it.
+
+## Set up your coding agent
+
+Install the domfx skill from your app's directory:
+
+```sh
+pnpm dlx skills add G0m1namm/domfx --skill domfx
+```
+
+Choose the coding agent you use and project installation when prompted. Keep
+`--skill domfx` to select only consumer guidance, excluding the repository's
+engineering skills. This installs instructions, not the npm library.
+
+The skill helps your agent choose effects, animate them and release resources.
+Ask in English or Spanish, for example: “Add Fire to this button and clean it up
+when the component unmounts.” Instructions are maintained in English; explanations
+and comments follow your language. Skill discovery depends on your agent; restart
+its session if needed. The installer supports multiple agents, but they have not
+all been tested with domfx.

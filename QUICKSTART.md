@@ -10,6 +10,14 @@ and [Uso independiente](https://domfx.dev/docs/es/standalone/).
 
 <span id="prompt-for-your-coding-assistant"></span>
 
+## Use a coding agent
+
+From your app, run `pnpm dlx skills add G0m1namm/domfx --skill domfx`, then choose
+your coding agent and project installation. This installs domfx instructions,
+not the library or engineering skills. Ask in English or Spanish; see
+[agent setup](https://domfx.dev/docs/installation/#set-up-your-coding-agent)
+for discovery and support details.
+
 ## Start a separate preview app
 
 Run `mkdir my-domfx-preview`, then `cd my-domfx-preview`. Save this as `package.json`:

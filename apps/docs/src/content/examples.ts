@@ -1,49 +1,108 @@
 import type { Locale } from '@domfx/site/locale';
 
+import { addGsapSequence } from './gsap-sequence.ts';
+
+// Extract executable statements rather than maintaining a second sequence.
+// This also works in the Node-based complete-example verifier, without Vite loaders.
+const sequenceFunction = addGsapSequence.toString();
+export const gsapSequenceCode = sequenceFunction
+  .slice(sequenceFunction.indexOf('{') + 1, sequenceFunction.lastIndexOf('}'))
+  .replace(/^(?: {2}|\t)/gm, '')
+  .replaceAll('\t', '  ')
+  .trim();
+
 export function examplesForLocale(locale: Locale) {
   const isEs = locale === 'es';
+  const elements = `const host = document.querySelector('#host');
+const target = document.querySelector('#target');
+const clicks = document.querySelector('#clicks');
+if (!(host instanceof HTMLElement) || !target || !clicks) {
+  throw new Error('${isEs ? 'Falta el contenedor, el objetivo o el contador' : 'Missing host, target or click counter'}');
+}
+
+let count = 0;
+const onClick = () => { clicks.textContent = String(++count); };
+target.addEventListener('click', onClick);`;
+  const standaloneCode = `import { attachFire } from '@domfx/browser';
+
+${elements}
+
+let disposed = false;
+let fire: ReturnType<typeof attachFire> | undefined;
+
+function cleanup() {
+  disposed = true;
+  window.removeEventListener('pagehide', cleanup);
+  target?.removeEventListener('click', onClick);
+  fire?.dispose();
+}
+
+// ${isEs ? 'Antes de llamar a setup, registra también cleanup para que se ejecute al desmontar el componente.' : 'Before calling setup, also register cleanup to run on component unmount.'}
+window.addEventListener('pagehide', cleanup, { once: true });
+
+const setup = async () => {
+  await document.fonts.ready;
+  if (disposed) { return; }
+
+  fire = attachFire(target, {
+    host, clock: 'auto', motion: 'respect',
+    intensity: 0.8, flameHeight: 32, seed: 314,
+  });
+  await fire.ready;
+  if (!disposed && fire.lifecycle !== 'active') {
+    console.info(fire.reason);
+  }
+};
+
+void setup();`;
   const gsapCode = `import { gsap } from 'gsap';
 import { attachFire } from '@domfx/browser';
 
-await document.fonts.ready;
-const fire = attachFire(target, {
-  host, clock: 'manual', motion: 'respect',
-  time: 0, intensity: 0.8,
-  flameHeight: 32, seed: 314,
-});
+${elements}
+
+let disposed = false;
+let fire: ReturnType<typeof attachFire> | undefined;
 const timeline = gsap.timeline({ paused: true });
-// ${isEs ? 'Anima la opacidad del contenedor para que el objetivo y el efecto la compartan.' : 'Fade the host so the target and its effect share opacity.'}
-timeline.from(host, {
-  opacity: 0, duration: 0.5, immediateRender: false,
-});
-timeline.addLabel('ignite', 0.5);
-timeline.to(fire, {
-  time: 4, intensity: 0.4,
-  duration: 4, ease: 'none',
-}, 'ignite');
-const unsubscribe = fire.onDispose(() => timeline.kill());
+let unsubscribe: (() => void) | undefined;
 
-// ${isEs ? 'Registra la limpieza antes de que se resuelva ready.' : 'Register teardown before ready settles.'}
-const cleanup = () => {
-  unsubscribe();
-  timeline.kill();
-  fire.dispose();
-};
+function cleanup() {
+  disposed = true;
+  window.removeEventListener('pagehide', cleanup);
+  target?.removeEventListener('click', onClick);
+  unsubscribe?.();
+  timeline.revert();
+  fire?.dispose();
+}
+
+// ${isEs ? 'Antes de llamar a setup, registra también cleanup para que se ejecute al desmontar el componente.' : 'Before calling setup, also register cleanup to run on component unmount.'}
 window.addEventListener('pagehide', cleanup, { once: true });
-// ${isEs ? 'Llama también a cleanup al desmontar el componente.' : 'Also call cleanup on component unmount.'}
-await fire.ready;
-if (fire.lifecycle === 'active') timeline.play();`;
-  const standaloneCode = `import { attachFire } from '@domfx/browser';
 
-await document.fonts.ready;
-const fire = attachFire(target, {
-  host, clock: 'auto', motion: 'respect',
-  intensity: 0.8, flameHeight: 32, seed: 314,
-});
-window.addEventListener('pagehide',
-  () => fire.dispose(), { once: true });
-// ${isEs ? 'Libera también el efecto al desmontar el componente.' : 'Also dispose on component unmount.'}
-await fire.ready;`;
+const setup = async () => {
+  await document.fonts.ready;
+  if (disposed) { return; }
+
+  fire = attachFire(target, {
+    host, clock: 'manual', motion: 'respect',
+    time: 0, intensity: 0.8, flameHeight: 32, seed: 314,
+  });
+  unsubscribe = fire.onDispose(() => timeline.revert());
+  // ${isEs ? 'El objetivo y el efecto comparten la opacidad del contenedor.' : 'The target and effect share the container opacity.'}
+${gsapSequenceCode
+  .split('\n')
+  .map((line) => `  ${line}`)
+  .join('\n')}
+
+  await fire.ready;
+  if (disposed) { return; }
+  if (fire.lifecycle !== 'active') {
+    console.info(fire.reason);
+    return;
+  }
+
+  timeline.play();
+};
+
+void setup();`;
   return { gsapCode, standaloneCode };
 }
 

@@ -15,7 +15,7 @@ import { codeTheme } from "../examples";
 
 ## Usage
 
-<p>Import an attachment function from <code>@domfx/browser</code>. Call it after the target and its positioned host are mounted. Imports are SSR-safe; attachment and capture require browser DOM elements.</p>
+<p>Import an attachment function from <code>@domfx/browser</code>. Call it in the browser after mounting the target element and its effect container (<code>host</code>). The container must contain the target and have CSS <code>position</code> other than <code>static</code>. Imports are SSR-safe; attachment and capture require browser DOM elements.</p>
 
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Shared attachment options example"><Code code={`import { attachFrost } from '@domfx/browser';
 import type { AttachmentOptions } from '@domfx/browser';
@@ -46,7 +46,7 @@ effect.time = 2;
 
 ### Effect-specific options
 
-<p><a href="/docs/api/effects/fire#effect-options">Fire's flameHeight</a> is currently the only additional creation option. Each effect has its own reference so additional controls can be documented where they belong when supported.</p>
+<p><a href="/docs/api/effects/fire#effect-options">Fire's <code>flameHeight</code></a> is currently the only additional creation option.</p>
 
 <span id="control-playback" />
 
@@ -74,7 +74,7 @@ effect.time = 2;
 
 ## GSAP
 
-<p>Use ordinary <code>gsap.to()</code> and timeline calls on an effect instance. The <a href="/docs/api/gsap">GSAP reference</a> also documents the optional snapshot bindings and their compatibility names.</p>
+<p>Use ordinary <code>gsap.to()</code> and timeline calls on an effect instance. The <a href="/docs/api/gsap">GSAP reference</a> explains optional bindings that keep fixed starting values and manage cleanup.</p>
 
 <span id="package-boundaries" />
 
@@ -83,9 +83,9 @@ effect.time = 2;
 <DocsApiTable label="Package responsibilities">
   <thead><tr><th scope="col">Package</th><th scope="col">Responsibility</th></tr></thead>
   <tbody>
-    <tr><th scope="row"><code>@domfx/core</code></th><td>Shared handles and capture contracts, independent of DOM, GPU and frameworks.</td></tr>
-    <tr><th scope="row"><code>@domfx/browser</code></th><td>DOM capture, silhouette preparation, GPU programs and decorative output. Consumers need no shader plugin or private renderer imports.</td></tr>
+    <tr><th scope="row"><code>@domfx/core</code></th><td>Shared effect types and capture contracts, independent of DOM, GPU and frameworks.</td></tr>
+    <tr><th scope="row"><code>@domfx/browser</code></th><td>Captures the target and renders its decorative effect. No consumer shader plugin is needed.</td></tr>
     <tr><th scope="row"><code>@domfx/gsap</code></th><td>Optional binding to a caller-owned GSAP timeline. Standalone attachments do not load GSAP.</td></tr>
   </tbody>
 </DocsApiTable>
-<p>For local debugging, see <a href="/docs/troubleshooting#trace-an-attachment">experimental attachment traces</a>. The debugging entry is separate from the shared application API.</p>
+<p>For local debugging, see <a href="/docs/troubleshooting#trace-an-attachment">experimental attachment traces</a>.</p>

@@ -3,8 +3,9 @@ title: "Instalación"
 description: "Instala la versión alfa experimental desde npm."
 ---
 
-Instala la versión experimental `%DOMFX_BROWSER_VERSION%` desde npm. Usa Node 22.22.3
-y pnpm 11.5.0 para el proceso verificado.
+Usa Node 22.22.3, pnpm 11.5.0 y un [navegador con WebGPU](/docs/es/support).
+Esta guía crea una pequeña aplicación con Vite y la versión experimental
+`%DOMFX_BROWSER_VERSION%`. La API puede cambiar.
 
 <span id="build-verified-artifacts"></span>
 <span id="genera-artefactos-verificados"></span>
@@ -12,18 +13,22 @@ y pnpm 11.5.0 para el proceso verificado.
 
 ## Instala la versión alfa
 
+Si ya tienes una aplicación:
+
 ```sh
 %DOMFX_BROWSER_INSTALL%
 ```
 
 Core se instala automáticamente. GSAP es opcional. Fija versiones exactas y conserva
-el lockfile; la API es experimental aunque la etiqueta `latest` de npm apunte a ella.
+el archivo de bloqueo de dependencias; la API es experimental aunque la etiqueta
+`latest` de npm apunte a ella.
 
 <span id="create-your-preview-app"></span>
 
 ## Crea tu aplicación de prueba
 
-Para una aplicación de prueba nueva, crea un directorio vacío y guarda esto como `package.json`:
+Para una aplicación nueva, ejecuta `mkdir my-domfx-preview` y después
+`cd my-domfx-preview`. Guarda esto como `package.json`:
 
 ```json
 {
@@ -63,25 +68,27 @@ Crea `index.html`:
 <!doctype html>
 <html lang="es">
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <link rel="icon" href="data:," />
   <title>Vista previa de domfx</title>
   <style>
     body { background: #14151B; color: #E8EAF3; font-family: sans-serif; }
-    #host { position: relative; padding: 60px; width: 280px; }
-    #target { width: 160px; height: 48px; }
+    #host { position: relative; padding: 3rem; width: fit-content; }
+    #target { min-width: 10rem; min-height: 3rem; font: inherit; }
   </style>
   <div id="host"><button id="target">Contenido original</button></div>
+  <p>Clics: <output id="clicks">0</output></p>
   <script type="module" src="/main.ts"></script>
 </html>
 ```
 
-El contenedor debe estar conectado al documento, tener posición CSS y contener al
-elemento objetivo. Ambos deben estar en el mismo documento y ser elementos distintos. Deja espacio para el efecto
-y elige un orden de apilamiento que permita que el canvas añadido se superponga al objetivo.
+El **elemento objetivo** (`target`) es el botón cuya forma recibe el efecto.
+El **contenedor del efecto** (`host`) contiene el objetivo y el canvas decorativo.
+Usa elementos distintos en el mismo documento, con `position: relative` en el
+contenedor y espacio para las llamas. Mantén ambos en el documento durante el efecto.
 
-Continúa con [GSAP](/docs/es/gsap) para crear tu propia línea de tiempo o con
-[uso independiente](/docs/es/standalone) para crear `main.ts`.
-Ejecuta `pnpm dev` durante el desarrollo; para producción, ejecuta `pnpm build`
-y luego `pnpm preview`. Abre la URL local indicada en uno de los navegadores con WebGPU verificados.
+Continúa con [uso independiente](/docs/es/standalone#attach-fire) para crear
+`main.ts` y ver el resultado. Si ya usas GSAP, sigue la [guía de GSAP](/docs/es/gsap).
 
 <span id="add-the-optional-gsap-binding"></span>
 
@@ -91,24 +98,37 @@ Para animar propiedades de forma nativa, añade solo `gsap` a tu aplicación.
 El paquete `@domfx/gsap` solo hace falta para las funciones opcionales que conservan los valores iniciales
 y gestionan el ciclo de vida.
 
-Para seguir la guía de GSAP, añade esta dependencia a `package.json`:
+Para seguir la guía de GSAP:
 
-```json
-"gsap": "3.15.0"
+```sh
+pnpm add -E gsap@3.15.0
 ```
 
-Si eliges las [funciones opcionales que conservan los valores iniciales](/docs/es/api/gsap#snapshot-bindings),
-añade también el paquete:
+Si necesitas las [funciones opcionales](/docs/es/api/gsap#snapshot-bindings):
 
-```json
-"@domfx/gsap": "%DOMFX_GSAP_VERSION%"
+```sh
+pnpm add -E @domfx/gsap@%DOMFX_GSAP_VERSION%
 ```
 
-Ejecuta `pnpm install --ignore-scripts` otra vez. GSAP es una dependencia compartida (`peer dependency`) explícita
-que debe aportar tu aplicación; el paquete browser independiente no lo instala.
+Tu aplicación aporta GSAP; `@domfx/browser` no lo instala.
 
-Las guías usan Fire como ejemplo. La referencia de la API enumera
-[todas las funciones de efecto](/docs/es/api#available-effects) y sus opciones compartidas.
-`flameHeight` es una opción de creación exclusiva de Fire. Usa versiones de paquetes
-compatibles entre sí para las exportaciones documentadas; no combines declaraciones
-antiguas con ejemplos nuevos.
+<span id="set-up-your-coding-agent"></span>
+
+## Configura tu agente de programación
+
+Instala la skill de domfx desde el directorio de tu aplicación:
+
+```sh
+pnpm dlx skills add G0m1namm/domfx --skill domfx
+```
+
+Elige tu agente de programación y la instalación en el proyecto cuando se te
+pregunte. Conserva `--skill domfx` para seleccionar solo la guía de uso, sin las
+skills de ingeniería del repositorio. Se instalan instrucciones, no la biblioteca npm.
+
+La skill ayuda a tu agente a elegir efectos, animarlos y liberar recursos.
+Puedes pedirlo en español o inglés, por ejemplo: «Añade Fire a este botón y libera
+sus recursos cuando se desmonte el componente». Las instrucciones se mantienen en
+inglés; las explicaciones y los comentarios siguen tu idioma. La detección de la
+skill depende del agente; reinicia su sesión si hace falta. El instalador admite
+varios agentes, pero no se han probado todos con domfx.

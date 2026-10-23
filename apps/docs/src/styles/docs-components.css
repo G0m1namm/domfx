@@ -176,6 +176,142 @@
 .docs-lab[data-effect='slime'] {
   --lab-tint: #718d3333;
 }
+.docs-gsap-lab {
+  min-inline-size: 0;
+  margin-block-end: 2rem;
+  border-radius: 0.625rem;
+}
+.docs-gsap-lab .docs-lab-heading,
+.docs-gsap-panel,
+.sl-markdown-content .docs-gsap-source-note {
+  padding: 1.25rem 1.5rem;
+}
+.docs-gsap-lab .docs-lab-stage {
+  min-block-size: 15rem;
+  padding: 2rem 1rem 1rem;
+  border-radius: 0;
+}
+.docs-gsap-lab .docs-lab-host {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  padding: 2rem 0.5rem;
+}
+.docs-gsap-lab button {
+  min-inline-size: max(2.75rem, 44px);
+  min-block-size: max(2.75rem, 44px);
+  max-inline-size: 100%;
+  padding: 0.5em 1em;
+  border: 1px solid var(--control-border);
+  border-radius: 0.375rem;
+  background: var(--raised);
+  color: var(--text);
+  font: inherit;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.docs-gsap-lab .docs-gsap-target {
+  background: var(--silver);
+  color: #191920;
+  font-weight: 500;
+}
+.docs-gsap-lab button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+.docs-gsap-lab button:enabled:hover {
+  border-color: var(--silver);
+}
+.docs-gsap-lab button:focus-visible,
+.docs-gsap-lab input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.docs-gsap-lab .docs-gsap-target:focus-visible {
+  outline-color: #191920;
+  box-shadow: 0 0 0 5px var(--silver);
+}
+.docs-gsap-panel {
+  display: grid;
+  min-inline-size: 0;
+  gap: 1rem;
+  border-top: 1px solid var(--border);
+}
+.sl-markdown-content .docs-gsap-panel p,
+.sl-markdown-content .docs-gsap-clicks,
+.sl-markdown-content .docs-gsap-source-note {
+  margin: 0;
+  font-size: 0.875rem;
+}
+.docs-gsap-status,
+.docs-gsap-source-note {
+  color: var(--muted);
+}
+.docs-gsap-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.docs-gsap-actions button {
+  flex: 1 1 auto;
+}
+.docs-gsap-lab .docs-gsap-position {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 1rem;
+  min-block-size: max(3.5rem, 44px);
+  padding-block: 0.375rem;
+}
+.docs-gsap-position .docs-lab-label {
+  grid-column: 1 / -1;
+}
+.docs-gsap-position input[type='range'] {
+  min-inline-size: 0;
+  min-block-size: max(2.75rem, 44px);
+}
+.docs-gsap-position output {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+}
+.docs-gsap-tracks,
+.docs-gsap-tracks > div {
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+.docs-gsap-track {
+  display: block;
+  block-size: 0.375rem;
+  border-radius: 0.1875rem;
+  background: var(--raised);
+}
+.docs-gsap-track-fade {
+  background: linear-gradient(to right, var(--silver) 11.111%, var(--raised) 11.111%);
+}
+.docs-gsap-track-effect {
+  background: linear-gradient(to right, var(--raised) 11.111%, var(--silver) 11.111%);
+}
+.docs-gsap-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+  padding: 0;
+  font-size: 0.875rem;
+}
+.docs-gsap-values dt {
+  color: var(--muted);
+}
+.docs-gsap-values dd {
+  margin: 0;
+}
+.docs-gsap-values output,
+.docs-gsap-position output {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.docs-gsap-lab .docs-code-scroll {
+  margin: 0;
+  margin-block-end: 0.5rem;
+}
 .docs-lab-heading {
   display: grid;
   gap: 6px;

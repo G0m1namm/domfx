@@ -13,35 +13,31 @@ los conflictos de objetivo pueden producir errores síncronos.
 ## Salida ausente o suprimida
 
 - `no-webgpu`, `no-adapter`, `canvas-webgpu-unavailable`: comprueba el navegador
-  y dispositivo reales, y usa un contexto seguro o una dirección local. Mantén
-  utilizable el contenido original. Compilar o comprobar tipos no demuestra que
-  WebGPU esté disponible.
+  y dispositivo reales, y usa un contexto seguro o una dirección de bucle local,
+  como `127.0.0.1`. Mantén utilizable el contenido original. Compilar o comprobar
+  tipos no demuestra que WebGPU esté disponible.
 - `reduced-motion`: respeta la preferencia. Elige `motion: 'static'` al crear
   el efecto para una decoración inmóvil, o reintenta explícitamente cuando cambie
   la preferencia. No hay una opción para forzar la animación.
-- `empty-mask`, `missing-exterior`: el objetivo necesita píxeles opacos
-  clasificados y exterior transparente dentro del margen de captura. Un objetivo
-  totalmente transparente no tiene silueta.
+- `empty-mask`, `missing-exterior`: la forma capturada necesita píxeles opacos
+  y espacio transparente alrededor. Un objetivo totalmente transparente no tiene
+  forma visible.
 - `capture-budget`, `target-budget`, `aggregate-budget`: reduce el tamaño
-  capturado, el DPR o el número de efectos simultáneos. Libera los efectos sin uso.
+  capturado, la densidad de píxeles del dispositivo (DPR) o el número de efectos simultáneos. Libera los efectos sin uso.
 - `renderer-failed`, `device-lost`: inspecciona los diagnósticos de GPU y shader.
-  Un reintento explícito puede recrearlos; la recuperación no está garantizada.
+  Un reintento explícito vuelve a intentar configurar el efecto; la recuperación
+  no está garantizada.
 
 <span id="misplaced-or-rejected-output"></span>
 
 ## Salida mal colocada o rechazada
 
-Comprueba que el contenedor esté conectado, tenga posición CSS y contenga el
-objetivo. Deja espacio para la decoración y usa un apilamiento compatible.
-`unsupported-placement` señala geometría o recorte fuera de los
-[límites actuales](/docs/es/support#capture-and-composition-limits).
-No intentes compensarlo estimando las dimensiones del elemento. `reasonDetail` identifica
-el elemento rechazado (etiqueta e ID, si existe), la propiedad y valor CSS
-calculados, y una corrección sugerida. Por ejemplo, un `h1#title` rotado
-informa de su `transform` calculado y pide traslación o escala positiva alineada
-con los ejes. Un filtro identifica el elemento afectado y sugiere quitarlo o
-aplicarlo al contenedor compartido. La redacción es diagnóstica; usa el código
-`reason` para las decisiones del programa.
+Comprueba que `host` esté conectado, tenga una posición CSS distinta de `static`
+y contenga el elemento objetivo. Deja espacio para la decoración y usa un
+apilamiento compatible. Para `unsupported-placement`, lee `reasonDetail`: indica
+el elemento, el CSS no admitido y una corrección sugerida. Compáralo con los
+[límites actuales](/docs/es/support#capture-and-composition-limits) y corrige el
+CSS antes de reintentar.
 
 Para `unsupported-composition`, revisa la opacidad del objetivo y los
 intermediarios, los filtros (incluso `blur(0px)`), los filtros de fondo y los
@@ -69,21 +65,20 @@ pueden rechazarse para evitar que la captura cambie el contenido original.
 
 ## Errores de instalación o shaders
 
-Si la instalación intenta usar el registro para core, conserva la
-[sustitución local del archivo tar](/docs/es/installation#create-your-preview-app)
-y revisa cada ruta de artefacto. Las instrucciones del registro deben esperar
-a la publicación de los paquetes.
+Instala los paquetes publicados con las versiones exactas de la
+[guía de instalación](/docs/es/installation). Revisa el archivo de bloqueo de
+dependencias por si quedan versiones incompatibles o sustituciones por archivos
+tar locales.
 
-Si aparece un error de metadatos de shader, recompila y empaqueta otra vez el
-paquete browser, y reinstala su archivo tar. La compilación del paquete aplica
-la transformación TypeGPU. Importa la exportación pública; no importes archivos
-fuente ni rutas dist privadas ni añadas un plugin de shaders a la aplicación.
+Importa desde `@domfx/browser`, no desde archivos fuente ni rutas `dist` privadas.
+El paquete ya incluye la transformación de shaders de TypeGPU; tu aplicación no
+necesita un plugin de shaders. Si aparecen errores de metadatos de shader,
+reinstala el paquete publicado e informa del error si persiste.
 
-Para `renderer-failed` durante la inicialización GPU, consulta `reasonDetail`
-para ver el nombre del efecto y la línea y columna WGSL generadas, si el compilador
-nativo las proporciona. Los programas se preparan juntos para el renderizador
-compartido; el shader indicado puede pertenecer a un efecto distinto del aplicado.
-Reintentar no corrige un shader inválido; corrige primero la compilación del paquete.
+Para `renderer-failed`, `reasonDetail` puede incluir el nombre del efecto y la
+línea y columna WGSL generadas. El shader indicado puede pertenecer a otro efecto
+porque el renderizador prepara los programas juntos. Reintentar no corrige un
+shader inválido; incluye el diagnóstico y la versión del paquete en el informe.
 
 <span id="trace-an-attachment"></span>
 
@@ -110,30 +105,22 @@ try {
 }
 ```
 
-Cada registro contiene el efecto, un identificador numérico del objetivo, la revisión
-de captura, la etapa, la fase y una marca de tiempo de CPU en milisegundos. El identificador
-es válido solo en la sesión y no revela información sobre el contenido del objetivo. Las
-etapas cubren la adquisición del renderizador, captura, preparación, aceptación
-o descarte de la revisión y primera presentación. Presentación significa envío
-de la salida decorativa, no ejecución completa en la GPU ni aparición en pantalla.
-No hay registros por fotograma.
+Los registros describen las etapas de configuración y captura con marcas de
+tiempo de CPU en milisegundos. Un registro de presentación indica que se envió
+la salida, no que terminó la ejecución en la GPU ni que apareció en pantalla.
+No hay registros por fotograma, texto del DOM ni selectores.
 
-Solo puede ejecutarse una sesión a la vez. La capacidad predeterminada es de
-128 registros y acepta enteros de 1 a 4096; al llegar al límite se descartan
-los más antiguos. `records` devuelve una instantánea. Cópiala antes de liberar
-la sesión si la necesitas después. Liberar la sesión borra registros y marcas
-retenidos; no libera efectos.
+Solo puede ejecutarse una sesión a la vez. `capacity` vale 128 de forma
+predeterminada y acepta enteros de 1 a 4096; cuando se llena, se descartan los
+registros más antiguos. `records` devuelve una instantánea. Cópiala antes de llamar
+a `trace.dispose()`, que borra los registros y las marcas, pero no libera los
+efectos. `userTiming: true` añade también un número limitado de marcas `domfx:`
+en el panel Performance del navegador.
 
-Usa `userTiming: true` para crear también marcas `domfx:` limitadas en el panel
-Performance del navegador. Los registros no conservan texto DOM ni selectores.
-Mantén locales los registros exportados y desactiva los diagnósticos para medir
-rendimiento. Esta es una interfaz experimental de depuración, no telemetría
-estable para aplicaciones.
-
-La entrada experimental también expone tipos GPU internos y queda fuera de
-las garantías de tipos de la API principal para aplicaciones. Para registrar con
-TypeScript, usa la configuración de pruebas GPU del repositorio. Las integraciones
-de aplicaciones pueden usar `reason` y `reasonDetail` de la API principal sin esa configuración.
+Mantén locales los registros exportados y desactiva el registro al medir el
+rendimiento. Esta entrada experimental de JavaScript expone tipos GPU internos
+y queda fuera de las garantías de TypeScript de la API principal. Usa `reason`
+y `reasonDetail` de la API principal para diagnosticar desde tu aplicación.
 
 <span id="recover-explicitly"></span>
 
@@ -151,9 +138,13 @@ try {
 }
 ```
 
-Los reintentos simultáneos comparten un intento y conservan los controles y
-enlaces GSAP. Actualizar la captura o asignar controles no recupera una instancia
-no disponible. Reintentar sobre una instancia liberada se rechaza; crea otro
-efecto después de volver a montar el elemento. `effect-target-owned` significa que otro
-efecto activo usa el objetivo, uno de sus ancestros o un descendiente. Libera
-primero ese efecto; una superposición visual arbitraria es otra condición.
+Que la promesa de reintento se resuelva indica que terminó el intento; consulta
+el estado para saber si funcionó. Los reintentos simultáneos comparten un intento
+y conservan los controles y enlaces GSAP. `refresh()` actualiza la captura;
+no recupera un efecto no disponible. Consulta los
+[métodos del efecto](/docs/es/api/effect-handle#refresh-retry-and-dispose).
+
+Reintentar sobre una instancia liberada se rechaza. Crea otro efecto después de
+volver a montar el elemento. `effect-target-owned` significa que otro efecto
+ocupa el objetivo, uno de sus ancestros o un descendiente. Libera primero ese
+efecto; esta restricción se refiere al árbol del DOM, no a la superposición visual.

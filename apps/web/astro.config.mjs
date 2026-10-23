@@ -12,7 +12,7 @@ const packages = resolve(import.meta.dirname, '../../packages');
 
 export default defineConfig({
   site,
-  trailingSlash: 'always',
+  trailingSlash: 'ignore',
   integrations: [marketingDiscovery()],
   output: 'static',
   publicDir: sitePublicDir,

@@ -12,24 +12,21 @@ export const { standaloneCode } = examplesForLocale('es');
 
 export const fire = findEffect('fire');
 
-<p>Esta guía usa Fire para mostrar el ciclo de vida compartido de los efectos. Puedes usar cualquier <a href="/docs/es/api#available-effects">efecto disponible</a> con los mismos controles de tiempo, intensidad y limpieza. Comienza con la <a href="/docs/es/installation">aplicación de prueba</a>. En <code>main.ts</code>, busca el elemento objetivo y su contenedor con posición CSS después de montar el componente:</p>
-
-<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Busca el objetivo y el contenedor"><Code code={`const host = document.querySelector('#host');
-const target = document.querySelector('#target');
-if (!(host instanceof HTMLElement) || !target) {
-  throw new Error('Falta el contenedor o el elemento objetivo');
-}`} lang="ts" theme={codeTheme} /></div>
+<p>Añade llamas animadas a un botón sin cambiar su interacción. Crea primero los archivos de la <a href="/docs/es/installation">guía de instalación</a> y guarda el siguiente módulo completo como <code>main.ts</code>.</p>
 
 <span id="attach-fire" />
 
 ## Aplica Fire
 
-<p>Añade el siguiente código al mismo módulo. La animación automática avanza el tiempo del efecto. Las fuentes están listas antes de capturar y la limpieza se registra antes de que termine la inicialización.</p>
+<p><code>clock: 'auto'</code> hace avanzar el tiempo del efecto. La limpieza se registra antes de esperar las fuentes y preparar Fire, por lo que salir durante la carga no crea un efecto tardío.</p>
 
-<DocsEffectLab effect={fire} subject="text" heading="Ajusta el efecto" description="Todos los efectos comparten la intensidad. La altura de las llamas es exclusiva de Fire y vuelve a crear el efecto cuando cambia. El texto original sigue siendo seleccionable." />
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Ejemplo de animación automática independiente"><Code code={standaloneCode} lang="ts" theme={codeTheme} /></div>
 
-<p>Al desmontar el componente, llama a <code>fire.dispose()</code> y elimina tus propios controladores de eventos. El controlador de pagehide cubre la salida de la página; no sustituye la limpieza del framework.</p>
+<p>Ejecuta <code>pnpm dev</code> y abre la URL local indicada. Verás llamas alrededor del botón; al pulsarlo, aumenta el contador. Para probar la compilación de producción, ejecuta <code>pnpm build</code> y después <code>pnpm preview</code>.</p>
+
+<p>Si no aparece el efecto, el botón sigue funcionando. Consulta el motivo en la consola y la sección <a href="#unavailable-output">Salida no disponible</a>.</p>
+
+<DocsEffectLab effect={fire} subject="text" heading="Ajusta el efecto" description="Todos los efectos comparten la intensidad. La altura de las llamas es exclusiva de Fire y vuelve a crear el efecto cuando cambia. El texto original sigue siendo seleccionable." />
 
 <span id="use-another-effect" />
 
@@ -45,7 +42,7 @@ if (!(host instanceof HTMLElement) || !target) {
 
 ## Controla el tiempo y la intensidad
 
-<p><code>fire.pause()</code> pausa la animación automática. <code>fire.resume()</code> continúa sin avanzar de golpe el tiempo transcurrido mientras estaba en pausa u oculto. Asigna a <code>fire.intensity</code> un valor entre 0 y 1. Debe ser finito y representable como float32; los valores aceptados fuera del rango se ajustan al límite correspondiente.</p>
+<p><code>fire.pause()</code> pausa la animación automática. <code>fire.resume()</code> continúa sin avanzar de golpe el tiempo transcurrido mientras estaba en pausa u oculto. Asigna a <code>fire.intensity</code> un valor entre 0 y 1. Consulta los valores admitidos en la <a href="/docs/es/api/shared#control-playback">referencia de controles</a>.</p>
 
 <p>Para elegir un tiempo explícito, usa <code>clock: 'manual'</code> al crear el efecto y asigna segundos absolutos a <code>fire.time</code>. Avanzar y retroceder reutiliza la captura. Con control externo, <code>paused</code> sigue siendo true aunque cambie el tiempo; <code>resume()</code> no lo avanza.</p>
 
@@ -55,7 +52,7 @@ if (!(host instanceof HTMLElement) || !target) {
 
 <p>Después de cambiar la apariencia capturada, espera a <code>fire.refresh()</code>. Oculta la salida obsoleta y se resuelve cuando se acepta esta captura u otra posterior. Los cambios detectados en el objetivo y su tamaño pueden actualizarla automáticamente; los cambios no detectados en hojas de estilo, estados de hover o la apariencia de los elementos antecesores requieren una actualización explícita.</p>
 
-<p>Puedes liberar la instancia varias veces y antes de que se resuelva <code>ready</code>. Eliminar un objetivo o contenedor observado libera el efecto de forma permanente; crea uno nuevo después de volver a montar el elemento.</p>
+<p>Llama a <code>cleanup()</code> al desmontar el componente; <code>pagehide</code> solo cubre la salida de la página. Puedes llamarla varias veces, incluso mientras esperas las fuentes o <code>ready</code>. Regístrala de forma síncrona en el mecanismo de limpieza de tu framework antes de llamar a <code>setup()</code>. Al volver a montar, ejecuta de nuevo el código con variables y elementos nuevos; un efecto liberado no se puede reutilizar.</p>
 
 <span id="unavailable-output" />
 

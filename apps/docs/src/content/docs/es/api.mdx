@@ -17,7 +17,7 @@ import { codeTheme } from "../../examples";
 
 ## Uso
 
-<p>Importa una función de efecto desde <code>@domfx/browser</code>. Llámala después de montar el objetivo y su contenedor posicionado. Puedes importar el paquete durante el renderizado en el servidor (SSR); aplicar efectos y capturar su apariencia requieren elementos del DOM en el navegador.</p>
+<p>Importa una función de efecto desde <code>@domfx/browser</code>. Llámala en el navegador después de montar el elemento objetivo y el contenedor del efecto (<code>host</code>). El contenedor debe contener el objetivo y tener una posición CSS distinta de <code>static</code>. Puedes importar el paquete durante el renderizado en el servidor (SSR); aplicar efectos y capturar su apariencia requieren elementos del DOM en el navegador.</p>
 
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Ejemplo de opciones compartidas de efecto"><Code code={`import { attachFrost } from '@domfx/browser';
 import type { AttachmentOptions } from '@domfx/browser';
@@ -52,7 +52,7 @@ effect.time = 2;
 
 ### Opciones específicas del efecto
 
-<p><a href="/docs/es/api/effects/fire#effect-options"><code>flameHeight</code> de Fire</a> es actualmente la única opción de creación adicional. Cada efecto tiene su propia referencia para documentar sus controles adicionales cuando sean compatibles.</p>
+<p><a href="/docs/es/api/effects/fire#effect-options"><code>flameHeight</code> de Fire</a> es actualmente la única opción de creación adicional.</p>
 
 <span id="control-playback" />
 
@@ -90,7 +90,7 @@ effect.time = 2;
 
 ## GSAP
 
-<p>Usa <code>gsap.to()</code> y llamadas normales de línea de tiempo sobre una instancia de efecto. La <a href="/docs/es/api/gsap">referencia de GSAP</a> también documenta los enlaces opcionales con valores iniciales fijos y sus nombres compatibles.</p>
+<p>Usa <code>gsap.to()</code> y llamadas habituales a los métodos de una línea de tiempo sobre una instancia de efecto. La <a href="/docs/es/api/gsap">referencia de GSAP</a> explica los enlaces opcionales que conservan valores iniciales fijos y gestionan la limpieza.</p>
 
 <span id="package-boundaries" />
 
@@ -101,9 +101,9 @@ effect.time = 2;
 <DocsApiTable label="Responsabilidades de los paquetes">
   <thead><tr><th scope="col">Paquete</th><th scope="col">Responsabilidad</th></tr></thead>
   <tbody>
-    <tr><th scope="row"><code>@domfx/core</code></th><td>Instancias y contratos de captura compartidos, independientes de DOM, GPU y frameworks.</td></tr>
-    <tr><th scope="row"><code>@domfx/browser</code></th><td>Captura DOM, preparación de la silueta, programas GPU y salida decorativa. Las aplicaciones no necesitan un plugin de shaders ni importaciones privadas del renderizador.</td></tr>
+    <tr><th scope="row"><code>@domfx/core</code></th><td>Tipos de efecto y contratos de captura compartidos, independientes de DOM, GPU y frameworks.</td></tr>
+    <tr><th scope="row"><code>@domfx/browser</code></th><td>Captura el objetivo y dibuja su efecto decorativo. La aplicación no necesita un plugin de shaders.</td></tr>
     <tr><th scope="row"><code>@domfx/gsap</code></th><td>Enlace opcional con una línea de tiempo de GSAP que proporcionas. Los efectos independientes no cargan GSAP.</td></tr>
   </tbody>
 </DocsApiTable>
-<p>Para depurar localmente, consulta los <a href="/docs/es/troubleshooting#trace-an-attachment">registros experimentales de efectos</a>. La entrada de depuración está separada de la API compartida de la aplicación.</p>
+<p>Para depurar localmente, consulta los <a href="/docs/es/troubleshooting#trace-an-attachment">registros experimentales de efectos</a>.</p>

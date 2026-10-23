@@ -14,8 +14,9 @@ const en = {
   findEffect: 'Find your effect',
   star: 'Star on GitHub',
   stars: 'Stars',
-  copySkill: 'Copy planned skill command: pnpm dlx skills add G0m1namm/domfx --skill domfx',
-  skillNote: 'Skill command preview. The consumer skill is not published yet.',
+  copySkill: 'Copy skill command: pnpm dlx skills add G0m1namm/domfx --skill domfx',
+  skillNote:
+    'Run in your app, then choose your coding agent and project installation. Installs domfx guidance; support depends on your agent.',
   apiGuide: 'Read the API guide',
   effects: 'Effects',
   exploreEffects: 'Explore the effects',
@@ -134,9 +135,9 @@ export const marketingMessages = {
     star: 'Dar una estrella',
     stars: 'Estrellas',
     copySkill:
-      'Copiar comando previsto para instalar la skill de domfx: pnpm dlx skills add G0m1namm/domfx --skill domfx',
+      'Copiar comando para instalar la skill de domfx: pnpm dlx skills add G0m1namm/domfx --skill domfx',
     skillNote:
-      'Comando de ejemplo. La skill de domfx con instrucciones para agentes de IA aún no está publicada.',
+      'Ejecuta el comando en tu aplicación y elige tu agente de programación y la instalación en el proyecto. Instala instrucciones de domfx; la compatibilidad depende del agente.',
     apiGuide: 'Lee la guía de la API',
     effects: 'Efectos',
     exploreEffects: 'Explora los efectos',

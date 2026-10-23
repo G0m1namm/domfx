@@ -70,6 +70,11 @@
 .nav-inner > .header-search {
   margin-left: auto;
 }
+/* Keep actions aligned before JavaScript reveals search, including without JavaScript. */
+.nav-inner > .header-search[hidden] ~ .language-switcher,
+.nav-inner > .header-search[hidden] ~ .nav-menu-button {
+  margin-inline-start: auto;
+}
 .language-switcher {
   position: relative;
   z-index: 1;

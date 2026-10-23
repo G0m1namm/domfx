@@ -16,23 +16,40 @@ for (const prefix of ['/docs', '/docs/es']) {
     await page.goto(`${prefix}/installation/`);
     const content = page.locator('.sl-markdown-content');
     await expect(content).not.toContainText('%DOMFX_');
-    const command = content.locator('.expressive-code').filter({ hasText: browserInstallCommand });
-    await expect(command.locator('pre code')).toHaveText(browserInstallCommand);
-    await command.locator('button').click();
-    await expect
-      .poll(() => page.evaluate(() => sessionStorage.getItem('copied')))
-      .toBe(browserInstallCommand);
-    for (const [name, version] of Object.entries(publishedVersions)) {
+    const bindingInstallCommand = `pnpm add -E @domfx/gsap@${publishedVersions['@domfx/gsap']}`;
+    for (const installCommand of [browserInstallCommand, bindingInstallCommand]) {
+      const command = content.locator('.expressive-code').filter({ hasText: installCommand });
+      await expect(command.locator('pre code')).toHaveText(installCommand);
+      await command.locator('button').click();
+      await expect
+        .poll(() => page.evaluate(() => sessionStorage.getItem('copied')))
+        .toBe(installCommand);
+    }
+    const standalonePackages = ['@domfx/browser', '@domfx/core'] as const;
+    for (const name of standalonePackages) {
+      const version = publishedVersions[name];
       await expect(
         content.locator('pre').filter({ hasText: `"${name}": "${version}"` }),
       ).toHaveCount(1);
     }
+    const manifest = content
+      .locator('.expressive-code')
+      .filter({ hasText: '"name": "my-domfx-preview"' });
+    await expect(manifest).not.toContainText('@domfx/gsap');
+    const manifestSource = (
+      await manifest.locator('pre code .ec-line .code').allTextContents()
+    ).join('\n');
+    await manifest.locator('button').click();
+    await expect
+      .poll(() => page.evaluate(() => sessionStorage.getItem('copied')))
+      .toBe(manifestSource);
     const markdown = await request.get(`${prefix}/installation.md`);
     expect(markdown.ok()).toBe(true);
     const source = await markdown.text();
     expect(source).toContain(browserInstallCommand);
-    for (const [name, version] of Object.entries(publishedVersions)) {
-      expect(source).toContain(`"${name}": "${version}"`);
+    expect(source).toContain(bindingInstallCommand);
+    for (const name of standalonePackages) {
+      expect(source).toContain(`"${name}": "${publishedVersions[name]}"`);
     }
     expect(source).not.toContain('%DOMFX_');
     const full = await request.get('/llms-full.txt');

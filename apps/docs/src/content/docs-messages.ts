@@ -2,6 +2,42 @@ import type { Locale } from '@domfx/site/locale';
 
 const messages = {
   en: {
+    gsapLab: {
+      title: 'Try the sequence',
+      introduction: 'Move through the sequence. Watch GSAP change effect time and intensity.',
+      target: 'Click me',
+      clicks: 'Clicks',
+      controls: 'Sequence controls',
+      play: 'Play',
+      pause: 'Pause',
+      replay: 'Replay',
+      restart: 'Restart',
+      reverse: 'Reverse',
+      position: 'Timeline position (s)',
+      time: 'Effect time (s)',
+      intensity: 'Intensity',
+      seconds: 'seconds',
+      help: 'Seeking pauses playback.',
+      fade: 'Container fade',
+      effect: 'Effect animation',
+      source: 'Shared sequence',
+      sourceNote:
+        'This is the sequence the player executes. The complete example below adds application setup and cleanup; the player adds its own controls and lifecycle.',
+      needsGpu:
+        'Playback needs JavaScript and WebGPU. The sequence and original button remain readable.',
+      noGpu: 'WebGPU is unavailable. Playback is disabled; the original button remains usable.',
+      reducedMotion:
+        'Reduced motion is enabled. Playback is disabled; the original button remains usable.',
+      resumeRequired:
+        'Motion preference changed. Choose Play to start; playback will not resume automatically.',
+      preparing: 'Preparing the sequence…',
+      waiting: 'Playback is suspended while the preview is out of view.',
+      unavailable: 'Effect unavailable. Playback is disabled; the original button remains usable.',
+      paused: 'Paused',
+      playing: 'Playing',
+      reversing: 'Playing backward',
+      complete: 'Complete. Choose Replay to play again.',
+    },
     categories: { Energy: 'Energy', Material: 'Material', Pattern: 'Pattern' },
     groups: {
       'Getting started': 'Getting started',
@@ -31,7 +67,7 @@ const messages = {
       needsGpu: 'Live preview needs JavaScript and WebGPU.',
       start: 'Start effect',
       settings: 'preview settings',
-      subject: 'Subject',
+      subject: 'Target element',
       intensity: 'Intensity',
       flameHeight: 'Flame height',
       flameNote: 'Creation option. Changing it recreates the effect.',
@@ -55,6 +91,46 @@ const messages = {
     },
   },
   es: {
+    gsapLab: {
+      title: 'Prueba la secuencia',
+      introduction:
+        'Recorre la secuencia y observa cómo GSAP cambia el tiempo y la intensidad del efecto.',
+      target: 'Haz clic',
+      clicks: 'Clics',
+      controls: 'Controles de la secuencia',
+      play: 'Reproducir',
+      pause: 'Pausar',
+      replay: 'Volver a reproducir',
+      restart: 'Reiniciar',
+      reverse: 'Reproducir hacia atrás',
+      position: 'Posición en la línea de tiempo (s)',
+      time: 'Tiempo del efecto (s)',
+      intensity: 'Intensidad',
+      seconds: 'segundos',
+      help: 'Cambiar la posición pausa la reproducción.',
+      fade: 'Aparición del contenedor',
+      effect: 'Animación del efecto',
+      source: 'Secuencia compartida',
+      sourceNote:
+        'Esta es la secuencia que ejecuta el reproductor. El ejemplo completo de abajo añade la preparación y limpieza de la aplicación; el reproductor añade sus propios controles y ciclo de vida.',
+      needsGpu:
+        'La reproducción necesita JavaScript y WebGPU. La secuencia y el botón original siguen visibles.',
+      noGpu:
+        'WebGPU no está disponible. La reproducción está desactivada; el botón original sigue funcionando.',
+      reducedMotion:
+        'El movimiento reducido está activado. La reproducción está desactivada; el botón original sigue funcionando.',
+      resumeRequired:
+        'Cambió la preferencia de movimiento. Elige Reproducir para empezar; no se reanudará automáticamente.',
+      preparing: 'Preparando la secuencia…',
+      waiting:
+        'La reproducción está suspendida mientras la vista previa está fuera de la pantalla.',
+      unavailable:
+        'Efecto no disponible. La reproducción está desactivada; el botón original sigue funcionando.',
+      paused: 'En pausa',
+      playing: 'Reproduciendo',
+      reversing: 'Reproduciendo hacia atrás',
+      complete: 'Secuencia terminada. Elige Volver a reproducir para repetirla.',
+    },
     categories: { Energy: 'Energía', Material: 'Material', Pattern: 'Patrón' },
     groups: {
       'Getting started': 'Primeros pasos',
@@ -84,7 +160,7 @@ const messages = {
       needsGpu: 'La vista previa necesita JavaScript y WebGPU.',
       start: 'Iniciar efecto',
       settings: 'ajustes de la vista previa',
-      subject: 'Elemento',
+      subject: 'Elemento objetivo',
       intensity: 'Intensidad',
       flameHeight: 'Altura de las llamas',
       flameNote: 'Opción de creación. Cambiarla vuelve a crear el efecto.',

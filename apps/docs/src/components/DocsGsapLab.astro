@@ -1,0 +1,54 @@
+---
+import { Code } from 'astro:components';
+import { localeFromPath } from '@domfx/site/locale';
+
+import { docsMessages } from '../content/docs-messages';
+import { codeTheme, gsapSequenceCode } from '../content/examples';
+
+const messages = docsMessages(localeFromPath(Astro.url.pathname)).gsapLab;
+const id = 'docs-gsap';
+---
+
+<section class="docs-lab docs-gsap-lab not-content" data-docs-gsap-lab data-effect="fire" data-status="suspended" data-paused="true" aria-labelledby={`${id}-title`}>
+  <div class="docs-lab-heading">
+    <h3 id={`${id}-title`}>{messages.title}</h3>
+    <p>{messages.introduction}</p>
+  </div>
+  <div class="docs-lab-stage">
+    <div class="docs-lab-host" data-gsap-host>
+      <button type="button" class="docs-gsap-target" data-gsap-target>{messages.target}</button>
+    </div>
+    <p class="docs-gsap-clicks">{messages.clicks}: <output data-gsap-clicks aria-live="off">0</output></p>
+  </div>
+  <div class="docs-gsap-panel">
+    <p class="docs-gsap-status" role="status" data-gsap-status>{messages.needsGpu}</p>
+    <div class="docs-gsap-actions" role="group" aria-label={messages.controls}>
+      <button type="button" data-gsap-play disabled>{messages.play}</button>
+      <button type="button" data-gsap-restart disabled>{messages.restart}</button>
+      <button type="button" data-gsap-reverse disabled>{messages.reverse}</button>
+    </div>
+    <label class="docs-lab-row docs-gsap-position" for={`${id}-position`}>
+      <span class="docs-lab-label">{messages.position}</span>
+      <input id={`${id}-position`} type="range" min="0" max="4.5" step="0.01" value="0" style="--fill:0%" data-gsap-position aria-describedby={`${id}-help`} disabled />
+      <output for={`${id}-position`} data-gsap-position-output aria-live="off">0.00</output>
+    </label>
+    <p class="visually-hidden" id={`${id}-help`}>{messages.help}</p>
+    <div class="docs-gsap-tracks">
+      <div><span>{messages.fade} · 0–0.5 s</span><span class="docs-gsap-track docs-gsap-track-fade" aria-hidden="true"></span></div>
+      <div><span>{messages.effect} · 0.5–4.5 s</span><span class="docs-gsap-track docs-gsap-track-effect" aria-hidden="true"></span></div>
+    </div>
+    <dl class="docs-gsap-values">
+      <div><dt>{messages.time}</dt><dd><output data-gsap-time-output aria-live="off">0.00</output></dd></div>
+      <div><dt>{messages.intensity}</dt><dd><output data-gsap-intensity-output aria-live="off">0.80</output></dd></div>
+    </dl>
+  </div>
+  <div class="docs-lab-code">
+    <div class="docs-lab-code-bar">{messages.source}</div>
+    <div class="docs-code-scroll" tabindex="0" role="region" aria-label={messages.source}><Code code={gsapSequenceCode} lang="ts" theme={codeTheme} /></div>
+  </div>
+  <p class="docs-gsap-source-note">{messages.sourceNote}</p>
+</section>
+
+<script>
+  import '../scripts/docs-gsap-lab';
+</script>

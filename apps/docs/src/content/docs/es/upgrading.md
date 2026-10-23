@@ -10,17 +10,15 @@ Consulta las versiones exactas en la [guía de instalación](/docs/es/installati
 
 ## Actualiza paquetes compatibles
 
-Las bibliotecas tienen versiones independientes. Lee el registro de cambios de
-cada paquete y las notas de publicación antes de actualizar: el rango de
-versiones de core que requiere browser y el rango de dependencias compartidas del enlace de GSAP determinan
-la compatibilidad. No presupongas que los números de versión son iguales.
-Fija las versiones exactas o los archivos tar que verificaste e incluye el
-lockfile de tu aplicación en el control de versiones.
+Los paquetes tienen versiones independientes. Consulta sus registros de cambios
+y notas de publicación, el rango de core que requiere browser y los rangos de
+`peerDependencies` del adaptador GSAP. Que los números de versión coincidan
+no basta para establecer compatibilidad.
 
-Actualiza browser y core a versiones compatibles. Actualiza el paquete GSAP opcional cuando cambien
-su compatibilidad o comportamiento; la integración independiente no necesita
-GSAP como dependencia. Ejecuta la instalación de tu gestor de paquetes y luego
-la compilación y comprobación de tipos de la aplicación.
+Fija las versiones que verificaste y guarda el archivo de bloqueo de dependencias
+en el control de versiones. Actualiza el adaptador GSAP opcional cuando sea
+necesario; los efectos independientes no dependen de él. Reinstala y ejecuta la
+compilación y las comprobaciones de tipos de tu aplicación.
 
 <span id="check-migration-notes"></span>
 
@@ -39,7 +37,7 @@ efectos y enlaces obsoletos antes de crear sustitutos. Corrige la condición de
 indisponibilidad antes de reintentar explícitamente; no añadas otro enlace
 para recuperar el efecto.
 
-Conserva el lockfile anterior para revertir. Si falla una actualización, informa
+Conserva el archivo de bloqueo anterior para volver a las versiones previas. Si falla una actualización, informa
 de versiones de paquetes, entorno, código de motivo y mensaje de diagnóstico
 junto con un ejemplo mínimo reproducible. Consulta
 [solución de problemas](/docs/es/troubleshooting).
@@ -53,13 +51,14 @@ Prefiere `clock: 'auto'` para la animación automática. El valor existente
 lectura `clock` informa del valor proporcionado. El valor predeterminado sigue
 siendo `'manual'` para el control externo.
 
-`bindEffect` y `bindEffectAsync`, junto con sus tipos genéricos, son alias
-compatibles de los enlaces con nombres Fire. Las llamadas existentes no requieren
-migración. Ambos nombres conservan los valores de los controles al crear el enlace, la interpolación
-lineal y los objetivos proxy privados.
+`bindEffect` y `bindEffectAsync` son alias compatibles de los enlaces con nombres
+Fire, incluidos sus tipos. Las llamadas existentes no requieren migración. Ambos
+nombres conservan los valores iniciales fijos, la interpolación lineal y los
+objetivos privados de animación. Consulta los
+[enlaces con valores iniciales fijos](/docs/es/api/gsap#snapshot-bindings).
 
-Para secuencias normales de GSAP, usa llamadas nativas a `.to(effect, ...)`.
-Es una elección de comportamiento: las llamadas `.to()` encadenadas heredan
-los valores anteriores, y la sobrescritura o `killTweensOf(effect)` se aplica
-a la instancia real. Registra la limpieza explícita del efecto antes de que
-termine su configuración. Consulta la [guía de GSAP](/docs/es/gsap).
+Para encadenar animaciones GSAP, usa llamadas nativas a `.to(effect, ...)` para
+que cada segmento parta de los valores anteriores. Cambiar desde los enlaces
+modifica este comportamiento y permite que `killTweensOf(effect)` y la sobrescritura
+de propiedades actúen directamente sobre la instancia. Registra la limpieza antes
+de que termine la configuración; consulta la [guía de GSAP](/docs/es/gsap).

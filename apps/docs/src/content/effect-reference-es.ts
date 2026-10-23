@@ -6,7 +6,8 @@ export const effectReferenceEs = {
     intensity: 'Aumenta el alcance y el brillo de los filamentos eléctricos.',
   },
   frost: {
-    description: 'Una capa de hielo blanco azulado, humo tenue y pequeñas partículas de escarcha.',
+    description:
+      'Una capa de hielo blanco azulado con humo tenue y pequeñas partículas de escarcha.',
     intensity: 'Extiende la escarcha hacia dentro y refuerza el humo y las partículas.',
   },
   fire: {
@@ -20,7 +21,7 @@ export const effectReferenceEs = {
   },
   slime: {
     description: 'Una capa verde brillante con gotas que se estiran y caen.',
-    intensity: 'Refuerza la capa y el material que gotea.',
+    intensity: 'Refuerza la capa y acentúa el goteo.',
   },
   kinetic: {
     description:
@@ -34,19 +35,19 @@ export const effectReferenceEs = {
       'Extiende la quemadura hacia dentro sin ensanchar el borde exterior. El contenido original permanece intacto.',
   },
   halftone: {
-    description: 'Un patrón de puntos de semitono sigue el borde.',
+    description: 'Puntos de semitono siguen el borde.',
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
   stipple: {
-    description: 'Marcas de punteado dispersas trazan la forma visible.',
+    description: 'Puntos dispersos siguen la forma visible.',
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
   scanlines: {
-    description: 'Bandas horizontales finas forman un borde animado.',
+    description: 'Bandas horizontales finas se mueven a lo largo del borde.',
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
   crosshatch: {
-    description: 'Líneas cruzadas forman un borde tramado.',
+    description: 'Líneas cruzadas forman un entramado a lo largo del borde.',
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
   diamonds: {
@@ -58,11 +59,11 @@ export const effectReferenceEs = {
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
   engraving: {
-    description: 'Líneas grabadas forman un borde con textura.',
+    description: 'Líneas finas grabadas dan textura al borde.',
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
   'woven-mesh': {
-    description: 'Hilos entrelazados crean una textura de malla tejida en el borde.',
+    description: 'Hilos entrelazados crean una textura tejida en el borde.',
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
   hexagons: {
@@ -74,7 +75,7 @@ export const effectReferenceEs = {
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
   shards: {
-    description: 'Fragmentos angulares forman un borde geométrico.',
+    description: 'Fragmentos angulares se agrupan a lo largo del borde.',
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
   circuits: {
@@ -86,7 +87,7 @@ export const effectReferenceEs = {
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
   'brush-fringe': {
-    description: 'Marcas semejantes a pinceladas forman una franja alrededor de la forma visible.',
+    description: 'Pinceladas forman una franja alrededor de la forma visible.',
     intensity: 'Refuerza el patrón y amplía su alcance.',
   },
 } satisfies Record<EffectId, { description: string; intensity: string }>;

@@ -26,7 +26,7 @@ function cleanup() {
   fire?.dispose();
 }
 
-// ${isEs ? 'Registra también cleanup al desmontar el componente, antes de llamar a setup.' : 'Also register cleanup on component unmount, before calling setup.'}
+// ${isEs ? 'Antes de llamar a setup, registra también cleanup para que se ejecute al desmontar el componente.' : 'Before calling setup, also register cleanup to run on component unmount.'}
 window.addEventListener('pagehide', cleanup, { once: true });
 
 const setup = async () => {
@@ -63,7 +63,7 @@ function cleanup() {
   fire?.dispose();
 }
 
-// ${isEs ? 'Registra también cleanup al desmontar el componente, antes de llamar a setup.' : 'Also register cleanup on component unmount, before calling setup.'}
+// ${isEs ? 'Antes de llamar a setup, registra también cleanup para que se ejecute al desmontar el componente.' : 'Before calling setup, also register cleanup to run on component unmount.'}
 window.addEventListener('pagehide', cleanup, { once: true });
 
 const setup = async () => {

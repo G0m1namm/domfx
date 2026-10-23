@@ -22,11 +22,11 @@ export const { gsapCode } = examplesForLocale('es');
 
 ## Construye tu secuencia
 
-<p>Crea el efecto con <code>clock: 'manual'</code> para que GSAP controle su tiempo. El contenedor aparece durante medio segundo; luego el efecto pasa del tiempo 0 al 4 y de intensidad 0.8 a 0.4 durante cuatro segundos. Anima la opacidad del contenedor para que el objetivo original y el efecto la compartan. Los cambios de opacidad solo en el objetivo no son compatibles.</p>
+<p>Crea el efecto con <code>clock: 'manual'</code> para que GSAP controle su tiempo. El contenedor aparece gradualmente en medio segundo; luego el efecto pasa del tiempo 0 al 4 y de intensidad 0.8 a 0.4 durante cuatro segundos. Anima la opacidad del contenedor para que el objetivo original y el efecto la compartan. Los cambios de opacidad solo en el objetivo no son compatibles.</p>
 
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Ejemplo completo de efecto con control manual y ciclo de vida GSAP"><Code code={gsapCode} lang="ts" theme={codeTheme} /></div>
 
-<p>Ejecuta <code>pnpm dev</code> y abre la URL indicada. El botón aparece con llamas que cambian durante cuatro segundos; pulsarlo aumenta el contador. Para producción, ejecuta <code>pnpm build</code> y después <code>pnpm preview</code>.</p>
+<p>Ejecuta <code>pnpm dev</code> y abre la URL indicada. El botón aparece gradualmente; después, sus llamas cambian durante cuatro segundos. Pulsarlo aumenta el contador. Para producción, ejecuta <code>pnpm build</code> y después <code>pnpm preview</code>.</p>
 
 <span id="seek-and-play" />
 
@@ -42,9 +42,9 @@ export const { gsapCode } = examplesForLocale('es');
 
 ## Gestiona el ciclo de vida
 
-<p>Registra <code>cleanup()</code> en el mecanismo de desmontaje de tu framework antes de llamar a <code>setup()</code>. Elimina los controladores de eventos, revierte y detiene la línea de tiempo propia y libera el efecto. Funciona incluso si las fuentes o <code>ready</code> siguen pendientes. La suscripción de liberación también restaura la opacidad si se elimina el objetivo. Al volver a montar, crea variables, efecto y línea de tiempo nuevos.</p>
+<p>Registra <code>cleanup()</code> en el mecanismo de desmontaje de tu framework antes de llamar a <code>setup()</code>. Elimina los controladores de eventos, revierte y elimina la línea de tiempo propia y libera el efecto. Funciona incluso si las fuentes o <code>ready</code> siguen pendientes. La suscripción de liberación también restaura la opacidad si se elimina el objetivo. Al volver a montar, crea variables, efecto y línea de tiempo nuevos.</p>
 
-<p>Si usas una línea de tiempo ajena, conserva y detén solo tus animaciones hijas; su propietario limpia la línea de tiempo y las demás animaciones. Terminar, detener o sobrescribir una animación no libera los recursos del objetivo.</p>
+<p>Si usas una línea de tiempo ajena, conserva referencias a tus animaciones hijas y elimina solo esas animaciones con <code>kill()</code>; su propietario limpia la línea de tiempo y las demás animaciones. Terminar, eliminar o sobrescribir una animación no libera los recursos del objetivo.</p>
 
 <span id="context-cleanup" />
 
@@ -64,7 +64,7 @@ export const { gsapCode } = examplesForLocale('es');
 
 <p><code>@domfx/gsap</code> proporciona <code>bindEffect</code> y <code>bindEffectAsync</code> para enlaces que conservan los valores iniciales de los controles, con responsabilidad explícita de limpieza. La función asíncrona libera con seguridad los resultados que llegan después de cancelar. Los nombres compatibles <code>bindFire</code> siguen disponibles para todos los efectos.</p>
 
-<p>Estas funciones capturan los controles iniciales al crearse y animan objetivos proxy privados. Difieren de las llamadas nativas encadenadas a <code>.to()</code>, del comportamiento al detener animaciones por objetivo y de la sobrescritura. Consulta la <a href="/docs/es/api/gsap#snapshot-bindings">referencia de enlaces con valores iniciales fijos</a> si necesitas ese contrato; para secuencias normales, prefiere animaciones nativas.</p>
+<p>Estas funciones capturan los controles iniciales al crearse y animan objetivos proxy privados. Difieren de las llamadas nativas encadenadas a <code>.to()</code>, de la eliminación de animaciones por objetivo con <code>gsap.killTweensOf()</code> y de la sobrescritura. Consulta la <a href="/docs/es/api/gsap#snapshot-bindings">referencia de enlaces con valores iniciales fijos</a> si necesitas ese contrato; para secuencias normales, prefiere animaciones nativas.</p>
 
 <span id="unavailable-and-retry" />
 

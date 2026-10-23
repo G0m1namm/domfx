@@ -20,7 +20,8 @@ Si ya tienes una aplicación:
 ```
 
 Core se instala automáticamente. GSAP es opcional. Fija versiones exactas y conserva
-el lockfile; la API es experimental aunque la etiqueta `latest` de npm apunte a ella.
+el archivo de bloqueo de dependencias; la API es experimental aunque la etiqueta
+`latest` de npm apunte a ella.
 
 <span id="create-your-preview-app"></span>
 

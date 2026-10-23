@@ -47,16 +47,35 @@ function familyName(value: string) {
 // Changing a CSS font's src creates a new FontFace; other descriptor edits change cssText.
 const embeddedFonts = new WeakMap<FontFace, { declaration: string; css: string }>();
 
-function matchesFontFace(style: CSSStyleDeclaration, face: FontFace) {
-  return (
-    familyName(style.getPropertyValue('font-family')) === familyName(face.family) &&
-    (style.getPropertyValue('font-weight') || 'normal').replace('normal', '400') ===
-      face.weight.replace('normal', '400') &&
-    (style.getPropertyValue('font-style') || 'normal') === face.style &&
-    (style.getPropertyValue('font-stretch') || 'normal').replace('100%', 'normal') ===
-      face.stretch.replace('100%', 'normal') &&
-    (style.getPropertyValue('unicode-range') || 'U+0-10FFFF') === face.unicodeRange
-  );
+function fontKey(face: Pick<FontFace, 'family' | 'weight' | 'style' | 'stretch' | 'unicodeRange'>) {
+  return JSON.stringify([
+    familyName(face.family),
+    face.weight.replace('normal', '400'),
+    face.style,
+    face.stretch.replace('100%', 'normal'),
+    face.unicodeRange,
+  ]);
+}
+
+function indexFontRules(rules: Iterable<CSSFontFaceRule>) {
+  const index = new Map<string, { rule: CSSFontFaceRule; count: number }>();
+  for (const rule of rules) {
+    const key = fontKey({
+      family: rule.style.getPropertyValue('font-family'),
+      weight: rule.style.getPropertyValue('font-weight') || 'normal',
+      style: rule.style.getPropertyValue('font-style') || 'normal',
+      stretch: rule.style.getPropertyValue('font-stretch') || 'normal',
+      unicodeRange: rule.style.getPropertyValue('unicode-range') || 'U+0-10FFFF',
+    });
+    const match = index.get(key);
+    if (match) {
+      match.count += 1;
+    } else {
+      // Preserve the first declaration for validation; duplicates cannot be reused.
+      index.set(key, { rule, count: 1 });
+    }
+  }
+  return index;
 }
 
 /** Fresh paint per capture, with validated font data and HTTP-fresh image reuse. */
@@ -266,38 +285,47 @@ export async function prepareCaptureAssets(target: Element) {
   if (fonts.size && !hasUnresolvedText) {
     let complete = true;
     const rules: CSSFontFaceRule[] = [];
-    function collectRules(cssRules: CSSRuleList, topLevel: boolean) {
+    function collectRules(cssRules: CSSRuleList, topLevel: boolean): boolean {
       for (const rule of cssRules) {
         if (rule instanceof view.CSSFontFaceRule) {
           if (topLevel) {
             rules.push(rule);
           } else {
-            complete = false;
+            return false;
           }
         } else if (rule instanceof view.CSSImportRule) {
-          complete = false;
+          return false;
         } else if (rule instanceof view.CSSGroupingRule) {
-          collectRules(rule.cssRules, false);
+          if (!collectRules(rule.cssRules, false)) {
+            return false;
+          }
         }
       }
+      return true;
     }
     for (const sheet of document.styleSheets) {
       try {
-        collectRules(sheet.cssRules, true);
+        complete = collectRules(sheet.cssRules, true);
       } catch {
         complete = false;
       }
-    }
-    for (const face of fonts) {
-      const matches = rules.filter((rule) => matchesFontFace(rule.style, face));
-      if (!complete || matches.length !== 1) {
-        continue;
+      if (!complete) {
+        break;
       }
-      const declaration = matches[0]!.cssText;
-      declarations.set(face, declaration);
-      const cached = embeddedFonts.get(face);
-      if (cached?.declaration === declaration) {
-        reusableCSS.push(cached.css);
+    }
+    if (complete) {
+      const index = indexFontRules(rules);
+      for (const face of fonts) {
+        const match = index.get(fontKey(face));
+        if (match?.count !== 1) {
+          continue;
+        }
+        const declaration = match.rule.cssText;
+        declarations.set(face, declaration);
+        const cached = embeddedFonts.get(face);
+        if (cached?.declaration === declaration) {
+          reusableCSS.push(cached.css);
+        }
       }
     }
   }
@@ -353,12 +381,14 @@ export async function prepareCaptureAssets(target: Element) {
       }
       const sheet = new view.CSSStyleSheet();
       sheet.replaceSync(context.fontsCSS ?? '');
-      const embedded = [...sheet.cssRules].filter(
-        (rule): rule is CSSFontFaceRule => rule instanceof view.CSSFontFaceRule,
+      const embedded = indexFontRules(
+        [...sheet.cssRules].filter(
+          (rule): rule is CSSFontFaceRule => rule instanceof view.CSSFontFaceRule,
+        ),
       );
       for (const face of fonts) {
-        const matches = embedded.filter(({ style }) => matchesFontFace(style, face));
-        const rule = matches[0];
+        const match = embedded.get(fontKey(face));
+        const rule = match?.rule;
         const source = rule?.style.getPropertyValue('src') ?? '';
         const urls = [...source.matchAll(/url\("([^"]*)"\)/g)];
         if (
@@ -371,7 +401,7 @@ export async function prepareCaptureAssets(target: Element) {
         try {
           await waitForAsset(new view.FontFace(face.family, source).load(), face.family);
           const declaration = declarations.get(face);
-          if (declaration && rule && matches.length === 1) {
+          if (declaration && rule && match.count === 1) {
             embeddedFonts.set(face, { declaration, css: rule.cssText });
           }
         } catch (cause) {

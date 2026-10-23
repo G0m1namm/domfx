@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 
 import type {} from '../src/assets.js';
 
-for (const location of ['imported', 'nested', 'unreadable'] as const) {
+for (const location of ['top-level', 'imported', 'nested', 'unreadable'] as const) {
   test(`${location} same-descriptor faces keep fresh font discovery on repeated captures`, async ({
     page,
   }) => {
@@ -81,10 +81,12 @@ for (const location of ['imported', 'nested', 'unreadable'] as const) {
           await loaded;
         } else {
           const style = document.createElement('style');
-          style.textContent =
-            location === 'imported'
-              ? `@import url("${stylesheet}");`
-              : `@media all { ${secondary} }`;
+          style.textContent = secondary;
+          if (location === 'imported') {
+            style.textContent = `@import url("${stylesheet}");`;
+          } else if (location === 'nested') {
+            style.textContent = `@media all { ${secondary} }`;
+          }
           const loaded = new Promise<void>((resolve) => {
             style.onload = () => resolve();
           });
@@ -126,6 +128,82 @@ for (const location of ['imported', 'nested', 'unreadable'] as const) {
     expect(frames[0]).toBe(frames[1]);
   });
 }
+
+test('cold and warm captures match font declarations with linear work', async ({ page }) => {
+  await page.goto('/assets.html');
+  const result = await page.evaluate(async () => {
+    const ruleCount = 100;
+    const fontCount = 10;
+    const style = document.createElement('style');
+    style.textContent = Array.from(
+      { length: ruleCount },
+      (_, index) =>
+        `@font-face { font-family: "Indexed ${String.fromCharCode(65 + Math.floor(index / 26), 65 + (index % 26))}"; src: url("/asset-fixtures/block.ttf?font=${index}"); }`,
+    ).join('\n');
+    document.head.append(style);
+    const target = document.querySelector('#target')!;
+    for (let index = 0; index < fontCount; index += 1) {
+      const span = document.createElement('span');
+      span.style.fontFamily = `"Indexed ${String.fromCharCode(65 + Math.floor(index / 26), 65 + (index % 26))}"`;
+      span.textContent = 'A';
+      target.append(span);
+    }
+    const declarations = new WeakSet(
+      [...style.sheet!.cssRules]
+        .filter((rule): rule is CSSFontFaceRule => rule instanceof CSSFontFaceRule)
+        .map((rule) => rule.style),
+    );
+    const original = CSSStyleDeclaration.prototype.getPropertyValue;
+    let reads = 0;
+    let embeddedReads = 0;
+    CSSStyleDeclaration.prototype.getPropertyValue = function (property) {
+      if (property === 'font-family') {
+        if (declarations.has(this)) {
+          reads += 1;
+        } else if (
+          this.parentRule instanceof CSSFontFaceRule &&
+          this.parentRule.parentStyleSheet?.ownerNode === null
+        ) {
+          embeddedReads += 1;
+        }
+      }
+      return original.call(this, property);
+    };
+    try {
+      const first = await window.assets.capture();
+      const cold = { reads, embeddedReads };
+      const pixels = document.querySelector<HTMLCanvasElement>('#frame')!.toDataURL();
+      reads = 0;
+      embeddedReads = 0;
+      const started = performance.now();
+      const second = await window.assets.capture();
+      return {
+        first,
+        second,
+        cold,
+        reads,
+        ruleCount,
+        fontCount,
+        milliseconds: performance.now() - started,
+        samePixels: pixels === document.querySelector<HTMLCanvasElement>('#frame')!.toDataURL(),
+      };
+    } finally {
+      CSSStyleDeclaration.prototype.getPropertyValue = original;
+    }
+  });
+  await test.info().attach('font-work', {
+    body: JSON.stringify(result),
+    contentType: 'application/json',
+  });
+  expect(result.first).toEqual({ code: 'ready', released: true });
+  expect(result.second).toEqual({ code: 'ready', released: true });
+  expect(result.samePixels).toBe(true);
+  // Allow constant overhead, but reject scanning all declarations for every font.
+  expect(result.cold.reads).toBeLessThanOrEqual(2 * (result.ruleCount + result.fontCount));
+  expect(result.cold.embeddedReads).toBeGreaterThan(0);
+  expect(result.cold.embeddedReads).toBeLessThanOrEqual(4 * result.fontCount);
+  expect(result.reads).toBeLessThanOrEqual(2 * (result.ruleCount + result.fontCount));
+});
 
 test('counter-only text rejects failed embedding of a loaded full-range font and cleans up', async ({
   page,

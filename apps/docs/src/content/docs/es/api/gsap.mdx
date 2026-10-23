@@ -17,7 +17,7 @@ import DocsGsapBindings from "../../../../components/docs-gsap-bindings.astro";
 
 <p>Mantén los valores dentro de los <a href="/docs/es/api/shared#control-playback">rangos de control del efecto</a>. La instancia valida las asignaciones al ejecutarse; los tipos de GSAP no imponen estos rangos. <code>intensity</code> se limita en cada asignación, por lo que las curvas que rebasan el rango pueden hacer que la intensidad permanezca en uno de sus límites.</p>
 
-<p>Detén tus animaciones y libera el efecto durante la limpieza. Detener o completar una animación no libera su objetivo. Registra la limpieza de inmediato, incluso si la configuración aún está pendiente. Consulta la <a href="/docs/es/gsap">guía completa de GSAP</a> para ver cómo hacerlo.</p>
+<p>Elimina tus animaciones con <code>kill()</code> y libera el efecto durante la limpieza. Eliminar o completar una animación no libera su objetivo. Registra la limpieza de inmediato, incluso si la configuración aún está pendiente. Consulta la <a href="/docs/es/gsap">guía completa de GSAP</a> para ver cómo hacerlo.</p>
 
 <span id="snapshot-bindings" />
 

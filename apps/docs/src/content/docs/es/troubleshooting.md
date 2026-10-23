@@ -13,9 +13,9 @@ los conflictos de objetivo pueden producir errores síncronos.
 ## Salida ausente o suprimida
 
 - `no-webgpu`, `no-adapter`, `canvas-webgpu-unavailable`: comprueba el navegador
-  y dispositivo reales, y usa un contexto seguro o una dirección local. Mantén
-  utilizable el contenido original. Compilar o comprobar tipos no demuestra que
-  WebGPU esté disponible.
+  y dispositivo reales, y usa un contexto seguro o una dirección de bucle local,
+  como `127.0.0.1`. Mantén utilizable el contenido original. Compilar o comprobar
+  tipos no demuestra que WebGPU esté disponible.
 - `reduced-motion`: respeta la preferencia. Elige `motion: 'static'` al crear
   el efecto para una decoración inmóvil, o reintenta explícitamente cuando cambie
   la preferencia. No hay una opción para forzar la animación.
@@ -25,7 +25,8 @@ los conflictos de objetivo pueden producir errores síncronos.
 - `capture-budget`, `target-budget`, `aggregate-budget`: reduce el tamaño
   capturado, la densidad de píxeles del dispositivo (DPR) o el número de efectos simultáneos. Libera los efectos sin uso.
 - `renderer-failed`, `device-lost`: inspecciona los diagnósticos de GPU y shader.
-  Un reintento explícito puede recrearlos; la recuperación no está garantizada.
+  Un reintento explícito vuelve a intentar configurar el efecto; la recuperación
+  no está garantizada.
 
 <span id="misplaced-or-rejected-output"></span>
 
@@ -113,8 +114,8 @@ Solo puede ejecutarse una sesión a la vez. `capacity` vale 128 de forma
 predeterminada y acepta enteros de 1 a 4096; cuando se llena, se descartan los
 registros más antiguos. `records` devuelve una instantánea. Cópiala antes de llamar
 a `trace.dispose()`, que borra los registros y las marcas, pero no libera los
-efectos. `userTiming: true` añade también marcas `domfx:` limitadas al panel
-Performance del navegador.
+efectos. `userTiming: true` añade también un número limitado de marcas `domfx:`
+en el panel Performance del navegador.
 
 Mantén locales los registros exportados y desactiva el registro al medir el
 rendimiento. Esta entrada experimental de JavaScript expone tipos GPU internos

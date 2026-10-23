@@ -4,11 +4,14 @@ description: "Control effect time and intensity with a timeline you own."
 ---
 
 import { Code } from 'astro:components';
+import DocsGsapLab from '../../components/DocsGsapLab.astro';
 import { codeTheme, gsapCode } from "../examples";
 
 <p>A GSAP tween animates properties over time. Use native tweens to animate any domfx effect, and a timeline to sequence them. The effect instance exposes numeric <code>time</code> and <code>intensity</code> setters. No domfx plugin registration or <code>@domfx/gsap</code> import is needed.</p>
 
 <p>Follow the <a href="/docs/installation#add-the-optional-gsap-binding">installation guide</a> and add GSAP to your app. This example uses Fire; replace its import and omit <code>flameHeight</code> to use another effect.</p>
+
+<DocsGsapLab />
 
 ## Provide your elements
 

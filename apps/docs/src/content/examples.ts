@@ -1,5 +1,16 @@
 import type { Locale } from '@domfx/site/locale';
 
+import { addGsapSequence } from './gsap-sequence.ts';
+
+// Extract executable statements rather than maintaining a second sequence.
+// This also works in the Node-based complete-example verifier, without Vite loaders.
+const sequenceFunction = addGsapSequence.toString();
+export const gsapSequenceCode = sequenceFunction
+  .slice(sequenceFunction.indexOf('{') + 1, sequenceFunction.lastIndexOf('}'))
+  .replace(/^(?: {2}|\t)/gm, '')
+  .replaceAll('\t', '  ')
+  .trim();
+
 export function examplesForLocale(locale: Locale) {
   const isEs = locale === 'es';
   const elements = `const host = document.querySelector('#host');
@@ -76,11 +87,10 @@ const setup = async () => {
   });
   unsubscribe = fire.onDispose(() => timeline.revert());
   // ${isEs ? 'El objetivo y el efecto comparten la opacidad del contenedor.' : 'The target and effect share the container opacity.'}
-  timeline.from(host, { opacity: 0, duration: 0.5, immediateRender: false });
-  timeline.addLabel('ignite', 0.5);
-  timeline.to(fire, {
-    time: 4, intensity: 0.4, duration: 4, ease: 'none',
-  }, 'ignite');
+${gsapSequenceCode
+  .split('\n')
+  .map((line) => `  ${line}`)
+  .join('\n')}
 
   await fire.ready;
   if (disposed) { return; }

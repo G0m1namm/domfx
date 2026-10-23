@@ -4,6 +4,7 @@ description: "Controla el tiempo y la intensidad del efecto con una línea de ti
 ---
 
 import { Code } from 'astro:components';
+import DocsGsapLab from '../../../components/DocsGsapLab.astro';
 import { codeTheme, examplesForLocale } from "../../examples";
 
 export const { gsapCode } = examplesForLocale('es');
@@ -11,6 +12,8 @@ export const { gsapCode } = examplesForLocale('es');
 <p>Un tween de GSAP es un objeto de animación que cambia propiedades con el tiempo. Usa estas animaciones nativas con cualquier efecto de domfx y una línea de tiempo para ordenarlas. La instancia permite modificar las propiedades numéricas <code>time</code> e <code>intensity</code>. No necesitas registrar un plugin de domfx ni importar <code>@domfx/gsap</code>.</p>
 
 <p>Sigue la <a href="/docs/es/installation#add-the-optional-gsap-binding">guía de instalación</a> y añade GSAP a tu aplicación. Este ejemplo usa Fire; sustituye su importación y omite <code>flameHeight</code> para usar otro efecto.</p>
+
+<DocsGsapLab />
 
 <span id="provide-your-elements" />
 

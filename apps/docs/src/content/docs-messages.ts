@@ -2,6 +2,49 @@ import type { Locale } from '@domfx/site/locale';
 
 const messages = {
   en: {
+    gsapLab: {
+      title: 'Try the sequence',
+      introduction: 'Move through the sequence. Watch GSAP change effect time and intensity.',
+      target: 'Click me',
+      clicks: 'Clicks',
+      controls: 'Sequence controls',
+      play: 'Play',
+      pause: 'Pause',
+      replay: 'Replay',
+      restart: 'Restart',
+      reverse: 'Reverse',
+      position: 'Timeline position (s)',
+      time: 'Effect time (s)',
+      intensity: 'Intensity',
+      seconds: 'seconds',
+      help: 'Scrubbing pauses playback. Restart plays from the beginning. Reverse plays backward, starting at the end if the position is zero.',
+      fade: 'Container fade',
+      effect: 'Effect animation',
+      fadeExplanation:
+        '0–0.5 s: the container fades in; effect time stays at 0 and intensity at 0.8.',
+      effectExplanation:
+        '0.5–4.5 s: effect time increases from 0 to 4 while intensity decreases from 0.8 to 0.4, linearly.',
+      meanings:
+        'Timeline position coordinates both stages. Effect time selects the sampled frame; intensity controls effect strength. GSAP drives time because the clock is manual.',
+      checkpoints: 'Checkpoints: timeline → effect time / intensity',
+      source: 'Shared sequence',
+      sourceNote:
+        'This is the sequence the player executes. The complete example below adds application setup and cleanup; the player adds its own controls and lifecycle.',
+      needsGpu:
+        'Playback needs JavaScript and WebGPU. The sequence and original button remain readable.',
+      noGpu: 'WebGPU is unavailable. Playback is disabled; the original button remains usable.',
+      reducedMotion:
+        'Reduced motion is enabled. Playback is disabled; the original button remains usable.',
+      resumeRequired:
+        'Motion preference changed. Choose Play to start; playback will not resume automatically.',
+      preparing: 'Preparing the sequence…',
+      waiting: 'Playback is suspended while the preview is out of view.',
+      unavailable: 'Effect unavailable. Playback is disabled; the original button remains usable.',
+      paused: 'Paused',
+      playing: 'Playing',
+      reversing: 'Playing backward',
+      complete: 'Complete. Choose Replay to play again.',
+    },
     categories: { Energy: 'Energy', Material: 'Material', Pattern: 'Pattern' },
     groups: {
       'Getting started': 'Getting started',
@@ -55,6 +98,53 @@ const messages = {
     },
   },
   es: {
+    gsapLab: {
+      title: 'Prueba la secuencia',
+      introduction:
+        'Recorre la secuencia y observa cómo GSAP cambia el tiempo y la intensidad del efecto.',
+      target: 'Haz clic',
+      clicks: 'Clics',
+      controls: 'Controles de la secuencia',
+      play: 'Reproducir',
+      pause: 'Pausar',
+      replay: 'Volver a reproducir',
+      restart: 'Reiniciar',
+      reverse: 'Reproducir hacia atrás',
+      position: 'Posición en la línea de tiempo (s)',
+      time: 'Tiempo del efecto (s)',
+      intensity: 'Intensidad',
+      seconds: 'segundos',
+      help: 'Mover el control pausa la reproducción. Reiniciar reproduce desde el principio. Reproducir hacia atrás comienza desde el final si la posición es cero.',
+      fade: 'Aparición del contenedor',
+      effect: 'Animación del efecto',
+      fadeExplanation:
+        '0–0.5 s: el contenedor aparece gradualmente; el tiempo del efecto sigue en 0 y la intensidad en 0.8.',
+      effectExplanation:
+        '0.5–4.5 s: el tiempo del efecto aumenta de 0 a 4 y la intensidad baja de 0.8 a 0.4 de forma lineal.',
+      meanings:
+        'La posición en la línea de tiempo coordina ambas etapas. El tiempo del efecto selecciona el fotograma; la intensidad controla la fuerza del efecto. GSAP controla el tiempo porque el reloj es manual.',
+      checkpoints: 'Puntos de referencia: línea de tiempo → tiempo del efecto / intensidad',
+      source: 'Secuencia compartida',
+      sourceNote:
+        'Esta es la secuencia que ejecuta el reproductor. El ejemplo completo de abajo añade la preparación y limpieza de la aplicación; el reproductor añade sus propios controles y ciclo de vida.',
+      needsGpu:
+        'La reproducción necesita JavaScript y WebGPU. La secuencia y el botón original siguen visibles.',
+      noGpu:
+        'WebGPU no está disponible. La reproducción está desactivada; el botón original sigue funcionando.',
+      reducedMotion:
+        'El movimiento reducido está activado. La reproducción está desactivada; el botón original sigue funcionando.',
+      resumeRequired:
+        'Cambió la preferencia de movimiento. Elige Reproducir para empezar; no se reanudará automáticamente.',
+      preparing: 'Preparando la secuencia…',
+      waiting:
+        'La reproducción está suspendida mientras la vista previa está fuera de la pantalla.',
+      unavailable:
+        'Efecto no disponible. La reproducción está desactivada; el botón original sigue funcionando.',
+      paused: 'En pausa',
+      playing: 'Reproduciendo',
+      reversing: 'Reproduciendo hacia atrás',
+      complete: 'Secuencia terminada. Elige Volver a reproducir para repetirla.',
+    },
     categories: { Energy: 'Energía', Material: 'Material', Pattern: 'Patrón' },
     groups: {
       'Getting started': 'Primeros pasos',

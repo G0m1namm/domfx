@@ -310,6 +310,7 @@
 }
 .docs-gsap-lab .docs-code-scroll {
   margin: 0;
+  margin-block-end: 0.5rem;
 }
 .docs-lab-heading {
   display: grid;

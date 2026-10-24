@@ -208,3 +208,41 @@ attachStarShimmer(target, { host, flameHeight: 48 });
 attachBrushFringe(target, shared).dispose();
 // @ts-expect-error Only Fire accepts a flame-height option.
 attachBrushFringe(target, { host, flameHeight: 48 });
+
+// Relative pattern extents are creation-only and effect-owned.
+for (const attach of [
+  attachDither,
+  attachHalftone,
+  attachStipple,
+  attachScanlines,
+  attachCrosshatch,
+  attachDiamonds,
+  attachEngraving,
+  attachWovenMesh,
+  attachHexagons,
+  attachInterference,
+  attachShards,
+  attachCircuits,
+  attachStarShimmer,
+]) {
+  const relative = attach(target, { host, plumeReach: 0.1, bandDepth: 0.05 });
+  relative.dispose();
+  // @ts-expect-error Pattern geometry has no writable extent control.
+  relative.plumeReach = 0.2;
+  // @ts-expect-error Radial echoes use their own options family.
+  attach(target, { host, echoReach: 0.1 });
+}
+attachContourEchoes(target, { host, echoReach: 0.15 }).dispose();
+attachBrushFringe(target, { host, fringeReach: 0.1 }).dispose();
+// @ts-expect-error Contour echoes have radial reach instead of a rising plume.
+attachContourEchoes(target, { host, plumeReach: 0.1 });
+// @ts-expect-error Brush fringe does not expose an inward band.
+attachBrushFringe(target, { host, bandDepth: 0.1 });
+// @ts-expect-error Extent fractions are numeric rather than CSS strings.
+attachDither(target, { host, plumeReach: '10%' });
+const radialPattern = { host, echoReach: 0.1 };
+// @ts-expect-error A radial options variable cannot configure a shared-flow pattern.
+attachHalftone(target, radialPattern);
+const flowingPattern = { host, plumeReach: 0.1 };
+// @ts-expect-error A flowing options variable cannot configure a radial pattern.
+attachContourEchoes(target, flowingPattern);

@@ -611,8 +611,9 @@ These limits measure managed allocations, not total process memory.
 
 ## Available effect functions
 
-Import any of these from `@domfx/browser`. All accept the shared options; only
-`attachFire` adds the mutually exclusive creation-only `flameHeight` and `flameReach` options. Time and intensity remain
+Import any of these from `@domfx/browser`. All accept the shared options.
+Fire adds mutually exclusive creation-only `flameHeight` and `flameReach` options;
+patterns add the effect-owned relative extents below. Time and intensity remain
 the shared writable controls. No color, gradient or particle-count controls are
 currently exported.
 
@@ -683,3 +684,41 @@ Host/ancestor clipping still applies. Extents have no writable setters: dispose
 and create another instance to change them; ordinary intensity updates do not
 recapture or allocate. The effect remains procedural at absolute time, supporting
 repeatable seeks and reverse playback.
+
+### Relative pattern extents
+
+Dither and the twelve shared-flow patterns accept creation-only `plumeReach` and
+`bandDepth`. `plumeReach` is a nonnegative finite fraction of the untransformed
+target border-box height; `bandDepth` uses its shorter local side. Transparent
+image margins count; capture padding does not. Fractions resolve again on resize.
+Dither uses `DitherOptions`; the shared-flow variants use `PatternOptions`.
+
+```ts
+const dots = attachDither(target, { host, plumeReach: 0.1, bandDepth: 0.05 });
+const echoes = attachContourEchoes(otherTarget, { host, echoReach: 0.1 });
+const brush = attachBrushFringe(thirdTarget, { host, fringeReach: 0.1 });
+```
+
+Contour echoes uses `ContourEchoesOptions.echoReach` for radial exterior reach as
+a fraction of the shorter side, retaining 5.5 CSS-pixel echo spacing. Brush fringe
+uses `BrushFringeOptions.fringeReach` for its shorter-side sampling envelope;
+fixed bristles can extend up to 5.1 CSS pixels beyond it. These two effects reject
+the shared-flow options.
+
+Omitting every extent option retains legacy appearance and intensity behavior.
+Supplying a shared-flow option enters relative mode with an omitted partner equal
+to zero; each zero disables that density component. All-zero extents are
+transparent. In relative mode, intensity scales final premultiplied output;
+it does not alter density, fixed mark detail or target-local phase. Dither keeps
+its fine dots and 2px grid. Extents are creation-only, with no instance setter.
+
+The full finite support includes fixed mark footprints: allocation reserves 6 CSS
+pixels beyond the outward sampling envelope, plus 2 CSS pixels of supported paint
+overflow and a guard of 2 CSS pixels plus 2 raster pixels. Relative mode requires
+contained descendants with no shadows, filters, CSS outlines or generated
+pseudo-elements, and paint within the target border box plus 2 CSS pixels. Actual
+alpha and the full free margin are checked; unsupported paint is unavailable with
+`missing-exterior`. Existing pixel, memory and device limits remain unchanged.
+Requests that do not fit are rejected rather than clipped or downsampled. DPR
+changes raster admission, not CSS-space fractions. Visible thresholded bounds can
+vary with opacity; an extent does not guarantee a visible tip on every frame.

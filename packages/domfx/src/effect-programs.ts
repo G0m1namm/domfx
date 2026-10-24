@@ -9,6 +9,7 @@ import { relativeFrostShader } from './frost-relative-shader.js';
 import { frostShader } from './frost-shader.js';
 import { kineticShader } from './kinetic-shader.js';
 import type { PatternEffect } from './pattern-options.js';
+import { createRelativePatternShader } from './pattern-relative-shader.js';
 import { createPatternShader } from './pattern-shader.js';
 import { relativeSlimeShader } from './slime-relative-shader.js';
 import { slimeShader } from './slime-shader.js';
@@ -43,7 +44,7 @@ export type RenderEffect =
 /** Renderer-private owner of effect source, compilation and the compatible binding layout. */
 export class EffectPrograms {
   private readonly pipelines = new Map<
-    RenderEffect | 'fire-relative' | 'frost-relative' | 'slime-relative' | 'burned-paper-relative',
+    RenderEffect | `${RenderEffect}-relative`,
     GPURenderPipeline
   >();
   readonly bindings: GPUBindGroupLayout;
@@ -74,16 +75,7 @@ export class EffectPrograms {
 
   static async create(device: GPUDevice): Promise<EffectPrograms> {
     const programs = new EffectPrograms(device);
-    const sources: [
-      (
-        | RenderEffect
-        | 'fire-relative'
-        | 'frost-relative'
-        | 'slime-relative'
-        | 'burned-paper-relative'
-      ),
-      string,
-    ][] = [
+    const sources: [RenderEffect | `${RenderEffect}-relative`, string][] = [
       ['fire', fireShader],
       ['fire-relative', relativeFireShader],
       ['electricity', electricityShader],
@@ -95,6 +87,11 @@ export class EffectPrograms {
       ['burned-paper', burnedPaperShader],
       ['burned-paper-relative', relativeBurnedPaperShader],
       ['dither', ditherShader],
+      ['dither-relative', createRelativePatternShader('dither')],
+      ...patternEffects.map((effect): [`${PatternEffect}-relative`, string] => [
+        `${effect}-relative`,
+        createRelativePatternShader(effect),
+      ]),
       ...patternEffects.map((effect): [RenderEffect, string] => [
         effect,
         createPatternShader(effect),
@@ -169,12 +166,7 @@ export class EffectPrograms {
   }
 
   pipeline(effect: RenderEffect, relative = false): GPURenderPipeline {
-    const pipeline = this.pipelines.get(
-      relative &&
-        (effect === 'fire' || effect === 'frost' || effect === 'slime' || effect === 'burned-paper')
-        ? `${effect}-relative`
-        : effect,
-    );
+    const pipeline = this.pipelines.get(relative ? `${effect}-relative` : effect);
     if (!pipeline) {
       throw new Error(`Unknown effect: ${effect}`);
     }

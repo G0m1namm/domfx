@@ -7,7 +7,7 @@ import {
   cssDistanceGradient,
 } from './shader-primitives.js';
 
-const patternBodies: Record<PatternEffect, string> = {
+export const patternBodies: Record<PatternEffect, string> = {
   halftone: `
     // Rotated print-screen dots vary in radius rather than turning on/off.
     let rotated = vec2f(p.x + p.y, p.y - p.x) * .70710678;

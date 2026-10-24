@@ -7,6 +7,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         effects: resolve(import.meta.dirname, 'effects.html'),
+        patternExtent: resolve(import.meta.dirname, 'pattern-extent.html'),
         main: resolve(import.meta.dirname, 'index.html'),
         manual: resolve(import.meta.dirname, 'manual.html'),
         materialExtent: resolve(import.meta.dirname, 'material-extent.html'),

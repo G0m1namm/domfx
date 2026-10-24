@@ -609,11 +609,24 @@ instead of clipping or reducing quality. For example, a 400×400 target at DPR 2
 with `flameReach: 0.2` fails the pixel gate; use a smaller reach/target or lower DPR.
 These limits measure managed allocations, not total process memory.
 
+All relative modes rasterize at exact DPR, placing ceil-rounding slack in the far
+transparent right/bottom edges without changing target dimensions or reducing
+resolution. Supported source paint uses an extent-independent guard (8 CSS px plus raster
+alignment, capped by requested padding), rasterized at a fixed origin and copied
+within the admitted canvas. Actual
+alpha admission still rejects paint outside the border box plus 2 CSS px. This
+does not establish arbitrary distant-paint capture. Existing raster, memory and
+device gates still apply. A resolution
+media-query event invalidates relative captures; environments that change DPR
+without delivering that event require `await effect.refresh()`. Chromium 153 CDP
+emulation on macOS changes DPR but emits no resolution event in the measured run;
+explicit refresh and synthetic listener/disposal checks are separate evidence.
+
 ## Available effect functions
 
 Import any of these from `@domfx/browser`. All accept the shared options.
 Fire adds mutually exclusive creation-only `flameHeight` and `flameReach` options;
-patterns add the effect-owned relative extents below. Time and intensity remain
+the other effects add their own relative extents below. Time and intensity remain
 the shared writable controls. No color, gradient or particle-count controls are
 currently exported.
 
@@ -667,9 +680,11 @@ and paint within the border box plus 2 CSS px. Symmetric padding is
 `max(8, ceil(support + 4 + 2 / DPR))` CSS px, including classification/interpolation
 guards; capture/device/memory limits reject oversized results without trimming or
 lowering quality. Kinetic source search grows with travel to retain distant emitters;
-large admitted travels can cost more GPU work. Fractional-DPR image recapture can
-change antialiasing when padding changes; deterministic shader alignment applies
-to an identical source raster, not pixel identity between browser rerasterizations.
+large admitted travels can cost more GPU work. Relative capture keeps integer and
+fractional transparent PNG fixtures stable across padding changes at DPR 1, 1.25
+and 2: source alpha, classified masks and distance fields match exactly, with at
+most 1/255 effect-output difference. These measured fixtures do not promise pixel
+identity for arbitrary browser rerasterizations.
 
 ### Relative material extents
 

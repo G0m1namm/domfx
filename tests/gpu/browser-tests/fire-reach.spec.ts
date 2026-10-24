@@ -1,10 +1,12 @@
 import { expect, test } from '@playwright/test';
 
 import type {} from '../src/manual.js';
+import { installResolutionProbe, resolutionEvidence } from './resolution-probe.js';
 
-test('DPR-only changes recapture relative geometry without changing the local box', async ({
+test('DPR-only changes retain the local box and refresh when CDP omits resolution events', async ({
   page,
-}) => {
+}, info) => {
+  await installResolutionProbe(page);
   await page.goto('/manual.html');
   await page.evaluate(async () => {
     await window.manual.effect.ready;
@@ -29,6 +31,16 @@ test('DPR-only changes recapture relative geometry without changing the local bo
     deviceScaleFactor: 1.25,
     mobile: false,
   });
+  await page.waitForTimeout(100);
+  const evidence = await resolutionEvidence(page);
+  if (evidence.changes === 0) {
+    await page.evaluate(() => window.manual.effect.refresh());
+  }
+  await info.attach('dpr-refresh.json', {
+    body: JSON.stringify({ ...evidence, explicitRefresh: evidence.changes === 0 }),
+    contentType: 'application/json',
+  });
+  expect(evidence.dpr).toBe(1.25);
   await expect.poll(() => page.locator('#manual-host canvas').getAttribute('width')).toBe('295');
   expect(
     await page
@@ -66,6 +78,25 @@ test('tiny reach, allocation rejection and distant overflow preserve cleanup', a
     const overflowReason = overflow.reason;
     overflow.dispose();
     escaped.remove();
+    // SVG stroke paint escapes its contained geometry box. The source guard
+    // must preserve it long enough for actual-alpha admission to reject it.
+    const painted = document.createElement('div');
+    painted.style.cssText = 'position:absolute;left:0;top:0;width:100px;height:100px';
+    painted.innerHTML =
+      '<svg width="100" height="100" style="display:block;overflow:visible"><rect width="100" height="100" fill="white" stroke="white" stroke-width="8"/></svg>';
+    host.append(painted);
+    const box = painted.getBoundingClientRect();
+    const rect = painted.querySelector('rect')!.getBoundingClientRect();
+    const paintBoxContained =
+      rect.left >= box.left &&
+      rect.top >= box.top &&
+      rect.right <= box.right &&
+      rect.bottom <= box.bottom;
+    const paintOverflow = window.manual.attach(painted, { host, flameReach: 0.1 });
+    await paintOverflow.ready;
+    const paintReason = paintOverflow.reason;
+    paintOverflow.dispose();
+    painted.remove();
     target.style.width = '400px';
     target.style.height = '400px';
     const rejected = [];
@@ -84,6 +115,8 @@ test('tiny reach, allocation rejection and distant overflow preserve cleanup', a
     return {
       tiny,
       overflowReason,
+      paintBoxContained,
+      paintReason,
       rejected,
       active,
       canvases: host.querySelectorAll('canvas').length,
@@ -93,6 +126,8 @@ test('tiny reach, allocation rejection and distant overflow preserve cleanup', a
   expect(result).toEqual({
     tiny: Array(4).fill('active'),
     overflowReason: 'missing-exterior',
+    paintBoxContained: true,
+    paintReason: 'missing-exterior',
     rejected: ['capture-budget', 'capture-budget'],
     active: true,
     canvases: 0,
@@ -152,6 +187,16 @@ for (const dpr of [1, 2]) {
     const flat = result.samples.filter((sample) => sample.kind === 'flat');
     expect(flat[0].maxReach).toBeGreaterThan(4);
     expect(flat[1].maxReach).toBeGreaterThan(flat[0].maxReach * 2);
+    // Gold runs in the upper half isolate embers from the orange flame body.
+    // Four times more travel must retain the measured local spark width.
+    const median = (widths: number[]) =>
+      [...widths].sort((a, b) => a - b)[Math.floor(widths.length / 2)];
+    expect(flat[0].emberWidths.length).toBeGreaterThan(0);
+    expect(flat[1].emberWidths.length).toBeGreaterThan(0);
+    expect(Math.abs(median(flat[0].emberWidths) - median(flat[1].emberWidths))).toBeLessThanOrEqual(
+      1 / dpr,
+    );
+    expect(Math.max(...flat[1].emberWidths)).toBeLessThanOrEqual(2);
   });
 }
 

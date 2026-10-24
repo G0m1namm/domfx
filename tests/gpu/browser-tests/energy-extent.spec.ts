@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import type {} from '../src/energy-extent.js';
+import { installResolutionProbe, resolutionEvidence } from './resolution-probe.js';
 
 for (const kind of ['electricity', 'kinetic'] as const) {
   for (const dpr of [1, 1.25, 2]) {
@@ -58,6 +59,7 @@ for (const kind of ['electricity', 'kinetic'] as const) {
         });
         expect(sample.strengthError).toBeLessThanOrEqual(1);
         expect(sample.maxDifference).toBeLessThanOrEqual(2);
+        expect(sample.recaptureOutputDifference).toBeLessThanOrEqual(2);
       }
       const flat = result.samples.filter((sample) => sample.shape === 'flat');
       const median = (values: number[]) =>
@@ -66,7 +68,8 @@ for (const kind of ['electricity', 'kinetic'] as const) {
       expect(flat[2].detailWidths.length).toBeGreaterThan(0);
       expect(
         Math.abs(median(flat[1].detailWidths) - median(flat[2].detailWidths)),
-      ).toBeLessThanOrEqual(1.5);
+        // Rasterized run widths have two independently quantized edges.
+      ).toBeLessThanOrEqual(Math.max(1.5, 2 / dpr));
       expect(Math.max(...flat[2].detailWidths)).toBeLessThanOrEqual(10);
 
       expect(flat[1].maxReach).toBeGreaterThan(flat[0].maxReach * 1.5);
@@ -150,9 +153,8 @@ for (const kind of ['electricity', 'kinetic'] as const) {
 }
 
 for (const kind of ['electricity', 'kinetic'] as const) {
-  test(`${kind} automatic DPR-only invalidation recaptures at the same local ratio`, async ({
-    page,
-  }, info) => {
+  test(`${kind} DPR-only refresh fallback retains the same local ratio`, async ({ page }, info) => {
+    await installResolutionProbe(page);
     await page.goto('/energy-extent.html');
     await page.evaluate(async (kind) => {
       const host = document.createElement('div');
@@ -188,11 +190,31 @@ for (const kind of ['electricity', 'kinetic'] as const) {
       (await page.locator('#dpr-host canvas').getAttribute('width')) === expectedWidth;
     // CDP on some Chromium builds changes resolution queries without dispatching
     // their change event. Exercise the supported explicit-refresh fallback too.
-    if (!automatic) {
-      await page.evaluate(() => window.energy.dprEffect?.refresh());
+    const evidence = await resolutionEvidence(page);
+    if (evidence.changes === 0) {
+      await page.evaluate(() => {
+        const effect = window.energy.dprEffect;
+        if (!effect) {
+          throw new Error('Missing DPR attachment');
+        }
+        return effect.refresh();
+      });
     }
     await info.attach('dpr-refresh.json', {
-      body: JSON.stringify({ automatic, explicitRefresh: !automatic }),
+      body: JSON.stringify({ ...evidence, automatic, explicitRefresh: evidence.changes === 0 }),
+      contentType: 'application/json',
+    });
+    await info.attach('dpr-result.json', {
+      body: JSON.stringify(
+        await page.evaluate(() => ({
+          width: document.querySelector<HTMLCanvasElement>('#dpr-host canvas')?.width,
+          lifecycle: window.energy.dprEffect?.lifecycle,
+          raster: window.energy.dprEffect?.raster,
+          reason: window.energy.dprEffect?.reason,
+          detail: window.energy.dprEffect?.reasonDetail,
+          dpr: devicePixelRatio,
+        })),
+      ),
       contentType: 'application/json',
     });
     await expect
@@ -205,9 +227,8 @@ for (const kind of ['electricity', 'kinetic'] as const) {
       })),
     ).toEqual({ width: 100.25, height: 160.5 });
     await page.evaluate(() => window.energy.dprEffect?.dispose());
-    expect(
-      automatic,
-      'Shared qualification: resolution change events must trigger recapture; explicit refresh worked.',
-    ).toBe(true);
+    expect(evidence.dpr).toBe(1.25);
+    // A delivered native event must work. Absence is reported as the tested fallback.
+    expect(evidence.changes === 0 || automatic).toBe(true);
   });
 }

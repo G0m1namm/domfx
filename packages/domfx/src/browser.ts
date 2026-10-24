@@ -110,6 +110,19 @@ export async function captureElementWithReservation(
   const heightCss = h0 + padding * 2;
   const width = Math.ceil(widthCss * dpr);
   const height = Math.ceil(heightCss * dpr);
+  // Relative source paint is bounded to the border box plus 2 CSS px. Give it
+  // an extent-independent guard so Chromium does not rerasterize embedded PNGs
+  // differently when only the output allocation changes. Preserve the raster
+  // phase and draw 1:1 into the admitted canvas; the legacy mapping is unchanged.
+  const relative = options.resolvePadding !== undefined;
+  const viewWidth = relative ? width / dpr : widthCss;
+  const viewHeight = relative ? height / dpr : heightCss;
+  const phase = padding * dpr - Math.floor(padding * dpr);
+  const sourcePadding = relative ? Math.min(padding, (Math.ceil(8 * dpr) + phase) / dpr) : padding;
+  const sourceWidth = relative ? Math.ceil((w0 + sourcePadding * 2) * dpr) : width;
+  const sourceHeight = relative ? Math.ceil((h0 + sourcePadding * 2) * dpr) : height;
+  const sourceViewWidth = relative ? sourceWidth / dpr : widthCss;
+  const sourceViewHeight = relative ? sourceHeight / dpr : heightCss;
   estimateFrameMemory(width, height);
   reserve?.(width, height);
   // Use HTML layout for the capture inset: WebKit can ignore SVG viewBox
@@ -127,17 +140,17 @@ export async function captureElementWithReservation(
       new Error('capture-sandbox-missing'),
     );
   }
-  svg.setAttribute('viewBox', `0 0 ${widthCss} ${heightCss}`);
-  svg.setAttribute('width', String(widthCss));
-  svg.setAttribute('height', String(heightCss));
+  svg.setAttribute('viewBox', `0 0 ${sourceViewWidth} ${sourceViewHeight}`);
+  svg.setAttribute('width', String(relative ? sourceWidth : widthCss));
+  svg.setAttribute('height', String(relative ? sourceHeight : heightCss));
   foreignObject.setAttribute('x', '0');
   foreignObject.setAttribute('y', '0');
-  foreignObject.setAttribute('width', String(widthCss));
-  foreignObject.setAttribute('height', String(heightCss));
-  sandbox.style.setProperty('padding-left', `${padding}px`, 'important');
-  sandbox.style.setProperty('padding-top', `${padding}px`, 'important');
-  sandbox.style.width = `${widthCss}px`;
-  sandbox.style.height = `${heightCss}px`;
+  foreignObject.setAttribute('width', String(sourceViewWidth));
+  foreignObject.setAttribute('height', String(sourceViewHeight));
+  sandbox.style.setProperty('padding-left', `${sourcePadding}px`, 'important');
+  sandbox.style.setProperty('padding-top', `${sourcePadding}px`, 'important');
+  sandbox.style.width = `${sourceViewWidth}px`;
+  sandbox.style.height = `${sourceViewHeight}px`;
   const image = element.ownerDocument.createElement('img');
   image.src =
     'data:image/svg+xml;charset=utf-8,' +
@@ -156,7 +169,27 @@ export async function captureElementWithReservation(
     if (!context) {
       throw new Error('capture-context-unavailable');
     }
-    context.drawImage(image, 0, 0, width, height);
+    if (relative) {
+      const inset = Math.round((padding - sourcePadding) * dpr);
+      // Rasterize at the same origin too: CPU canvas can change SVG image
+      // interpolation at different draw offsets. Move the resulting pixels
+      // within this canvas; copy clears the original without another buffer.
+      context.drawImage(image, 0, 0);
+      context.globalCompositeOperation = 'copy';
+      context.drawImage(
+        canvas,
+        0,
+        0,
+        sourceWidth,
+        sourceHeight,
+        inset,
+        inset,
+        sourceWidth,
+        sourceHeight,
+      );
+    } else {
+      context.drawImage(image, 0, 0, width, height);
+    }
     try {
       pixels = new Uint8Array(context.getImageData(0, 0, width, height).data);
     } catch (cause) {
@@ -176,9 +209,14 @@ export async function captureElementWithReservation(
     get pixels() {
       return pixels;
     },
-    padding: { top: padding, right: padding, bottom: padding, left: padding },
+    padding: {
+      top: padding,
+      right: relative ? viewWidth - w0 - padding : padding,
+      bottom: relative ? viewHeight - h0 - padding : padding,
+      left: padding,
+    },
     contentBounds: { x: 0, y: 0, width: w0, height: h0 },
-    pixelToLocal: { a: widthCss / width, d: heightCss / height, e: -padding, f: -padding },
+    pixelToLocal: { a: viewWidth / width, d: viewHeight / height, e: -padding, f: -padding },
     release() {
       if (!released) {
         released = true;

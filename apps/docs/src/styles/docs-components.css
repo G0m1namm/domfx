@@ -362,6 +362,8 @@
   display: none;
 }
 .docs-lab-text {
+  /* Contain glyph overhang inside the target box required by relative capture. */
+  padding: 0.125em;
   color: #f4f5fb;
   font-family: 'Cabinet Grotesk', ui-sans-serif, sans-serif;
   /* Keep the 16px design curve while following larger browser font defaults. */

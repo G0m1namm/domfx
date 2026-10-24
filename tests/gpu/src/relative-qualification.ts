@@ -165,6 +165,74 @@ export async function qualifyRelativeCatalog() {
   }
 }
 
+/** Synthetic event integration only; this does not establish native DPR event delivery. */
+export async function qualifyRelativeResolutionListeners() {
+  const host = document.createElement('div');
+  host.style.cssText = 'position:absolute;left:80px;top:80px';
+  const target = document.createElement('div');
+  target.style.cssText = 'width:100px;height:100px;background:white';
+  host.append(target);
+  document.body.append(host);
+  const matchMedia = window.matchMedia;
+  const resolutions: MediaQueryList[] = [];
+  window.matchMedia = (query) => {
+    const result = matchMedia.call(window, query);
+    if (query.includes('resolution:')) {
+      resolutions.push(result);
+    }
+    return result;
+  };
+  const diagnostics = startEffectDiagnostics({ capacity: 4096 });
+  const ledger = memoryFor(document);
+  const baseline = ledger.bytes;
+  const results = [];
+  try {
+    for (const effect of effects) {
+      resolutions.length = 0;
+      const handle: EffectHandle = Reflect.apply(factories[effect], undefined, [
+        target,
+        { host, ...relativeOptions(effect), seed: 314 },
+      ]);
+      try {
+        await handle.ready;
+        const query = resolutions.at(-1);
+        if (!query) {
+          throw new Error(`Missing relative DPR listener: ${effect}`);
+        }
+        const captures = () =>
+          diagnostics.records.filter((record) => record.stage === 'capture').length;
+        const before = captures();
+        query.dispatchEvent(new Event('change'));
+        for (let attempt = 0; attempt < 120; attempt++) {
+          await nextPaint();
+          if (captures() > before && handle.lifecycle === 'active' && handle.raster === 'fresh') {
+            break;
+          }
+        }
+        const refreshed =
+          captures() > before && handle.lifecycle === 'active' && handle.raster === 'fresh';
+        handle.dispose();
+        const disposedCaptures = captures();
+        query.dispatchEvent(new Event('change'));
+        await nextPaint();
+        results.push({
+          effect,
+          refreshed,
+          disposedCapturesStable: captures() === disposedCaptures,
+          releasedBytes: ledger.bytes - baseline,
+        });
+      } finally {
+        handle.dispose();
+      }
+    }
+    return { results, canvases: host.querySelectorAll('canvas').length };
+  } finally {
+    window.matchMedia = matchMedia;
+    diagnostics.dispose();
+    host.remove();
+  }
+}
+
 /** Compare the real relative capture path at identical target-local sample positions. */
 export async function qualifyRelativeCapture(kind: string, dpr: number) {
   const host = document.createElement('div');
@@ -173,14 +241,18 @@ export async function qualifyRelativeCapture(kind: string, dpr: number) {
   target.style.cssText = 'width:160.5px;height:100.25px;color:white;font:60px/1 system-ui';
   host.append(target);
   document.body.append(host);
+  if (kind === 'image-integer') {
+    target.style.width = '160px';
+    target.style.height = '100px';
+  }
   if (kind === 'text') {
     target.textContent = 'Fire';
   } else if (kind === 'svg') {
     target.innerHTML =
       '<svg width="160.5" height="100.25" viewBox="0 0 160 100"><path fill="white" fill-rule="evenodd" d="M10 5h65v90H10z M25 25v50h35V25z M100 10h2v80h-2z M125 40h25v30h-25z"/></svg>';
-  } else if (kind === 'image') {
+  } else if (kind.startsWith('image')) {
     const image = document.createElement('img');
-    image.style.cssText = 'display:block;width:160.5px;height:100.25px';
+    image.style.cssText = `display:block;width:${target.style.width};height:${target.style.height}`;
     const source = document.createElement('canvas');
     source.width = 160;
     source.height = 100;
@@ -213,14 +285,30 @@ export async function qualifyRelativeCapture(kind: string, dpr: number) {
     try {
       const offset = 16 * dpr;
       let sourceDifference = 0;
+      let maskDifferences = 0;
       for (let y = 0; y < normal.frame.height; y++) {
         for (let x = 0; x < normal.frame.width; x++) {
           const a = (y * normal.frame.width + x) * 4 + 3;
           const b = ((y + offset) * larger.frame.width + x + offset) * 4 + 3;
+          if (normal.frame.pixels[a] >= 128 !== larger.frame.pixels[b] >= 128) {
+            maskDifferences++;
+          }
           sourceDifference = Math.max(
             sourceDifference,
             Math.abs(normal.frame.pixels[a] - larger.frame.pixels[b]),
           );
+        }
+      }
+      const normalSdf = await normal.prepared.readSdf();
+      const largerSdf = await larger.prepared.readSdf();
+      let sdfDifference = 0;
+      for (let y = 0; y < normal.frame.height; y++) {
+        for (let x = 0; x < normal.frame.width; x++) {
+          const a = y * normal.frame.width + x;
+          const b = (y + offset) * larger.frame.width + x + offset;
+          if (Math.abs(normalSdf[a]) <= 50 * dpr) {
+            sdfDifference = Math.max(sdfDifference, Math.abs(normalSdf[a] - largerSdf[b]));
+          }
         }
       }
       const results = [];
@@ -271,11 +359,22 @@ export async function qualifyRelativeCapture(kind: string, dpr: number) {
         kind,
         dpr,
         sourceDifference,
+        maskDifferences,
+        sdfDifference,
         box: normal.frame.contentBounds,
+        padding: normal.frame.padding,
         mapping: normal.frame.pixelToLocal,
         results,
         errors: [...gpu.errors],
-        environment: { userAgent: navigator.userAgent, gpu: gpu.adapterInfo },
+        environment: {
+          userAgent: navigator.userAgent,
+          gpu: {
+            vendor: gpu.adapterInfo.vendor,
+            architecture: gpu.adapterInfo.architecture,
+            device: gpu.adapterInfo.device,
+            description: gpu.adapterInfo.description,
+          },
+        },
       };
     } finally {
       normal.prepared.destroy();

@@ -2,7 +2,11 @@ import { attachFire, attachFrost, captureElement } from '@domfx/browser';
 import { GpuExperiment, startEffectDiagnostics } from '@domfx/browser/experimental';
 
 import { effects } from './effect-selection.js';
-import { qualifyRelativeCapture, qualifyRelativeCatalog } from './relative-qualification.js';
+import {
+  qualifyRelativeCapture,
+  qualifyRelativeCatalog,
+  qualifyRelativeResolutionListeners,
+} from './relative-qualification.js';
 
 async function renderEffects(targetId: string, dpr: number) {
   await document.fonts.ready;
@@ -57,11 +61,13 @@ declare global {
     renderEffects: typeof renderEffects;
     qualifyRelativeCapture: typeof qualifyRelativeCapture;
     qualifyRelativeCatalog: typeof qualifyRelativeCatalog;
+    qualifyRelativeResolutionListeners: typeof qualifyRelativeResolutionListeners;
   }
 }
 window.renderEffects = renderEffects;
 window.qualifyRelativeCapture = qualifyRelativeCapture;
 window.qualifyRelativeCatalog = qualifyRelativeCatalog;
+window.qualifyRelativeResolutionListeners = qualifyRelativeResolutionListeners;
 
 async function traceEffects() {
   document.body.style.position = 'relative';

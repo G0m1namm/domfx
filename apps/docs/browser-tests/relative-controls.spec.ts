@@ -34,7 +34,7 @@ for (const locale of ['en', 'es'] as const) {
         await expect(page.locator('#effect-options + p').first()).toBeVisible();
         await expect(page.locator('main')).toContainText(field.name);
       }
-      await expect(lab.locator('fieldset')).toBeDisabled();
+      await expect(lab.locator('[data-docs-lab-intensity]')).toBeDisabled();
       await expect(lab.locator('canvas')).toHaveCount(0);
     }
     await context.close();

@@ -28,3 +28,8 @@ private source is not a repair. Read [troubleshooting](https://domfx.dev/docs/tr
 for detailed recovery and [support limits](https://domfx.dev/docs/support/) for
 capture/composition restrictions and measured environments. Keep support claims
 within that evidence.
+
+For relative output that retains an old raster after a DPR-only change, await
+`effect.refresh()` and inspect state again. The resolution listener depends on
+browser event delivery; Chromium CDP emulation can change DPR without that event.
+This fallback does not establish automatic DPR handling in untested browsers.

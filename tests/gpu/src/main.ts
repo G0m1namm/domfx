@@ -7,6 +7,9 @@ import { classifyAlpha, type CaptureFrame } from '@domfx/core';
 import { exactDistanceField } from './diagnostics/distance-oracle.js';
 import { verifyFireShape } from './diagnostics/fire-shape.js';
 import { verifyPreparationResources } from './diagnostics/preparation-resources.js';
+import { qualifyRelativeCatalog } from './relative-qualification.js';
+
+window.qualifyRelativeCatalog = qualifyRelativeCatalog;
 
 const element = <T extends Element = HTMLElement>(id: string) =>
   document.getElementById(id)! as unknown as T;

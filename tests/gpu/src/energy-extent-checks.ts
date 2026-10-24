@@ -225,7 +225,12 @@ export async function verifyEnergyExtentGeometry(kind: 'electricity' | 'kinetic'
         const padding = Math.ceil(support + 4 + 2 / dpr);
         const captures = [];
         for (const [captureIndex, extra] of [0, 16, 16].entries()) {
-          const capture = await captureElement(target, { dpr, paddingCss: padding + extra });
+          const options = {
+            dpr,
+            paddingCss: padding + extra,
+            resolvePadding: () => padding + extra,
+          };
+          const capture = await captureElement(target, options);
           const rawSource = capture.pixels.slice();
           // Isolate procedural anchoring from browser image resampling: the third
           // capture uses the first raster translated into the larger allocation.

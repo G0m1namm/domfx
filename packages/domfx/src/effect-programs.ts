@@ -2,11 +2,13 @@ import { relativeBurnedPaperShader } from './burned-paper-relative-shader.js';
 import { burnedPaperShader } from './burned-paper-shader.js';
 import { ditherShader } from './dither-shader.js';
 import { EffectError } from './effect-error.js';
+import { relativeElectricityShader } from './electricity-relative-shader.js';
 import { electricityShader } from './electricity-shader.js';
 import { relativeFireShader } from './fire-relative-shader.js';
 import { fireShader } from './fire-shader.js';
 import { relativeFrostShader } from './frost-relative-shader.js';
 import { frostShader } from './frost-shader.js';
+import { relativeKineticShader } from './kinetic-relative-shader.js';
 import { kineticShader } from './kinetic-shader.js';
 import type { PatternEffect } from './pattern-options.js';
 import { createRelativePatternShader } from './pattern-relative-shader.js';
@@ -79,9 +81,11 @@ export class EffectPrograms {
       ['fire', fireShader],
       ['fire-relative', relativeFireShader],
       ['electricity', electricityShader],
+      ['electricity-relative', relativeElectricityShader],
       ['frost', frostShader],
       ['frost-relative', relativeFrostShader],
       ['kinetic', kineticShader],
+      ['kinetic-relative', relativeKineticShader],
       ['slime', slimeShader],
       ['slime-relative', relativeSlimeShader],
       ['burned-paper', burnedPaperShader],

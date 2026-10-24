@@ -39,6 +39,21 @@ declare const target: Element;
 declare const host: HTMLElement;
 declare const svgHost: SVGSVGElement;
 
+const relativeElectricity = attachElectricity(target, { host, contourSpread: 0.1 });
+const relativeKinetic = attachKinetic(target, { host, fragmentTravel: 0.2 });
+// @ts-expect-error Contour spread is creation-only.
+relativeElectricity.contourSpread = 0.2;
+// @ts-expect-error Fragment travel is creation-only.
+relativeKinetic.fragmentTravel = 0.3;
+// @ts-expect-error Only Electricity accepts contour spread.
+attachKinetic(target, { host, contourSpread: 0.1 });
+// @ts-expect-error Only Kinetic bloom accepts fragment travel.
+attachElectricity(target, { host, fragmentTravel: 0.1 });
+// @ts-expect-error Ratios use finite numbers, not CSS strings.
+attachElectricity(target, { host, contourSpread: '10%' });
+// @ts-expect-error Ratios use finite numbers, not CSS strings.
+attachKinetic(target, { host, fragmentTravel: '10%' });
+
 const relativeFire = attachFire(target, { host, flameReach: 0.1 });
 const relativeFrost = attachFrost(target, { host, coatingDepth: 0.1, mistReach: 0.2 });
 attachFrost(target, { host, mistReach: 0 }).dispose();

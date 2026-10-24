@@ -13,6 +13,7 @@ import {
 } from './effect-geometry.js';
 import { assertRelativeEffectSource } from './effect-paint.js';
 import type { ElectricityOptions } from './electricity-options.js';
+import { energyExtentPadding, energyExtentSupport } from './energy-geometry.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
 import type { RenderEffect } from './gpu.js';
@@ -147,6 +148,34 @@ export function attachWithAdapters(
   ) {
     throw new Error('invalid-fire-parameter');
   }
+  let energyExtent: number | undefined;
+  if (request.effect === 'electricity') {
+    energyExtent = request.options.contourSpread;
+  } else if (request.effect === 'kinetic') {
+    energyExtent = request.options.fragmentTravel;
+  }
+  // JavaScript callers also reject energy options belonging to another effect.
+  if (
+    ('contourSpread' in options &&
+      options.contourSpread !== undefined &&
+      effect !== 'electricity') ||
+    ('fragmentTravel' in options && options.fragmentTravel !== undefined && effect !== 'kinetic')
+  ) {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+  if (
+    energyExtent !== undefined &&
+    (typeof energyExtent !== 'number' || !Number.isFinite(energyExtent) || energyExtent < 0)
+  ) {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+  const energyReach = (width: number, height: number) =>
+    Math.min(width, height) * (energyExtent ?? 0);
+  const relative =
+    flameReach !== undefined ||
+    energyExtent !== undefined ||
+    materialExtent !== undefined ||
+    patternGeometry !== undefined;
   const flameHeight = finite(
     request.effect === 'fire' ? (request.options.flameHeight ?? 24) : 24,
     effect,
@@ -195,6 +224,9 @@ export function attachWithAdapters(
         return Promise.resolve(undefined);
       }
       const relativePadding = (width: number, height: number, dpr: number) => {
+        if (energyExtent !== undefined) {
+          return energyExtentPadding(effect, energyReach(width, height), dpr);
+        }
         if (materialExtent) {
           return materialPadding(width, height, dpr, materialExtent);
         }
@@ -203,8 +235,6 @@ export function attachWithAdapters(
           ? patternPadding(geometry, dpr)
           : fireReachPadding(height, flameReach ?? 0, dpr);
       };
-      const relative =
-        flameReach !== undefined || materialExtent !== undefined || patternGeometry !== undefined;
       if (relative) {
         assertRelativeEffectSource(target);
       }
@@ -241,9 +271,15 @@ export function attachWithAdapters(
                 frame.contentBounds.width,
                 frame.contentBounds.height,
               );
-              const support = geometry
-                ? patternSupport(geometry)
-                : frame.contentBounds.height * (flameReach ?? 0);
+              let support = frame.contentBounds.height * (flameReach ?? 0);
+              if (energyExtent !== undefined) {
+                support = energyExtentSupport(
+                  effect,
+                  energyReach(frame.contentBounds.width, frame.contentBounds.height),
+                );
+              } else if (geometry) {
+                support = patternSupport(geometry);
+              }
               assertEffectPaintMargin(frame, support);
             } catch (error) {
               frame.release();
@@ -708,6 +744,12 @@ export function attachWithAdapters(
       let geometry: EffectGeometry | undefined;
       if (materialExtent) {
         geometry = materialGeometry(frame, materialExtent);
+      } else if (energyExtent !== undefined) {
+        geometry = {
+          pixelToLocal: frame.pixelToLocal,
+          directionalReach: energyReach(frame.contentBounds.width, frame.contentBounds.height),
+          inwardDepth: 3,
+        };
       } else if (flameReach !== undefined) {
         geometry = {
           pixelToLocal: frame.pixelToLocal,
@@ -859,10 +901,7 @@ export function attachWithAdapters(
 
   function observeDpr() {
     dprQuery?.removeEventListener('change', dprChanged);
-    if (
-      (flameReach !== undefined || materialExtent !== undefined || patternGeometry !== undefined) &&
-      view
-    ) {
+    if (relative && view) {
       dprQuery = view.matchMedia(`(resolution: ${view.devicePixelRatio}dppx)`);
       dprQuery.addEventListener('change', dprChanged);
     }

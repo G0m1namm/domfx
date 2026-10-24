@@ -820,7 +820,7 @@ export function attachWithAdapters(
 
   function observeDpr() {
     dprQuery?.removeEventListener('change', dprChanged);
-    if (flameReach !== undefined && view) {
+    if ((flameReach !== undefined || materialExtent !== undefined) && view) {
       dprQuery = view.matchMedia(`(resolution: ${view.devicePixelRatio}dppx)`);
       dprQuery.addEventListener('change', dprChanged);
     }

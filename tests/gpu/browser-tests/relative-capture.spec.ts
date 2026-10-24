@@ -81,6 +81,70 @@ test('raw text outside the source viewport is rejected before paint is cropped',
   expect(result.canvases).toBe(0);
 });
 
+test('boxless generated paint is rejected even when its owner hides its own text', async ({
+  page,
+}, info) => {
+  await page.goto('/manual.html');
+  await page.evaluate(() => window.manual.effect.ready);
+  const result = await page.evaluate(async () => {
+    window.manual.effect.dispose();
+    const host = document.createElement('div');
+    host.style.cssText = 'position:absolute;left:80px;top:80px;width:200px;height:200px';
+    const style = document.createElement('style');
+    style.textContent =
+      '.relative-escaped-before::before,.relative-escaped-after::after { content:"Escaped text";position:absolute;left:1000px;top:0;visibility:visible }';
+    host.append(style);
+    document.body.append(host);
+    const results = [];
+    for (const pseudo of ['before', 'after']) {
+      for (const boxless of [true, false]) {
+        for (const hidden of [false, true]) {
+          for (const relative of [true, false]) {
+            const target = document.createElement('div');
+            target.style.cssText =
+              'position:relative;width:100px;height:100px;background:white;color:white;font:16px/20px sans-serif;overflow:visible';
+            const span = document.createElement('span');
+            span.className = `relative-escaped-${pseudo}`;
+            span.style.cssText = `display:${boxless ? 'contents' : 'inline'};visibility:${hidden ? 'hidden' : 'visible'}`;
+            target.append(span);
+            host.append(target);
+            const effect = window.manual.attach(target, {
+              host,
+              ...(relative ? { flameReach: 0.1 } : {}),
+            });
+            await effect.ready;
+            results.push({
+              pseudo,
+              boxless,
+              hidden,
+              relative,
+              lifecycle: effect.lifecycle,
+              reason: effect.reason,
+            });
+            effect.dispose();
+            target.remove();
+          }
+        }
+      }
+    }
+    const canvases = host.querySelectorAll('canvas').length;
+    host.remove();
+    return { results, canvases };
+  });
+  await info.attach('boxless-generated-admission.json', {
+    body: JSON.stringify(result),
+    contentType: 'application/json',
+  });
+  for (const sample of result.results) {
+    expect(sample).toMatchObject(
+      sample.relative
+        ? { lifecycle: 'unavailable', reason: 'missing-exterior' }
+        : { lifecycle: 'active', reason: undefined },
+    );
+  }
+  expect(result.canvases).toBe(0);
+});
+
 test('all 21 relative resolution listeners recapture on a synthetic event and detach on disposal', async ({
   page,
 }, info) => {

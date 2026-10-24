@@ -6,14 +6,20 @@ import { createCaptureRevisions } from './capture-revision.js';
 import { diagnosticsFor } from './diagnostics.js';
 import type { DitherOptions } from './dither-options.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
-import { assertFirePaintMargin, fireReachPadding } from './effect-geometry.js';
+import { assertFirePaintMargin, fireReachPadding, type EffectGeometry } from './effect-geometry.js';
 import type { ElectricityOptions } from './electricity-options.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
 import type { RenderEffect } from './gpu.js';
 import type { KineticOptions } from './kinetic-options.js';
 import { memoryFor } from './memory.js';
-import type { PatternEffect, PatternOptions } from './pattern-options.js';
+import { patternPadding, patternSupport, resolvePatternGeometry } from './pattern-geometry.js';
+import type {
+  BrushFringeOptions,
+  ContourEchoesOptions,
+  PatternEffect,
+  PatternOptions,
+} from './pattern-options.js';
 import {
   assertEffectComposition,
   isPlacementMutation,
@@ -53,7 +59,10 @@ export function attachWithAdapters(
     | { effect: 'slime'; options: SlimeOptions }
     | { effect: 'burned-paper'; options: BurnedPaperOptions }
     | { effect: 'dither'; options: DitherOptions }
-    | { effect: PatternEffect; options: PatternOptions },
+    | {
+        effect: PatternEffect;
+        options: PatternOptions | ContourEchoesOptions | BrushFringeOptions;
+      },
   adapters: AttachmentAdapters,
   measurePlacement = measureEffectPlacement,
 ): EffectHandle {
@@ -93,6 +102,8 @@ export function attachWithAdapters(
     throw new Error('effect-target-owned');
   }
 
+  const patternOptions = { ...options };
+  const patternGeometry = resolvePatternGeometry(effect, patternOptions, 0, 0);
   const seed = finite(options.seed === undefined ? 0 : options.seed, effect);
   const flameReach = request.effect === 'fire' ? request.options.flameReach : undefined;
   if (
@@ -150,12 +161,17 @@ export function attachWithAdapters(
       if (!current()) {
         return Promise.resolve(undefined);
       }
-      const relativePadding = (_width: number, height: number, dpr: number) =>
-        fireReachPadding(height, flameReach ?? 0, dpr);
-      const padding =
-        flameReach === undefined
-          ? paddingCss
-          : relativePadding(0, targetSize().height, view.devicePixelRatio);
+      const relative = flameReach !== undefined || patternGeometry !== undefined;
+      const relativePadding = (width: number, height: number, dpr: number) => {
+        const geometry = resolvePatternGeometry(effect, patternOptions, width, height);
+        return geometry
+          ? patternPadding(geometry, dpr)
+          : fireReachPadding(height, flameReach ?? 0, dpr);
+      };
+      const size = targetSize();
+      const padding = relative
+        ? relativePadding(size.width, size.height, view.devicePixelRatio)
+        : paddingCss;
       const estimate = measureCapture(target, padding);
       observedSize = targetSize();
       reserve(estimate.width, estimate.height);
@@ -165,7 +181,7 @@ export function attachWithAdapters(
           target,
           {
             paddingCss: padding,
-            resolvePadding: flameReach === undefined ? undefined : relativePadding,
+            resolvePadding: relative ? relativePadding : undefined,
           },
           reserve,
           () => {
@@ -174,9 +190,18 @@ export function attachWithAdapters(
           },
         )
         .then((frame) => {
-          if (flameReach !== undefined) {
+          if (relative) {
             try {
-              assertFirePaintMargin(frame, frame.contentBounds.height * flameReach);
+              const geometry = resolvePatternGeometry(
+                effect,
+                patternOptions,
+                frame.contentBounds.width,
+                frame.contentBounds.height,
+              );
+              const support = geometry
+                ? patternSupport(geometry)
+                : frame.contentBounds.height * (flameReach ?? 0);
+              assertFirePaintMargin(frame, support);
             } catch (error) {
               frame.release();
               throw error;
@@ -623,6 +648,24 @@ export function attachWithAdapters(
     }
 
     if (dirty) {
+      let geometry: EffectGeometry | undefined;
+      if (flameReach !== undefined) {
+        geometry = {
+          pixelToLocal: frame.pixelToLocal,
+          directionalReach: frame.contentBounds.height * flameReach,
+          inwardDepth: 3,
+        };
+      } else if (patternGeometry) {
+        geometry = {
+          pixelToLocal: frame.pixelToLocal,
+          ...(resolvePatternGeometry(
+            effect,
+            patternOptions,
+            frame.contentBounds.width,
+            frame.contentBounds.height,
+          ) ?? patternGeometry),
+        };
+      }
       prepared.render(
         motionPolicy === 'static' ? 0 : time,
         seed,
@@ -631,13 +674,7 @@ export function attachWithAdapters(
         undefined,
         flameHeight,
         effect,
-        flameReach === undefined
-          ? undefined
-          : {
-              pixelToLocal: frame.pixelToLocal,
-              directionalReach: frame.contentBounds.height * flameReach,
-              inwardDepth: 3,
-            },
+        geometry,
       );
       prepared.present(output.getCurrentTexture());
       dirty = false;
@@ -992,7 +1029,7 @@ export function attachDitherWithAdapters(
 export function attachPatternWithAdapters(
   target: Element,
   effect: PatternEffect,
-  options: PatternOptions,
+  options: PatternOptions | ContourEchoesOptions | BrushFringeOptions,
   adapters: AttachmentAdapters,
 ): EffectHandle {
   return attachWithAdapters(target, { effect, options }, adapters);

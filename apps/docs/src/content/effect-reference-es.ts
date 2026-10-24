@@ -8,7 +8,8 @@ export const effectReferenceEs = {
   frost: {
     description:
       'Una capa de hielo blanco azulado con humo tenue y pequeñas partículas de escarcha.',
-    intensity: 'Extiende la escarcha hacia dentro y refuerza el humo y las partículas.',
+    intensity:
+      'El modo anterior extiende la escarcha hacia dentro y refuerza la niebla y las partículas. Con coatingDepth o mistReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero.',
   },
   fire: {
     description: 'Llamas cálidas y chispas se elevan desde la forma visible.',
@@ -21,7 +22,8 @@ export const effectReferenceEs = {
   },
   slime: {
     description: 'Una capa verde brillante con gotas que se estiran y caen.',
-    intensity: 'Refuerza la capa y acentúa el goteo.',
+    intensity:
+      'El modo anterior cambia la geometría de la capa y las gotas. Con coatingDepth o dripReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero.',
   },
   kinetic: {
     description:
@@ -32,7 +34,7 @@ export const effectReferenceEs = {
     description:
       'Un borde carbonizado irregular con zonas quemadas marrones y algunas grietas luminosas.',
     intensity:
-      'Extiende la quemadura hacia dentro sin ensanchar el borde exterior. El contenido original permanece intacto.',
+      'El modo anterior extiende la quemadura hacia dentro y refuerza la ceniza. Con scorchDepth o ashReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero. El contenido original permanece intacto.',
   },
   halftone: {
     description: 'Puntos de semitono siguen el borde.',

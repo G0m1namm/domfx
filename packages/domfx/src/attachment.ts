@@ -12,6 +12,13 @@ import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
 import type { RenderEffect } from './gpu.js';
 import type { KineticOptions } from './kinetic-options.js';
+import {
+  materialExtentOptions,
+  materialPadding,
+  materialGeometry,
+  materialSupport,
+  type MaterialExtent,
+} from './material-geometry.js';
 import { memoryFor } from './memory.js';
 import type { PatternEffect, PatternOptions } from './pattern-options.js';
 import {
@@ -95,6 +102,26 @@ export function attachWithAdapters(
 
   const seed = finite(options.seed === undefined ? 0 : options.seed, effect);
   const flameReach = request.effect === 'fire' ? request.options.flameReach : undefined;
+  let materialExtent: MaterialExtent | undefined;
+  if (request.effect === 'frost') {
+    materialExtent = materialExtentOptions(
+      request.options.coatingDepth,
+      request.options.mistReach,
+      effect,
+    );
+  } else if (request.effect === 'slime') {
+    materialExtent = materialExtentOptions(
+      request.options.coatingDepth,
+      request.options.dripReach,
+      effect,
+    );
+  } else if (request.effect === 'burned-paper') {
+    materialExtent = materialExtentOptions(
+      request.options.scorchDepth,
+      request.options.ashReach,
+      effect,
+    );
+  }
   if (
     flameReach !== undefined &&
     (typeof flameReach !== 'number' ||
@@ -150,12 +177,16 @@ export function attachWithAdapters(
       if (!current()) {
         return Promise.resolve(undefined);
       }
-      const relativePadding = (_width: number, height: number, dpr: number) =>
-        fireReachPadding(height, flameReach ?? 0, dpr);
-      const padding =
-        flameReach === undefined
-          ? paddingCss
-          : relativePadding(0, targetSize().height, view.devicePixelRatio);
+      const relativePadding = (width: number, height: number, dpr: number) => {
+        if (materialExtent) {
+          return materialPadding(width, height, dpr, materialExtent);
+        }
+        return fireReachPadding(height, flameReach ?? 0, dpr);
+      };
+      const relative = flameReach !== undefined || materialExtent !== undefined;
+      const padding = relative
+        ? relativePadding(targetSize().width, targetSize().height, view.devicePixelRatio)
+        : paddingCss;
       const estimate = measureCapture(target, padding);
       observedSize = targetSize();
       reserve(estimate.width, estimate.height);
@@ -165,7 +196,7 @@ export function attachWithAdapters(
           target,
           {
             paddingCss: padding,
-            resolvePadding: flameReach === undefined ? undefined : relativePadding,
+            resolvePadding: relative ? relativePadding : undefined,
           },
           reserve,
           () => {
@@ -177,6 +208,19 @@ export function attachWithAdapters(
           if (flameReach !== undefined) {
             try {
               assertFirePaintMargin(frame, frame.contentBounds.height * flameReach);
+            } catch (error) {
+              frame.release();
+              throw error;
+            }
+          }
+          if (materialExtent) {
+            try {
+              const geometry = materialGeometry(frame, materialExtent);
+              assertFirePaintMargin(
+                frame,
+                materialSupport(geometry.directionalReach, geometry.inwardDepth),
+                effect,
+              );
             } catch (error) {
               frame.release();
               throw error;
@@ -623,6 +667,16 @@ export function attachWithAdapters(
     }
 
     if (dirty) {
+      let geometry;
+      if (materialExtent) {
+        geometry = materialGeometry(frame, materialExtent);
+      } else if (flameReach !== undefined) {
+        geometry = {
+          pixelToLocal: frame.pixelToLocal,
+          directionalReach: frame.contentBounds.height * flameReach,
+          inwardDepth: 3,
+        };
+      }
       prepared.render(
         motionPolicy === 'static' ? 0 : time,
         seed,
@@ -631,13 +685,7 @@ export function attachWithAdapters(
         undefined,
         flameHeight,
         effect,
-        flameReach === undefined
-          ? undefined
-          : {
-              pixelToLocal: frame.pixelToLocal,
-              directionalReach: frame.contentBounds.height * flameReach,
-              inwardDepth: 3,
-            },
+        geometry,
       );
       prepared.present(output.getCurrentTexture());
       dirty = false;

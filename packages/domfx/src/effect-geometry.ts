@@ -25,7 +25,7 @@ export function fireReachPadding(height: number, fraction: number, dpr: number):
 /** Relative mode supports paint within two CSS px of the target border box.
  * Check every nontransparent sample, not merely the existence of exterior pixels.
  */
-export function assertFirePaintMargin(frame: CaptureFrame, reach: number): void {
+export function assertFirePaintMargin(frame: CaptureFrame, reach: number, effect = 'Fire'): void {
   const { a, d, e, f } = frame.pixelToLocal;
   const guard = 2 + 2 * Math.max(a, d);
   const { x, y, width, height } = frame.contentBounds;
@@ -48,7 +48,7 @@ export function assertFirePaintMargin(frame: CaptureFrame, reach: number): void 
       ) {
         throw new EffectError(
           'missing-exterior',
-          'Relative Fire requires paint within the target border box plus 2 CSS px and its full reserved margin.',
+          `Relative ${effect} requires paint within the target border box plus 2 CSS px and its full reserved margin.`,
         );
       }
     }

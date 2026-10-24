@@ -602,3 +602,49 @@ currently exported.
 - `attachCircuits`
 - `attachStarShimmer`
 - `attachBrushFringe`
+
+### Relative material extents
+
+Frost, Slime and Burned paper accept additive, creation-only fractions:
+
+| Effect       | Inward depth / shorter border-box side | Directional travel / border-box height    |
+| ------------ | -------------------------------------- | ----------------------------------------- |
+| Frost        | `coatingDepth`                         | `mistReach` (mist and ice grains)         |
+| Slime        | `coatingDepth`                         | `dripReach` (attached and released drops) |
+| Burned paper | `scorchDepth`                          | `ashReach` (rising ash)                   |
+
+```ts
+const frost = attachFrost(target, { host, coatingDepth: 0.1, mistReach: 0.2 });
+const slime = attachSlime(target, { host, coatingDepth: 0.05, dripReach: 0.2 });
+const paper = attachBurnedPaper(target, { host, scorchDepth: 0.15, ashReach: 0.15 });
+```
+
+These values are examples, not defaults. Supplying either field selects relative
+mode and defaults its omitted partner to **zero**. Zero disables that component;
+both zero produce transparent output. Omit both for the original appearance and
+intensity behavior. Fractions must be finite and nonnegative; resolved float32
+lengths and padded captures must fit existing device and memory limits. A larger
+extent can make the effect unavailable; it is never silently reduced.
+
+The reference box is the untransformed target border box, including transparent
+in-box margins and excluding capture padding. For example, `mistReach: 0.2`
+allows 20 CSS pixels of travel on a 100px-high target and 80 on a 400px-high target.
+Resize resolves the fraction again. Supported placement transforms carry the
+output with the target; DPR changes raster resolution, not the ratio's basis.
+
+In relative mode, intensity scales premultiplied output uniformly; geometry,
+particle eligibility and fine detail do not depend on intensity. Noise/grain,
+particle spacing, neck/bead sizes and narrow lips stay in local CSS pixels.
+Scorching retains its local thin-shape caps. Travel is a permitted envelope, not
+a guaranteed visible tip. Fixed marks and joins reserve up to 8 additional CSS
+pixels beyond travel; material lips reserve up to 6 outside the silhouette.
+Depth is a maximum inward allowance, with a fading material front.
+
+Relative material mode uses the same bounded-source-paint policy as relative
+Fire: paint stays inside the border box plus 2 CSS pixels and has its full
+reserved margin. Shadows, filters, outlines, generated paint and overflowing
+descendant paint are unsupported. The original target stays usable on failure.
+Host/ancestor clipping still applies. Extents have no writable setters: dispose
+and create another instance to change them; ordinary intensity updates do not
+recapture or allocate. The effect remains procedural at absolute time, supporting
+repeatable seeks and reverse playback.

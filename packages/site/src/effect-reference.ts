@@ -8,7 +8,8 @@ export const effectReference = {
   },
   frost: {
     description: 'A white-blue ice coating with pale smoke and small frost particles.',
-    intensity: 'Extends the frost inward and strengthens the smoke and particles.',
+    intensity:
+      'Legacy mode extends frost inward and strengthens mist and particles. With coatingDepth or mistReach, intensity scales strength only; omitted extents are zero.',
   },
   fire: {
     description: 'Warm flames and sparks rise from the visible shape.',
@@ -21,7 +22,8 @@ export const effectReference = {
   },
   slime: {
     description: 'A glossy green coating with drips that stretch and fall.',
-    intensity: 'Strengthens the coating and drips.',
+    intensity:
+      'Legacy mode changes coating and drip geometry. With coatingDepth or dripReach, intensity scales strength only; omitted extents are zero.',
   },
   kinetic: {
     description:
@@ -31,7 +33,7 @@ export const effectReference = {
   'burned-paper': {
     description: 'An uneven charred rim with brown scorching and sparse glowing seams.',
     intensity:
-      'Spreads the scorching inward while keeping the outer rim narrow. The original content remains intact.',
+      'Legacy mode spreads scorching inward and strengthens ash. With scorchDepth or ashReach, intensity scales strength only; omitted extents are zero. The original content remains intact.',
   },
   halftone: {
     description: 'Halftone dots follow the edge.',

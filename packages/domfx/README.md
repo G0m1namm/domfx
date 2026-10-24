@@ -323,10 +323,10 @@ is used to fit a budget. Pixel rejection reports `capture-budget`, per-target re
 `target-budget`, and Document rejection `aggregate-budget`. Refresh budget failures
 reject the promise and leave the attachment unavailable with stale, hidden output.
 
-For a raster of P pixels, known managed GPU allocations are 36P + 20 bytes (source,
+For a raster of P pixels, known managed GPU allocations are 36P + 52 bytes (source,
 SDF/JFA, fire texture and uniforms). Admission additionally estimates 4P bytes for one
 RGBA output surface and reserves 4P CPU capture bytes until the capture frame is
-released: 44P + 20 pending, then 40P + 20 retained. Actual SnapDOM dimensions are
+released: 44P + 52 pending, then 40P + 52 retained. Actual SnapDOM dimensions are
 checked before rasterization; returned capture dimensions and prepared-frame bytes
 are reconciled before presentation. Reconciliation replaces an entry, so estimates
 and their actual resources are never added twice. The previous frame remains charged

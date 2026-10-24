@@ -1,6 +1,57 @@
 import { expect, test } from '@playwright/test';
 
 import type {} from '../src/effects.js';
+import type {} from '../src/manual.js';
+
+test('raw text outside the source viewport is rejected before paint is cropped', async ({
+  page,
+}, info) => {
+  await page.goto('/manual.html');
+  await page.evaluate(() => window.manual.effect.ready);
+  const result = await page.evaluate(async () => {
+    window.manual.effect.dispose();
+    const host = document.createElement('div');
+    host.style.cssText = 'position:absolute;left:80px;top:80px;width:200px;height:200px';
+    document.body.append(host);
+    const results = [];
+    for (const [indent, relative] of [
+      [200, true],
+      [1000, true],
+      [0, true],
+      [200, false],
+    ] as const) {
+      const target = document.createElement('div');
+      target.style.cssText = `width:100px;height:100px;background:white;color:white;font:16px/20px sans-serif;white-space:nowrap;overflow:visible;text-indent:${indent}px`;
+      target.textContent = 'Escaped text';
+      host.append(target);
+      const effect = window.manual.attach(target, {
+        host,
+        ...(relative ? { flameReach: 0.1 } : {}),
+      });
+      await effect.ready;
+      results.push({ indent, relative, lifecycle: effect.lifecycle, reason: effect.reason });
+      effect.dispose();
+      target.remove();
+    }
+    const canvases = host.querySelectorAll('canvas').length;
+    host.remove();
+    return { results, canvases };
+  });
+  await info.attach('raw-text-admission.json', {
+    body: JSON.stringify(result),
+    contentType: 'application/json',
+  });
+  expect(result.results.slice(0, 2)).toEqual(
+    [200, 1000].map((indent) => ({
+      indent,
+      relative: true,
+      lifecycle: 'unavailable',
+      reason: 'missing-exterior',
+    })),
+  );
+  expect(result.results.slice(2).map((sample) => sample.lifecycle)).toEqual(['active', 'active']);
+  expect(result.canvases).toBe(0);
+});
 
 test('all 21 relative resolution listeners recapture on a synthetic event and detach on disposal', async ({
   page,

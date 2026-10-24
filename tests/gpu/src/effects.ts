@@ -7,6 +7,7 @@ import {
   qualifyRelativeCatalog,
   qualifyRelativeResolutionListeners,
 } from './relative-qualification.js';
+import { verifyRelativeSizes } from './relative-size-checks.js';
 
 async function renderEffects(targetId: string, dpr: number) {
   await document.fonts.ready;
@@ -62,12 +63,14 @@ declare global {
     qualifyRelativeCapture: typeof qualifyRelativeCapture;
     qualifyRelativeCatalog: typeof qualifyRelativeCatalog;
     qualifyRelativeResolutionListeners: typeof qualifyRelativeResolutionListeners;
+    verifyRelativeSizes: typeof verifyRelativeSizes;
   }
 }
 window.renderEffects = renderEffects;
 window.qualifyRelativeCapture = qualifyRelativeCapture;
 window.qualifyRelativeCatalog = qualifyRelativeCatalog;
 window.qualifyRelativeResolutionListeners = qualifyRelativeResolutionListeners;
+window.verifyRelativeSizes = verifyRelativeSizes;
 
 async function traceEffects() {
   document.body.style.position = 'relative';

@@ -1,4 +1,5 @@
 import { EffectError } from './effect-error.js';
+import { scaleToViewport } from './placement.js';
 
 /** Certify the bounded source policy before capture can omit distant paint.
  * Raster admission then checks actual alpha and the complete free margin.
@@ -9,6 +10,7 @@ export function assertRelativeEffectSource(target: Element): void {
     throw new EffectError('missing-exterior');
   }
   const box = target.getBoundingClientRect();
+  const scale = scaleToViewport(target);
   for (const element of [target, ...target.querySelectorAll('*')]) {
     const style = view.getComputedStyle(element);
     if (
@@ -23,6 +25,29 @@ export function assertRelativeEffectSource(target: Element): void {
       const content = view.getComputedStyle(element, pseudo).content;
       return content !== 'none' && content !== 'normal';
     });
+    // Element rectangles omit raw text displaced by indentation or wrapping.
+    // Reject escaping text before the bounded source viewport can crop it;
+    // the raster still checks actual glyph alpha against the 2 CSS-pixel limit.
+    for (const child of element.childNodes) {
+      if (child.nodeType !== view.Node.TEXT_NODE || !child.textContent?.trim()) {
+        continue;
+      }
+      const range = target.ownerDocument.createRange();
+      range.selectNodeContents(child);
+      for (const text of range.getClientRects()) {
+        if (
+          text.left < box.left - 2 * scale.x ||
+          text.top < box.top - 2 * scale.y ||
+          text.right > box.right + 2 * scale.x ||
+          text.bottom > box.bottom + 2 * scale.y
+        ) {
+          throw new EffectError(
+            'missing-exterior',
+            'Relative effects require contained text paint.',
+          );
+        }
+      }
+    }
     if (
       style.boxShadow !== 'none' ||
       style.textShadow !== 'none' ||

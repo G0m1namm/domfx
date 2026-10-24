@@ -68,7 +68,8 @@ for (const kind of ['electricity', 'kinetic'] as const) {
       expect(flat[2].detailWidths.length).toBeGreaterThan(0);
       expect(
         Math.abs(median(flat[1].detailWidths) - median(flat[2].detailWidths)),
-        // Rasterized run widths have two independently quantized edges.
+        // Mixed thresholded runs vary with sampling/population and raster edges;
+        // these are not matched individual shards or a pure quantization proof.
       ).toBeLessThanOrEqual(Math.max(1.5, 2 / dpr));
       expect(Math.max(...flat[2].detailWidths)).toBeLessThanOrEqual(10);
 

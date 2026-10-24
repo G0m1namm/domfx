@@ -13,7 +13,7 @@ export const effectReferenceEs = {
   fire: {
     description: 'Llamas cálidas y chispas se elevan desde la forma visible.',
     intensity:
-      'Aumenta el alcance y el brillo de las llamas. Usa flameHeight para fijar su escala al crear el efecto.',
+      'Con flameReach, cambia la fuerza visual sin cambiar el alcance ni el detalle fino. Omitir flameReach conserva la intensidad y flameHeight anteriores.',
   },
   dither: {
     description: 'Puntos ordenados cubren el borde y forman estelas ascendentes.',

@@ -57,7 +57,7 @@ pipelines; formats, allocation accounting and alpha threshold remain unchanged.
 Jump flooding remains approximate; the verified fixtures do not prove an error bound
 for arbitrary paint. No dependency version upgrade is involved.
 
-Prepared frames account for 36 bytes per pixel of textures, a 16-byte fire uniform,
+Prepared frames account for 36 bytes per pixel of textures, a 16-byte legacy parameter uniform, a 32-byte local geometry uniform,
 and the observed 4-byte JFA offset buffer (`i32`, TypeGPU 0.12.4). Destroying a frame
 releases all of these allocations; zero offset bytes remain per destroyed frame,
 so the bound does not grow with refresh count. Destroying the service releases its
@@ -574,11 +574,46 @@ Run `pnpm --filter @domfx/gpu-tests exec vite --host 127.0.0.1` and open `/manua
 Zero intensity and Dispose controls. The browser suite covers it in development
 and production alongside the existing numerical capture/fire fixtures.
 
+## Relative Fire reach
+
+```ts
+const fire = attachFire(target, { host, flameReach: 0.1, intensity: 0.8 });
+```
+
+`flameReach` is a finite nonnegative fraction of the untransformed target border-box
+height, including transparent margins: `0.1` resolves to 10 CSS px at 100 px height,
+and 40 CSS px at 400 px height. It bounds positive signed distance and upward travel,
+not a guaranteed visible tip. Fine detail stays in target-local CSS pixels. In this
+mode intensity scales premultiplied output; it changes strength independently of
+geometry/detail. Zero reach or intensity is transparent. Omission preserves the
+legacy defaults, artistic `flameHeight` scale (8–64, default 24), and intensity behavior.
+Combining both options throws synchronously before ownership is acquired.
+
+Reach is creation-only, with no writable setter. It resolves from each captured local
+border box after resize. DPR/fractional raster mapping apply once; supported positive
+scale and translation follow placement without recapturing. Intensity writes do not
+capture or allocate.
+
+Relative mode reserves symmetric padding of `ceil(reach + 4 + 2 / DPR)` CSS px,
+minimum 8. This includes 2 CSS px of paint allowance and a sampling guard of
+2 CSS px plus 2 raster pixels (bilinear sampling, pixel-center classification and
+half-float distance rounding). Descendant boxes must stay within the target;
+shadows, filters, outlines and generated pseudo-elements are unsupported. Actual
+paint must fit the border box plus 2 CSS px. Every captured alpha sample must leave
+the complete reach and sampling margin; failure reports `missing-exterior` without
+hiding the original target. Arbitrary distant overflow paint is not supported.
+
+The existing 1,000,000-raster-pixel, managed-memory and device-dimension gates still
+apply, including pending and replacement captures. Excess reach becomes unavailable
+instead of clipping or reducing quality. For example, a 400×400 target at DPR 2
+with `flameReach: 0.2` fails the pixel gate; use a smaller reach/target or lower DPR.
+These limits measure managed allocations, not total process memory.
+
 ## Available effect functions
 
 Import any of these from `@domfx/browser`. All accept the shared options.
-Fire adds its creation-only geometric options; patterns add the effect-owned relative
-extents below. Time and intensity remain
+Fire adds mutually exclusive creation-only `flameHeight` and `flameReach` options;
+patterns add the effect-owned relative extents below. Time and intensity remain
 the shared writable controls. No color, gradient or particle-count controls are
 currently exported.
 

@@ -135,6 +135,7 @@ export function attachWithAdapters(
   );
 
   const motion = view.matchMedia('(prefers-reduced-motion: reduce)');
+  let dprQuery: MediaQueryList | undefined;
   const scheduler = schedulerFor(document, view);
   const now = () => view.performance.now();
   const targetStyle = view.getComputedStyle.bind(view, target);
@@ -410,6 +411,8 @@ export function attachWithAdapters(
     view?.removeEventListener('resize', observePaint);
     document.removeEventListener('visibilitychange', visibilityChanged);
     motion.removeEventListener('change', suspendForMotion);
+    dprQuery?.removeEventListener('change', dprChanged);
+    dprQuery = undefined;
 
     context?.unconfigure();
     context = null;
@@ -809,6 +812,19 @@ export function attachWithAdapters(
     }
   }
 
+  function observeDpr() {
+    dprQuery?.removeEventListener('change', dprChanged);
+    if ((flameReach !== undefined || patternGeometry !== undefined) && view) {
+      dprQuery = view.matchMedia(`(resolution: ${view.devicePixelRatio}dppx)`);
+      dprQuery.addEventListener('change', dprChanged);
+    }
+  }
+
+  function dprChanged() {
+    observeDpr();
+    observePaint();
+  }
+
   function observe() {
     for (let ancestor = target.parentNode; ancestor; ancestor = ancestor.parentNode) {
       connectionObserver.observe(ancestor, { childList: true });
@@ -832,6 +848,7 @@ export function attachWithAdapters(
     view?.addEventListener('resize', observePaint);
     document.addEventListener('visibilitychange', visibilityChanged);
     motion.addEventListener('change', suspendForMotion);
+    observeDpr();
   }
 
   function initialize() {

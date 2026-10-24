@@ -184,12 +184,12 @@ test('Spanish Fire lab retains playback, tuning and valid code', async ({ page }
   await expect(lab).toHaveAttribute('data-paused', 'false');
   await lab.getByRole('slider', { name: 'Intensidad de Fire' }).fill('45');
   await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
-  await lab.getByRole('slider', { name: 'Altura de las llamas de Fire' }).fill('40');
-  await expect(lab.locator('[data-docs-lab-height-code]')).toHaveText('40');
+  await lab.getByRole('slider', { name: 'Alcance de las llamas de Fire' }).fill('25');
+  await expect(lab.locator('[data-docs-lab-reach-code]')).toHaveText('0.25');
   await lab.getByRole('radio', { name: 'SVG' }).check();
   await expect(lab.locator('[data-docs-lab-target="svg"]')).toBeVisible();
   await expect(lab).toHaveAttribute('data-status', 'active');
-  expect(await lab.locator('[data-docs-lab-code]').textContent()).toContain('flameHeight: 40');
+  expect(await lab.locator('[data-docs-lab-code]').textContent()).toContain('flameReach: 0.25');
 });
 
 test('Spanish lab explains reduced motion and requires an explicit restart', async ({ page }) => {

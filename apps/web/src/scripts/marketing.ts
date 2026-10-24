@@ -48,6 +48,7 @@ function initializeMarketing() {
   const intensity = required<HTMLInputElement>('#effect-intensity');
   const creationControls = required<HTMLFieldSetElement>('[data-creation-controls]', dialog);
   const dialogScene = required<HTMLElement>('.dialog-scene', dialog);
+  const previewVisibility = required<HTMLElement>('.preview-visibility', dialogScene);
   const dialogStage = required<HTMLElement>('.dialog-stage', dialog);
   const zoomOut = required<HTMLButtonElement>('[data-zoom-out]', dialog);
   const zoomIn = required<HTMLButtonElement>('[data-zoom-in]', dialog);
@@ -113,12 +114,19 @@ function initializeMarketing() {
   });
   let previewTarget: HTMLElement | undefined;
   let previewVisible = false;
-  // Creation controls can scroll the target out of a narrow dialog. Wait for
-  // its full return before capture instead of starting an already stale raster.
+  // Gate capture on the target's layout box, independent of camera zoom/pan.
+  // Creation controls can still scroll that box out of a narrow dialog.
+  function updatePreviewVisibilitySize() {
+    if (previewTarget) {
+      previewVisibility.style.width = `${previewTarget.offsetWidth}px`;
+      previewVisibility.style.height = `${previewTarget.offsetHeight}px`;
+    }
+  }
+  const previewSizeObserver = new ResizeObserver(updatePreviewVisibilitySize);
   const previewObserver = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
-        if (entry.target !== previewTarget) {
+        if (entry.target !== previewVisibility) {
           continue;
         }
         const visible = entry.intersectionRatio >= 0.99;
@@ -660,6 +668,7 @@ function initializeMarketing() {
 
   function showDialogEffect() {
     previewObserver.disconnect();
+    previewSizeObserver.disconnect();
     previewVisible = false;
     dialogSlot.clear();
     const target = document.createElement('span');
@@ -686,7 +695,9 @@ function initializeMarketing() {
     }
     dialogStage.replaceChildren(target);
     previewTarget = target;
-    previewObserver.observe(target);
+    updatePreviewVisibilitySize();
+    previewSizeObserver.observe(target);
+    previewObserver.observe(previewVisibility);
     required('#dialog-title', dialog).textContent = selectedEffect.name;
     required<HTMLAnchorElement>('[data-effect-reference]', dialog).href = localePath(
       { kind: 'effect-reference', effect: selectedEffect.id },
@@ -866,6 +877,7 @@ function initializeMarketing() {
   on(dialog, 'close', () => {
     backdropPointer = undefined;
     previewObserver.disconnect();
+    previewSizeObserver.disconnect();
     previewVisible = false;
     previewTarget = undefined;
     dialogSlot.clear();
@@ -957,6 +969,7 @@ function initializeMarketing() {
     window.clearTimeout(toastTimer);
     closingObserver.disconnect();
     previewObserver.disconnect();
+    previewSizeObserver.disconnect();
     closingSlot.dispose();
     clearCards();
     dialogSlot.dispose();

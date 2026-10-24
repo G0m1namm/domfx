@@ -434,6 +434,9 @@ footer nav {
   min-block-size: max(2.75rem, 44px);
   margin: 0;
 }
+.effect-creation-row input:focus-visible {
+  outline-offset: -2px;
+}
 .effect-creation-row small {
   display: block;
   color: var(--muted);
@@ -2207,6 +2210,13 @@ html[data-initial-audience='agents'] #humans-panel {
 }
 .dialog-scene:focus-visible {
   outline-offset: -5px;
+}
+.preview-visibility {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 .dialog-stage {
   position: absolute;

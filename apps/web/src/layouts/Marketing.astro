@@ -69,6 +69,7 @@ const controlBasis = {
 <template data-preview-svg><svg width="260" height="260" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg></template>
 <div class="dialog-top"><span>{m.preview}</span><button data-close aria-label={m.closePreview}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div><div class="dialog-layout"><div class="dialog-viewer">
   <div class="dialog-scene" tabindex="0" role="region" aria-label={m.previewRegion} aria-describedby="preview-zoom-hint">
+    <span class="preview-visibility" aria-hidden="true"></span>
     <div class="dialog-stage" data-effect-host><span class="dialog-target" data-dialog-target>{m.previewWord}</span></div>
   </div>
   <div class="preview-toolbar">

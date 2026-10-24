@@ -22,6 +22,11 @@ fn field(p: vec2f) -> vec3f {
                mix(c - a, d - b, blend.x) * unit / geometry.map.y);
 }
 
+// Upper metric bounds envelope membership; tracing retains the lower bound.
+fn envelopeDistance(distance: f32) -> f32 {
+  return distance * max(geometry.map.x, geometry.map.y) / min(geometry.map.x, geometry.map.y);
+}
+
 fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
   var height = 0.0;
   let direction = vec2f(bend / max(reach, 1), 1);
@@ -41,7 +46,7 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
 function relativeFlow(dither: boolean): string {
   return `
 fn densityAt(p: vec2f) -> vec3f {
-  let distance = field(p).x;
+  let distance = envelopeDistance(field(p).x);
   let reach = geometry.extent.x;
   let depth = geometry.extent.y;
   let seed = vec2f(sin(params.y) * 17, cos(params.y) * 23);
@@ -86,10 +91,9 @@ const echoes = `
 /** Artistic bristles stay bounded, so the original 3x3 neighbor search is complete:
  * the first omitted cell is >=9 CSS px away; a bristle reaches <5.1 CSS px.
  */
-const fringe = patternBodies['brush-fringe'].replace(
-  'let reach = 3 + intensity * 16;',
-  'let reach = geometry.extent.x;',
-);
+const fringe = patternBodies['brush-fringe']
+  .replaceAll('sample.x', 'envelopeDistance(sample.x)')
+  .replace('let reach = 3 + intensity * 16;', 'let reach = geometry.extent.x;');
 
 export function createRelativePatternShader(pattern: PatternEffect | 'dither'): string {
   const dither = pattern === 'dither';
@@ -127,8 +131,10 @@ ${relativeFlow(dither)}
   if (params.z <= 0 || ${radial ? 'geometry.extent.x == 0' : '(geometry.extent.x == 0 && geometry.extent.y == 0)'}) {
     return vec4f(0);
   }
-  let p = pos.xy * geometry.map.xy + geometry.map.zw;
-  let distance = field(p).x;
+  // Keep cell/noise phase stable under f32 cancellation from different padding.
+  // Quantization is <=1/8192 CSS px, far below the raster classification guard.
+  let p = round((pos.xy * geometry.map.xy + geometry.map.zw) * 4096) / 4096;
+  let distance = envelopeDistance(field(p).x);
   if (distance > geometry.extent.x + 6 || distance < -geometry.extent.y - 6) { return vec4f(0); }
   let intensity = 1.0;
   let aa = clamp(.45 * max(geometry.map.x, geometry.map.y), ${dither ? '.15' : '.12'}, .45);

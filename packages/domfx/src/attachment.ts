@@ -9,6 +9,7 @@ import { cssEffectError, EffectError, normalizeEffectError } from './effect-erro
 import { assertEffectPaintMargin, fireReachPadding } from './effect-geometry.js';
 import { assertRelativeEffectSource } from './effect-paint.js';
 import type { ElectricityOptions } from './electricity-options.js';
+import { energyExtentPadding, energyExtentSupport } from './energy-geometry.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
 import type { RenderEffect } from './gpu.js';
@@ -105,6 +106,34 @@ export function attachWithAdapters(
   ) {
     throw new Error('invalid-fire-parameter');
   }
+  let energyExtent: number | undefined;
+  if (request.effect === 'electricity') {
+    energyExtent = request.options.contourSpread;
+  } else if (request.effect === 'kinetic') {
+    energyExtent = request.options.fragmentTravel;
+  }
+  // JavaScript callers also reject energy options belonging to another effect.
+  if (
+    ('contourSpread' in options &&
+      options.contourSpread !== undefined &&
+      effect !== 'electricity') ||
+    ('fragmentTravel' in options && options.fragmentTravel !== undefined && effect !== 'kinetic')
+  ) {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+  if (
+    energyExtent !== undefined &&
+    (typeof energyExtent !== 'number' || !Number.isFinite(energyExtent) || energyExtent < 0)
+  ) {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+  const relative = flameReach !== undefined || energyExtent !== undefined;
+  const relativeReach = (width: number, height: number) =>
+    flameReach === undefined ? Math.min(width, height) * (energyExtent ?? 0) : height * flameReach;
+  const relativeSupport = (width: number, height: number) => {
+    const reach = relativeReach(width, height);
+    return energyExtent === undefined ? reach : energyExtentSupport(effect, reach);
+  };
   const flameHeight = finite(
     request.effect === 'fire' ? (request.options.flameHeight ?? 24) : 24,
     effect,
@@ -152,15 +181,16 @@ export function attachWithAdapters(
       if (!current()) {
         return Promise.resolve(undefined);
       }
-      if (flameReach !== undefined) {
+      if (relative) {
         assertRelativeEffectSource(target);
       }
-      const relativePadding = (_width: number, height: number, dpr: number) =>
-        fireReachPadding(height, flameReach ?? 0, dpr);
-      const padding =
-        flameReach === undefined
-          ? paddingCss
-          : relativePadding(0, targetSize().height, view.devicePixelRatio);
+      const relativePadding = (width: number, height: number, dpr: number) =>
+        energyExtent === undefined
+          ? fireReachPadding(height, flameReach ?? 0, dpr)
+          : energyExtentPadding(effect, relativeReach(width, height), dpr);
+      const padding = !relative
+        ? paddingCss
+        : relativePadding(targetSize().width, targetSize().height, view.devicePixelRatio);
       const estimate = measureCapture(target, padding);
       observedSize = targetSize();
       reserve(estimate.width, estimate.height);
@@ -170,21 +200,24 @@ export function attachWithAdapters(
           target,
           {
             paddingCss: padding,
-            resolvePadding: flameReach === undefined ? undefined : relativePadding,
+            resolvePadding: relative ? relativePadding : undefined,
           },
           reserve,
           () => {
             observedSize = targetSize();
             awaitingAssets = false;
-            if (flameReach !== undefined) {
+            if (relative) {
               assertRelativeEffectSource(target);
             }
           },
         )
         .then((frame) => {
-          if (flameReach !== undefined) {
+          if (relative) {
             try {
-              assertEffectPaintMargin(frame, frame.contentBounds.height * flameReach);
+              assertEffectPaintMargin(
+                frame,
+                relativeSupport(frame.contentBounds.width, frame.contentBounds.height),
+              );
             } catch (error) {
               frame.release();
               throw error;
@@ -641,11 +674,14 @@ export function attachWithAdapters(
         undefined,
         flameHeight,
         effect,
-        flameReach === undefined
+        !relative
           ? undefined
           : {
               pixelToLocal: frame.pixelToLocal,
-              directionalReach: frame.contentBounds.height * flameReach,
+              directionalReach: relativeReach(
+                frame.contentBounds.width,
+                frame.contentBounds.height,
+              ),
               inwardDepth: 3,
             },
       );
@@ -773,7 +809,7 @@ export function attachWithAdapters(
 
   function observeDpr() {
     dprQuery?.removeEventListener('change', dprChanged);
-    if (flameReach !== undefined && view) {
+    if (relative && view) {
       dprQuery = view.matchMedia(`(resolution: ${view.devicePixelRatio}dppx)`);
       dprQuery.addEventListener('change', dprChanged);
     }

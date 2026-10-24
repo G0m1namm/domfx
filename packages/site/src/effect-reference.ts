@@ -3,8 +3,10 @@ import type { EffectId } from './effects';
 // Reader-facing descriptions live here; renderer settings remain in the browser package.
 export const effectReference = {
   electricity: {
-    description: 'Branching blue lightning strands follow the visible shape.',
-    intensity: 'Increases the reach and brightness of the electrical strands.',
+    description:
+      'Branching blue lightning follows the visible shape. Creation-only contourSpread is a finite nonnegative fraction of the shorter untransformed border-box side, transparent margins included: 0.1 permits 10 CSS px outside a 100px shorter side. It bounds positive signed distance; strand thickness, noise and spark detail stay fixed. Zero is transparent; omission keeps legacy rendering.',
+    intensity:
+      'Changes electrical strength and brightness; it does not move the strands. With contourSpread, scales premultiplied output independently of spread and detail.',
   },
   frost: {
     description: 'A white-blue ice coating with pale smoke and small frost particles.',
@@ -25,8 +27,9 @@ export const effectReference = {
   },
   kinetic: {
     description:
-      'A bright pulse travels around the shape with a violet wake and geometric fragments.',
-    intensity: 'Increases pulse width, brightness and fragment reach.',
+      'A bright pulse travels around the shape with a violet wake and geometric fragments. Creation-only fragmentTravel is a finite nonnegative fraction of the shorter untransformed border-box side, transparent margins included: 0.1 permits 10 CSS px of outward fragment-center travel on a 100px shorter side. A fixed 3px sideways drift and 5px fragment footprint add 8px to exterior support. Zero is transparent; omission keeps legacy rendering.',
+    intensity:
+      'With fragmentTravel, scales premultiplied strength while pulse/wake coverage, fragment travel and fine fragment size stay fixed. Omission retains legacy pulse-width and fragment behavior.',
   },
   'burned-paper': {
     description: 'An uneven charred rim with brown scorching and sparse glowing seams.',

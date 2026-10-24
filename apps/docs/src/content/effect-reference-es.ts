@@ -2,8 +2,10 @@ import type { EffectId } from '@domfx/site/effects';
 
 export const effectReferenceEs = {
   electricity: {
-    description: 'Filamentos eléctricos azules se ramifican y siguen la forma visible.',
-    intensity: 'Aumenta el alcance y el brillo de los filamentos eléctricos.',
+    description:
+      'Filamentos eléctricos azules siguen la forma visible. contourSpread, definido al crear, es una fracción finita no negativa del lado menor del border-box sin transformar, incluidos los márgenes transparentes: 0.1 permite 10 px CSS exteriores con un lado menor de 100px. Limita la distancia con signo positiva; el grosor, ruido y detalle de las chispas se mantienen. Cero es transparente; omitirlo conserva el renderizado anterior.',
+    intensity:
+      'Cambia la fuerza y el brillo eléctricos; no mueve los filamentos. Con contourSpread, escala la salida premultiplicada sin cambiar la extensión ni el detalle.',
   },
   frost: {
     description:
@@ -25,8 +27,9 @@ export const effectReferenceEs = {
   },
   kinetic: {
     description:
-      'Un pulso brillante recorre la forma con una estela violeta y fragmentos geométricos.',
-    intensity: 'Aumenta el ancho y el brillo del pulso y el alcance de los fragmentos.',
+      'Un pulso brillante recorre la forma con una estela violeta y fragmentos geométricos. fragmentTravel, definido al crear, es una fracción finita no negativa del lado menor del border-box sin transformar, incluidos los márgenes transparentes: 0.1 permite 10 px CSS de recorrido exterior del centro de los fragmentos con un lado menor de 100px. La deriva lateral fija de 3px y la huella de 5px añaden 8px al soporte exterior. Cero es transparente; omitirlo conserva el renderizado anterior.',
+    intensity:
+      'Con fragmentTravel, escala la fuerza premultiplicada y mantiene la cobertura del pulso y la estela, el recorrido y el tamaño fino de los fragmentos. Omitirlo conserva el comportamiento anterior del pulso y los fragmentos.',
   },
   'burned-paper': {
     description:

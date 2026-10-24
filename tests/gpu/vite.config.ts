@@ -6,6 +6,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
+        energyExtent: resolve(import.meta.dirname, 'energy-extent.html'),
         effects: resolve(import.meta.dirname, 'effects.html'),
         main: resolve(import.meta.dirname, 'index.html'),
         manual: resolve(import.meta.dirname, 'manual.html'),

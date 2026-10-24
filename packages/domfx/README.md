@@ -637,3 +637,35 @@ currently exported.
 - `attachCircuits`
 - `attachStarShimmer`
 - `attachBrushFringe`
+
+### Relative Electricity and Kinetic bloom
+
+`attachElectricity(target, { host, contourSpread: 0.1 })` opts into a finite
+maximum exterior contour spread. `attachKinetic(target, { host, fragmentTravel: 0.1 })`
+opts into a finite maximum outward fragment-center travel. Each number is a finite
+nonnegative fraction of the **shorter untransformed target border-box side**,
+including transparent margins and excluding capture padding. For example, `0.1`
+resolves to 10 CSS px on a 100×400 target and 40 CSS px on a 400×400 target.
+These are creation options; recreate the instance to change them. Real resizing
+resolves the ratio again; supported translation/positive scale only changes placement.
+DPR changes capture resolution and resource admission, not the CSS-space ratio.
+
+Electricity bounds positive signed distance by the resolved spread and retains its
+fixed strand widths, noise and spark detail. Kinetic bloom bounds outward normal
+fragment-center travel by the resolved travel; its fixed sideways drift (at most
+3 CSS px) and fragment footprint (5 CSS px) add 8 CSS px to reserved exterior
+support. Pulse/wake widths, lifetimes, emission grid and fine fragment size remain
+fixed. These are permitted envelopes, not promises that every frame fills them.
+Both modes multiply final premultiplied output by intensity. Zero extent or zero
+intensity is transparent; omitting the option retains byte-exact legacy rendering.
+Electricity's legacy intensity already changes brightness without moving strands.
+
+Both relative modes use the bounded source-paint policy described for relative
+Fire: contained descendant boxes, no shadows/filters/outlines/generated pseudos,
+and paint within the border box plus 2 CSS px. Symmetric padding is
+`max(8, ceil(support + 4 + 2 / DPR))` CSS px, including classification/interpolation
+guards; capture/device/memory limits reject oversized results without trimming or
+lowering quality. Kinetic source search grows with travel to retain distant emitters;
+large admitted travels can cost more GPU work. Fractional-DPR image recapture can
+change antialiasing when padding changes; deterministic shader alignment applies
+to an identical source raster, not pixel identity between browser rerasterizations.

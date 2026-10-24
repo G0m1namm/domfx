@@ -184,20 +184,18 @@ run(positive, 'pnpm', ['exec', 'vite', 'build']);
 const broken = join(directory, 'untransformed-package');
 mkdirSync(broken);
 run(broken, 'tar', ['-xzf', browserPackage, '--strip-components=1']);
-const plain = ts.transpileModule(readFileSync(join(root, 'packages/domfx/src/gpu.ts'), 'utf8'), {
-  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
-}).outputText;
-assert.ok(!plain.includes('__TYPEGPU_META__'));
-// Preserve the experimental surface used by fixtures; only the GPU module loses
-// shader metadata. Missing exports/imports would test a broken bundle instead.
+// Preserve the transformed experimental surface; emit the complete GPU module
+// graph without shader metadata so the negative case reaches its intended gate.
 cpSync(join(broken, 'dist/experimental.js'), join(broken, 'dist/transformed-experimental.js'));
-writeFileSync(join(broken, 'dist/gpu.js'), plain);
-writeFileSync(
-  join(broken, 'dist/effect-error.js'),
-  ts.transpileModule(readFileSync(join(root, 'packages/domfx/src/effect-error.ts'), 'utf8'), {
-    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
-  }).outputText,
-);
+ts.createProgram([join(root, 'packages/domfx/src/gpu.ts')], {
+  target: ts.ScriptTarget.ES2022,
+  module: ts.ModuleKind.ESNext,
+  moduleResolution: ts.ModuleResolutionKind.Bundler,
+  rootDir: join(root, 'packages/domfx/src'),
+  outDir: join(broken, 'dist'),
+  skipLibCheck: true,
+}).emit();
+assert.ok(!readFileSync(join(broken, 'dist/gpu.js'), 'utf8').includes('__TYPEGPU_META__'));
 writeFileSync(
   join(broken, 'dist/experimental.js'),
   "export * from './transformed-experimental.js';\nexport { GpuExperiment, decodeFloat16 } from './gpu.js';\n",

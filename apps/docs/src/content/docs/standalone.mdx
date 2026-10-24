@@ -22,11 +22,11 @@ export const fire = findEffect('fire');
 
 <p>If the effect is unavailable, the button still works. Check the console reason and <a href="#unavailable-output">Unavailable output</a> below.</p>
 
-<DocsEffectLab effect={fire} subject="text" heading="Tune the attachment" description="Intensity is shared by all effects. Flame height is specific to Fire and recreates the effect when changed. The original text remains selectable." />
+<DocsEffectLab effect={fire} subject="text" heading="Tune the attachment" description="Flame reach is a fraction of the target's height. Changing it recreates the effect; intensity changes strength. The original text remains selectable." />
 
 ## Use another effect
 
-<p>Replace <code>attachFire</code> with an attachment such as <code>attachFrost</code> or <code>attachDither</code> and remove <code>flameHeight</code>. The remaining options and handle methods are shared. Intensity changes each effect's appearance; it is not a universal height or opacity setting.</p>
+<p>Replace <code>attachFire</code> with an attachment such as <code>attachFrost</code> or <code>attachDither</code> and use that effect's creation options. Both <code>flameHeight</code> and <code>flameReach</code> are Fire-only. Time, intensity and instance methods are shared; intensity follows the chosen effect and sizing mode.</p>
 
 <p>Dispose the existing attachment before attaching another effect to the same target. Every <a href="/docs/api/effects">effect reference</a> opens with the same live preview, and the <a href="/effects/">gallery</a> compares them side by side.</p>
 

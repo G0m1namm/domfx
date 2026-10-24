@@ -243,7 +243,8 @@ and count toward the existing capture and aggregate memory budgets.
 const effect = attachFire(title, { host, clock: 'auto', flameHeight: 48 });
 ```
 
-Intensity controls flame reach and opacity together. Use manual time or a GSAP binding
+Without `flameReach`, intensity controls flame reach and opacity together. With
+`flameReach`, intensity changes strength while reach stays fixed. Use manual time or a GSAP binding
 to change playback speed; seed varies the pattern. Identical time, seed, intensity and
 flame height reproduce the same frame, including embers. The palette remains warm.
 

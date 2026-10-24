@@ -32,6 +32,21 @@ Keep the previous lockfile for rollback. If an update fails, report the package
 versions, environment, reason code and diagnostic message with a small reproduction.
 See [troubleshooting](/docs/troubleshooting).
 
+## Relative effect sizing
+
+If your installed version exposes relative sizing options, choose the fields in
+your [effect's reference](/docs/api/effects). Omitting them preserves the previous
+appearance. For Fire, replace `flameHeight` with `flameReach`; never supply both.
+For paired options, an omitted partner is zero.
+
+In relative mode, intensity changes strength without changing the configured
+reach or depth. Sizing options are set at creation: dispose and recreate the
+effect to change them. Check its capture limits before switching.
+
+Slime also offers `dripDensity` (0–1, default 0.56). Higher values add more drips
+without changing their size, travel or timing. It is set at creation and does not
+enable relative sizing by itself. See the [Slime options](/docs/api/effects/slime#effect-options).
+
 ## Animation and binding names
 
 Prefer `clock: 'auto'` for automatic animation. Existing `clock: 'ambient'`

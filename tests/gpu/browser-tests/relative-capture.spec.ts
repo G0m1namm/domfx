@@ -14,22 +14,39 @@ test('raw text outside the source viewport is rejected before paint is cropped',
     host.style.cssText = 'position:absolute;left:80px;top:80px;width:200px;height:200px';
     document.body.append(host);
     const results = [];
-    for (const [indent, relative] of [
-      [200, true],
-      [1000, true],
-      [0, true],
-      [200, false],
+    for (const [indent, relative, boxless] of [
+      [200, true, false],
+      [1000, true, false],
+      [200, true, true],
+      [1000, true, true],
+      [0, true, false],
+      [0, true, true],
+      [200, false, false],
+      [200, false, true],
     ] as const) {
       const target = document.createElement('div');
       target.style.cssText = `width:100px;height:100px;background:white;color:white;font:16px/20px sans-serif;white-space:nowrap;overflow:visible;text-indent:${indent}px`;
-      target.textContent = 'Escaped text';
+      if (boxless) {
+        const span = document.createElement('span');
+        span.style.display = 'contents';
+        span.textContent = 'Escaped text';
+        target.append(span);
+      } else {
+        target.textContent = 'Escaped text';
+      }
       host.append(target);
       const effect = window.manual.attach(target, {
         host,
         ...(relative ? { flameReach: 0.1 } : {}),
       });
       await effect.ready;
-      results.push({ indent, relative, lifecycle: effect.lifecycle, reason: effect.reason });
+      results.push({
+        indent,
+        relative,
+        boxless,
+        lifecycle: effect.lifecycle,
+        reason: effect.reason,
+      });
       effect.dispose();
       target.remove();
     }
@@ -41,15 +58,26 @@ test('raw text outside the source viewport is rejected before paint is cropped',
     body: JSON.stringify(result),
     contentType: 'application/json',
   });
-  expect(result.results.slice(0, 2)).toEqual(
-    [200, 1000].map((indent) => ({
+  expect(result.results.slice(0, 4)).toEqual(
+    [
+      [200, false],
+      [1000, false],
+      [200, true],
+      [1000, true],
+    ].map(([indent, boxless]) => ({
       indent,
+      boxless,
       relative: true,
       lifecycle: 'unavailable',
       reason: 'missing-exterior',
     })),
   );
-  expect(result.results.slice(2).map((sample) => sample.lifecycle)).toEqual(['active', 'active']);
+  expect(result.results.slice(4).map((sample) => sample.lifecycle)).toEqual([
+    'active',
+    'active',
+    'active',
+    'active',
+  ]);
   expect(result.canvases).toBe(0);
 });
 

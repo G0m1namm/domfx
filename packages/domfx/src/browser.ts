@@ -1,6 +1,7 @@
 import type { CaptureFrame } from '@domfx/core';
 
 import { CaptureError, prepareCaptureAssets } from './capture-assets.js';
+import { relativeSourceGuardCss } from './effect-paint.js';
 import { estimateFrameMemory } from './memory.js';
 import { scaleToViewport } from './placement.js';
 
@@ -118,7 +119,9 @@ export async function captureElementWithReservation(
   const viewWidth = relative ? width / dpr : widthCss;
   const viewHeight = relative ? height / dpr : heightCss;
   const phase = padding * dpr - Math.floor(padding * dpr);
-  const sourcePadding = relative ? Math.min(padding, (Math.ceil(8 * dpr) + phase) / dpr) : padding;
+  const sourcePadding = relative
+    ? Math.min(padding, (Math.ceil(relativeSourceGuardCss * dpr) + phase) / dpr)
+    : padding;
   const sourceWidth = relative ? Math.ceil((w0 + sourcePadding * 2) * dpr) : width;
   const sourceHeight = relative ? Math.ceil((h0 + sourcePadding * 2) * dpr) : height;
   const sourceViewWidth = relative ? sourceWidth / dpr : widthCss;

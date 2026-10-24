@@ -96,3 +96,32 @@ for (const locale of ['en', 'es'] as const) {
     }
   });
 }
+
+test('logical font rectangles may exceed paint bounds inside the finite source guard', async ({
+  page,
+}) => {
+  await page.goto('/docs/api/effects/fire/');
+  const lab = page.locator('[data-docs-lab]');
+  await lab.scrollIntoViewIfNeeded();
+  await lab.locator('[data-docs-lab-subject][value="text"]').check();
+  const geometry = await lab.locator('[data-docs-lab-target="text"]').evaluate((target) => {
+    const box = target.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(target);
+    const text = range.getBoundingClientRect();
+    return {
+      fontSize: getComputedStyle(target).fontSize,
+      lineHeight: getComputedStyle(target).lineHeight,
+      top: box.top - text.top,
+      bottom: text.bottom - box.bottom,
+    };
+  });
+  expect(geometry.fontSize).toBe('92px');
+  expect(geometry.lineHeight).toBe('78.2px');
+  expect(geometry.top).toBeGreaterThan(2);
+  expect(geometry.bottom).toBeGreaterThan(2);
+  expect(geometry.top).toBeLessThan(8);
+  expect(geometry.bottom).toBeLessThan(8);
+  await expect(lab).toHaveAttribute('data-status', 'active');
+  await expect(lab.locator('canvas')).toHaveCount(1);
+});

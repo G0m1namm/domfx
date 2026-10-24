@@ -27,7 +27,9 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
   // Subtract the interpolation/classification uncertainty before sphere tracing.
   for (var step = 0; step < 2048; step++) {
     let distance = field(p + direction * height);
-    if (distance <= .75 * texel) { return height; }
+    // Refine the last subpixel step instead of snapping to an iteration boundary.
+    // Tiny f32 sampling differences after a padding change must not move a tongue.
+    if (distance <= .75 * texel) { return max(0, height + distance / length(direction)); }
     height += max(distance - .75 * texel, .5 * texel) / length(direction);
     if (height > reach) { return -1; }
   }
@@ -42,7 +44,10 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
   let time = params.x;
   let seed = params.y;
   let distance = field(p);
-  if (distance <= -depth || distance >= reach) { return vec4f(0); }
+  // The SDF is isotropic in raster space. Use the upper CSS metric bound for
+  // the support envelope, and the lower bound for conservative emitter tracing.
+  let supportDistance = distance * max(geometry.map.x, geometry.map.y) / min(geometry.map.x, geometry.map.y);
+  if (distance <= -depth || supportDistance >= reach) { return vec4f(0); }
   var flow = p * vec2f(.18, .025) + vec2f(sin(seed) * 17, cos(seed) * 23 + time * .8);
   let warp = noise(flow * .6 + vec2f(3.7, time * .2));
   flow.x += (warp - .5) * 1.6;
@@ -58,7 +63,7 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
   let rim = exp(-abs(distance) * 1.6) * .28;
   let glow = exp(-abs(distance) * .45) * .07;
   let exterior = smoothstep(-.75, .75, distance);
-  let envelope = 1 - smoothstep(max(0, reach - 1), reach, distance);
+  let envelope = 1 - smoothstep(max(0, reach - 1), reach, supportDistance);
   let alpha = clamp(rim + glow + body * exterior * .94, 0, .95)
               * smoothstep(-depth, -min(depth, .5), distance) * envelope;
   let heat = clamp(exp(-max(height, 0) / reach * 6.72) * .85 + max(density, 0) * .25, 0, 1);

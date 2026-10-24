@@ -2,6 +2,61 @@ import { expect, test } from '@playwright/test';
 
 import type {} from '../src/manual.js';
 
+for (const dpr of [1, 1.25, 2]) {
+  test.describe(`relative Fire lifecycle DPR ${dpr}`, () => {
+    test.use({ deviceScaleFactor: dpr });
+    test('resize resolves reach and placement/strength retain allocations', async ({
+      page,
+    }, info) => {
+      await page.goto('/manual.html');
+      await page.evaluate(() => window.manual.effect.ready);
+      const result = await page.evaluate(() => window.manual.verifyFireReachLifecycle());
+      await info.attach('relative-fire-lifecycle.json', {
+        body: JSON.stringify(result),
+        contentType: 'application/json',
+      });
+      expect(result.errors).toEqual([]);
+      expect(result.placementOnly).toBe(true);
+      expect(result.first.box.height).toBe(100.25);
+      expect(result.resized.box.height).toBe(400);
+      expect(result.first.reach).toBeGreaterThan(4);
+      expect(result.resized.reach).toBeGreaterThan(result.first.reach * 2);
+      expect(result.scaleSample).toEqual(result.first);
+      expect(result.refreshed).toEqual(result.resized);
+      expect(result.first.boundary).toBe(0);
+      expect(result.resized.boundary).toBe(0);
+      expect(result).toMatchObject({
+        rejected: { reason: 'missing-exterior', bytes: 0, canvases: 0 },
+        recovered: true,
+        releasedBytes: 0,
+        managedBytes: 0,
+      });
+    });
+  });
+}
+
+for (const dpr of [1, 2]) {
+  test(`relative Fire has finite target-anchored support at DPR ${dpr}`, async ({ page }, info) => {
+    await page.goto('/manual.html');
+    await page.evaluate(() => window.manual.effect.ready);
+    const result = await page.evaluate((dpr) => window.manual.verifyFireReachGeometry(dpr), dpr);
+    await info.attach('relative-fire-geometry.json', {
+      body: JSON.stringify(result),
+      contentType: 'application/json',
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.managedBytes).toBe(0);
+    for (const sample of result.samples) {
+      expect(sample.boundaryAlpha).toBe(0);
+      expect(sample.supportAlpha).toBe(0);
+      expect(sample.maxDifference).toBeLessThanOrEqual(2);
+    }
+    const flat = result.samples.filter((sample) => sample.kind === 'flat');
+    expect(flat[0].maxReach).toBeGreaterThan(4);
+    expect(flat[1].maxReach).toBeGreaterThan(flat[0].maxReach * 2);
+  });
+}
+
 test('relative Fire validates options before claiming ownership', async ({ page }) => {
   await page.goto('/manual.html');
   await page.evaluate(() => window.manual.effect.ready);

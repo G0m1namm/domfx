@@ -44,6 +44,7 @@ export async function captureElementWithReservation(
   assetsReady?.();
   const { snapdom } = await import('@zumer/snapdom');
   let assetFailure: unknown;
+  let localBorderBox: { width: number; height: number } | undefined;
   const snapshot = await snapdom(element, {
     dpr,
     outerTransforms: false,
@@ -70,6 +71,7 @@ export async function captureElementWithReservation(
           // box so percentage min/max sizes cannot resize its captured paint.
           const scale = scaleToViewport(element);
           const rect = element.getBoundingClientRect();
+          localBorderBox = { width: rect.width / scale.x, height: rect.height / scale.y };
           clone.style.setProperty('box-sizing', 'border-box', 'important');
           clone.style.setProperty('width', `${rect.width / scale.x}px`, 'important');
           clone.style.setProperty('height', `${rect.height / scale.y}px`, 'important');
@@ -95,7 +97,14 @@ export async function captureElementWithReservation(
   if (assetFailure) {
     throw assetFailure;
   }
-  const { w0, h0 } = snapshot.meta;
+  // SnapDOM's metadata rounds the local box to integer CSS px. Relative geometry
+  // needs the exact box frozen on the clone; preserve the legacy raster contract.
+  const w0 = options.resolvePadding
+    ? (localBorderBox?.width ?? snapshot.meta.w0)
+    : snapshot.meta.w0;
+  const h0 = options.resolvePadding
+    ? (localBorderBox?.height ?? snapshot.meta.h0)
+    : snapshot.meta.h0;
   padding = options.resolvePadding?.(w0, h0, dpr) ?? padding;
   const widthCss = w0 + padding * 2;
   const heightCss = h0 + padding * 2;

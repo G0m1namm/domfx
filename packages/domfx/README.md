@@ -702,13 +702,13 @@ const slime = attachSlime(target, { host, coatingDepth: 0.05, dripReach: 0.2 });
 const paper = attachBurnedPaper(target, { host, scorchDepth: 0.15, ashReach: 0.15 });
 ```
 
-Slime also accepts creation-only `dripDensity`, a finite fraction from 0 to 1
-(default `0.56`). Higher values enable more candidate drip locations; zero disables
-drips and one enables every eligible location. It is not an exact drop count or
+Slime also accepts creation-only `dripDensity`, a finite normalized value from 0 to 1
+(default `0.56`). Higher values add more drip locations; zero disables drips. Values
+above the default add extra emission locations. It is not an exact drop count or
 emission rate. Drop size, travel and timing stay unchanged. It works with legacy
 and relative extents, and does not enable relative mode by itself.
 
-These values are examples, not defaults. Supplying either field selects relative
+The extent values above are examples, not defaults. Supplying either field selects relative
 mode and defaults its omitted partner to **zero**. Zero disables that component;
 both zero produce transparent output. Omit both for the original sizing and
 intensity behavior; Slime density remains independent. Fractions must be finite and nonnegative; resolved float32

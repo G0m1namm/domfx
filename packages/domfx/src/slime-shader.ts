@@ -41,13 +41,23 @@ ${valueNoise}
   var liquidGradient = targetField.yz;
 
   let cell = floor(p / 12);
-  // Projection <=7px, droplet support <=30px, probe jitter <=2.4px per axis;
-  // the first omitted cell is >=39.6px away. All drips fit the 32px padding.
+  // Omitted rows are >=39.6px away: projection<=7 plus radial support<=30.
+  // With the half-column lane, omitted columns are >=33.6px away;
+  // projection<=7 plus bend/width/joins/AA<10 cannot reach them.
+  // All drips retain the same radial support and fit the 32px padding.
+  // Keep the original seven columns first; admit a half-column lane above default.
   for (var y = -3; y <= 3; y++) {
-    for (var x = -3; x <= 3; x++) {
-      let id = cell + vec2f(f32(x), f32(y));
+    for (var x = -3; x <= 10; x++) {
+      var density = geometry.extent.z;
+      var column = f32(x);
+      if (x > 3) {
+        density = (density - .56) / .44;
+        if (density <= 0) { break; }
+        column = f32(x - 7) + .5;
+      }
+      let id = cell + vec2f(column, f32(y));
       let random = hash(id + seed);
-      if (geometry.extent.z <= 0 || random > geometry.extent.z) { continue; }
+      if (density <= 0 || random > density) { continue; }
       let detail = hash(id + seed + vec2f(17.3, 43.7));
       let jitter = vec2f(hash(id + seed + 7.1), hash(id + seed + 53.2));
       let probe = (id + .5) * 12 + (jitter - .5) * 4.8;

@@ -41,18 +41,27 @@ ${valueNoise}
   var liquidGradient = targetField.yz;
 
   let cell = floor(p / 12);
-  // Five columns cover fixed bend <=2, neck<=5.2, bead<=4, joins/AA,
-  // projection<=7 and jitter<=2.4. First omitted column is >=27.6px away.
+  // Five columns per lane cover projection<=7 plus bend/width/joins/AA<10.
+  // Including the half-column lane and jitter<=2.4, the nearest omitted
+  // column is >=21.6px away. Density does not enlarge the drip footprint.
   // Rows follow the full admitted travel, not a fixed seven-cell neighborhood:
   // emitter->probe<=7, jitter<=2.4, upper mark/joins/AA<8 CSS px.
   let firstRow = i32(floor((p.y - reach - 18) / 12));
   let lastRow = i32(ceil((p.y + 18) / 12));
+  // Keep the original five columns first; admit a half-column lane above default.
   for (var y = firstRow; y <= lastRow; y++) {
     if (reach == 0) { break; }
-    for (var x = -2; x <= 2; x++) {
-      let id = vec2f(cell.x + f32(x), f32(y));
+    for (var x = -2; x <= 7; x++) {
+      var density = geometry.extent.z;
+      var column = f32(x);
+      if (x > 2) {
+        density = (density - .56) / .44;
+        if (density <= 0) { break; }
+        column = f32(x - 5) + .5;
+      }
+      let id = vec2f(cell.x + column, f32(y));
       let random = hash(id + seed);
-      if (geometry.extent.z <= 0 || random > geometry.extent.z) { continue; }
+      if (density <= 0 || random > density) { continue; }
       let detail = hash(id + seed + vec2f(17.3, 43.7));
       let jitter = vec2f(hash(id + seed + 7.1), hash(id + seed + 53.2));
       let probe = (id + .5) * 12 + (jitter - .5) * 4.8;

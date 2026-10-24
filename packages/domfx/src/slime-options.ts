@@ -1,8 +1,8 @@
 import type { AttachmentOptions } from './attachment-options.js';
 
 export interface SlimeOptions extends AttachmentOptions {
-  /** Creation-only fraction of candidate drip locations, from 0 to 1. Defaults
-   * to 0.56. Zero disables drips; one enables every eligible location. Does not
+  /** Creation-only normalized drip density, from 0 to 1. Defaults to 0.56.
+   * Higher values add drip locations; zero disables drips. Does not
    * change drip size, travel, timing or intensity, or enable relative mode.
    */
   readonly dripDensity?: number;

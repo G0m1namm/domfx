@@ -44,12 +44,12 @@ When installed declarations expose relative options, choose the effect-owned fie
 | Contour echoes                  | `echoReach`: shorter side                                                   |
 | Brush fringe                    | `fringeReach`: shorter side                                                 |
 
-Slime also accepts creation-only `dripDensity` (0–1, default 0.56): the fraction
-of candidate drip locations, independent of size, travel and timing. Zero disables
-drips; one enables all eligible locations. It works in legacy and relative modes
-and does not opt into relative geometry by itself.
+Slime also accepts creation-only `dripDensity` (0–1, default 0.56): a normalized
+density, independent of size, travel and timing. Zero disables drips; higher values
+add more locations, including extra emission locations above the default. It works
+in legacy and relative modes and does not opt into relative geometry by itself.
 
-These are finite nonnegative numeric fractions of the untransformed target border
+Relative extents are finite nonnegative numeric fractions of the untransformed target border
 box, excluding capture padding; transparent image margins count. `0.1` means 10%,
 not 10 pixels. Resolve again after resize. All omitted retains legacy behavior;
 with paired options, supplying either enables relative mode and the missing partner

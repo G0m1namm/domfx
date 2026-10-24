@@ -72,7 +72,7 @@ const messages = {
       extentBasis: {
         height: 'Percent of target height.',
         'shorter-side': 'Percent of the shorter target side.',
-        'drip-density': 'Percent of candidate drip locations; not a drop count.',
+        'drip-density': 'Higher values add more drips; not an exact count.',
       },
       extentNote: 'Changing these settings recreates the effect; intensity changes strength only.',
       currentSettings: 'Current settings',
@@ -169,7 +169,7 @@ const messages = {
       extentBasis: {
         height: 'Porcentaje de la altura del objetivo.',
         'shorter-side': 'Porcentaje del lado más corto del objetivo.',
-        'drip-density': 'Porcentaje de ubicaciones candidatas; no es un número de gotas.',
+        'drip-density': 'Los valores más altos añaden más gotas; no es un número exacto.',
       },
       extentNote: 'Cambiar estos ajustes recrea el efecto; la intensidad solo cambia su fuerza.',
       currentSettings: 'Ajustes actuales',

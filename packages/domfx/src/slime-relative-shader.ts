@@ -25,7 +25,8 @@ ${valueNoise}
   let support = max(select(0.0, 6.0, depth > 0), select(0.0, reach + 8, reach > 0));
   let targetField = field(p);
   let distance = targetField.x;
-  if (distance < -depth || distance >= support) { return vec4f(0); }
+  let supportDistance = distance * max(geometry.map.x, geometry.map.y) / min(geometry.map.x, geometry.map.y);
+  if (supportDistance < -depth || supportDistance >= support) { return vec4f(0); }
   let intensity = 1.0;
   let aa = clamp(.45 * max(geometry.map.x, geometry.map.y), .15, .65);
   let inset = geometry.map.zw + .5 * geometry.map.xy;
@@ -154,8 +155,8 @@ ${valueNoise}
   // Thin gel reveals the original content but never fades out at its border.
   // Reflections stay more opaque; output remains premultiplied RGBA.
   let opacity = clamp(.62 + thickness * .24 + specular * .3, 0, 1);
-  let envelope = 1 - smoothstep(max(0, support - 1), support, distance);
-  let innerFade = 1 - smoothstep(.9, 1, max(-distance, 0) / max(depth, .000001));
+  let envelope = 1 - smoothstep(max(0, support - 1), support, supportDistance);
+  let innerFade = 1 - smoothstep(.9, 1, max(-supportDistance, 0) / max(depth, .000001));
   let alpha = coverage * opacity * envelope * innerFade;
   return vec4f(color * alpha, alpha) * params.z;
 }`;

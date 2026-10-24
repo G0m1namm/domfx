@@ -24,7 +24,7 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
   // Subtract the interpolation/classification uncertainty before sphere tracing.
   for (var step = 0; step < 2048; step++) {
     let distance = field(p + direction * height);
-    if (distance <= .75 * texel) { return height; }
+    if (distance <= .75 * texel) { return max(0, height + distance / length(direction)); }
     height += max(distance - .75 * texel, .5 * texel) / length(direction);
     if (height > reach) { return -1; }
   }
@@ -40,10 +40,11 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
   let seed = params.y;
   let intensity = 1.0;
   let distance = field(p);
+  let supportDistance = distance * max(geometry.map.x, geometry.map.y) / min(geometry.map.x, geometry.map.y);
   let support = max(select(0.0, 6.0, depth > 0), select(0.0, reach + 8, reach > 0));
-  if (distance <= -max(depth, 1) || distance >= support) { return vec4f(0); }
+  if (supportDistance <= -max(depth, 1) || supportDistance >= support) { return vec4f(0); }
   let exterior = smoothstep(-.5, .8, distance);
-  let boundaryFade = 1 - smoothstep(max(0, support - 1), support, distance);
+  let boundaryFade = 1 - smoothstep(max(0, support - 1), support, supportDistance);
   let origin = vec2f(sin(seed) * 17, cos(seed) * 23);
 
   // Resolved inward coverage; crust and grain remain in local CSS pixels.
@@ -59,7 +60,7 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
   let coating = coverage * (.66 + grain * .3) * (.45 + intensity * .5);
   let iceAlpha = clamp(lip + coating * (1 - lip), 0, .98)
     * select(0.0, 1.0, depth > 0)
-    * (1 - smoothstep(.9, 1, inward / max(depth, .000001)))
+    * (1 - smoothstep(.9, 1, max(-supportDistance, 0) / max(depth, .000001)))
     * (1 - smoothstep(4, 6, max(distance, 0)));
   let whiteMix = clamp(1 - inward / frostDepth + grain * .12, 0, 1);
   let iceColor = mix(vec3f(.53, .77, .93), vec3f(.97, .99, 1), whiteMix);

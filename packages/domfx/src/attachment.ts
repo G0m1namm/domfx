@@ -6,7 +6,8 @@ import { createCaptureRevisions } from './capture-revision.js';
 import { diagnosticsFor } from './diagnostics.js';
 import type { DitherOptions } from './dither-options.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
-import { assertFirePaintMargin, fireReachPadding } from './effect-geometry.js';
+import { assertEffectPaintMargin, fireReachPadding } from './effect-geometry.js';
+import { assertRelativeEffectSource } from './effect-paint.js';
 import type { ElectricityOptions } from './electricity-options.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
@@ -184,6 +185,9 @@ export function attachWithAdapters(
         return fireReachPadding(height, flameReach ?? 0, dpr);
       };
       const relative = flameReach !== undefined || materialExtent !== undefined;
+      if (relative) {
+        assertRelativeEffectSource(target);
+      }
       const padding = relative
         ? relativePadding(targetSize().width, targetSize().height, view.devicePixelRatio)
         : paddingCss;
@@ -202,12 +206,15 @@ export function attachWithAdapters(
           () => {
             observedSize = targetSize();
             awaitingAssets = false;
+            if (relative) {
+              assertRelativeEffectSource(target);
+            }
           },
         )
         .then((frame) => {
           if (flameReach !== undefined) {
             try {
-              assertFirePaintMargin(frame, frame.contentBounds.height * flameReach);
+              assertEffectPaintMargin(frame, frame.contentBounds.height * flameReach);
             } catch (error) {
               frame.release();
               throw error;
@@ -216,10 +223,9 @@ export function attachWithAdapters(
           if (materialExtent) {
             try {
               const geometry = materialGeometry(frame, materialExtent);
-              assertFirePaintMargin(
+              assertEffectPaintMargin(
                 frame,
                 materialSupport(geometry.directionalReach, geometry.inwardDepth),
-                effect,
               );
             } catch (error) {
               frame.release();

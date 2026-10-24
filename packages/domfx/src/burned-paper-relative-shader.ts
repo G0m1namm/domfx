@@ -39,7 +39,8 @@ fn fbm(point: vec2f) -> f32 {
   let support = max(select(0.0, 6.0, depth > 0), select(0.0, reach + 8, reach > 0));
   let targetField = field(p);
   let distance = targetField.x;
-  if (distance < -depth - 1 || distance >= support) { return vec4f(0); }
+  let supportDistance = distance * max(geometry.map.x, geometry.map.y) / min(geometry.map.x, geometry.map.y);
+  if (supportDistance < -depth - 1 || supportDistance >= support) { return vec4f(0); }
   let intensity = 1.0;
   let aa = clamp(.5 * max(geometry.map.x, geometry.map.y), .15, .7);
   let seed = vec2f(params.y * .137, params.y * .071);
@@ -98,7 +99,7 @@ fn fbm(point: vec2f) -> f32 {
 
   // Sparse ash flakes lift from upward-facing edges, remaining inside padding.
   result *= select(0.0, 1.0, depth > 0)
-    * (1 - smoothstep(.9, 1, max(-distance, 0) / max(depth, .000001)))
+    * (1 - smoothstep(.9, 1, max(-supportDistance, 0) / max(depth, .000001)))
     * (1 - smoothstep(4, 6, max(distance, 0)));
   let column = floor(p.x / 12);
   for (var neighbor = -1; neighbor <= 1; neighbor++) {
@@ -124,5 +125,5 @@ fn fbm(point: vec2f) -> f32 {
     let ashColor = mix(vec3f(.8, .18, .025), vec3f(.39, .35, .3), smoothstep(0, .25, age));
     result = vec4f(ashColor * ash, ash) + result * (1 - ash);
   }
-  return result * (1 - smoothstep(max(0, support - 1), support, distance)) * params.z;
+  return result * (1 - smoothstep(max(0, support - 1), support, supportDistance)) * params.z;
 }`;

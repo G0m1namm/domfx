@@ -1,6 +1,7 @@
 import { attachFire, type EffectHandle } from '@domfx/browser';
 
 import { verifyFailureClassification } from './failure-checks.js';
+import { verifyFireReachGeometry, verifyFireReachLifecycle } from './fire-reach-checks.js';
 import { verifyMemory } from './memory-checks.js';
 import { createMotionFixture } from './motion-fixture.js';
 import { createPlacementFixture } from './placement-fixture.js';
@@ -62,6 +63,8 @@ declare global {
       verifyFailureClassification: typeof verifyFailureClassification;
       verifyRetryConditions: typeof verifyRetryConditions;
       verifyMemory: typeof verifyMemory;
+      verifyFireReachGeometry: typeof verifyFireReachGeometry;
+      verifyFireReachLifecycle: typeof verifyFireReachLifecycle;
       verifySharedTargets: typeof verifySharedTargets;
       verifySharedInitialization: typeof verifySharedInitialization;
       verifyDocumentIsolation: typeof verifyDocumentIsolation;
@@ -79,6 +82,8 @@ window.manual = {
   verifyFailureClassification,
   verifyRetryConditions,
   verifyMemory,
+  verifyFireReachGeometry,
+  verifyFireReachLifecycle,
   verifySharedTargets,
   verifySharedInitialization,
   verifyDocumentIsolation,

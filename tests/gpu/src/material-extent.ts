@@ -1,5 +1,5 @@
 import { attachFrost, attachSlime, attachBurnedPaper } from '@domfx/browser';
-import { GpuExperiment } from '@domfx/browser/experimental';
+import { GpuExperiment, startEffectDiagnostics, memoryFor } from '@domfx/browser/experimental';
 
 declare global {
   interface Window {
@@ -8,6 +8,8 @@ declare global {
       slime: typeof attachSlime;
       'burned-paper': typeof attachBurnedPaper;
       renderer: typeof GpuExperiment;
+      diagnostics: typeof startEffectDiagnostics;
+      memory: typeof memoryFor;
     };
   }
 }
@@ -16,4 +18,6 @@ window.materials = {
   slime: attachSlime,
   'burned-paper': attachBurnedPaper,
   renderer: GpuExperiment,
+  diagnostics: startEffectDiagnostics,
+  memory: memoryFor,
 };

@@ -16,6 +16,7 @@ for (const family of ['frost', 'slime', 'burned-paper'] as const) {
         'burned-paper': { scorchDepth: 0.15, ashReach: 0.6 },
       };
       const attach = window.materials[family];
+      const diagnostics = window.materials.diagnostics();
       const effect = attach(target, { host, ...options[family], seed: 314, time: 2.7 });
       await effect.ready;
       const state = {
@@ -47,6 +48,8 @@ for (const family of ['frost', 'slime', 'burned-paper'] as const) {
         effect.dispose();
         return { state };
       }
+      const captured = diagnostics.records.filter((record) => record.stage === 'capture').length;
+      const memory = window.materials.memory(document).bytes;
       const full = await sample(1);
       const errors = [];
       for (const strength of [0.2, 0.5]) {
@@ -61,6 +64,10 @@ for (const family of ['frost', 'slime', 'burned-paper'] as const) {
       await sample(1, 5);
       const repeated = await sample(1);
       const zero = await sample(0);
+      const stableResources =
+        memory === window.materials.memory(document).bytes &&
+        captured === diagnostics.records.filter((record) => record.stage === 'capture').length;
+      diagnostics.dispose();
       effect.dispose();
       const zeroOptions = {
         frost: { coatingDepth: 0, mistReach: 0 },
@@ -89,6 +96,7 @@ for (const family of ['frost', 'slime', 'burned-paper'] as const) {
         repeat: full.every((value, index) => value === repeated[index]),
         zero: zero.every((value) => value === 0),
         emptyOutput,
+        stableResources,
         canvases: host.querySelectorAll('canvas').length,
       };
     }, family);
@@ -100,6 +108,7 @@ for (const family of ['frost', 'slime', 'burned-paper'] as const) {
       repeat: true,
       zero: true,
       emptyOutput: true,
+      stableResources: true,
       canvases: 0,
     });
   });

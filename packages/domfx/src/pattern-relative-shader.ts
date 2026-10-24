@@ -11,7 +11,7 @@ fn field(p: vec2f) -> vec3f {
   let size = vec2i(textureDimensions(distances));
   let q = raster - .5;
   let base = vec2i(floor(q));
-  let blend = fract(q);
+  let blend = round(fract(q) * 256) / 256;
   let a = textureLoad(distances, clamp(base, vec2i(0), size - 1), 0).r;
   let b = textureLoad(distances, clamp(base + vec2i(1, 0), vec2i(0), size - 1), 0).r;
   let c = textureLoad(distances, clamp(base + vec2i(0, 1), vec2i(0), size - 1), 0).r;

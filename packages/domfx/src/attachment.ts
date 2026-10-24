@@ -6,7 +6,12 @@ import { createCaptureRevisions } from './capture-revision.js';
 import { diagnosticsFor } from './diagnostics.js';
 import type { DitherOptions } from './dither-options.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
-import { assertFirePaintMargin, fireReachPadding, type EffectGeometry } from './effect-geometry.js';
+import {
+  assertEffectPaintMargin,
+  fireReachPadding,
+  type EffectGeometry,
+} from './effect-geometry.js';
+import { assertRelativeEffectSource } from './effect-paint.js';
 import type { ElectricityOptions } from './electricity-options.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
@@ -162,6 +167,9 @@ export function attachWithAdapters(
         return Promise.resolve(undefined);
       }
       const relative = flameReach !== undefined || patternGeometry !== undefined;
+      if (relative) {
+        assertRelativeEffectSource(target);
+      }
       const relativePadding = (width: number, height: number, dpr: number) => {
         const geometry = resolvePatternGeometry(effect, patternOptions, width, height);
         return geometry
@@ -187,6 +195,9 @@ export function attachWithAdapters(
           () => {
             observedSize = targetSize();
             awaitingAssets = false;
+            if (relative) {
+              assertRelativeEffectSource(target);
+            }
           },
         )
         .then((frame) => {
@@ -201,7 +212,7 @@ export function attachWithAdapters(
               const support = geometry
                 ? patternSupport(geometry)
                 : frame.contentBounds.height * (flameReach ?? 0);
-              assertFirePaintMargin(frame, support);
+              assertEffectPaintMargin(frame, support);
             } catch (error) {
               frame.release();
               throw error;

@@ -25,7 +25,7 @@ export function fireReachPadding(height: number, fraction: number, dpr: number):
 /** Relative mode supports paint within two CSS px of the target border box.
  * Check every nontransparent sample, not merely the existence of exterior pixels.
  */
-export function assertFirePaintMargin(frame: CaptureFrame, reach: number): void {
+export function assertEffectPaintMargin(frame: CaptureFrame, reach: number): void {
   const { a, d, e, f } = frame.pixelToLocal;
   const guard = 2 + 2 * Math.max(a, d);
   const { x, y, width, height } = frame.contentBounds;
@@ -48,7 +48,7 @@ export function assertFirePaintMargin(frame: CaptureFrame, reach: number): void 
       ) {
         throw new EffectError(
           'missing-exterior',
-          'Relative Fire requires paint within the target border box plus 2 CSS px and its full reserved margin.',
+          'Relative effects require paint within the target border box plus 2 CSS px and its full reserved margin.',
         );
       }
     }
@@ -74,7 +74,9 @@ fn field(p: vec2f) -> f32 {
   let size = vec2i(textureDimensions(distances));
   let q = raster - .5;
   let base = vec2i(floor(q));
-  let blend = fract(q);
+  // Stabilize bilinear phases against f32 cancellation when an integer padding
+  // offset changes. At most 1/512 raster px, below SDF classification uncertainty.
+  let blend = round(fract(q) * 256) / 256;
   let a = textureLoad(distances, clamp(base, vec2i(0), size - 1), 0).r;
   let b = textureLoad(distances, clamp(base + vec2i(1, 0), vec2i(0), size - 1), 0).r;
   let c = textureLoad(distances, clamp(base + vec2i(0, 1), vec2i(0), size - 1), 0).r;

@@ -27,11 +27,15 @@ export async function captureElement(
 /** Internal pre-raster admission hook for attachment-owned reservations. */
 export async function captureElementWithReservation(
   element: Element,
-  options: { paddingCss?: number; dpr?: number } = {},
+  options: {
+    paddingCss?: number;
+    dpr?: number;
+    resolvePadding?: (width: number, height: number, dpr: number) => number;
+  } = {},
   reserve?: (width: number, height: number) => void,
   assetsReady?: () => void,
 ): Promise<CaptureFrame> {
-  const padding = options.paddingCss ?? 32;
+  let padding = options.paddingCss ?? 32;
   const dpr = options.dpr ?? element.ownerDocument.defaultView!.devicePixelRatio;
   if (!(padding >= 0) || !Number.isFinite(padding) || !(dpr > 0) || !Number.isFinite(dpr)) {
     throw new Error('invalid-capture-options');
@@ -92,6 +96,7 @@ export async function captureElementWithReservation(
     throw assetFailure;
   }
   const { w0, h0 } = snapshot.meta;
+  padding = options.resolvePadding?.(w0, h0, dpr) ?? padding;
   const widthCss = w0 + padding * 2;
   const heightCss = h0 + padding * 2;
   const width = Math.ceil(widthCss * dpr);

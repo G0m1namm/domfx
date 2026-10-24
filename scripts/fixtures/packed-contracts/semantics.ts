@@ -39,6 +39,16 @@ declare const target: Element;
 declare const host: HTMLElement;
 declare const svgHost: SVGSVGElement;
 
+const relativeFire = attachFire(target, { host, flameReach: 0.1 });
+// @ts-expect-error Geometry is fixed when the instance is created.
+relativeFire.flameReach = 0.2;
+// @ts-expect-error Legacy artistic scale and relative reach are mutually exclusive.
+attachFire(target, { host, flameReach: 0.1, flameHeight: 24 });
+// @ts-expect-error Reach is a numeric target-height fraction.
+attachFire(target, { host, flameReach: '10%' });
+// @ts-expect-error Relative Fire reach is not an Electricity option.
+attachElectricity(target, { host, flameReach: 0.1 });
+
 const effect = attachFire(target, {
   host,
   clock: 'manual',

@@ -6,6 +6,7 @@ import { createCaptureRevisions } from './capture-revision.js';
 import { diagnosticsFor } from './diagnostics.js';
 import type { DitherOptions } from './dither-options.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
+import { assertFirePaintMargin, fireReachPadding } from './effect-geometry.js';
 import type { ElectricityOptions } from './electricity-options.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
@@ -93,6 +94,16 @@ export function attachWithAdapters(
   }
 
   const seed = finite(options.seed === undefined ? 0 : options.seed, effect);
+  const flameReach = request.effect === 'fire' ? request.options.flameReach : undefined;
+  if (
+    flameReach !== undefined &&
+    (typeof flameReach !== 'number' ||
+      !Number.isFinite(flameReach) ||
+      flameReach < 0 ||
+      (request.effect === 'fire' && request.options.flameHeight !== undefined))
+  ) {
+    throw new Error('invalid-fire-parameter');
+  }
   const flameHeight = finite(
     request.effect === 'fire' ? (request.options.flameHeight ?? 24) : 24,
     effect,
@@ -139,14 +150,40 @@ export function attachWithAdapters(
       if (!current()) {
         return Promise.resolve(undefined);
       }
-      const estimate = measureCapture(target, paddingCss);
+      const relativePadding = (_width: number, height: number, dpr: number) =>
+        fireReachPadding(height, flameReach ?? 0, dpr);
+      const padding =
+        flameReach === undefined
+          ? paddingCss
+          : relativePadding(0, targetSize().height, view.devicePixelRatio);
+      const estimate = measureCapture(target, padding);
       observedSize = targetSize();
       reserve(estimate.width, estimate.height);
       awaitingAssets = true;
-      return adapters.capture(target, { paddingCss }, reserve, () => {
-        observedSize = targetSize();
-        awaitingAssets = false;
-      });
+      return adapters
+        .capture(
+          target,
+          {
+            paddingCss: padding,
+            resolvePadding: flameReach === undefined ? undefined : relativePadding,
+          },
+          reserve,
+          () => {
+            observedSize = targetSize();
+            awaitingAssets = false;
+          },
+        )
+        .then((frame) => {
+          if (flameReach !== undefined) {
+            try {
+              assertFirePaintMargin(frame, frame.contentBounds.height * flameReach);
+            } catch (error) {
+              frame.release();
+              throw error;
+            }
+          }
+          return frame;
+        });
     },
     canRun: canCapture,
     present: presentRevision,
@@ -594,6 +631,13 @@ export function attachWithAdapters(
         undefined,
         flameHeight,
         effect,
+        flameReach === undefined
+          ? undefined
+          : {
+              pixelToLocal: frame.pixelToLocal,
+              directionalReach: frame.contentBounds.height * flameReach,
+              inwardDepth: 3,
+            },
       );
       prepared.present(output.getCurrentTexture());
       dirty = false;

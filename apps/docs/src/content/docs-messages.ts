@@ -69,9 +69,11 @@ const messages = {
       settings: 'preview settings',
       subject: 'Target element',
       intensity: 'Intensity',
-      flameReach: 'Flame reach',
-      flameNote:
-        'Percent of target height. Changing reach recreates the effect; intensity changes strength only.',
+      extentBasis: {
+        height: 'Percent of target height.',
+        'shorter-side': 'Percent of the shorter target side.',
+      },
+      extentNote: 'Changing extent recreates the effect; intensity changes strength only.',
       currentSettings: 'Current settings',
       copy: 'Copy',
       copied: 'Copied',
@@ -163,9 +165,11 @@ const messages = {
       settings: 'ajustes de la vista previa',
       subject: 'Elemento objetivo',
       intensity: 'Intensidad',
-      flameReach: 'Alcance de las llamas',
-      flameNote:
-        'Porcentaje de la altura del objetivo. Cambiarlo recrea el efecto; la intensidad solo cambia su fuerza.',
+      extentBasis: {
+        height: 'Porcentaje de la altura del objetivo.',
+        'shorter-side': 'Porcentaje del lado más corto del objetivo.',
+      },
+      extentNote: 'Cambiar la extensión recrea el efecto; la intensidad solo cambia su fuerza.',
       currentSettings: 'Ajustes actuales',
       copy: 'Copiar',
       copied: 'Copiado',

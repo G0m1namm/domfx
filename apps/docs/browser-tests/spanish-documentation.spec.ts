@@ -74,7 +74,7 @@ test('@smoke Spanish docs direct load keeps navigation, anchors and native contr
     /Copiado|Pulsa ⌘\/Ctrl\+C/,
   );
   expect(code).toContain('attachFire(target');
-  expect(code).toContain('flameHeight: 32');
+  expect(code).toContain('flameReach: 0.2');
 });
 
 test('@smoke Spanish docs reflow at 320 pixels and larger text', async ({ page }) => {
@@ -185,7 +185,7 @@ test('Spanish Fire lab retains playback, tuning and valid code', async ({ page }
   await lab.getByRole('slider', { name: 'Intensidad de Fire' }).fill('45');
   await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
   await lab.getByRole('slider', { name: 'Alcance de las llamas de Fire' }).fill('25');
-  await expect(lab.locator('[data-docs-lab-reach-code]')).toHaveText('0.25');
+  await expect(lab.locator('[data-docs-lab-extent-code="flameReach"]')).toHaveText('0.25');
   await lab.getByRole('radio', { name: 'SVG' }).check();
   await expect(lab.locator('[data-docs-lab-target="svg"]')).toBeVisible();
   await expect(lab).toHaveAttribute('data-status', 'active');

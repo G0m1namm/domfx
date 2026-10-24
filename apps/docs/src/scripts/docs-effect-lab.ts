@@ -1,3 +1,4 @@
+import { effectExtentReference, type ExtentField } from '@domfx/site/effect-extent';
 import type { EffectStatus } from '@domfx/site/effect-slot';
 import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import { findEffect, type Effect } from '@domfx/site/effects';
@@ -41,9 +42,12 @@ function initializeLab(
   const intensityInput = required<HTMLInputElement>('[data-docs-lab-intensity]', lab);
   const intensityOutput = required<HTMLOutputElement>('[data-docs-lab-intensity-output]', lab);
   const intensityCode = required<HTMLOutputElement>('[data-docs-lab-intensity-code]', lab);
-  const reachInput = lab.querySelector<HTMLInputElement>('[data-docs-lab-reach]');
-  const reachOutput = lab.querySelector<HTMLOutputElement>('[data-docs-lab-reach-output]');
-  const reachCode = lab.querySelector<HTMLOutputElement>('[data-docs-lab-reach-code]');
+  const extentInputs = (effectExtentReference(effect)?.fields ?? []).map((field) => ({
+    name: field.name,
+    input: required<HTMLInputElement>(`[data-docs-lab-extent="${field.name}"]`, lab),
+    output: required<HTMLOutputElement>(`[data-docs-lab-extent-output="${field.name}"]`, lab),
+    code: required<HTMLOutputElement>(`[data-docs-lab-extent-code="${field.name}"]`, lab),
+  }));
   const status = required<HTMLElement>('[data-docs-lab-status]', lab);
   const toggle = required<HTMLButtonElement>('[data-docs-lab-toggle]', lab);
   const toggleIcon = required<SVGUseElement>('use', toggle);
@@ -71,10 +75,10 @@ function initializeLab(
     intensityOutput.value = `${intensityInput.value}%`;
     intensityCode.value = String(intensity());
     setFill(intensityInput);
-    if (reachInput && reachOutput && reachCode) {
-      reachOutput.value = `${reachInput.value}%`;
-      reachCode.value = String(Number(reachInput.value) / 100);
-      setFill(reachInput);
+    for (const { input, output, code } of extentInputs) {
+      output.value = `${input.value}%`;
+      code.value = String(Number(input.value) / 100);
+      setFill(input);
     }
   }
 
@@ -134,12 +138,16 @@ function initializeLab(
     if (!visible) {
       return;
     }
+    const extents: Partial<Record<ExtentField['name'], number>> = {};
+    for (const { name, input } of extentInputs) {
+      extents[name] = Number(input.value) / 100;
+    }
     return slot.show(currentTarget(), effect, () => ({
       clock: 'auto',
       motion: 'respect',
       intensity: intensity(),
       seed: SEED,
-      ...(effect.id === 'fire' ? { flameReach: Number(reachInput?.value) / 100 } : {}),
+      ...extents,
     }));
   }
 
@@ -205,8 +213,10 @@ function initializeLab(
     },
     { signal },
   );
-  reachInput?.addEventListener('input', updateValues, { signal });
-  reachInput?.addEventListener('change', () => void attach(), { signal });
+  for (const { input } of extentInputs) {
+    input.addEventListener('input', updateValues, { signal });
+    input.addEventListener('change', () => void attach(), { signal });
+  }
   for (const subject of subjects) {
     subject.addEventListener('change', () => selectSubject(subject.value), { signal });
   }

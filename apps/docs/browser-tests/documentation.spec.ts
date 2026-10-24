@@ -353,10 +353,10 @@ for (const { path, effect, text } of labPages) {
     await expect(lab.locator('[data-docs-lab-intensity-output]')).toHaveText('45%');
 
     if (effect === 'Fire') {
-      const reach = lab.locator('[data-docs-lab-reach]');
+      const reach = lab.locator('[data-docs-lab-extent="flameReach"]');
       await reach.fill('25');
       await reach.press('Tab');
-      await expect(lab.locator('[data-docs-lab-reach-code]')).toHaveText('0.25');
+      await expect(lab.locator('[data-docs-lab-extent-code="flameReach"]')).toHaveText('0.25');
       await expect(lab).toHaveAttribute('data-status', 'active');
       await expect(canvas).toHaveCount(1);
     }

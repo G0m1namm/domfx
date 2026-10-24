@@ -1,3 +1,4 @@
+import { relativeBurnedPaperShader } from './burned-paper-relative-shader.js';
 import { burnedPaperShader } from './burned-paper-shader.js';
 import { ditherShader } from './dither-shader.js';
 import { EffectError } from './effect-error.js';
@@ -5,11 +6,14 @@ import { relativeElectricityShader } from './electricity-relative-shader.js';
 import { electricityShader } from './electricity-shader.js';
 import { relativeFireShader } from './fire-relative-shader.js';
 import { fireShader } from './fire-shader.js';
+import { relativeFrostShader } from './frost-relative-shader.js';
 import { frostShader } from './frost-shader.js';
 import { relativeKineticShader } from './kinetic-relative-shader.js';
 import { kineticShader } from './kinetic-shader.js';
 import type { PatternEffect } from './pattern-options.js';
+import { createRelativePatternShader } from './pattern-relative-shader.js';
 import { createPatternShader } from './pattern-shader.js';
+import { relativeSlimeShader } from './slime-relative-shader.js';
 import { slimeShader } from './slime-shader.js';
 
 const patternEffects = [
@@ -42,7 +46,7 @@ export type RenderEffect =
 /** Renderer-private owner of effect source, compilation and the compatible binding layout. */
 export class EffectPrograms {
   private readonly pipelines = new Map<
-    RenderEffect | 'fire-relative' | 'electricity-relative' | 'kinetic-relative',
+    RenderEffect | `${RenderEffect}-relative`,
     GPURenderPipeline
   >();
   readonly bindings: GPUBindGroupLayout;
@@ -73,20 +77,25 @@ export class EffectPrograms {
 
   static async create(device: GPUDevice): Promise<EffectPrograms> {
     const programs = new EffectPrograms(device);
-    const sources: [
-      RenderEffect | 'fire-relative' | 'electricity-relative' | 'kinetic-relative',
-      string,
-    ][] = [
+    const sources: [RenderEffect | `${RenderEffect}-relative`, string][] = [
       ['fire', fireShader],
       ['fire-relative', relativeFireShader],
       ['electricity', electricityShader],
       ['electricity-relative', relativeElectricityShader],
       ['frost', frostShader],
+      ['frost-relative', relativeFrostShader],
       ['kinetic', kineticShader],
       ['kinetic-relative', relativeKineticShader],
       ['slime', slimeShader],
+      ['slime-relative', relativeSlimeShader],
       ['burned-paper', burnedPaperShader],
+      ['burned-paper-relative', relativeBurnedPaperShader],
       ['dither', ditherShader],
+      ['dither-relative', createRelativePatternShader('dither')],
+      ...patternEffects.map((effect): [`${PatternEffect}-relative`, string] => [
+        `${effect}-relative`,
+        createRelativePatternShader(effect),
+      ]),
       ...patternEffects.map((effect): [RenderEffect, string] => [
         effect,
         createPatternShader(effect),
@@ -161,17 +170,7 @@ export class EffectPrograms {
   }
 
   pipeline(effect: RenderEffect, relative = false): GPURenderPipeline {
-    let key: RenderEffect | 'fire-relative' | 'electricity-relative' | 'kinetic-relative' = effect;
-    if (relative && effect === 'fire') {
-      key = 'fire-relative';
-    }
-    if (relative && effect === 'electricity') {
-      key = 'electricity-relative';
-    }
-    if (relative && effect === 'kinetic') {
-      key = 'kinetic-relative';
-    }
-    const pipeline = this.pipelines.get(key);
+    const pipeline = this.pipelines.get(relative ? `${effect}-relative` : effect);
     if (!pipeline) {
       throw new Error(`Unknown effect: ${effect}`);
     }

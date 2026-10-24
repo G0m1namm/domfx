@@ -5,7 +5,8 @@ import DocsEffectLab from '../../../components/DocsEffectLab.astro';
 import DocsEffectLinks from '../../../components/docs-effect-links.astro';
 import DocsEffectControls from '../../../components/docs-effect-controls.astro';
 import DocsSharedOptions from '../../../components/docs-shared-options.astro';
-import { effectReference } from '@domfx/site/effect-reference';
+import { effectReference, patternExtentReference } from '@domfx/site/effect-reference';
+import DocsPatternOptions from '../../../components/docs-pattern-options.astro';
 import { effects, type Effect } from '@domfx/site/effects';
 import { localeFromPath } from '@domfx/site/locale';
 import { effectReferenceEs } from '../../../content/effect-reference-es';
@@ -25,15 +26,15 @@ const reference = isEs ? effectReferenceEs[effect.id] : effectReference[effect.i
 const category = docsMessages(locale).categories[effect.category];
 const docsPrefix = isEs ? '/docs/es' : '/docs';
 const related = effects.filter((entry) => entry.category === effect.category && entry.id !== effect.id);
-const optionsType = effect.category === 'Pattern' && effect.id !== 'dither'
-  ? 'PatternOptions'
-  : `${effect.exportName.slice('attach'.length)}Options`;
+const patternExtent = patternExtentReference(effect);
+const optionsType = patternExtent?.optionsType ?? `${effect.exportName.slice('attach'.length)}Options`;
+const patternCode = patternExtent?.fields.map((field) => `\n  ${field.name}: ${field.example},`).join('') ?? '';
 const code = `import { ${effect.exportName} } from '@domfx/browser';
 import type { ${optionsType} } from '@domfx/browser';
 
 // ${isEs ? 'Ejecuta después del montaje; host contiene target y tiene position: relative.' : 'Run after mount; host contains target and has position: relative.'}
 const options: ${optionsType} = {
-  host, clock: 'auto', intensity: 0.8,${effect.id === 'fire' ? '\n  flameReach: 0.2,' : ''}
+  host, clock: 'auto', intensity: 0.8,${effect.id === 'fire' ? '\n  flameReach: 0.2,' : ''}${patternCode}
 };
 const effect = ${effect.exportName}(target, options);
 // ${isEs ? 'Llama también a effect.dispose() al desmontar el componente.' : 'Also call effect.dispose() on component unmount.'}
@@ -66,13 +67,14 @@ if (effect.lifecycle !== 'active') {
   <p>{isEs ? 'Devuelve una instancia de efecto de inmediato. Las importaciones son seguras durante el renderizado en servidor; llama a la función en el navegador después de montar los elementos. La' : 'Returns an effect instance immediately. Imports are safe during server rendering; call the function in the browser after the elements are mounted. The'} <a href={`${docsPrefix}/standalone`}>{isEs ? 'guía de uso independiente' : 'Standalone guide'}</a> {isEs ? 'incluye el HTML y CSS necesarios.' : 'includes the required HTML and CSS.'}</p>
   <div class="docs-code-scroll" tabindex="0" role="region" aria-label={isEs ? `Uso de ${effect.name}` : `${effect.name} usage`}><Code code={code} lang="ts" theme={codeTheme} /></div>
   <h2 id="effect-options">{isEs ? 'Opciones del efecto' : 'Effect options'}</h2>
+  {patternExtent && <DocsPatternOptions effect={effect} />}
   {effect.id === 'fire' ? <>
     <p><code>FireOptions</code> {isEs ? 'amplía' : 'extends'} <code>AttachmentOptions</code> {isEs ? 'con dos opciones de creación excluyentes.' : 'with two mutually exclusive creation options.'}</p>
     <DocsApiTable label={isEs ? 'Opciones de creación específicas de Fire' : 'Fire-specific creation options'}>
       <thead><tr><th scope="col">{isEs ? 'Propiedad' : 'Property'}</th><th scope="col">{isEs ? 'Tipo' : 'Type'}</th><th scope="col">{isEs ? 'Predeterminado' : 'Default'}</th></tr></thead>
       <tbody><tr><th scope="row"><code>flameReach</code><p>{isEs ? 'Fracción finita no negativa de la altura del border box sin transformar, incluidos los márgenes transparentes. 0.1 equivale a 10 px CSS en un objetivo de 100 px y a 40 px en uno de 400 px. Limita la distancia exterior y el recorrido ascendente; no garantiza una punta visible en cada fotograma. La intensidad cambia la fuerza, sin cambiar el alcance ni el detalle fino. Cero produce salida transparente. Solo al crear la instancia; se recalcula en cada captura tras un cambio de tamaño. No se puede combinar con flameHeight.' : 'Finite nonnegative fraction of the untransformed target border-box height, including transparent margins. 0.1 means 10 CSS px on a 100 px target and 40 px on a 400 px target. Bounds exterior distance and upward travel; it does not guarantee a visible tip in every frame. Intensity changes strength independently of reach and fine detail. Zero produces transparent output. Creation-only; resolved again on capture after resize. Cannot be combined with flameHeight.'}</p></th><td><code>number</code></td><td>{isEs ? 'Omitido (modo anterior)' : 'Omitted (legacy mode)'}</td></tr><tr><th scope="row"><code>flameHeight</code><p>{isEs ? 'Escala de las llamas en píxeles CSS del sistema de coordenadas del elemento objetivo, de 8 a 64. Es una escala artística, no una extensión máxima garantizada en píxeles. Se fija al crear el efecto; cambiarla requiere otra instancia.' : 'Flame scale in target-local CSS pixels, from 8 to 64. This is an artistic scale, not a guaranteed maximum pixel extent. Set at creation; changing it requires a new effect instance.'}</p></th><td><code>number</code></td><td><code>24</code></td></tr></tbody>
     </DocsApiTable>
-  </> : <p><code>{optionsType}</code> {isEs ? 'acepta las opciones de creación compartidas de abajo. No hay ajustes públicos adicionales.' : 'accepts the shared creation options below. There are no additional public settings.'}</p>}
+  </> : !patternExtent && <p><code>{optionsType}</code> {isEs ? 'acepta las opciones de creación compartidas de abajo. No hay ajustes públicos adicionales.' : 'accepts the shared creation options below. There are no additional public settings.'}</p>}
   <h2 id="shared-options">{isEs ? 'Opciones compartidas' : 'Shared options'}</h2>
   <DocsSharedOptions />
   <h2 id="controls">{isEs ? 'Controles' : 'Controls'}</h2>

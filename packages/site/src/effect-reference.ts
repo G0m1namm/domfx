@@ -14,7 +14,7 @@ export const effectReference = {
   fire: {
     description: 'Warm flames and sparks rise from the visible shape.',
     intensity:
-      'Increases flame reach and brightness. Use flameHeight to set the flame scale at creation.',
+      'With flameReach, scales visual strength without changing reach or fine detail. Omitted flameReach preserves legacy intensity and flameHeight behavior.',
   },
   dither: {
     description: 'Ordered dots coat the edge and form rising wisps.',

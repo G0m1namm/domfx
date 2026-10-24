@@ -24,11 +24,11 @@ const gallerySubjects: Subject[] = ['image', 'text', 'svg', 'text', 'svg'];
 const { effect, heading, description } = Astro.props;
 const subject = Astro.props.subject ?? (effect.id === 'fire' || effect.id === 'slime' ? 'image' : gallerySubjects[effects.indexOf(effect) % gallerySubjects.length]);
 const id = `docs-lab-${effect.id}`;
-const hasHeight = effect.id === 'fire';
+const hasReach = effect.id === 'fire';
 // Spread so SVG accepts the global hidden attribute, which its typings omit.
 const visibility = (kind: Subject) => (kind === subject ? {} : { hidden: true });
 const intensity = 80;
-const height = 32;
+const reach = 20;
 const locale = localeFromPath(Astro.url.pathname);
 const messages = docsMessages(locale).lab;
 const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.name}` : `${effect.name} ${label.toLowerCase()}`;
@@ -60,18 +60,18 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
       <input type="range" min="0" max="100" step="1" value={intensity} style={`--fill:${intensity}%`} data-docs-lab-intensity aria-label={effectLabel(messages.intensity)} />
       <output data-docs-lab-intensity-output>{intensity}%</output>
     </label>
-    {hasHeight && <label class="docs-lab-row">
-      <span class="docs-lab-label">{messages.flameHeight}</span>
-      <input type="range" min="8" max="64" step="1" value={height} style={`--fill:${((height - 8) / 56) * 100}%`} data-docs-lab-height aria-label={effectLabel(messages.flameHeight)} aria-describedby={`${id}-height-note`} />
-      <output data-docs-lab-height-output>{height}px</output>
-      <small id={`${id}-height-note`} class="docs-lab-note">{messages.flameNote}</small>
+    {hasReach && <label class="docs-lab-row">
+      <span class="docs-lab-label">{messages.flameReach}</span>
+      <input type="range" min="0" max="30" step="1" value={reach} style={`--fill:${reach / 30 * 100}%`} data-docs-lab-reach aria-label={effectLabel(messages.flameReach)} aria-describedby={`${id}-reach-note`} />
+      <output data-docs-lab-reach-output>{reach}%</output>
+      <small id={`${id}-reach-note`} class="docs-lab-note">{messages.flameNote}</small>
     </label>}
   </fieldset>
   <div class="docs-lab-code">
     <div class="docs-lab-code-bar"><span>{messages.currentSettings}</span><button type="button" class="docs-lab-copy" data-docs-lab-copy><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg><span data-docs-lab-copy-label>{messages.copy}</span></button></div>
     <pre tabindex="0" aria-label={effectLabel(messages.liveSettings)}><code data-docs-lab-code>{`const effect = ${effect.exportName}(target, {
   host, clock: 'auto', motion: 'respect',
-  intensity: `}<output data-docs-lab-intensity-code>{intensity / 100}</output>{`,${hasHeight ? '\n  flameHeight: ' : ''}`}{hasHeight && <output data-docs-lab-height-code>{height}</output>}{`${hasHeight ? ',' : ''}
+  intensity: `}<output data-docs-lab-intensity-code>{intensity / 100}</output>{`,${hasReach ? '\n  flameReach: ' : ''}`}{hasReach && <output data-docs-lab-reach-code>{reach / 100}</output>}{`${hasReach ? ',' : ''}
   seed: 314,
 });`}</code></pre>
   </div>

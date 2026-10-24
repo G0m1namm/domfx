@@ -41,9 +41,9 @@ function initializeLab(
   const intensityInput = required<HTMLInputElement>('[data-docs-lab-intensity]', lab);
   const intensityOutput = required<HTMLOutputElement>('[data-docs-lab-intensity-output]', lab);
   const intensityCode = required<HTMLOutputElement>('[data-docs-lab-intensity-code]', lab);
-  const heightInput = lab.querySelector<HTMLInputElement>('[data-docs-lab-height]');
-  const heightOutput = lab.querySelector<HTMLOutputElement>('[data-docs-lab-height-output]');
-  const heightCode = lab.querySelector<HTMLOutputElement>('[data-docs-lab-height-code]');
+  const reachInput = lab.querySelector<HTMLInputElement>('[data-docs-lab-reach]');
+  const reachOutput = lab.querySelector<HTMLOutputElement>('[data-docs-lab-reach-output]');
+  const reachCode = lab.querySelector<HTMLOutputElement>('[data-docs-lab-reach-code]');
   const status = required<HTMLElement>('[data-docs-lab-status]', lab);
   const toggle = required<HTMLButtonElement>('[data-docs-lab-toggle]', lab);
   const toggleIcon = required<SVGUseElement>('use', toggle);
@@ -71,10 +71,10 @@ function initializeLab(
     intensityOutput.value = `${intensityInput.value}%`;
     intensityCode.value = String(intensity());
     setFill(intensityInput);
-    if (heightInput && heightOutput && heightCode) {
-      heightOutput.value = `${heightInput.value}px`;
-      heightCode.value = heightInput.value;
-      setFill(heightInput);
+    if (reachInput && reachOutput && reachCode) {
+      reachOutput.value = `${reachInput.value}%`;
+      reachCode.value = String(Number(reachInput.value) / 100);
+      setFill(reachInput);
     }
   }
 
@@ -139,7 +139,7 @@ function initializeLab(
       motion: 'respect',
       intensity: intensity(),
       seed: SEED,
-      ...(effect.id === 'fire' ? { flameHeight: Number(heightInput?.value) } : {}),
+      ...(effect.id === 'fire' ? { flameReach: Number(reachInput?.value) / 100 } : {}),
     }));
   }
 
@@ -205,8 +205,8 @@ function initializeLab(
     },
     { signal },
   );
-  heightInput?.addEventListener('input', updateValues, { signal });
-  heightInput?.addEventListener('change', () => void attach(), { signal });
+  reachInput?.addEventListener('input', updateValues, { signal });
+  reachInput?.addEventListener('change', () => void attach(), { signal });
   for (const subject of subjects) {
     subject.addEventListener('change', () => selectSubject(subject.value), { signal });
   }

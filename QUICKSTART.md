@@ -174,3 +174,12 @@ usable. Read the console reason and [troubleshooting](https://domfx.dev/docs/tro
 Call `cleanup()` when the page or component goes away. Disposed instances cannot
 be reused. See [browser support](https://domfx.dev/docs/support/) for measured
 limits and [the API](https://domfx.dev/docs/api/) for placement and capture restrictions.
+
+### Target-relative Fire
+
+Use `flameReach: 0.1` instead of `flameHeight` for creation-only reach of 10% of
+the untransformed target border-box height. In this mode intensity changes strength
+without changing reach or fine detail; zero reach/intensity is transparent. Resizing
+resolves reach again. Both options together throw. Omission keeps legacy behavior.
+See the [Fire contract](packages/domfx/README.md#relative-fire-reach) for the bounded
+paint policy and allocation limits; excess reach becomes unavailable without clipping.

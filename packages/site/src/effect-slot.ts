@@ -55,7 +55,8 @@ export function createEffectEnvironment({
   } satisfies EffectEnvironment & { update(): void };
 }
 
-type EffectOptions = Omit<FireOptions, 'host'>;
+type WithoutHost<T> = T extends unknown ? Omit<T, 'host'> : never;
+type EffectOptions = WithoutHost<FireOptions>;
 type EffectFactory = (target: Element, options: FireOptions) => EffectHandle;
 type EffectLoader = (effect: Effect) => Promise<EffectFactory>;
 

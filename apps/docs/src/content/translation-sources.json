@@ -3,7 +3,7 @@
   "api/effects.mdx": "34a78634d7202acb683839d32a86a2ac6be434cd0217f8827c542ac0108deed0",
   "api/gsap.mdx": "5db0995d64aceb1c1fb38c108b8ef11d5c7a30e002d4b1f04d15028f65e22fe3",
   "api/shared.mdx": "be791da7187be8ce36028c0c47a671b877c2cc153e3d2ce129ac242b4c0bacd2",
-  "api.mdx": "72d55b91d3a5a6a35577cade4acb7a18badcba09b86458855d21480f273ec8c5",
+  "api.mdx": "7ced2706b95f2556bb8b950a8c0243edce994660b560fed22c8f598b63bbb014",
   "gsap.mdx": "10ed2b1faa2a845fed8bbaf343e8f3f9f3b2cae012db22cb565664d6b2c006f2",
   "installation.md": "4789a68112483cf22c54b434aae0c26264cbd6740862f34a3ff0f42603e7fa11",
   "introduction.md": "28df22c1a56c871e050fde6ac4e869d3ab53a6b3a3a1c748d41cef6edbe03e27",
@@ -11,5 +11,5 @@
   "support.md": "8232abdf98a66185762b491f6ad2308f73dcfa208777cf75467fc516dfd8da41",
   "troubleshooting.md": "94267c71baddb69d2760c480b57a777f82824e466e10a781a6a2971f3da50b64",
   "upgrading.md": "95aacf066f51f103946986d9d6f635a028d4bbc4e126f784f2ef2fbb162f6d1f",
-  "effect-reference.ts": "a261af8b63f675487294019844436ae29a05d00f11b39f9d9b81621258592dbb"
+  "effect-reference.ts": "aeef44dee091eab4b7afebdb54d9d278ca879f044b3724f765e7210aee45abac"
 }

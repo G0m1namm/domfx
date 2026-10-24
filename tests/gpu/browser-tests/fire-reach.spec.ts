@@ -2,6 +2,104 @@ import { expect, test } from '@playwright/test';
 
 import type {} from '../src/manual.js';
 
+test('DPR-only changes recapture relative geometry without changing the local box', async ({
+  page,
+}) => {
+  await page.goto('/manual.html');
+  await page.evaluate(async () => {
+    await window.manual.effect.ready;
+    window.manual.effect.dispose();
+    const host = document.querySelector<HTMLElement>('#manual-host');
+    const target = document.querySelector('#manual-target');
+    if (!host || !target) {
+      throw new Error('fixture');
+    }
+    window.manual.effect = window.manual.attach(target, {
+      host,
+      flameReach: 0.5,
+      time: 1.5,
+      seed: 314,
+    });
+    await window.manual.effect.ready;
+  });
+  const session = await page.context().newCDPSession(page);
+  await session.send('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 900,
+    deviceScaleFactor: 1.25,
+    mobile: false,
+  });
+  await expect.poll(() => page.locator('#manual-host canvas').getAttribute('width')).toBe('295');
+  expect(
+    await page
+      .locator('#manual-target')
+      .evaluate((target) => target.getBoundingClientRect().height),
+  ).toBe(64);
+  expect(await page.evaluate(() => window.manual.effect.lifecycle)).toBe('active');
+  await page.evaluate(() => window.manual.effect.dispose());
+});
+
+test('tiny reach, allocation rejection and distant overflow preserve cleanup', async ({ page }) => {
+  await page.goto('/manual.html');
+  await page.evaluate(() => window.manual.effect.ready);
+  const result = await page.evaluate(async () => {
+    window.manual.effect.dispose();
+    const host = document.querySelector<HTMLElement>('#manual-host');
+    const target = document.querySelector<HTMLElement>('#manual-target');
+    if (!host || !target) {
+      throw new Error('fixture');
+    }
+    target.style.width = '100px';
+    target.style.height = '100px';
+    const tiny = [];
+    for (const flameReach of [0, 0.001, 0.005, 0.01]) {
+      const effect = window.manual.attach(target, { host, flameReach, time: 1.5, seed: 314 });
+      await effect.ready;
+      tiny.push(effect.lifecycle);
+      effect.dispose();
+    }
+    const escaped = document.createElement('span');
+    escaped.style.cssText = 'position:absolute;left:2000px;width:10px;height:10px;background:white';
+    target.append(escaped);
+    const overflow = window.manual.attach(target, { host, flameReach: 0.1 });
+    await overflow.ready;
+    const overflowReason = overflow.reason;
+    overflow.dispose();
+    escaped.remove();
+    target.style.width = '400px';
+    target.style.height = '400px';
+    const rejected = [];
+    for (const flameReach of [0.2, Number.MAX_VALUE]) {
+      const effect = window.manual.attach(target, { host, flameReach });
+      await effect.ready;
+      rejected.push(effect.reason);
+      effect.dispose();
+    }
+    target.style.width = '100px';
+    target.style.height = '100px';
+    const recovered = window.manual.attach(target, { host, flameReach: 0.1 });
+    await recovered.ready;
+    const active = recovered.lifecycle === 'active';
+    recovered.dispose();
+    return {
+      tiny,
+      overflowReason,
+      rejected,
+      active,
+      canvases: host.querySelectorAll('canvas').length,
+      visible: getComputedStyle(target).visibility,
+    };
+  });
+  expect(result).toEqual({
+    tiny: Array(4).fill('active'),
+    overflowReason: 'missing-exterior',
+    rejected: ['capture-budget', 'capture-budget'],
+    active: true,
+    canvases: 0,
+    visible: 'visible',
+  });
+});
+
 for (const dpr of [1, 1.25, 2]) {
   test.describe(`relative Fire lifecycle DPR ${dpr}`, () => {
     test.use({ deviceScaleFactor: dpr });

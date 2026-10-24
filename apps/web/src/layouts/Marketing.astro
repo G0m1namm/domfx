@@ -4,6 +4,7 @@ import DiscoveryHead from '@domfx/site/components/discovery-head.astro';
 import PhosphorIcons from '@domfx/site/components/phosphor-icons.astro';
 import SiteNav from '@domfx/site/components/SiteNav.astro';
 import { effects } from '@domfx/site/effects';
+import { effectCreationFields } from '@domfx/site/effect-extent';
 import { localeFromPath, localePath } from '@domfx/site/locale';
 import { marketingPages } from '@domfx/site/marketing-pages';
 import washer from '../assets/brand/washer.png';
@@ -22,6 +23,11 @@ const m = marketingMessages[locale];
 const page = marketingPages(Astro.site?.href ?? 'http://127.0.0.1:4321', locale)[isLibrary ? 1 : 0];
 const docsPath = (slug: 'api' | 'api/effects') => localePath({ kind: 'docs', slug }, locale);
 const panLabels = { left: m.panLeft, right: m.panRight, up: m.panUp, down: m.panDown };
+const controlBasis = {
+  height: { en: 'Percent of target height.', es: 'Porcentaje de la altura del objetivo.' },
+  'shorter-side': { en: 'Percent of the shorter target side.', es: 'Porcentaje del lado más corto del objetivo.' },
+  'drip-density': { en: 'Percent of candidate drip locations.', es: 'Porcentaje de ubicaciones candidatas para gotas.' },
+};
 ---
 <!doctype html>
 <html lang={locale}>
@@ -52,6 +58,13 @@ const panLabels = { left: m.panLeft, right: m.panRight, up: m.panUp, down: m.pan
 <div id="closing-content"><MarketingClosing locale={locale}/></div>
 <noscript><p class="wrap">{m.noscript}</p></noscript>
 <dialog class="effect-dialog" aria-labelledby="dialog-title">
+{effects.map((effect) => <template data-creation-template={effect.id}>
+  {effectCreationFields(effect).map((field) => <label class="effect-creation-row" for={`preview-${effect.id}-${field.name}`}>
+    <span class="intensity-label">{field.label[locale]} <output>{Math.round(field.example * 100)}%</output></span>
+    <input id={`preview-${effect.id}-${field.name}`} type="range" min="0" max={field.max} step="1" value={Math.round(field.example * 100)} data-creation-option={field.name} aria-describedby={`preview-${field.name}-note`} />
+    <small id={`preview-${field.name}-note`}>{controlBasis[field.basis][locale]}</small>
+  </label>)}
+</template>)}
 <template data-preview-image><img src={washer.src} width="260" height="260" alt=""/></template>
 <template data-preview-svg><svg width="260" height="260" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg></template>
 <div class="dialog-top"><span>{m.preview}</span><button data-close aria-label={m.closePreview}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-x"/></svg></button></div><div class="dialog-layout"><div class="dialog-viewer">
@@ -70,7 +83,7 @@ const panLabels = { left: m.panLeft, right: m.panRight, up: m.panUp, down: m.pan
       {(['left', 'right', 'up', 'down'] as const).map((direction) => <button data-pan={direction} aria-label={panLabels[direction]} title={panLabels[direction]}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href={`#ph-arrow-${direction}`}/></svg></button>)}
     </div>
   </div>
-</div><div class="dialog-details"><span class="category" data-dialog-category></span><h2 id="dialog-title"></h2><div class="target-options" role="group" aria-label={m.previewTarget}><button data-target="text" aria-pressed="true">{m.text}</button><button data-target="svg" aria-pressed="false">SVG</button><button data-target="image" aria-pressed="false">{m.image}</button></div><label class="intensity-label" for="effect-intensity">{m.intensity} <output>70%</output></label><input id="effect-intensity" type="range" min="0" max="100" value="70"/><button class="button pause-button" data-pause><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg><span>{m.pauseAnimation}</span></button><code data-code></code><button class="button silver" data-copy-code>{m.copyCode} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><p class="preview-status" role="status" data-copy-status></p><p class="preview-status" role="status" data-preview-status></p><a class="plain-link" data-effect-reference href={docsPath('api/effects')}>{m.effectReference} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up-right"/></svg></a></div></div></dialog>
+</div><div class="dialog-details"><span class="category" data-dialog-category></span><h2 id="dialog-title"></h2><div class="target-options" role="group" aria-label={m.previewTarget}><button data-target="text" aria-pressed="true">{m.text}</button><button data-target="svg" aria-pressed="false">SVG</button><button data-target="image" aria-pressed="false">{m.image}</button></div><label class="intensity-label" for="effect-intensity">{m.intensity} <output>70%</output></label><input id="effect-intensity" type="range" min="0" max="100" value="70"/><fieldset class="effect-creation-controls" data-creation-controls aria-label={m.effectSettings} disabled hidden></fieldset><button class="button pause-button" data-pause><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-pause"/></svg><span>{m.pauseAnimation}</span></button><code data-code></code><button class="button silver" data-copy-code>{m.copyCode} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button><p class="preview-status" role="status" data-copy-status></p><p class="preview-status" role="status" data-preview-status></p><a class="plain-link" data-effect-reference href={docsPath('api/effects')}>{m.effectReference} <svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-up-right"/></svg></a></div></div></dialog>
 <SiteSearch locale={locale}/>
 <div class="toast" role="status" hidden></div>
 <script src="../scripts/marketing.ts"></script>

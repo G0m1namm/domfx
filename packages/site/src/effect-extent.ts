@@ -104,3 +104,26 @@ export function effectExtentReference(effect: Effect) {
 }
 
 export type ExtentField = NonNullable<ReturnType<typeof effectExtentReference>>['fields'][number];
+
+/** Shared creation controls keep marketing and docs previews on the same API. */
+export function effectCreationFields(effect: Effect) {
+  const fields = (effectExtentReference(effect)?.fields ?? []).map((field) => ({
+    ...field,
+    max: 30,
+  }));
+  if (effect.id !== 'slime') {
+    return fields;
+  }
+  return [
+    ...fields,
+    {
+      name: 'dripDensity' as const,
+      basis: 'drip-density' as const,
+      example: 0.56,
+      max: 100,
+      label: { en: 'Drip density', es: 'Densidad de gotas' },
+    },
+  ];
+}
+
+export type EffectCreationField = ReturnType<typeof effectCreationFields>[number];

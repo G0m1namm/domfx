@@ -6,6 +6,13 @@ tables; effect pages include them rather than maintaining separate copies.
 Each effect reference opens with its own live preview; the Standalone guide reuses
 the same preview to tune Fire.
 
+For every effect behavior, option or default change, update and verify the marketing
+Home and `/effects/` previews, copied code, and EN/ES docs together. Reuse shared
+creation-control metadata so both sites expose the same supported settings. Preserve
+authored showcase sizing and synchronized animations unless the change requires
+otherwise. Final review must check these surfaces, including keyboard and narrow
+layouts.
+
 Describe appearance and intensity per effect. Separate creation options, writable
 controls, read-only state and methods. Record types, defaults, units, ranges and
 whether changing a value requires a replacement instance. Keep code identifiers

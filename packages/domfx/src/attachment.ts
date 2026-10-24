@@ -119,6 +119,13 @@ export function attachWithAdapters(
   const patternGeometry = resolvePatternGeometry(effect, patternOptions, 0, 0);
   const seed = finite(options.seed === undefined ? 0 : options.seed, effect);
   const flameReach = request.effect === 'fire' ? request.options.flameReach : undefined;
+  const dripDensity =
+    request.effect === 'slime' && request.options.dripDensity !== undefined
+      ? finite(request.options.dripDensity, effect)
+      : 0.56;
+  if (dripDensity < 0 || dripDensity > 1) {
+    throw new Error('invalid-slime-parameter');
+  }
   let materialExtent: MaterialExtent | undefined;
   if (request.effect === 'frost') {
     materialExtent = materialExtentOptions(
@@ -776,6 +783,7 @@ export function attachWithAdapters(
         flameHeight,
         effect,
         geometry,
+        dripDensity,
       );
       prepared.present(output.getCurrentTexture());
       dirty = false;

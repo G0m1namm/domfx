@@ -1,4 +1,4 @@
-import { effectExtentReference, type ExtentField } from '@domfx/site/effect-extent';
+import { effectCreationFields, type EffectCreationField } from '@domfx/site/effect-extent';
 import type { EffectStatus } from '@domfx/site/effect-slot';
 import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import { findEffect, type Effect } from '@domfx/site/effects';
@@ -42,7 +42,7 @@ function initializeLab(
   const intensityInput = required<HTMLInputElement>('[data-docs-lab-intensity]', lab);
   const intensityOutput = required<HTMLOutputElement>('[data-docs-lab-intensity-output]', lab);
   const intensityCode = required<HTMLOutputElement>('[data-docs-lab-intensity-code]', lab);
-  const extentInputs = (effectExtentReference(effect)?.fields ?? []).map((field) => ({
+  const extentInputs = effectCreationFields(effect).map((field) => ({
     name: field.name,
     input: required<HTMLInputElement>(`[data-docs-lab-extent="${field.name}"]`, lab),
     output: required<HTMLOutputElement>(`[data-docs-lab-extent-output="${field.name}"]`, lab),
@@ -138,7 +138,7 @@ function initializeLab(
     if (!visible) {
       return;
     }
-    const extents: Partial<Record<ExtentField['name'], number>> = {};
+    const extents: Partial<Record<EffectCreationField['name'], number>> = {};
     for (const { name, input } of extentInputs) {
       extents[name] = Number(input.value) / 100;
     }

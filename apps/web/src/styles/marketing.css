@@ -411,6 +411,35 @@ footer nav {
   justify-content: space-between;
   font-size: 0.75rem;
 }
+.effect-creation-controls {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+  min-inline-size: 0;
+}
+.effect-creation-row {
+  display: block;
+  margin-block: 1rem;
+}
+.effect-creation-row .intensity-label {
+  gap: 0.75rem;
+  align-items: baseline;
+}
+.effect-creation-row output {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.dialog-details .effect-creation-row input {
+  display: block;
+  min-block-size: max(2.75rem, 44px);
+  margin: 0;
+}
+.effect-creation-row small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
 .dialog-details input {
   width: 100%;
   accent-color: var(--silver);
@@ -2193,6 +2222,10 @@ html[data-initial-audience='agents'] #humans-panel {
   letter-spacing: -7px;
   flex: none;
   max-width: calc(100% - 64px);
+}
+.dialog-target[data-kind='text'] {
+  /* Include the tracked glyph overhang without moving the centered lettering. */
+  padding-inline: 0.5rem;
 }
 .dialog-target svg,
 .dialog-target img {

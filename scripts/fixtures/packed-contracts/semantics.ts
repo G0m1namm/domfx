@@ -65,6 +65,13 @@ attachFrost(target, { host, mistReach: '20%' });
 attachFrost(target, { host, dripReach: 0.2 });
 relativeFrost.dispose();
 const relativeSlime = attachSlime(target, { host, coatingDepth: 0.05, dripReach: 0.2 });
+attachSlime(target, { host, dripDensity: 0.9 }).dispose();
+// @ts-expect-error Drip density is a numeric fraction, not percentage text.
+attachSlime(target, { host, dripDensity: '90%' });
+// @ts-expect-error Only Slime supports drip density.
+attachFrost(target, { host, dripDensity: 0.9 });
+// @ts-expect-error Drip density is creation-only, not a writable instance control.
+relativeSlime.dripDensity = 0.9;
 attachSlime(target, { host, dripReach: 0 }).dispose();
 // @ts-expect-error Relative drip travel belongs only to Slime.
 attachBurnedPaper(target, { host, dripReach: 0.2 });

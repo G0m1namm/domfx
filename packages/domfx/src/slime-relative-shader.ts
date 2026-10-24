@@ -52,7 +52,7 @@ ${valueNoise}
     for (var x = -2; x <= 2; x++) {
       let id = vec2f(cell.x + f32(x), f32(y));
       let random = hash(id + seed);
-      if (random > .56) { continue; }
+      if (geometry.extent.z <= 0 || random > geometry.extent.z) { continue; }
       let detail = hash(id + seed + vec2f(17.3, 43.7));
       let jitter = vec2f(hash(id + seed + 7.1), hash(id + seed + 53.2));
       let probe = (id + .5) * 12 + (jitter - .5) * 4.8;

@@ -50,6 +50,7 @@ export interface PreparedGpuFrame {
     flameHeight?: number,
     effect?: RenderEffect,
     geometry?: EffectGeometry,
+    dripDensity?: number,
   ): void;
   present(destination: GPUTexture): void;
   readFire(): Promise<Uint8Array>;
@@ -236,21 +237,35 @@ export class GpuExperiment {
           flameHeight = 24,
           effect = 'fire',
           geometry,
+          dripDensity = 0.56,
         ) => {
           if (disposed) {
             throw new Error('frame-disposed');
           }
           if (
-            ![time, seed, intensity, pixelsPerCss, flameHeight].every(Number.isFinite) ||
+            ![time, seed, intensity, pixelsPerCss, flameHeight, dripDensity].every(
+              Number.isFinite,
+            ) ||
             pixelsPerCss <= 0 ||
             flameHeight < 8 ||
-            flameHeight > 64
+            flameHeight > 64 ||
+            dripDensity < 0 ||
+            dripDensity > 1
           ) {
             throw new Error('invalid-parameters');
           }
           if (geometry) {
             const { a, d, e, f } = geometry.pixelToLocal;
-            const values = [a, d, e, f, geometry.directionalReach, geometry.inwardDepth, 0, 0];
+            const values = [
+              a,
+              d,
+              e,
+              f,
+              geometry.directionalReach,
+              geometry.inwardDepth,
+              dripDensity,
+              0,
+            ];
             if (
               values.some((value) => !Number.isFinite(Math.fround(value))) ||
               a <= 0 ||
@@ -261,6 +276,8 @@ export class GpuExperiment {
               throw new Error('invalid-geometry');
             }
             device.queue.writeBuffer(geometricParameters, 0, new Float32Array(values));
+          } else if (effect === 'slime') {
+            device.queue.writeBuffer(geometricParameters, 24, new Float32Array([dripDensity]));
           }
           device.queue.writeBuffer(
             parameters,

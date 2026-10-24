@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { effectExtentReference } from '@domfx/site/effect-extent';
+import { effectCreationFields } from '@domfx/site/effect-extent';
 import { effects } from '@domfx/site/effects';
 
 for (const locale of ['en', 'es'] as const) {
@@ -14,19 +14,19 @@ for (const locale of ['en', 'es'] as const) {
     const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
     const page = await context.newPage();
     for (const effect of effects) {
-      const reference = effectExtentReference(effect);
-      if (!reference) {
+      const fields = effectCreationFields(effect);
+      if (!fields.length) {
         throw new Error(`Missing extent metadata: ${effect.id}`);
       }
       await page.goto(`${prefix}/api/effects/${effect.id}/`);
       const lab = page.locator('[data-docs-lab]');
-      await expect(lab.locator('[data-docs-lab-extent]')).toHaveCount(reference.fields.length);
-      for (const field of reference.fields) {
+      await expect(lab.locator('[data-docs-lab-extent]')).toHaveCount(fields.length);
+      for (const field of fields) {
         await expect(lab.locator(`[data-docs-lab-extent="${field.name}"]`)).toHaveValue(
-          String(field.example * 100),
+          String(Math.round(field.example * 100)),
         );
         await expect(lab.locator(`[data-docs-lab-extent-output="${field.name}"]`)).toHaveText(
-          `${field.example * 100}%`,
+          `${Math.round(field.example * 100)}%`,
         );
         await expect(lab.locator('[data-docs-lab-code]')).toContainText(
           `${field.name}: ${field.example}`,
@@ -65,11 +65,11 @@ for (const locale of ['en', 'es'] as const) {
       await lab.locator('[data-docs-lab-intensity]').fill('45');
       await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
       expect(await firstCanvas.evaluate((canvas) => canvas.isConnected), effect.id).toBe(true);
-      const reference = effectExtentReference(effect);
-      if (!reference) {
+      const fields = effectCreationFields(effect);
+      if (!fields.length) {
         throw new Error(`Missing extent metadata: ${effect.id}`);
       }
-      for (const field of reference.fields) {
+      for (const field of fields) {
         const previous = await lab.locator('canvas').elementHandle();
         if (!previous) {
           throw new Error(`Missing output: ${effect.id}`);
@@ -84,7 +84,7 @@ for (const locale of ['en', 'es'] as const) {
       const copied = await page.locator('html').getAttribute('data-copied-settings');
       expect(copied, effect.id).toContain(`const effect = ${effect.exportName}(target`);
       expect(copied, effect.id).toContain('intensity: 0.45');
-      for (const field of reference.fields) {
+      for (const field of fields) {
         expect(copied, effect.id).toContain(`${field.name}: 0.17`);
       }
       for (const subject of ['text', 'svg', 'image']) {

@@ -1,7 +1,7 @@
 ---
 import piercedRing from '../assets/brand/pierced-ring.png';
 import { effects, type Effect } from '@domfx/site/effects';
-import { effectExtentReference } from '@domfx/site/effect-extent';
+import { effectCreationFields } from '@domfx/site/effect-extent';
 import { localeFromPath } from '@domfx/site/locale';
 
 import { docsMessages } from '../content/docs-messages';
@@ -25,8 +25,7 @@ const gallerySubjects: Subject[] = ['image', 'text', 'svg', 'text', 'svg'];
 const { effect, heading, description } = Astro.props;
 const subject = Astro.props.subject ?? (effect.id === 'fire' || effect.id === 'slime' ? 'image' : gallerySubjects[effects.indexOf(effect) % gallerySubjects.length]);
 const id = `docs-lab-${effect.id}`;
-const extent = effectExtentReference(effect);
-const fields = extent?.fields ?? [];
+const fields = effectCreationFields(effect);
 // Spread so SVG accepts the global hidden attribute, which its typings omit.
 const visibility = (kind: Subject) => (kind === subject ? {} : { hidden: true });
 const intensity = 80;
@@ -63,8 +62,8 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
     </label>
     {fields.map((field) => <label class="docs-lab-row">
       <span class="docs-lab-label">{field.label[locale]}</span>
-      <input type="range" min="0" max="30" step="1" value={field.example * 100} style={`--fill:${field.example / 0.3 * 100}%`} data-docs-lab-extent={field.name} aria-label={effectLabel(field.label[locale])} aria-describedby={`${id}-${field.name}-note`} />
-      <output data-docs-lab-extent-output={field.name}>{field.example * 100}%</output>
+      <input type="range" min="0" max={field.max} step="1" value={Math.round(field.example * 100)} style={`--fill:${field.example * 100 / field.max * 100}%`} data-docs-lab-extent={field.name} aria-label={effectLabel(field.label[locale])} aria-describedby={`${id}-${field.name}-note`} />
+      <output data-docs-lab-extent-output={field.name}>{Math.round(field.example * 100)}%</output>
       <small id={`${id}-${field.name}-note`} class="docs-lab-note">{messages.extentBasis[field.basis]} {messages.extentNote}</small>
     </label>)}
   </fieldset>

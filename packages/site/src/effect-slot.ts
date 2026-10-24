@@ -1,7 +1,7 @@
 import type * as BrowserEffects from '@domfx/browser';
 import type { AttachmentOptions, EffectHandle, EffectReason } from '@domfx/browser';
 
-import type { ExtentField } from './effect-extent.js';
+import type { EffectCreationField } from './effect-extent.js';
 import type { Effect } from './effects.js';
 
 export interface EffectStatus {
@@ -58,7 +58,7 @@ export function createEffectEnvironment({
 
 type WithoutHost<T> = T extends unknown ? Omit<T, 'host'> : never;
 // Site-only controls; the loader forwards only the selected effect's owned fields.
-type CreationOptions = AttachmentOptions & Partial<Record<ExtentField['name'], number>>;
+type CreationOptions = AttachmentOptions & Partial<Record<EffectCreationField['name'], number>>;
 type EffectOptions = WithoutHost<CreationOptions>;
 type EffectFactory = (target: Element, options: CreationOptions) => EffectHandle;
 type EffectLoader = (effect: Effect) => Promise<EffectFactory>;
@@ -80,6 +80,7 @@ async function loadEffect(effect: Effect): Promise<EffectFactory> {
       coatingDepth,
       mistReach,
       dripReach,
+      dripDensity,
       scorchDepth,
       ashReach,
       contourSpread,
@@ -96,7 +97,7 @@ async function loadEffect(effect: Effect): Promise<EffectFactory> {
       case 'attachFrost':
         return api.attachFrost(target, { ...shared, coatingDepth, mistReach });
       case 'attachSlime':
-        return api.attachSlime(target, { ...shared, coatingDepth, dripReach });
+        return api.attachSlime(target, { ...shared, coatingDepth, dripReach, dripDensity });
       case 'attachBurnedPaper':
         return api.attachBurnedPaper(target, { ...shared, scorchDepth, ashReach });
       case 'attachElectricity':

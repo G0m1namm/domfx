@@ -66,15 +66,7 @@ function finite(value: unknown, effect: RenderEffect): number {
   return value;
 }
 
-function normalizedControl(
-  value: unknown | undefined,
-  fallback: number,
-  effect: RenderEffect,
-): number {
-  if (value === undefined) {
-    return fallback;
-  }
-
+function normalizedControl(value: unknown, effect: RenderEffect): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error(`invalid-${effect}-parameter`);
   }
@@ -180,15 +172,22 @@ export function attachWithAdapters(
   let emberDensity = 1;
   let dotSpacing = 5.5;
   if (request.effect === 'frost') {
-    mistOpacity = normalizedControl(request.options.mistOpacity, 1, effect);
+    mistOpacity =
+      request.options.mistOpacity === undefined
+        ? 1
+        : normalizedControl(request.options.mistOpacity, effect);
   } else if (request.effect === 'fire') {
     emberDensity = creationControl(request.options.emberDensity, 1, 0, 1, effect);
   } else if (request.effect === 'halftone' && 'dotSpacing' in request.options) {
     dotSpacing = creationControl(request.options.dotSpacing, 5.5, 3, 12, effect);
   } else if (request.effect === 'slime') {
-    gloss = normalizedControl(request.options.gloss, 1, effect);
+    gloss =
+      request.options.gloss === undefined ? 1 : normalizedControl(request.options.gloss, effect);
   } else if (request.effect === 'burned-paper') {
-    emberGlow = normalizedControl(request.options.emberGlow, 1, effect);
+    emberGlow =
+      request.options.emberGlow === undefined
+        ? 1
+        : normalizedControl(request.options.emberGlow, effect);
   }
   const flameReach = request.effect === 'fire' ? request.options.flameReach : undefined;
   const dripDensity =
@@ -1160,7 +1159,7 @@ export function attachWithAdapters(
     },
 
     set mistOpacity(value) {
-      mistOpacity = normalizedControl(value, 1, effect);
+      mistOpacity = normalizedControl(value, effect);
       invalidate();
     },
 
@@ -1177,7 +1176,7 @@ export function attachWithAdapters(
     },
 
     set gloss(value) {
-      gloss = normalizedControl(value, 1, effect);
+      gloss = normalizedControl(value, effect);
       invalidate();
     },
 
@@ -1186,7 +1185,7 @@ export function attachWithAdapters(
     },
 
     set emberGlow(value) {
-      emberGlow = normalizedControl(value, 1, effect);
+      emberGlow = normalizedControl(value, effect);
       invalidate();
     },
 

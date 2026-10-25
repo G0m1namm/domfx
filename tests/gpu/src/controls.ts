@@ -7,6 +7,7 @@ import {
   attachHalftone,
   attachSlime,
 } from '@domfx/browser';
+import { memoryFor, startEffectDiagnostics } from '@domfx/browser/experimental';
 
 declare global {
   interface Window {
@@ -17,6 +18,8 @@ declare global {
       slime: typeof attachSlime;
       'burned-paper': typeof attachBurnedPaper;
       gsap: typeof gsap;
+      diagnostics: typeof startEffectDiagnostics;
+      memory: typeof memoryFor;
     };
   }
 }
@@ -28,4 +31,6 @@ window.controlEffects = {
   slime: attachSlime,
   'burned-paper': attachBurnedPaper,
   gsap,
+  diagnostics: startEffectDiagnostics,
+  memory: memoryFor,
 };

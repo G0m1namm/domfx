@@ -79,7 +79,7 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
         let rank = (laneNumber + hash(vec2f(id, seed + 53))) / 2;
         if (rank >= controls.material.y) { continue; }
         let random = hash(vec2f(id, seed + 61 + laneNumber * 29));
-        if (random > .6) { continue; }
+        if (random > .85) { continue; }
         let age = fract(time * .65 + hash(vec2f(id + 17, seed + laneNumber * 13)));
         let emitterX = (id + (laneNumber + hash(vec2f(id, seed + 9 + laneNumber * 7))) / 2) * 12;
         let drift = sin(age * 5 + random * 6) * age * 2;

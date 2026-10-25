@@ -524,35 +524,101 @@ test('Fire half density is deterministic and visibly distinct from full density'
       return {
         pixels: [...copy.getContext('2d')!.getImageData(0, 0, copy.width, copy.height).data],
         png: canvas.toDataURL('image/png'),
+        width: copy.width,
+        height: copy.height,
       };
     };
     const equal = (left: readonly number[], right: readonly number[]) =>
       left.length === right.length && left.every((value, index) => value === right[index]);
+    const components = (
+      first: { pixels: readonly number[]; width: number; height: number },
+      second: { pixels: readonly number[]; width: number; height: number },
+    ) => {
+      const mask = new Uint8Array(first.width * first.height);
+      for (let index = 0; index < mask.length; index++) {
+        const offset = index * 4;
+        const mass =
+          Math.abs(first.pixels[offset]! - second.pixels[offset]!) +
+          Math.abs(first.pixels[offset + 1]! - second.pixels[offset + 1]!) +
+          Math.abs(first.pixels[offset + 2]! - second.pixels[offset + 2]!);
+        mask[index] = Number(mass > 32);
+      }
+      const parts: Array<{
+        area: number;
+        left: number;
+        top: number;
+        right: number;
+        bottom: number;
+      }> = [];
+      for (let start = 0; start < mask.length; start++) {
+        if (!mask[start]) {
+          continue;
+        }
+        const queue = [start];
+        mask[start] = 0;
+        let left = first.width;
+        let top = first.height;
+        let right = 0;
+        let bottom = 0;
+        for (let cursor = 0; cursor < queue.length; cursor++) {
+          const current = queue[cursor]!;
+          const x = current % first.width;
+          const y = Math.floor(current / first.width);
+          left = Math.min(left, x);
+          top = Math.min(top, y);
+          right = Math.max(right, x);
+          bottom = Math.max(bottom, y);
+          for (const [nextX, nextY] of [
+            [x - 1, y],
+            [x + 1, y],
+            [x, y - 1],
+            [x, y + 1],
+          ]) {
+            if (nextX < 0 || nextX >= first.width || nextY < 0 || nextY >= first.height) {
+              continue;
+            }
+            const next = nextY * first.width + nextX;
+            if (mask[next]) {
+              mask[next] = 0;
+              queue.push(next);
+            }
+          }
+        }
+        if (queue.length >= 2) {
+          parts.push({ area: queue.length, left, top, right, bottom });
+        }
+      }
+      return parts;
+    };
     const make = (kind: 'text' | 'svg' | 'image', width: number, height: number) => {
       const target = document.createElement(kind === 'image' ? 'img' : 'div');
       target.style.cssText = `display:block;width:${width}px;height:${height}px;background:transparent`;
+      const sourceTop = Math.round(height * 0.55);
       if (kind === 'text') {
         target.textContent = 'Fi';
-        target.setAttribute('style', `${target.style.cssText};color:white;font:64px/1 sans-serif`);
+        target.setAttribute(
+          'style',
+          `${target.style.cssText};color:white;font:${Math.round(width * 0.32)}px/1 sans-serif;display:flex;align-items:flex-end`,
+        );
       } else if (kind === 'svg') {
-        target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"><path fill="white" fill-rule="evenodd" d="M8 8h${width - 16}v${height - 16}H8zM${Math.floor(width / 3)} ${Math.floor(height / 3)}h${Math.floor(width / 3)}v${Math.floor(height / 3)}H${Math.floor(width / 3)}z"/></svg>`;
+        target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"><path fill="white" fill-rule="evenodd" d="M8 ${sourceTop}h${width - 16}v${height - sourceTop - 8}H8zM${Math.floor(width / 3)} ${Math.floor(sourceTop + (height - sourceTop) / 3)}h${Math.floor(width / 3)}v${Math.floor((height - sourceTop) / 3)}H${Math.floor(width / 3)}z"/></svg>`;
       } else {
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
         const pen = canvas.getContext('2d')!;
         pen.fillStyle = 'white';
-        pen.fillRect(8, 8, width - 16, height - 16);
+        pen.fillRect(8, sourceTop, width - 16, height - sourceTop - 8);
         pen.clearRect(
           Math.floor(width / 3),
-          Math.floor(height / 3),
+          Math.floor(sourceTop + (height - sourceTop) / 3),
           Math.floor(width / 3),
-          Math.floor(height / 3),
+          Math.floor((height - sourceTop) / 3),
         );
         (target as HTMLImageElement).src = canvas.toDataURL();
       }
       host.replaceChildren(target);
-      return target;
+      return { target, sourceTop };
     };
     const samples: Array<{
       kind: string;
@@ -562,6 +628,9 @@ test('Fire half density is deterministic and visibly distinct from full density'
       repeat: boolean;
       changedPixels: number;
       changedRgbMass: number;
+      halfVisibleComponents: number;
+      fullVisibleComponents: number;
+      halfMatchesFull: boolean;
       half: string;
       full: string;
     }> = [];
@@ -571,7 +640,8 @@ test('Fire half density is deterministic and visibly distinct from full density'
           [0.7, 314],
           [1.4, 271],
         ] as const) {
-          const target = make(kind, size, Math.round((size * 2) / 3));
+          const height = Math.round((size * 2) / 3);
+          const { target, sourceTop } = make(kind, size, height);
           const render = async (emberDensity: number) => {
             const effect = window.controlEffects.fire(target, {
               host,
@@ -588,6 +658,7 @@ test('Fire half density is deterministic and visibly distinct from full density'
             effect.dispose();
             return pixels;
           };
+          const none = await render(0);
           const half = await render(0.5);
           const full = await render(1);
           const halfRepeat = await render(0.5);
@@ -601,6 +672,22 @@ test('Fire half density is deterministic and visibly distinct from full density'
             changedPixels += Number(mass > 0);
             changedRgbMass += mass;
           }
+          const sourceTopPixels = (32 + sourceTop) * (full.height / (height + 64));
+          const halfComponents = components(none, half).filter(
+            (part) => part.bottom < sourceTopPixels,
+          );
+          const fullComponents = components(none, full).filter(
+            (part) => part.bottom < sourceTopPixels,
+          );
+          const halfMatchesFull = halfComponents.every((halfComponent) =>
+            fullComponents.some(
+              (fullComponent) =>
+                halfComponent.left >= fullComponent.left - 1 &&
+                halfComponent.right <= fullComponent.right + 1 &&
+                halfComponent.top >= fullComponent.top - 1 &&
+                halfComponent.bottom <= fullComponent.bottom + 1,
+            ),
+          );
           samples.push({
             kind,
             size,
@@ -609,6 +696,9 @@ test('Fire half density is deterministic and visibly distinct from full density'
             repeat: equal(half.pixels, halfRepeat.pixels),
             changedPixels,
             changedRgbMass,
+            halfVisibleComponents: halfComponents.length,
+            fullVisibleComponents: fullComponents.length,
+            halfMatchesFull,
             half: half.png,
             full: full.png,
           });
@@ -646,15 +736,19 @@ test('Fire half density is deterministic and visibly distinct from full density'
   );
   expect(result.samples).toHaveLength(12);
   expect(result.samples.every((sample) => sample.repeat)).toBe(true);
+  expect(result.samples.every((sample) => sample.halfMatchesFull)).toBe(true);
   for (const kind of ['text', 'svg', 'image']) {
     for (const size of [96, 240]) {
+      const classSamples = result.samples.filter(
+        (sample) => sample.kind === kind && sample.size === size,
+      );
+      expect(classSamples).toHaveLength(2);
       expect(
-        result.samples.some(
+        classSamples.every(
           (sample) =>
-            sample.kind === kind &&
-            sample.size === size &&
-            sample.changedPixels >= 8 &&
-            sample.changedRgbMass >= 256,
+            sample.changedPixels >= 60 &&
+            sample.changedRgbMass >= 10_000 &&
+            sample.fullVisibleComponents > sample.halfVisibleComponents,
         ),
       ).toBe(true);
     }

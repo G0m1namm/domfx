@@ -1,6 +1,7 @@
 import type { CaptureFrame } from '@domfx/core';
 
 import { CaptureError, prepareCaptureAssets } from './capture-assets.js';
+import { relativeSourceGuardCss } from './effect-paint.js';
 import { estimateFrameMemory } from './memory.js';
 import { scaleToViewport } from './placement.js';
 
@@ -27,11 +28,15 @@ export async function captureElement(
 /** Internal pre-raster admission hook for attachment-owned reservations. */
 export async function captureElementWithReservation(
   element: Element,
-  options: { paddingCss?: number; dpr?: number } = {},
+  options: {
+    paddingCss?: number;
+    dpr?: number;
+    resolvePadding?: (width: number, height: number, dpr: number) => number;
+  } = {},
   reserve?: (width: number, height: number) => void,
   assetsReady?: () => void,
 ): Promise<CaptureFrame> {
-  const padding = options.paddingCss ?? 32;
+  let padding = options.paddingCss ?? 32;
   const dpr = options.dpr ?? element.ownerDocument.defaultView!.devicePixelRatio;
   if (!(padding >= 0) || !Number.isFinite(padding) || !(dpr > 0) || !Number.isFinite(dpr)) {
     throw new Error('invalid-capture-options');
@@ -40,6 +45,7 @@ export async function captureElementWithReservation(
   assetsReady?.();
   const { snapdom } = await import('@zumer/snapdom');
   let assetFailure: unknown;
+  let localBorderBox: { width: number; height: number } | undefined;
   const snapshot = await snapdom(element, {
     dpr,
     outerTransforms: false,
@@ -66,6 +72,7 @@ export async function captureElementWithReservation(
           // box so percentage min/max sizes cannot resize its captured paint.
           const scale = scaleToViewport(element);
           const rect = element.getBoundingClientRect();
+          localBorderBox = { width: rect.width / scale.x, height: rect.height / scale.y };
           clone.style.setProperty('box-sizing', 'border-box', 'important');
           clone.style.setProperty('width', `${rect.width / scale.x}px`, 'important');
           clone.style.setProperty('height', `${rect.height / scale.y}px`, 'important');
@@ -91,11 +98,34 @@ export async function captureElementWithReservation(
   if (assetFailure) {
     throw assetFailure;
   }
-  const { w0, h0 } = snapshot.meta;
+  // SnapDOM's metadata rounds the local box to integer CSS px. Relative geometry
+  // needs the exact box frozen on the clone; preserve the legacy raster contract.
+  const w0 = options.resolvePadding
+    ? (localBorderBox?.width ?? snapshot.meta.w0)
+    : snapshot.meta.w0;
+  const h0 = options.resolvePadding
+    ? (localBorderBox?.height ?? snapshot.meta.h0)
+    : snapshot.meta.h0;
+  padding = options.resolvePadding?.(w0, h0, dpr) ?? padding;
   const widthCss = w0 + padding * 2;
   const heightCss = h0 + padding * 2;
   const width = Math.ceil(widthCss * dpr);
   const height = Math.ceil(heightCss * dpr);
+  // Relative source paint is bounded to the border box plus 2 CSS px. Give it
+  // an extent-independent guard so Chromium does not rerasterize embedded PNGs
+  // differently when only the output allocation changes. Preserve the raster
+  // phase and draw 1:1 into the admitted canvas; the legacy mapping is unchanged.
+  const relative = options.resolvePadding !== undefined;
+  const viewWidth = relative ? width / dpr : widthCss;
+  const viewHeight = relative ? height / dpr : heightCss;
+  const phase = padding * dpr - Math.floor(padding * dpr);
+  const sourcePadding = relative
+    ? Math.min(padding, (Math.ceil(relativeSourceGuardCss * dpr) + phase) / dpr)
+    : padding;
+  const sourceWidth = relative ? Math.ceil((w0 + sourcePadding * 2) * dpr) : width;
+  const sourceHeight = relative ? Math.ceil((h0 + sourcePadding * 2) * dpr) : height;
+  const sourceViewWidth = relative ? sourceWidth / dpr : widthCss;
+  const sourceViewHeight = relative ? sourceHeight / dpr : heightCss;
   estimateFrameMemory(width, height);
   reserve?.(width, height);
   // Use HTML layout for the capture inset: WebKit can ignore SVG viewBox
@@ -113,17 +143,17 @@ export async function captureElementWithReservation(
       new Error('capture-sandbox-missing'),
     );
   }
-  svg.setAttribute('viewBox', `0 0 ${widthCss} ${heightCss}`);
-  svg.setAttribute('width', String(widthCss));
-  svg.setAttribute('height', String(heightCss));
+  svg.setAttribute('viewBox', `0 0 ${sourceViewWidth} ${sourceViewHeight}`);
+  svg.setAttribute('width', String(relative ? sourceWidth : widthCss));
+  svg.setAttribute('height', String(relative ? sourceHeight : heightCss));
   foreignObject.setAttribute('x', '0');
   foreignObject.setAttribute('y', '0');
-  foreignObject.setAttribute('width', String(widthCss));
-  foreignObject.setAttribute('height', String(heightCss));
-  sandbox.style.setProperty('padding-left', `${padding}px`, 'important');
-  sandbox.style.setProperty('padding-top', `${padding}px`, 'important');
-  sandbox.style.width = `${widthCss}px`;
-  sandbox.style.height = `${heightCss}px`;
+  foreignObject.setAttribute('width', String(sourceViewWidth));
+  foreignObject.setAttribute('height', String(sourceViewHeight));
+  sandbox.style.setProperty('padding-left', `${sourcePadding}px`, 'important');
+  sandbox.style.setProperty('padding-top', `${sourcePadding}px`, 'important');
+  sandbox.style.width = `${sourceViewWidth}px`;
+  sandbox.style.height = `${sourceViewHeight}px`;
   const image = element.ownerDocument.createElement('img');
   image.src =
     'data:image/svg+xml;charset=utf-8,' +
@@ -142,7 +172,27 @@ export async function captureElementWithReservation(
     if (!context) {
       throw new Error('capture-context-unavailable');
     }
-    context.drawImage(image, 0, 0, width, height);
+    if (relative) {
+      const inset = Math.round((padding - sourcePadding) * dpr);
+      // Rasterize at the same origin too: CPU canvas can change SVG image
+      // interpolation at different draw offsets. Move the resulting pixels
+      // within this canvas; copy clears the original without another buffer.
+      context.drawImage(image, 0, 0);
+      context.globalCompositeOperation = 'copy';
+      context.drawImage(
+        canvas,
+        0,
+        0,
+        sourceWidth,
+        sourceHeight,
+        inset,
+        inset,
+        sourceWidth,
+        sourceHeight,
+      );
+    } else {
+      context.drawImage(image, 0, 0, width, height);
+    }
     try {
       pixels = new Uint8Array(context.getImageData(0, 0, width, height).data);
     } catch (cause) {
@@ -162,9 +212,14 @@ export async function captureElementWithReservation(
     get pixels() {
       return pixels;
     },
-    padding: { top: padding, right: padding, bottom: padding, left: padding },
+    padding: {
+      top: padding,
+      right: relative ? viewWidth - w0 - padding : padding,
+      bottom: relative ? viewHeight - h0 - padding : padding,
+      left: padding,
+    },
     contentBounds: { x: 0, y: 0, width: w0, height: h0 },
-    pixelToLocal: { a: widthCss / width, d: heightCss / height, e: -padding, f: -padding },
+    pixelToLocal: { a: viewWidth / width, d: viewHeight / height, e: -padding, f: -padding },
     release() {
       if (!released) {
         released = true;

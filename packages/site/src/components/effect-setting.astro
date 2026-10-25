@@ -1,0 +1,26 @@
+---
+import { effectSettingBasis, effectSettingValueText, type EffectSetting } from '../effect-extent';
+import type { Locale } from '../locale';
+import SelectControl from './select-control.astro';
+import '../styles/effect-controls.css';
+
+interface Props {
+  field: EffectSetting;
+  locale: Locale;
+  id: string;
+  value?: number;
+  inputAttributes?: Record<string, string | boolean>;
+}
+
+const { field, locale, id, value = Math.round(field.example * 100), inputAttributes = {} } = Astro.props;
+const basis = effectSettingBasis(field, locale);
+---
+<div class="effect-setting">
+  <label class="effect-setting-label" for={id}><span class="effect-setting-name">{field.name}</span>{basis && <small id={`${id}-basis`}>{basis}</small>}</label>
+  {field.kind === 'preset' ? <SelectControl id={id} aria-label={field.name} aria-describedby={basis ? `${id}-basis` : undefined} {...inputAttributes}>
+    {field.options.map((option) => <option value={option.value} selected={option.value === value}>{option.label[locale]}</option>)}
+  </SelectControl> : <>
+    <input id={id} type="range" min="0" max={field.max} step="1" value={value} style={`--fill:${value / field.max * 100}%`} aria-label={field.name} aria-valuetext={effectSettingValueText(field, String(value), locale)} aria-describedby={basis ? `${id}-basis` : undefined} {...inputAttributes}/>
+    <output for={id} data-effect-setting-output={field.name}>{value}%</output>
+  </>}
+</div>

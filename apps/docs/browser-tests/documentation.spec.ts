@@ -181,7 +181,7 @@ test('@smoke all catalog references retain their public options and usable sourc
       ).toContainText('intensity');
       const lab = page.locator('[data-docs-lab]');
       await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
-      await expect(lab.getByRole('slider', { name: `${effect.name} intensity` })).toBeDisabled();
+      await expect(lab.getByRole('slider', { name: 'intensity', exact: true })).toBeDisabled();
       await expect(page.locator('canvas')).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
@@ -329,7 +329,7 @@ for (const { path, effect, text } of labPages) {
     await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
     await expect(lab.locator('canvas')).toHaveCount(0);
     await expect(lab.getByRole('button', { name: 'Effects unavailable' })).toBeDisabled();
-    await expect(lab.getByRole('slider', { name: `${effect} intensity` })).toBeDisabled();
+    await expect(lab.getByRole('slider', { name: 'intensity', exact: true })).toBeDisabled();
   });
 
   test(`${path} preview attaches, updates and disposes one real effect`, async ({ page }) => {
@@ -350,13 +350,13 @@ for (const { path, effect, text } of labPages) {
     const intensity = lab.locator('[data-docs-lab-intensity]');
     await intensity.fill('45');
     await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
-    await expect(lab.locator('[data-docs-lab-intensity-output]')).toHaveText('45%');
+    await expect(lab.locator('[data-effect-setting-output="intensity"]')).toHaveText('45%');
 
     if (effect === 'Fire') {
-      const height = lab.locator('[data-docs-lab-height]');
-      await height.fill('44');
-      await height.press('Tab');
-      await expect(lab.locator('[data-docs-lab-height-code]')).toHaveText('44');
+      const reach = lab.locator('[data-docs-lab-extent="flameReach"]');
+      await reach.fill('25');
+      await reach.press('Tab');
+      await expect(lab.locator('[data-docs-lab-extent-code="flameReach"]')).toHaveText('0.25');
       await expect(lab).toHaveAttribute('data-status', 'active');
       await expect(canvas).toHaveCount(1);
     }

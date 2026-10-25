@@ -406,15 +406,11 @@ footer nav {
 .target-options button[aria-pressed='true'] {
   background: var(--raised);
 }
-.intensity-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-}
-.dialog-details input {
-  width: 100%;
-  accent-color: var(--silver);
-  margin: 14px 0 24px;
+.effect-creation-controls {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+  min-inline-size: 0;
 }
 .dialog-details .button {
   width: 100%;
@@ -772,10 +768,6 @@ footer nav a {
 }
 .pause-button {
   gap: 9px;
-}
-.dialog-details input[type='range'] {
-  height: 4px;
-  cursor: pointer;
 }
 .dialog-details > code {
   font-size: 0.6875rem;
@@ -2179,6 +2171,13 @@ html[data-initial-audience='agents'] #humans-panel {
 .dialog-scene:focus-visible {
   outline-offset: -5px;
 }
+.preview-visibility {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
 .dialog-stage {
   position: absolute;
   inset: 0;
@@ -2193,6 +2192,10 @@ html[data-initial-audience='agents'] #humans-panel {
   letter-spacing: -7px;
   flex: none;
   max-width: calc(100% - 64px);
+}
+.dialog-target[data-kind='text'] {
+  /* Include the tracked glyph overhang without moving the centered lettering. */
+  padding-inline: 0.5rem;
 }
 .dialog-target svg,
 .dialog-target img {

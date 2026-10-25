@@ -1,6 +1,7 @@
 import type * as BrowserEffects from '@domfx/browser';
-import type { EffectHandle, EffectReason, FireOptions } from '@domfx/browser';
+import type { AttachmentOptions, EffectHandle, EffectReason } from '@domfx/browser';
 
+import type { EffectCreationField } from './effect-extent.js';
 import type { Effect } from './effects.js';
 
 export interface EffectStatus {
@@ -55,8 +56,11 @@ export function createEffectEnvironment({
   } satisfies EffectEnvironment & { update(): void };
 }
 
-type EffectOptions = Omit<FireOptions, 'host'>;
-type EffectFactory = (target: Element, options: FireOptions) => EffectHandle;
+type WithoutHost<T> = T extends unknown ? Omit<T, 'host'> : never;
+// Site-only controls; the loader forwards only the selected effect's owned fields.
+type CreationOptions = AttachmentOptions & Partial<Record<EffectCreationField['name'], number>>;
+type EffectOptions = WithoutHost<CreationOptions>;
+type EffectFactory = (target: Element, options: CreationOptions) => EffectHandle;
 type EffectLoader = (effect: Effect) => Promise<EffectFactory>;
 
 interface SlotOptions {
@@ -69,7 +73,45 @@ interface SlotOptions {
 let browserModule: Promise<typeof BrowserEffects> | undefined;
 async function loadEffect(effect: Effect): Promise<EffectFactory> {
   browserModule ??= import('@domfx/browser');
-  return (await browserModule)[effect.exportName];
+  const api = await browserModule;
+  return (target, options) => {
+    const {
+      flameReach,
+      coatingDepth,
+      mistReach,
+      dripReach,
+      dripDensity,
+      scorchDepth,
+      ashReach,
+      contourSpread,
+      fragmentTravel,
+      plumeReach,
+      bandDepth,
+      echoReach,
+      fringeReach,
+      ...shared
+    } = options;
+    switch (effect.exportName) {
+      case 'attachFire':
+        return api.attachFire(target, { ...shared, flameReach });
+      case 'attachFrost':
+        return api.attachFrost(target, { ...shared, coatingDepth, mistReach });
+      case 'attachSlime':
+        return api.attachSlime(target, { ...shared, coatingDepth, dripReach, dripDensity });
+      case 'attachBurnedPaper':
+        return api.attachBurnedPaper(target, { ...shared, scorchDepth, ashReach });
+      case 'attachElectricity':
+        return api.attachElectricity(target, { ...shared, contourSpread });
+      case 'attachKinetic':
+        return api.attachKinetic(target, { ...shared, fragmentTravel });
+      case 'attachContourEchoes':
+        return api.attachContourEchoes(target, { ...shared, echoReach });
+      case 'attachBrushFringe':
+        return api.attachBrushFringe(target, { ...shared, fringeReach });
+      default:
+        return api[effect.exportName](target, { ...shared, plumeReach, bandDepth });
+    }
+  };
 }
 
 async function prepareTarget(target: Element) {

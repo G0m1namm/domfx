@@ -57,7 +57,7 @@ pipelines; formats, allocation accounting and alpha threshold remain unchanged.
 Jump flooding remains approximate; the verified fixtures do not prove an error bound
 for arbitrary paint. No dependency version upgrade is involved.
 
-Prepared frames account for 36 bytes per pixel of textures, a 16-byte fire uniform,
+Prepared frames account for 36 bytes per pixel of textures, a 16-byte legacy parameter uniform, a 32-byte local geometry uniform,
 and the observed 4-byte JFA offset buffer (`i32`, TypeGPU 0.12.4). Destroying a frame
 releases all of these allocations; zero offset bytes remain per destroyed frame,
 so the bound does not grow with refresh count. Destroying the service releases its
@@ -243,7 +243,8 @@ and count toward the existing capture and aggregate memory budgets.
 const effect = attachFire(title, { host, clock: 'auto', flameHeight: 48 });
 ```
 
-Intensity controls flame reach and opacity together. Use manual time or a GSAP binding
+Without `flameReach`, intensity controls flame reach and opacity together. With
+`flameReach`, intensity changes strength while reach stays fixed. Use manual time or a GSAP binding
 to change playback speed; seed varies the pattern. Identical time, seed, intensity and
 flame height reproduce the same frame, including embers. The palette remains warm.
 
@@ -323,10 +324,10 @@ is used to fit a budget. Pixel rejection reports `capture-budget`, per-target re
 `target-budget`, and Document rejection `aggregate-budget`. Refresh budget failures
 reject the promise and leave the attachment unavailable with stale, hidden output.
 
-For a raster of P pixels, known managed GPU allocations are 36P + 20 bytes (source,
+For a raster of P pixels, known managed GPU allocations are 36P + 52 bytes (source,
 SDF/JFA, fire texture and uniforms). Admission additionally estimates 4P bytes for one
 RGBA output surface and reserves 4P CPU capture bytes until the capture frame is
-released: 44P + 20 pending, then 40P + 20 retained. Actual SnapDOM dimensions are
+released: 44P + 52 pending, then 40P + 52 retained. Actual SnapDOM dimensions are
 checked before rasterization; returned capture dimensions and prepared-frame bytes
 are reconciled before presentation. Reconciliation replaces an entry, so estimates
 and their actual resources are never added twice. The previous frame remains charged
@@ -574,10 +575,59 @@ Run `pnpm --filter @domfx/gpu-tests exec vite --host 127.0.0.1` and open `/manua
 Zero intensity and Dispose controls. The browser suite covers it in development
 and production alongside the existing numerical capture/fire fixtures.
 
+## Relative Fire reach
+
+```ts
+const fire = attachFire(target, { host, flameReach: 0.1, intensity: 0.8 });
+```
+
+`flameReach` is a finite nonnegative fraction of the untransformed target border-box
+height, including transparent margins: `0.1` resolves to 10 CSS px at 100 px height,
+and 40 CSS px at 400 px height. It bounds positive signed distance and upward travel,
+not a guaranteed visible tip. Fine detail stays in target-local CSS pixels. In this
+mode intensity scales premultiplied output; it changes strength independently of
+geometry/detail. Zero reach or intensity is transparent. Omission preserves the
+legacy defaults, artistic `flameHeight` scale (8–64, default 24), and intensity behavior.
+Combining both options throws synchronously before ownership is acquired.
+
+Reach is creation-only, with no writable setter. It resolves from each captured local
+border box after resize. DPR/fractional raster mapping apply once; supported positive
+scale and translation follow placement without recapturing. Intensity writes do not
+capture or allocate.
+
+Relative mode reserves symmetric padding of `ceil(reach + 4 + 2 / DPR)` CSS px,
+minimum 8. This includes 2 CSS px of paint allowance and a sampling guard of
+2 CSS px plus 2 raster pixels (bilinear sampling, pixel-center classification and
+half-float distance rounding). Descendant boxes must stay within the target;
+shadows, filters, outlines and generated pseudo-elements are unsupported. Actual
+paint must fit the border box plus 2 CSS px. Every captured alpha sample must leave
+the complete reach and sampling margin; failure reports `missing-exterior` without
+hiding the original target. Arbitrary distant overflow paint is not supported.
+
+The existing 1,000,000-raster-pixel, managed-memory and device-dimension gates still
+apply, including pending and replacement captures. Excess reach becomes unavailable
+instead of clipping or reducing quality. For example, a 400×400 target at DPR 2
+with `flameReach: 0.2` fails the pixel gate; use a smaller reach/target or lower DPR.
+These limits measure managed allocations, not total process memory.
+
+All relative modes rasterize at exact DPR, placing ceil-rounding slack in the far
+transparent right/bottom edges without changing target dimensions or reducing
+resolution. Supported source paint uses an extent-independent guard (8 CSS px plus raster
+alignment, capped by requested padding), rasterized at a fixed origin and copied
+within the admitted canvas. Actual
+alpha admission still rejects paint outside the border box plus 2 CSS px. This
+does not establish arbitrary distant-paint capture. Existing raster, memory and
+device gates still apply. A resolution
+media-query event invalidates relative captures; environments that change DPR
+without delivering that event require `await effect.refresh()`. Chromium 153 CDP
+emulation on macOS changes DPR but emits no resolution event in the measured run;
+explicit refresh and synthetic listener/disposal checks are separate evidence.
+
 ## Available effect functions
 
-Import any of these from `@domfx/browser`. All accept the shared options; only
-`attachFire` adds the creation-only `flameHeight` option. Time and intensity remain
+Import any of these from `@domfx/browser`. All accept the shared options.
+Fire adds mutually exclusive creation-only `flameHeight` and `flameReach` options;
+the other effects add their own relative extents below. Time and intensity remain
 the shared writable controls. No color, gradient or particle-count controls are
 currently exported.
 
@@ -602,3 +652,127 @@ currently exported.
 - `attachCircuits`
 - `attachStarShimmer`
 - `attachBrushFringe`
+
+### Relative Electricity and Kinetic bloom
+
+`attachElectricity(target, { host, contourSpread: 0.1 })` opts into a finite
+maximum exterior contour spread. `attachKinetic(target, { host, fragmentTravel: 0.1 })`
+opts into a finite maximum outward fragment-center travel. Each number is a finite
+nonnegative fraction of the **shorter untransformed target border-box side**,
+including transparent margins and excluding capture padding. For example, `0.1`
+resolves to 10 CSS px on a 100×400 target and 40 CSS px on a 400×400 target.
+These are creation options; recreate the instance to change them. Real resizing
+resolves the ratio again; supported translation/positive scale only changes placement.
+DPR changes capture resolution and resource admission, not the CSS-space ratio.
+
+Electricity bounds positive signed distance by the resolved spread and retains its
+fixed strand widths, noise and spark detail. Kinetic bloom bounds outward normal
+fragment-center travel by the resolved travel; its fixed sideways drift (at most
+3 CSS px) and fragment footprint (5 CSS px) add 8 CSS px to reserved exterior
+support. Pulse/wake widths, lifetimes, emission grid and fine fragment size remain
+fixed. These are permitted envelopes, not promises that every frame fills them.
+Both modes multiply final premultiplied output by intensity. Zero extent or zero
+intensity is transparent; omitting the option retains byte-exact legacy rendering.
+Electricity's legacy intensity already changes brightness without moving strands.
+
+Both relative modes use the bounded source-paint policy described for relative
+Fire: contained descendant boxes, no shadows/filters/outlines/generated pseudos,
+and paint within the border box plus 2 CSS px. Symmetric padding is
+`max(8, ceil(support + 4 + 2 / DPR))` CSS px, including classification/interpolation
+guards; capture/device/memory limits reject oversized results without trimming or
+lowering quality. Kinetic source search grows with travel to retain distant emitters;
+large admitted travels can cost more GPU work. Relative capture keeps integer and
+fractional transparent PNG fixtures stable across padding changes at DPR 1, 1.25
+and 2: source alpha, classified masks and distance fields match exactly, with at
+most 1/255 effect-output difference. These measured fixtures do not promise pixel
+identity for arbitrary browser rerasterizations.
+
+### Relative material extents
+
+Frost, Slime and Burned paper accept additive, creation-only fractions:
+
+| Effect       | Inward depth / shorter border-box side | Directional travel / border-box height    |
+| ------------ | -------------------------------------- | ----------------------------------------- |
+| Frost        | `coatingDepth`                         | `mistReach` (mist and ice grains)         |
+| Slime        | `coatingDepth`                         | `dripReach` (attached and released drops) |
+| Burned paper | `scorchDepth`                          | `ashReach` (rising ash)                   |
+
+```ts
+const frost = attachFrost(target, { host, coatingDepth: 0.1, mistReach: 0.2 });
+const slime = attachSlime(target, { host, coatingDepth: 0.05, dripReach: 0.2 });
+const paper = attachBurnedPaper(target, { host, scorchDepth: 0.15, ashReach: 0.15 });
+```
+
+Slime also accepts creation-only `dripDensity`, a finite normalized value from 0 to 1
+(default `0.56`). Higher values add more drip locations; zero disables drips. Values
+above the default add extra emission locations. It is not an exact drop count or
+emission rate. Drop size, travel and timing stay unchanged. It works with legacy
+and relative extents, and does not enable relative mode by itself.
+
+The extent values above are examples, not defaults. Supplying either field selects relative
+mode and defaults its omitted partner to **zero**. Zero disables that component;
+both zero produce transparent output. Omit both for the original sizing and
+intensity behavior; Slime density remains independent. Fractions must be finite and nonnegative; resolved float32
+lengths and padded captures must fit existing device and memory limits. A larger
+extent can make the effect unavailable; it is never silently reduced.
+
+The reference box is the untransformed target border box, including transparent
+in-box margins and excluding capture padding. For example, `mistReach: 0.2`
+allows 20 CSS pixels of travel on a 100px-high target and 80 on a 400px-high target.
+Resize resolves the fraction again. Supported placement transforms carry the
+output with the target; DPR changes raster resolution, not the ratio's basis.
+
+In relative mode, intensity scales premultiplied output uniformly; geometry,
+particle eligibility and fine detail do not depend on intensity. Noise/grain,
+particle spacing, neck/bead sizes and narrow lips stay in local CSS pixels.
+Scorching retains its local thin-shape caps. Travel is a permitted envelope, not
+a guaranteed visible tip. Fixed marks and joins reserve up to 8 additional CSS
+pixels beyond travel; material lips reserve up to 6 outside the silhouette.
+Depth is a maximum inward allowance, with a fading material front.
+
+Relative material mode uses the same bounded-source-paint policy as relative
+Fire: paint stays inside the border box plus 2 CSS pixels and has its full
+reserved margin. Shadows, filters, outlines, generated paint and overflowing
+descendant paint are unsupported. The original target stays usable on failure.
+Host/ancestor clipping still applies. Extents have no writable setters: dispose
+and create another instance to change them; ordinary intensity updates do not
+recapture or allocate. The effect remains procedural at absolute time, supporting
+repeatable seeks and reverse playback.
+
+### Relative pattern extents
+
+Dither and the twelve shared-flow patterns accept creation-only `plumeReach` and
+`bandDepth`. `plumeReach` is a nonnegative finite fraction of the untransformed
+target border-box height; `bandDepth` uses its shorter local side. Transparent
+image margins count; capture padding does not. Fractions resolve again on resize.
+Dither uses `DitherOptions`; the shared-flow variants use `PatternOptions`.
+
+```ts
+const dots = attachDither(target, { host, plumeReach: 0.1, bandDepth: 0.05 });
+const echoes = attachContourEchoes(otherTarget, { host, echoReach: 0.1 });
+const brush = attachBrushFringe(thirdTarget, { host, fringeReach: 0.1 });
+```
+
+Contour echoes uses `ContourEchoesOptions.echoReach` for radial exterior reach as
+a fraction of the shorter side, retaining 5.5 CSS-pixel echo spacing. Brush fringe
+uses `BrushFringeOptions.fringeReach` for its shorter-side sampling envelope;
+fixed bristles can extend up to 5.1 CSS pixels beyond it. These two effects reject
+the shared-flow options.
+
+Omitting every extent option retains legacy appearance and intensity behavior.
+Supplying a shared-flow option enters relative mode with an omitted partner equal
+to zero; each zero disables that density component. All-zero extents are
+transparent. In relative mode, intensity scales final premultiplied output;
+it does not alter density, fixed mark detail or target-local phase. Dither keeps
+its fine dots and 2px grid. Extents are creation-only, with no instance setter.
+
+The full finite support includes fixed mark footprints: allocation reserves 6 CSS
+pixels beyond the outward sampling envelope, plus 2 CSS pixels of supported paint
+overflow and a guard of 2 CSS pixels plus 2 raster pixels. Relative mode requires
+contained descendants with no shadows, filters, CSS outlines or generated
+pseudo-elements, and paint within the target border box plus 2 CSS pixels. Actual
+alpha and the full free margin are checked; unsupported paint is unavailable with
+`missing-exterior`. Existing pixel, memory and device limits remain unchanged.
+Requests that do not fit are rejected rather than clipped or downsampled. DPR
+changes raster admission, not CSS-space fractions. Visible thresholded bounds can
+vary with opacity; an extent does not guarantee a visible tip on every frame.

@@ -1,3 +1,9 @@
+import {
+  effectCreationFields,
+  effectSettingValueText,
+  intensityField,
+  type EffectCreationField,
+} from '@domfx/site/effect-extent';
 import type { EffectStatus } from '@domfx/site/effect-slot';
 import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import { findEffect, type Effect } from '@domfx/site/effects';
@@ -31,7 +37,8 @@ function initializeLab(
   hasGpu: boolean,
   reducedMotion: MediaQueryList,
 ) {
-  const messages = docsMessages(localeFromPath(location.pathname)).lab;
+  const locale = localeFromPath(location.pathname);
+  const messages = docsMessages(locale).lab;
   const host = required<HTMLElement>('[data-docs-lab-host]', lab);
   const targets = Array.from(
     lab.querySelectorAll<HTMLElement | SVGElement>('[data-docs-lab-target]'),
@@ -39,11 +46,21 @@ function initializeLab(
   const subjects = Array.from(lab.querySelectorAll<HTMLInputElement>('[data-docs-lab-subject]'));
   const controls = required<HTMLFieldSetElement>('[data-docs-lab-controls]', lab);
   const intensityInput = required<HTMLInputElement>('[data-docs-lab-intensity]', lab);
-  const intensityOutput = required<HTMLOutputElement>('[data-docs-lab-intensity-output]', lab);
+  const intensityOutput = required<HTMLOutputElement>(
+    '[data-effect-setting-output="intensity"]',
+    lab,
+  );
   const intensityCode = required<HTMLOutputElement>('[data-docs-lab-intensity-code]', lab);
-  const heightInput = lab.querySelector<HTMLInputElement>('[data-docs-lab-height]');
-  const heightOutput = lab.querySelector<HTMLOutputElement>('[data-docs-lab-height-output]');
-  const heightCode = lab.querySelector<HTMLOutputElement>('[data-docs-lab-height-code]');
+  const extentInputs = effectCreationFields(effect).map((field) => ({
+    name: field.name,
+    field,
+    input: required<HTMLInputElement | HTMLSelectElement>(
+      `[data-docs-lab-extent="${field.name}"]`,
+      lab,
+    ),
+    output: lab.querySelector<HTMLOutputElement>(`[data-effect-setting-output="${field.name}"]`),
+    code: required<HTMLOutputElement>(`[data-docs-lab-extent-code="${field.name}"]`, lab),
+  }));
   const status = required<HTMLElement>('[data-docs-lab-status]', lab);
   const toggle = required<HTMLButtonElement>('[data-docs-lab-toggle]', lab);
   const toggleIcon = required<SVGUseElement>('use', toggle);
@@ -69,12 +86,19 @@ function initializeLab(
 
   function updateValues() {
     intensityOutput.value = `${intensityInput.value}%`;
+    intensityInput.setAttribute(
+      'aria-valuetext',
+      effectSettingValueText(intensityField, intensityInput.value, locale),
+    );
     intensityCode.value = String(intensity());
     setFill(intensityInput);
-    if (heightInput && heightOutput && heightCode) {
-      heightOutput.value = `${heightInput.value}px`;
-      heightCode.value = heightInput.value;
-      setFill(heightInput);
+    for (const { field, input, output, code } of extentInputs) {
+      if (input instanceof HTMLInputElement && output) {
+        output.value = `${input.value}%`;
+        input.setAttribute('aria-valuetext', effectSettingValueText(field, input.value, locale));
+        setFill(input);
+      }
+      code.value = String(Number(input.value) / 100);
     }
   }
 
@@ -134,12 +158,16 @@ function initializeLab(
     if (!visible) {
       return;
     }
+    const extents: Partial<Record<EffectCreationField['name'], number>> = {};
+    for (const { name, input } of extentInputs) {
+      extents[name] = Number(input.value) / 100;
+    }
     return slot.show(currentTarget(), effect, () => ({
       clock: 'auto',
       motion: 'respect',
       intensity: intensity(),
       seed: SEED,
-      ...(effect.id === 'fire' ? { flameHeight: Number(heightInput?.value) } : {}),
+      ...extents,
     }));
   }
 
@@ -205,8 +233,10 @@ function initializeLab(
     },
     { signal },
   );
-  heightInput?.addEventListener('input', updateValues, { signal });
-  heightInput?.addEventListener('change', () => void attach(), { signal });
+  for (const { input } of extentInputs) {
+    input.addEventListener('input', updateValues, { signal });
+    input.addEventListener('change', () => void attach(), { signal });
+  }
   for (const subject of subjects) {
     subject.addEventListener('change', () => selectSubject(subject.value), { signal });
   }

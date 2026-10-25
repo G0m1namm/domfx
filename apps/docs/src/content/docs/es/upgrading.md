@@ -42,6 +42,25 @@ de versiones de paquetes, entorno, código de motivo y mensaje de diagnóstico
 junto con un ejemplo mínimo reproducible. Consulta
 [solución de problemas](/docs/es/troubleshooting).
 
+<span id="relative-effect-sizing"></span>
+
+## Tamaño relativo del efecto
+
+Si la versión instalada ofrece opciones de tamaño relativo, elige los campos de
+la [referencia de tu efecto](/docs/es/api/effects). Omitirlos conserva la apariencia
+anterior. En Fire, sustituye `flameHeight` por `flameReach`; nunca uses ambos.
+En las opciones emparejadas, la que omitas vale cero.
+
+En el modo relativo, la intensidad cambia la fuerza visual sin cambiar el alcance
+ni la profundidad configurados. Las opciones de tamaño se fijan al crear el efecto:
+libera la instancia y crea otra para cambiarlas. Revisa sus límites de captura antes
+de cambiar de modo.
+
+Slime también ofrece `dripDensity` (0–1, valor predeterminado 0.56). Los valores más
+altos añaden más gotas sin cambiar su tamaño, recorrido o ritmo. Se fija al crear
+el efecto y no activa el tamaño relativo por sí sola. Consulta las
+[opciones de Slime](/docs/es/api/effects/slime#effect-options).
+
 <span id="animation-and-binding-names"></span>
 
 ## Nombres de animación y enlaces

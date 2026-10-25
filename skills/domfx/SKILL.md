@@ -13,8 +13,9 @@ Write explanations and code comments in the user's language; keep API names unch
 
 Inspect the app's manifest, lockfile and installed versions of `@domfx/browser`,
 `@domfx/core` and, when used, `gsap` and `@domfx/gsap` before choosing APIs.
-These instructions describe the `0.1.0-alpha.0` domfx packages and GSAP `3.15.0`.
-For another version, check its public declarations and matching documentation;
+The published quickstart currently pins `0.1.0-alpha.1`; this repository also
+documents additive relative options awaiting release. Check the installed public
+declarations and matching documentation before using those options;
 explain a mismatch rather than inventing exports or upgrading dependencies silently.
 
 For a new installation, use the exact package versions in the public
@@ -24,8 +25,48 @@ No repository checkout, private imports or consumer TypeGPU plugin is needed.
 
 Choose an attachment from the [effect catalog](https://domfx.dev/docs/api/effects/).
 `attachFire`, `attachFrost` and `attachDither` share controls, but effect-specific
-options differ: remove Fire's `flameHeight` when switching to another effect.
+options differ: remove the previous effect's geometry options when switching effects.
 Read that effect's public options instead of deriving an export name from its label.
+
+## Choose strength and extent
+
+When installed declarations expose relative options, choose the effect-owned fields:
+
+| Effect                          | Creation options and reference dimension                                    |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| Fire                            | `flameReach`: physical height; mutually exclusive with legacy `flameHeight` |
+| Frost                           | `coatingDepth`: shorter side; `mistReach`: height                           |
+| Slime                           | `coatingDepth`: shorter side; `dripReach`: height                           |
+| Burned paper                    | `scorchDepth`: shorter side; `ashReach`: height                             |
+| Electricity                     | `contourSpread`: shorter side                                               |
+| Kinetic bloom                   | `fragmentTravel`: shorter side                                              |
+| Dither and shared-flow patterns | `plumeReach`: height; `bandDepth`: shorter side                             |
+| Contour echoes                  | `echoReach`: shorter side                                                   |
+| Brush fringe                    | `fringeReach`: shorter side                                                 |
+
+Slime also accepts creation-only `dripDensity` (0–1, default 0.56): a normalized
+density, independent of size, travel and timing. Zero disables drips; higher values
+add more locations, including extra emission locations above the default. It works
+in legacy and relative modes and does not opt into relative geometry by itself.
+
+Relative extents are finite nonnegative numeric fractions of the untransformed target border
+box, excluding capture padding; transparent image margins count. `0.1` means 10%,
+not 10 pixels. Resolve again after resize. All omitted retains legacy behavior;
+with paired options, supplying either enables relative mode and the missing partner
+is zero. All-zero extents produce transparent output.
+
+In relative mode, `intensity` scales final premultiplied strength without changing
+configured geometry or local fine detail. Animate intensity normally, including
+with GSAP. Extents are creation-only: dispose and recreate to change them; there
+are no geometry setters. Reach is an envelope, not a guaranteed visible tip, and
+fixed marks can extend beyond their sampling envelope within reserved support.
+
+Relative capture requires contained descendant boxes and paint inside the border
+box plus 2 CSS pixels, without shadows, filters, outlines or generated pseudo-elements.
+Existing pixel/memory/device limits still apply; oversized support is unavailable,
+never silently clipped or downsampled. Use the matching per-effect reference for
+exact support limits. If the installed release lacks these fields, use its legacy
+options and explain the version requirement instead of claiming npm support.
 
 ## Attach and own the lifetime
 

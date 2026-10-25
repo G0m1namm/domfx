@@ -63,6 +63,8 @@ Repository contracts take precedence over upstream examples, especially target
 visibility, global animation state, package boundaries, and resource ownership.
 
 Keep changes vertical, small, typed, and testable. Preserve the core's DOM/framework independence; browser and GPU details belong behind adapters. Every behavior change needs an observable verification path.
+For effect behavior, options or defaults, follow [effect API conventions](engineering/effect-api.md),
+including marketing and EN/ES docs updates and final cross-site review.
 
 ## Design System
 

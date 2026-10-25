@@ -4,6 +4,7 @@ import { d, std, tgpu, type TgpuRoot } from 'typegpu';
 import type { CaptureFrame } from '@domfx/core';
 
 import { EffectError } from './effect-error.js';
+import type { EffectGeometry } from './effect-geometry.js';
 import { EffectPrograms, type RenderEffect } from './effect-programs.js';
 
 export type { RenderEffect } from './effect-programs.js';
@@ -48,6 +49,8 @@ export interface PreparedGpuFrame {
     timestampWrites?: GPURenderPassTimestampWrites,
     flameHeight?: number,
     effect?: RenderEffect,
+    geometry?: EffectGeometry,
+    dripDensity?: number,
   ): void;
   present(destination: GPUTexture): void;
   readFire(): Promise<Uint8Array>;
@@ -156,7 +159,7 @@ export class GpuExperiment {
     if (!pixels.some((value, i) => i % 4 === 3 && value < 128)) {
       throw new EffectError('missing-exterior');
     }
-    if (this.managedBytes + width * height * 36 + 20 > 144_000_000) {
+    if (this.managedBytes + width * height * 36 + 52 > 144_000_000) {
       throw new EffectError('aggregate-budget');
     }
 
@@ -169,6 +172,7 @@ export class GpuExperiment {
     let runner: JumpFlood.Executor | undefined;
     let output: GPUTexture | undefined;
     let uniform: GPUBuffer | undefined;
+    let geometryUniform: GPUBuffer | undefined;
     let scopeOpen = true;
     device.pushErrorScope('validation');
     try {
@@ -201,15 +205,21 @@ export class GpuExperiment {
         size: 16,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
+      geometryUniform = device.createBuffer({
+        label: 'domfx target-local geometry',
+        size: 32,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      });
       const outputTexture = output;
       const parameters = uniform;
-      const bindings = this.programs.bind(sdfTexture, parameters);
+      const geometricParameters = geometryUniform;
+      const bindings = this.programs.bind(sdfTexture, parameters, geometricParameters);
       let disposed = false;
       const prepared: PreparedGpuFrame = {
         width,
         height,
-        // Source/JFA/effect textures + one vec4f (16) and patched JFA i32 (4).
-        managedBytes: width * height * 36 + 20,
+        // Textures + legacy vec4f (16), geometry (32), patched JFA i32 (4).
+        managedBytes: width * height * 36 + 52,
         prepareMs: performance.now() - started,
         readSdf: async () => {
           const bytes = await this.readTexture(sdfTexture, width, height, 8);
@@ -226,17 +236,48 @@ export class GpuExperiment {
           timestampWrites,
           flameHeight = 24,
           effect = 'fire',
+          geometry,
+          dripDensity = 0.56,
         ) => {
           if (disposed) {
             throw new Error('frame-disposed');
           }
           if (
-            ![time, seed, intensity, pixelsPerCss, flameHeight].every(Number.isFinite) ||
+            ![time, seed, intensity, pixelsPerCss, flameHeight, dripDensity].every(
+              Number.isFinite,
+            ) ||
             pixelsPerCss <= 0 ||
             flameHeight < 8 ||
-            flameHeight > 64
+            flameHeight > 64 ||
+            dripDensity < 0 ||
+            dripDensity > 1
           ) {
             throw new Error('invalid-parameters');
+          }
+          if (geometry) {
+            const { a, d, e, f } = geometry.pixelToLocal;
+            const values = [
+              a,
+              d,
+              e,
+              f,
+              geometry.directionalReach,
+              geometry.inwardDepth,
+              dripDensity,
+              0,
+            ];
+            if (
+              values.some((value) => !Number.isFinite(Math.fround(value))) ||
+              a <= 0 ||
+              d <= 0 ||
+              geometry.directionalReach < 0 ||
+              geometry.inwardDepth < 0
+            ) {
+              throw new Error('invalid-geometry');
+            }
+            device.queue.writeBuffer(geometricParameters, 0, new Float32Array(values));
+          } else if (effect === 'slime') {
+            device.queue.writeBuffer(geometricParameters, 24, new Float32Array([dripDensity]));
           }
           device.queue.writeBuffer(
             parameters,
@@ -261,7 +302,7 @@ export class GpuExperiment {
               },
             ],
           });
-          pass.setPipeline(this.programs.pipeline(effect));
+          pass.setPipeline(this.programs.pipeline(effect, geometry !== undefined));
           pass.setBindGroup(0, bindings);
           pass.draw(3);
           pass.end();
@@ -289,6 +330,7 @@ export class GpuExperiment {
           source.destroy();
           outputTexture.destroy();
           parameters.destroy();
+          geometricParameters.destroy();
           this.prepared.delete(prepared);
         },
       };
@@ -305,6 +347,7 @@ export class GpuExperiment {
       source.destroy();
       output?.destroy();
       uniform?.destroy();
+      geometryUniform?.destroy();
       if (scopeOpen) {
         await device.popErrorScope();
       }

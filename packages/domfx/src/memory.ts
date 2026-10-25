@@ -11,7 +11,7 @@ export function estimateFrameMemory(width: number, height: number) {
   if (pixels > 1_000_000) {
     throw new EffectError('capture-budget');
   }
-  return { managedBytes: pixels * 36 + 20, captureBytes: pixels * 4, outputBytes: pixels * 4 };
+  return { managedBytes: pixels * 36 + 52, captureBytes: pixels * 4, outputBytes: pixels * 4 };
 }
 
 type FrameMemory = ReturnType<typeof estimateFrameMemory>;

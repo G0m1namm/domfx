@@ -52,6 +52,10 @@ readiness and CORS. Accepted formats have broader scope than the tested assets.
   the effect container or its ancestors so they affect the shared subtree.
 - Large shadows or overflowing content can exceed the capture margin. Keep an
   explicit effect container and compatible stacking; capture fidelity is bounded.
+- Relative sizing requires descendant boxes to stay inside the target, with paint
+  no farther than 2 CSS px outside its border box. Shadows, filters, outlines and
+  generated pseudo-elements are unsupported. See each
+  [effect's sizing limits](/docs/api/effects) before enabling this mode.
 
 ## When an effect is unavailable
 

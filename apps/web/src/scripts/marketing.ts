@@ -1,3 +1,9 @@
+import {
+  effectCreationFields,
+  effectSettingValueText,
+  intensityField,
+  type EffectCreationField,
+} from '@domfx/site/effect-extent';
 import type { EffectSlot, EffectStatus } from '@domfx/site/effect-slot';
 import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import type { Effect } from '@domfx/site/effects';
@@ -45,7 +51,9 @@ function initializeMarketing() {
     openEffect: (result) => openPreview(result),
   });
   const intensity = required<HTMLInputElement>('#effect-intensity');
+  const creationControls = required<HTMLFieldSetElement>('[data-creation-controls]', dialog);
   const dialogScene = required<HTMLElement>('.dialog-scene', dialog);
+  const previewVisibility = required<HTMLElement>('.preview-visibility', dialogScene);
   const dialogStage = required<HTMLElement>('.dialog-stage', dialog);
   const zoomOut = required<HTMLButtonElement>('[data-zoom-out]', dialog);
   const zoomIn = required<HTMLButtonElement>('[data-zoom-in]', dialog);
@@ -109,6 +117,37 @@ function initializeMarketing() {
     environment: previewEnvironment,
     onChange: updatePreviewStatus,
   });
+  let previewTarget: HTMLElement | undefined;
+  let previewVisible = false;
+  // Gate capture on the target's layout box, independent of camera zoom/pan.
+  // Creation controls can still scroll that box out of a narrow dialog.
+  function updatePreviewVisibilitySize() {
+    if (previewTarget) {
+      previewVisibility.style.width = `${previewTarget.offsetWidth}px`;
+      previewVisibility.style.height = `${previewTarget.offsetHeight}px`;
+    }
+  }
+  const previewSizeObserver = new ResizeObserver(updatePreviewVisibilitySize);
+  const previewObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.target !== previewVisibility) {
+          continue;
+        }
+        const visible = entry.intersectionRatio >= 0.99;
+        if (visible === previewVisible) {
+          continue;
+        }
+        previewVisible = visible;
+        if (visible) {
+          void attachDialogEffect();
+        } else {
+          dialogSlot.clear();
+        }
+      }
+    },
+    { root: dialog, threshold: [0, 0.99] },
+  );
 
   function updatePatternPlayback() {
     const paused = patternsPaused || reducedMotion.matches;
@@ -473,7 +512,22 @@ function initializeMarketing() {
 
   function attachmentCode() {
     const effect = selectedEffect;
-    return `import { ${effect.exportName} } from '@domfx/browser';\n\nconst effect = ${effect.exportName}(element, { host, clock: 'ambient', intensity: ${(Number(intensity.value) / 100).toFixed(2)} });\n\n${m.disposeComment}`;
+    const settings = Object.entries(creationOptions())
+      .map(([name, value]) => `  ${name}: ${value},`)
+      .join('\n');
+    return `import { ${effect.exportName} } from '@domfx/browser';\n\nconst effect = ${effect.exportName}(element, {\n  host, clock: 'ambient',\n  intensity: ${(Number(intensity.value) / 100).toFixed(2)},\n${settings}\n});\n\n${m.disposeComment}`;
+  }
+
+  function creationOptions() {
+    const options: Partial<Record<EffectCreationField['name'], number>> = {};
+    for (const field of effectCreationFields(selectedEffect)) {
+      const input = required<HTMLInputElement | HTMLSelectElement>(
+        `[data-creation-option="${field.name}"]`,
+        creationControls,
+      );
+      options[field.name] = Number(input.value) / 100;
+    }
+    return options;
   }
 
   // Scale the source and its attached canvas together; zoom never changes intensity.
@@ -607,6 +661,8 @@ function initializeMarketing() {
       message = m.statusPreparing;
     } else if (status.lifecycle === 'active') {
       message = m.statusActive;
+    } else if (status.lifecycle === 'suspended') {
+      message = m.statusStatic;
     } else if (status.reason && locale === 'en') {
       message = `${m.statusStatic} · ${status.reason}`;
     } else {
@@ -616,6 +672,10 @@ function initializeMarketing() {
   }
 
   function showDialogEffect() {
+    previewObserver.disconnect();
+    previewSizeObserver.disconnect();
+    previewVisible = false;
+    dialogSlot.clear();
     const target = document.createElement('span');
     target.className = 'dialog-target';
     target.dataset.dialogTarget = '';
@@ -639,6 +699,10 @@ function initializeMarketing() {
       target.append(content);
     }
     dialogStage.replaceChildren(target);
+    previewTarget = target;
+    updatePreviewVisibilitySize();
+    previewSizeObserver.observe(target);
+    previewObserver.observe(previewVisibility);
     required('#dialog-title', dialog).textContent = selectedEffect.name;
     required<HTMLAnchorElement>('[data-effect-reference]', dialog).href = localePath(
       { kind: 'effect-reference', effect: selectedEffect.id },
@@ -664,23 +728,28 @@ function initializeMarketing() {
     for (const button of dialog.querySelectorAll<HTMLElement>('[data-target]')) {
       button.setAttribute('aria-pressed', String(button.dataset.target === targetKind));
     }
-    const effect = selectedEffect;
-    if (disposed) {
+    updatePreviewPlayback();
+  }
+
+  function attachDialogEffect() {
+    if (disposed || !dialog.open || !previewVisible || !previewTarget) {
       return;
     }
-    updatePreviewPlayback();
-    return dialogSlot.show(target, effect, () => {
+    return dialogSlot.show(previewTarget, selectedEffect, () => {
       setPreviewZoom(previewZoom);
       return {
         clock: 'manual',
         seed: 314,
         intensity: Number(intensity.value) / 100,
         time: previewTime,
+        ...creationOptions(),
       };
     });
   }
 
   function updatePreviewPlayback() {
+    creationControls.disabled = reducedMotion.matches || !hasGpu;
+    intensity.disabled = reducedMotion.matches || !hasGpu;
     const button = required<HTMLButtonElement>('[data-pause]', dialog);
     button.disabled = reducedMotion.matches || !hasGpu;
     button.innerHTML = playbackLabel();
@@ -696,6 +765,12 @@ function initializeMarketing() {
       throw new Error(`Unknown effect: ${trigger.dataset.id}`);
     }
     selectedEffect = effect;
+    const template = required<HTMLTemplateElement>(
+      `[data-creation-template="${effect.id}"]`,
+      dialog,
+    );
+    creationControls.replaceChildren(template.content.cloneNode(true));
+    creationControls.hidden = false;
     clearCards();
     previewSubject =
       document.querySelector(`[data-card][data-id="${effect.id}"] [data-preview]`) ?? undefined;
@@ -711,9 +786,10 @@ function initializeMarketing() {
     required('[data-copy-status]', dialog).textContent = '';
     previewReturnFocus = trigger;
     intensity.value = '70';
-    required('output', dialog).textContent = '70%';
+    updateIntensityValue();
     required('[data-pause]', dialog).innerHTML = playbackLabel();
     dialog.showModal();
+    dialog.scrollTop = 0;
     setPreviewZoom(1);
     void showDialogEffect();
   }
@@ -761,12 +837,47 @@ function initializeMarketing() {
     }
   });
 
+  function setFill(input: HTMLInputElement) {
+    input.style.setProperty('--fill', `${(Number(input.value) / Number(input.max)) * 100}%`);
+  }
+
+  function updateIntensityValue() {
+    required('[data-effect-setting-output="intensity"]', dialog).textContent =
+      `${intensity.value}%`;
+    intensity.setAttribute(
+      'aria-valuetext',
+      effectSettingValueText(intensityField, intensity.value, locale),
+    );
+    setFill(intensity);
+  }
+
   on(intensity, 'input', () => {
-    required('output', dialog).textContent = `${intensity.value}%`;
+    updateIntensityValue();
     if (dialogSlot.handle) {
       dialogSlot.handle.intensity = Number(intensity.value) / 100;
     }
     required('[data-code]', dialog).textContent = attachmentCode();
+  });
+
+  on(creationControls, 'input', (event) => {
+    if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement)) {
+      return;
+    }
+    const input = event.target;
+    const field = effectCreationFields(selectedEffect).find(
+      (field) => field.name === input.dataset.creationOption,
+    );
+    if (!field) {
+      return;
+    }
+    if (input instanceof HTMLInputElement) {
+      required('output', input.closest('.effect-setting') ?? creationControls).textContent =
+        `${input.value}%`;
+      input.setAttribute('aria-valuetext', effectSettingValueText(field, input.value, locale));
+      setFill(input);
+    }
+    required('[data-code]', dialog).textContent = attachmentCode();
+    void attachDialogEffect();
   });
 
   let backdropPointer: number | undefined;
@@ -796,6 +907,10 @@ function initializeMarketing() {
   });
   on(dialog, 'close', () => {
     backdropPointer = undefined;
+    previewObserver.disconnect();
+    previewSizeObserver.disconnect();
+    previewVisible = false;
+    previewTarget = undefined;
     dialogSlot.clear();
     previewDrag = undefined;
     setPreviewZoom(1);
@@ -884,6 +999,8 @@ function initializeMarketing() {
     cancelAnimationFrame(frame);
     window.clearTimeout(toastTimer);
     closingObserver.disconnect();
+    previewObserver.disconnect();
+    previewSizeObserver.disconnect();
     closingSlot.dispose();
     clearCards();
     dialogSlot.dispose();

@@ -6,9 +6,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
+        energyExtent: resolve(import.meta.dirname, 'energy-extent.html'),
         effects: resolve(import.meta.dirname, 'effects.html'),
+        patternExtent: resolve(import.meta.dirname, 'pattern-extent.html'),
         main: resolve(import.meta.dirname, 'index.html'),
         manual: resolve(import.meta.dirname, 'manual.html'),
+        materialExtent: resolve(import.meta.dirname, 'material-extent.html'),
         placementNative: resolve(import.meta.dirname, 'placement-native.html'),
         gsap: resolve(import.meta.dirname, 'gsap.html'),
         assets: resolve(import.meta.dirname, 'assets.html'),

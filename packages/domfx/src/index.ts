@@ -17,7 +17,11 @@ import type { ElectricityOptions } from './electricity-options.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
 import type { KineticOptions } from './kinetic-options.js';
-import type { PatternOptions } from './pattern-options.js';
+import type {
+  BrushFringeOptions,
+  ContourEchoesOptions,
+  PatternOptions,
+} from './pattern-options.js';
 import { acquireRenderer } from './renderer-service.js';
 import type { SlimeOptions } from './slime-options.js';
 
@@ -118,7 +122,7 @@ export function attachDiamonds(target: Element, options: PatternOptions): Effect
 }
 
 /** Attach the contour echoes pattern exploration to a captured silhouette. */
-export function attachContourEchoes(target: Element, options: PatternOptions): EffectHandle {
+export function attachContourEchoes(target: Element, options: ContourEchoesOptions): EffectHandle {
   return attachPatternWithAdapters(target, 'contour-echoes', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -182,14 +186,19 @@ export function attachStarShimmer(target: Element, options: PatternOptions): Eff
 }
 
 /** Attach the brush fringe exploration to a captured silhouette. */
-export function attachBrushFringe(target: Element, options: PatternOptions): EffectHandle {
+export function attachBrushFringe(target: Element, options: BrushFringeOptions): EffectHandle {
   return attachPatternWithAdapters(target, 'brush-fringe', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
   });
 }
 
-export type { PatternEffect, PatternOptions } from './pattern-options.js';
+export type {
+  BrushFringeOptions,
+  ContourEchoesOptions,
+  PatternEffect,
+  PatternOptions,
+} from './pattern-options.js';
 export type { DitherOptions } from './dither-options.js';
 export type { BurnedPaperOptions } from './burned-paper-options.js';
 export type { SlimeOptions } from './slime-options.js';

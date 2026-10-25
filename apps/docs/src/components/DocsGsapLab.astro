@@ -1,4 +1,5 @@
 ---
+import '@domfx/site/styles/effect-controls.css';
 import { Code } from 'astro:components';
 import { localeFromPath } from '@domfx/site/locale';
 
@@ -38,8 +39,8 @@ const id = 'docs-gsap';
       <div><span>{messages.effect} · 0.5–4.5 s</span><span class="docs-gsap-track docs-gsap-track-effect" aria-hidden="true"></span></div>
     </div>
     <dl class="docs-gsap-values">
-      <div><dt>{messages.time}</dt><dd><output data-gsap-time-output aria-live="off">0.00</output></dd></div>
-      <div><dt>{messages.intensity}</dt><dd><output data-gsap-intensity-output aria-live="off">0.80</output></dd></div>
+      <div><dt>time (s)</dt><dd><output data-gsap-time-output aria-live="off">0.00</output></dd></div>
+      <div><dt>intensity</dt><dd><output data-gsap-intensity-output aria-live="off">0.80</output></dd></div>
     </dl>
   </div>
   <div class="docs-lab-code">

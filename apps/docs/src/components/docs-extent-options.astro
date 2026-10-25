@@ -1,0 +1,42 @@
+---
+import { effectExtentReference } from '@domfx/site/effect-extent';
+import type { Effect } from '@domfx/site/effects';
+import { localeFromPath } from '@domfx/site/locale';
+
+import DocsApiTable from './DocsApiTable.astro';
+
+interface Props { effect: Effect; }
+const { effect } = Astro.props;
+const reference = effectExtentReference(effect);
+const locale = localeFromPath(Astro.url.pathname);
+const isEs = locale === 'es';
+const isMaterial = ['frost', 'slime', 'burned-paper'].includes(effect.id);
+const basisLabels = {
+  height: { en: 'fraction of local physical height', es: 'fracción de la altura física local' },
+  'shorter-side': { en: 'fraction of the shorter local side', es: 'fracción del lado local más corto' },
+};
+---
+{reference && <>
+  <p>{isEs ? 'Opciones de creación: fracciones numéricas finitas y no negativas del border box sin transformar, sin incluir el margen de captura. Los márgenes transparentes cuentan. Se recalculan al capturar después de un cambio de tamaño; las traslaciones y escalas positivas admitidas solo cambian la colocación.' : 'Creation options: finite nonnegative numeric fractions of the untransformed border box, excluding capture padding. Transparent margins count. Resolved again on capture after resize; supported translation and positive scale change placement only.'}</p>
+  <DocsApiTable label={isEs ? `Opciones de extensión de ${effect.name}` : `${effect.name} extent options`}>
+    <thead><tr><th scope="col">{isEs ? 'Propiedad' : 'Property'}</th><th scope="col">{isEs ? 'Tipo y unidad' : 'Type and unit'}</th><th scope="col">{isEs ? 'Ejemplo' : 'Example'}</th></tr></thead>
+    <tbody>{reference.fields.map((field) => <tr>
+      <th scope="row"><code>{field.name}</code><p>{field.label[locale]}</p></th>
+      <td><code>number</code> · {basisLabels[field.basis][locale]}</td>
+      <td><code>{field.example}</code> = {field.example * 100}%</td>
+    </tr>)}</tbody>
+  </DocsApiTable>
+  {effect.id === 'slime' && <>
+    <DocsApiTable label={isEs ? 'Densidad de gotas de Slime' : 'Slime drip density'}>
+      <thead><tr><th scope="col">{isEs ? 'Propiedad' : 'Property'}</th><th scope="col">{isEs ? 'Tipo y rango' : 'Type and range'}</th><th scope="col">{isEs ? 'Valor predeterminado' : 'Default'}</th></tr></thead>
+      <tbody><tr><th scope="row"><code>dripDensity</code></th><td><code>number</code> · 0–1</td><td><code>0.56</code></td></tr></tbody>
+    </DocsApiTable>
+    <p>{isEs ? 'Aumenta dripDensity para añadir más gotas. Cero las desactiva; los valores superiores al predeterminado añaden más ubicaciones de emisión. No es un número exacto de gotas ni una tasa de emisión: no cambia su tamaño, recorrido o ritmo. Funciona con las extensiones anteriores y relativas; por sí sola no activa el modo relativo. Es una opción de creación: libera la instancia y crea otra para cambiarla.' : 'Increase dripDensity to add more drips. Zero disables them; values above the default add extra emission locations. It is not an exact drop count or emission rate: drop size, travel and timing stay unchanged. Works with legacy and relative extents; it does not enable relative mode by itself. This is a creation option: dispose and create another instance to change it.'}</p>
+  </>}
+  {isMaterial && <p>{isEs ? 'Omitir ambas extensiones conserva el tamaño anterior. Proporcionar cualquiera activa el modo relativo: la opción que falte vale cero y desactiva ese componente. La intensidad escala la salida premultiplicada sin cambiar la geometría ni el detalle fino. Ambas extensiones en cero producen salida transparente. Cambiar una extensión requiere liberar la instancia y crear otra; no hay setters geométricos.' : 'Omitting both extents keeps legacy sizing. Supplying either enables relative mode: the missing partner is zero and disables that component. Intensity scales premultiplied output without changing geometry or fine detail. Both extents at zero produce transparent output. Changing an extent requires disposing and creating another instance; there are no geometric setters.'}</p>}
+  {isMaterial && <p>{isEs ? 'La profundidad limita la cobertura interior; el alcance limita el recorrido de la niebla, gotas o ceniza. Es una envolvente permitida, no una punta visible garantizada. Los granos, brillos y gotas conservan su tamaño local. El borde material puede sobresalir hasta 6 px CSS y las marcas móviles hasta 8 px CSS del recorrido; el margen reservado incluye ese soporte y la protección de muestreo.' : 'Depth bounds inward coverage; reach bounds mist, drip or ash travel. This is a permitted envelope, not a guaranteed visible tip. Grains, highlights and drops keep their local size. The material lip can extend up to 6 CSS px and moving marks up to 8 CSS px beyond travel; padding includes that support and the sampling guard.'}</p>}
+  {!isMaterial && <p>{isEs ? 'Omitir la opción conserva la apariencia anterior. Un valor explícito activa el modo relativo: la intensidad escala la salida premultiplicada sin cambiar la geometría ni el detalle fino. Cero oculta todo el efecto. Cambiar la extensión requiere liberar la instancia y crear otra; no hay setter geométrico.' : 'Omitting the option preserves legacy appearance. An explicit value enables relative mode: intensity scales premultiplied output without changing geometry or fine detail. Zero hides the entire effect. Changing extent requires disposing and creating another instance; there is no geometric setter.'}</p>}
+  {effect.id === 'electricity' && <p>{isEs ? 'contourSpread limita la extensión exterior de los filamentos respecto de la forma visible, incluidos sus huecos. El borde interior tiene 2.5 px CSS. El ruido, ancho de los filamentos, chispas y celdas de emisión de 18 px mantienen su tamaño local. El alcance es una envolvente, no una punta visible garantizada. La intensidad del modo anterior también cambia la energía sin mover los filamentos.' : 'contourSpread bounds exterior strand spread from the visible shape, including its holes. The inward rim is 2.5 CSS px. Noise, strand widths, sparks and 18px emission cells keep their local size. Spread is an envelope, not a guaranteed visible tip. Legacy intensity also changes energy without moving strands.'}</p>}
+  {effect.id === 'kinetic' && <p>{isEs ? 'fragmentTravel limita el recorrido normal exterior de los centros de los fragmentos. El soporte añade 3 px CSS de deriva tangencial y 5 px CSS de huella del fragmento; el borde interior tiene 3 px CSS. El perfil del pulso y su estela, la cuadrícula de emisión de 12 px y los fragmentos mantienen su tamaño local. El recorrido no garantiza un fragmento visible en cada fotograma.' : 'fragmentTravel bounds outward normal travel of fragment centers. Support adds 3 CSS px of tangential drift and 5 CSS px of fragment footprint; the inward rim is 3 CSS px. Pulse and wake profiles, the 12px emission grid and fragments keep their local size. Travel does not guarantee a visible fragment each frame.'}</p>}
+  <p>{isEs ? 'Requiere cajas descendientes contenidas y pintura dentro del border box más 2 px CSS; no admite sombras, filtros, contornos ni pseudoelementos generados. Se comprueba todo el alfa capturado y el margen exterior. Los límites de píxeles, memoria y dispositivo siguen vigentes: una solicitud que no cabe deja el efecto no disponible sin recortar ni reducir la calidad. El contenido original sigue utilizable.' : 'Requires contained descendant boxes and paint within the border box plus 2 CSS px; shadows, filters, outlines and generated pseudo-elements are unsupported. Every captured alpha sample and the full free margin are checked. Pixel, memory and device limits still apply: a request that does not fit leaves the effect unavailable without trimming or reducing quality. Original content stays usable.'}</p>
+</>}

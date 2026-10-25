@@ -174,3 +174,24 @@ usable. Read the console reason and [troubleshooting](https://domfx.dev/docs/tro
 Call `cleanup()` when the page or component goes away. Disposed instances cannot
 be reused. See [browser support](https://domfx.dev/docs/support/) for measured
 limits and [the API](https://domfx.dev/docs/api/) for placement and capture restrictions.
+
+### Target-relative extent
+
+These additive options are implemented in this branch and await release. Check
+the installed package declarations before using them with the pinned npm version.
+
+Use `flameReach: 0.1` instead of `flameHeight` for creation-only reach of 10% of
+the untransformed target border-box height. In this mode intensity changes strength
+without changing reach or fine detail; zero reach/intensity is transparent. Resizing
+resolves reach again. Both options together throw. Omission keeps legacy behavior.
+See the [Fire contract](packages/domfx/README.md#relative-fire-reach) for the bounded
+paint policy and allocation limits; excess reach becomes unavailable without clipping.
+
+Other effects own their relative options: Frost `coatingDepth`/`mistReach`, Slime
+`coatingDepth`/`dripReach`, Burned paper `scorchDepth`/`ashReach`, Electricity
+`contourSpread`, Kinetic bloom `fragmentTravel`, shared-flow patterns
+`plumeReach`/`bandDepth`, Contour echoes `echoReach`, and Brush fringe `fringeReach`.
+Directional travel uses physical height; depth and radial travel use the shorter
+side. Paired options default the missing partner to zero once either is supplied.
+All are creation-only; intensity remains a setter. See the
+[browser package contracts](packages/domfx/README.md) for units and finite support.

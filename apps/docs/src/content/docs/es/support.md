@@ -67,6 +67,10 @@ los recursos probados.
 - Las sombras grandes o el contenido desbordado pueden exceder el margen de captura.
   Usa un contenedor del efecto explícito y un apilamiento compatible; la fidelidad
   de captura tiene límites.
+- El tamaño relativo exige que las cajas descendientes queden dentro del objetivo
+  y que la pintura no sobresalga más de 2 px CSS de su border box. No admite sombras,
+  filtros, contornos ni pseudoelementos generados. Consulta los
+  [límites de tamaño de cada efecto](/docs/es/api/effects) antes de activar este modo.
 
 <span id="when-an-effect-is-unavailable"></span>
 

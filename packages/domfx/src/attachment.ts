@@ -6,13 +6,33 @@ import { createCaptureRevisions } from './capture-revision.js';
 import { diagnosticsFor } from './diagnostics.js';
 import type { DitherOptions } from './dither-options.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
+import {
+  assertEffectPaintMargin,
+  fireReachPadding,
+  type EffectGeometry,
+} from './effect-geometry.js';
+import { assertRelativeEffectSource } from './effect-paint.js';
 import type { ElectricityOptions } from './electricity-options.js';
+import { energyExtentPadding, energyExtentSupport } from './energy-geometry.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
 import type { RenderEffect } from './gpu.js';
 import type { KineticOptions } from './kinetic-options.js';
+import {
+  materialExtentOptions,
+  materialPadding,
+  materialGeometry,
+  materialSupport,
+  type MaterialExtent,
+} from './material-geometry.js';
 import { memoryFor } from './memory.js';
-import type { PatternEffect, PatternOptions } from './pattern-options.js';
+import { patternPadding, patternSupport, resolvePatternGeometry } from './pattern-geometry.js';
+import type {
+  BrushFringeOptions,
+  ContourEchoesOptions,
+  PatternEffect,
+  PatternOptions,
+} from './pattern-options.js';
 import {
   assertEffectComposition,
   isPlacementMutation,
@@ -52,7 +72,10 @@ export function attachWithAdapters(
     | { effect: 'slime'; options: SlimeOptions }
     | { effect: 'burned-paper'; options: BurnedPaperOptions }
     | { effect: 'dither'; options: DitherOptions }
-    | { effect: PatternEffect; options: PatternOptions },
+    | {
+        effect: PatternEffect;
+        options: PatternOptions | ContourEchoesOptions | BrushFringeOptions;
+      },
   adapters: AttachmentAdapters,
   measurePlacement = measureEffectPlacement,
 ): EffectHandle {
@@ -92,7 +115,74 @@ export function attachWithAdapters(
     throw new Error('effect-target-owned');
   }
 
+  const patternOptions = { ...options };
+  const patternGeometry = resolvePatternGeometry(effect, patternOptions, 0, 0);
   const seed = finite(options.seed === undefined ? 0 : options.seed, effect);
+  const flameReach = request.effect === 'fire' ? request.options.flameReach : undefined;
+  const dripDensity =
+    request.effect === 'slime' && request.options.dripDensity !== undefined
+      ? finite(request.options.dripDensity, effect)
+      : 0.56;
+  if (dripDensity < 0 || dripDensity > 1) {
+    throw new Error('invalid-slime-parameter');
+  }
+  let materialExtent: MaterialExtent | undefined;
+  if (request.effect === 'frost') {
+    materialExtent = materialExtentOptions(
+      request.options.coatingDepth,
+      request.options.mistReach,
+      effect,
+    );
+  } else if (request.effect === 'slime') {
+    materialExtent = materialExtentOptions(
+      request.options.coatingDepth,
+      request.options.dripReach,
+      effect,
+    );
+  } else if (request.effect === 'burned-paper') {
+    materialExtent = materialExtentOptions(
+      request.options.scorchDepth,
+      request.options.ashReach,
+      effect,
+    );
+  }
+  if (
+    flameReach !== undefined &&
+    (typeof flameReach !== 'number' ||
+      !Number.isFinite(flameReach) ||
+      flameReach < 0 ||
+      (request.effect === 'fire' && request.options.flameHeight !== undefined))
+  ) {
+    throw new Error('invalid-fire-parameter');
+  }
+  let energyExtent: number | undefined;
+  if (request.effect === 'electricity') {
+    energyExtent = request.options.contourSpread;
+  } else if (request.effect === 'kinetic') {
+    energyExtent = request.options.fragmentTravel;
+  }
+  // JavaScript callers also reject energy options belonging to another effect.
+  if (
+    ('contourSpread' in options &&
+      options.contourSpread !== undefined &&
+      effect !== 'electricity') ||
+    ('fragmentTravel' in options && options.fragmentTravel !== undefined && effect !== 'kinetic')
+  ) {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+  if (
+    energyExtent !== undefined &&
+    (typeof energyExtent !== 'number' || !Number.isFinite(energyExtent) || energyExtent < 0)
+  ) {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+  const energyReach = (width: number, height: number) =>
+    Math.min(width, height) * (energyExtent ?? 0);
+  const relative =
+    flameReach !== undefined ||
+    energyExtent !== undefined ||
+    materialExtent !== undefined ||
+    patternGeometry !== undefined;
   const flameHeight = finite(
     request.effect === 'fire' ? (request.options.flameHeight ?? 24) : 24,
     effect,
@@ -108,6 +198,7 @@ export function attachWithAdapters(
   );
 
   const motion = view.matchMedia('(prefers-reduced-motion: reduce)');
+  let dprQuery: MediaQueryList | undefined;
   const scheduler = schedulerFor(document, view);
   const now = () => view.performance.now();
   const targetStyle = view.getComputedStyle.bind(view, target);
@@ -139,14 +230,83 @@ export function attachWithAdapters(
       if (!current()) {
         return Promise.resolve(undefined);
       }
-      const estimate = measureCapture(target, paddingCss);
+      const relativePadding = (width: number, height: number, dpr: number) => {
+        if (energyExtent !== undefined) {
+          return energyExtentPadding(effect, energyReach(width, height), dpr);
+        }
+        if (materialExtent) {
+          return materialPadding(width, height, dpr, materialExtent);
+        }
+        const geometry = resolvePatternGeometry(effect, patternOptions, width, height);
+        return geometry
+          ? patternPadding(geometry, dpr)
+          : fireReachPadding(height, flameReach ?? 0, dpr);
+      };
+      if (relative) {
+        assertRelativeEffectSource(target);
+      }
+      const size = targetSize();
+      const padding = relative
+        ? relativePadding(size.width, size.height, view.devicePixelRatio)
+        : paddingCss;
+      const estimate = measureCapture(target, padding);
       observedSize = targetSize();
       reserve(estimate.width, estimate.height);
       awaitingAssets = true;
-      return adapters.capture(target, { paddingCss }, reserve, () => {
-        observedSize = targetSize();
-        awaitingAssets = false;
-      });
+      return adapters
+        .capture(
+          target,
+          {
+            paddingCss: padding,
+            resolvePadding: relative ? relativePadding : undefined,
+          },
+          reserve,
+          () => {
+            observedSize = targetSize();
+            awaitingAssets = false;
+            if (relative) {
+              assertRelativeEffectSource(target);
+            }
+          },
+        )
+        .then((frame) => {
+          if (relative) {
+            try {
+              const geometry = resolvePatternGeometry(
+                effect,
+                patternOptions,
+                frame.contentBounds.width,
+                frame.contentBounds.height,
+              );
+              let support = frame.contentBounds.height * (flameReach ?? 0);
+              if (energyExtent !== undefined) {
+                support = energyExtentSupport(
+                  effect,
+                  energyReach(frame.contentBounds.width, frame.contentBounds.height),
+                );
+              } else if (geometry) {
+                support = patternSupport(geometry);
+              }
+              assertEffectPaintMargin(frame, support);
+            } catch (error) {
+              frame.release();
+              throw error;
+            }
+          }
+          if (materialExtent) {
+            try {
+              const geometry = materialGeometry(frame, materialExtent);
+              assertEffectPaintMargin(
+                frame,
+                materialSupport(geometry.directionalReach, geometry.inwardDepth),
+              );
+            } catch (error) {
+              frame.release();
+              throw error;
+            }
+          }
+          return frame;
+        });
     },
     canRun: canCapture,
     present: presentRevision,
@@ -337,6 +497,8 @@ export function attachWithAdapters(
     view?.removeEventListener('resize', observePaint);
     document.removeEventListener('visibilitychange', visibilityChanged);
     motion.removeEventListener('change', suspendForMotion);
+    dprQuery?.removeEventListener('change', dprChanged);
+    dprQuery = undefined;
 
     context?.unconfigure();
     context = null;
@@ -586,6 +748,32 @@ export function attachWithAdapters(
     }
 
     if (dirty) {
+      let geometry: EffectGeometry | undefined;
+      if (materialExtent) {
+        geometry = materialGeometry(frame, materialExtent);
+      } else if (energyExtent !== undefined) {
+        geometry = {
+          pixelToLocal: frame.pixelToLocal,
+          directionalReach: energyReach(frame.contentBounds.width, frame.contentBounds.height),
+          inwardDepth: 3,
+        };
+      } else if (flameReach !== undefined) {
+        geometry = {
+          pixelToLocal: frame.pixelToLocal,
+          directionalReach: frame.contentBounds.height * flameReach,
+          inwardDepth: 3,
+        };
+      } else if (patternGeometry) {
+        geometry = {
+          pixelToLocal: frame.pixelToLocal,
+          ...(resolvePatternGeometry(
+            effect,
+            patternOptions,
+            frame.contentBounds.width,
+            frame.contentBounds.height,
+          ) ?? patternGeometry),
+        };
+      }
       prepared.render(
         motionPolicy === 'static' ? 0 : time,
         seed,
@@ -594,6 +782,8 @@ export function attachWithAdapters(
         undefined,
         flameHeight,
         effect,
+        geometry,
+        dripDensity,
       );
       prepared.present(output.getCurrentTexture());
       dirty = false;
@@ -717,6 +907,19 @@ export function attachWithAdapters(
     }
   }
 
+  function observeDpr() {
+    dprQuery?.removeEventListener('change', dprChanged);
+    if (relative && view) {
+      dprQuery = view.matchMedia(`(resolution: ${view.devicePixelRatio}dppx)`);
+      dprQuery.addEventListener('change', dprChanged);
+    }
+  }
+
+  function dprChanged() {
+    observeDpr();
+    observePaint();
+  }
+
   function observe() {
     for (let ancestor = target.parentNode; ancestor; ancestor = ancestor.parentNode) {
       connectionObserver.observe(ancestor, { childList: true });
@@ -740,6 +943,7 @@ export function attachWithAdapters(
     view?.addEventListener('resize', observePaint);
     document.addEventListener('visibilitychange', visibilityChanged);
     motion.addEventListener('change', suspendForMotion);
+    observeDpr();
   }
 
   function initialize() {
@@ -948,7 +1152,7 @@ export function attachDitherWithAdapters(
 export function attachPatternWithAdapters(
   target: Element,
   effect: PatternEffect,
-  options: PatternOptions,
+  options: PatternOptions | ContourEchoesOptions | BrushFringeOptions,
   adapters: AttachmentAdapters,
 ): EffectHandle {
   return attachWithAdapters(target, { effect, options }, adapters);

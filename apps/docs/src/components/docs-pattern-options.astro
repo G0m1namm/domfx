@@ -1,0 +1,34 @@
+---
+import { patternExtentReference } from '@domfx/site/effect-reference';
+import type { Effect } from '@domfx/site/effects';
+import { localeFromPath } from '@domfx/site/locale';
+
+import DocsApiTable from './DocsApiTable.astro';
+
+interface Props { effect: Effect; }
+const { effect } = Astro.props;
+const reference = patternExtentReference(effect);
+const locale = localeFromPath(Astro.url.pathname);
+const isEs = locale === 'es';
+const basisLabels = {
+  height: { en: 'fraction of local physical height', es: 'fracción de la altura física local' },
+  'shorter-side': { en: 'fraction of the shorter local side', es: 'fracción del lado local más corto' },
+};
+---
+{reference && <>
+  <p>{isEs ? 'Estas opciones se fijan al crear la instancia. Son fracciones numéricas finitas y no negativas del borde del elemento objetivo, antes de transformar y sin incluir el relleno de captura. Los márgenes transparentes de las imágenes cuentan; no se usan los límites ajustados de los píxeles visibles. Se calculan otra vez cuando cambia el tamaño del objetivo. Cambiar una opción requiere otra instancia.' : 'Set these options when creating the instance. Values are finite nonnegative numeric fractions of the untransformed target border box, excluding capture padding. Transparent image margins count; tight visible-pixel bounds are not used. Fractions resolve again when the target resizes. Changing an option requires a new instance.'}</p>
+  <DocsApiTable label={isEs ? `Opciones de extensión de ${effect.name}` : `${effect.name} extent options`}>
+    <thead><tr><th scope="col">{isEs ? 'Propiedad' : 'Property'}</th><th scope="col">{isEs ? 'Tipo y unidad' : 'Type and unit'}</th><th scope="col">{isEs ? 'Ejemplo' : 'Example'}</th></tr></thead>
+    <tbody>{reference.fields.map((field) => <tr>
+      <th scope="row"><code>{field.name}</code><p>{field.label[locale]}</p></th>
+      <td><code>number</code> · {basisLabels[field.basis][locale]}</td>
+      <td><code>{field.example}</code> = {field.example * 100}%</td>
+    </tr>)}</tbody>
+  </DocsApiTable>
+  <p>{isEs ? 'Omitir todas las opciones de extensión conserva la apariencia anterior, incluida su relación con intensity. Al proporcionar una opción se activa el modo relativo: intensity escala la salida premultiplicada sin cambiar los emisores, la cuadrícula, las marcas ni su separación. El valor cero produce una salida transparente cuando todas las extensiones son cero.' : 'Omitting every extent option preserves legacy appearance, including its relationship to intensity. Supplying an option enables relative mode: intensity scales premultiplied output without changing emitters, the grid, marks or spacing. Output is transparent when every extent is zero.'}</p>
+  {reference.family === 'flow' && <p>{isEs ? 'plumeReach fija el recorrido ascendente de los emisores; bandDepth fija la cobertura interior. En modo relativo, la opción que falte vale cero y desactiva ese componente. Por ejemplo, plumeReach: 0.1 representa 10 píxeles CSS en un objetivo de 100px de alto y 40 en uno de 400px. Las marcas mantienen su escala local: Dither conserva los puntos finos y su cuadrícula de 2px.' : 'plumeReach sets upward emitter travel; bandDepth sets inward coverage. In relative mode, a missing partner is zero and disables that component. For example, plumeReach: 0.1 means 10 CSS pixels on a 100px-high target and 40 on a 400px-high target. Marks retain their local scale: Dither keeps its fine dots and 2px grid.'}</p>}
+  {reference.family === 'echoes' && <p>{isEs ? 'echoReach fija el alcance radial exterior, incluidos los huecos de la forma visible. La separación entre contornos se mantiene en 5.5 píxeles CSS; el borde interior es fino y fijo. echoReach: 0 oculta todo el efecto.' : 'echoReach sets radial exterior reach, including holes in the visible shape. Echo spacing stays at 5.5 CSS pixels; the inward rim stays thin and fixed. echoReach: 0 hides the entire effect.'}</p>}
+  {reference.family === 'fringe' && <p>{isEs ? 'fringeReach fija la envolvente de muestreo de las pinceladas. Sus cerdas mantienen una longitud de 1.5–4.5 píxeles CSS, su ancho y su cuadrícula de 7px. Las marcas pueden sobresalir hasta 5.1 píxeles CSS de esa envolvente; el espacio reservado incluye ese soporte. fringeReach: 0 oculta todo el efecto.' : 'fringeReach sets the bristle sampling envelope. Bristles keep their 1.5–4.5 CSS-pixel length range, width and 7px grid. Marks can extend up to 5.1 CSS pixels beyond that envelope; the reserved space includes this support. fringeReach: 0 hides the entire effect.'}</p>}
+  <p>{isEs ? 'El alcance es una envolvente permitida, no una punta visible garantizada. Las marcas que se muestrean cerca del borde pueden sobresalir de ella; se reservan 6 píxeles CSS para cubrir todas las marcas, además del margen de muestreo. La opacidad puede cambiar los límites visibles al aplicar un umbral.' : 'Reach is a permitted envelope, not a guaranteed visible tip. Marks sampled near its edge may extend beyond it; allocation reserves 6 CSS pixels for all mark footprints, plus the sampling guard. Opacity can change thresholded visible bounds.'}</p>
+  <p>{isEs ? 'El modo relativo requiere descendientes contenidos, sin sombras, filtros, contornos CSS ni pseudo-elementos generados, y pintura dentro del borde del objetivo más 2 píxeles CSS. Se comprueba la pintura real y todo el margen exterior. El DPR cambia la resolución y la admisión, no la fracción CSS. Los límites de captura y memoria siguen vigentes: las solicitudes que no caben dejan el efecto no disponible, sin recortar ni reducir su calidad. El contenido original sigue utilizable.' : 'Relative mode requires contained descendants, no shadows, filters, CSS outlines or generated pseudo-elements, and paint within the target border box plus 2 CSS pixels. Actual paint and the full free margin are checked. DPR changes resolution and admission, not the CSS fraction. Capture and memory limits still apply: requests that do not fit make the effect unavailable, without trimming reach or reducing quality. Original content stays usable.'}</p>
+</>}

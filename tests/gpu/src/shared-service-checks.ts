@@ -226,12 +226,12 @@ export async function verifySharedTargets(sharedHost: boolean, disposedIndex: nu
     const both = observation.allocation();
     const survivorIndex = 1 - disposedIndex;
     const survivor = layers[survivorIndex];
-    const expectedBytes = survivor.width * survivor.height * 36 + 20;
+    const expectedBytes = survivor.width * survivor.height * 36 + 52;
     effects[disposedIndex].dispose();
     effects[disposedIndex].dispose();
     const surviving = observation.allocation();
     check(
-      surviving.managedBytes === expectedBytes && surviving.bufferBytes === 20,
+      surviving.managedBytes === expectedBytes && surviving.bufferBytes === 52,
       'survivor allocation baseline',
     );
     check(
@@ -656,7 +656,7 @@ export async function verifySharedDeviceLoss(
     }
     const pendingBytes = memoryFor(document).bytes;
     const retainedBytes = layers.reduce(
-      (sum, layer) => sum + layer.width * layer.height * 40 + 20,
+      (sum, layer) => sum + layer.width * layer.height * 40 + 52,
       0,
     );
     const animationTime = Number(animation.currentTime);

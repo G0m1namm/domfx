@@ -18,6 +18,8 @@ const browserExports = [
   'CaptureError',
   'CaptureErrorCode',
   'BurnedPaperOptions',
+  'BrushFringeOptions',
+  'ContourEchoesOptions',
   'DitherOptions',
   'ElectricityOptions',
   'FireOptions',

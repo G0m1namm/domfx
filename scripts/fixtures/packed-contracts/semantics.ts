@@ -39,6 +39,67 @@ declare const target: Element;
 declare const host: HTMLElement;
 declare const svgHost: SVGSVGElement;
 
+const relativeElectricity = attachElectricity(target, { host, contourSpread: 0.1 });
+const relativeKinetic = attachKinetic(target, { host, fragmentTravel: 0.2 });
+// @ts-expect-error Contour spread is creation-only.
+relativeElectricity.contourSpread = 0.2;
+// @ts-expect-error Fragment travel is creation-only.
+relativeKinetic.fragmentTravel = 0.3;
+// @ts-expect-error Only Electricity accepts contour spread.
+attachKinetic(target, { host, contourSpread: 0.1 });
+// @ts-expect-error Only Kinetic bloom accepts fragment travel.
+attachElectricity(target, { host, fragmentTravel: 0.1 });
+// @ts-expect-error Ratios use finite numbers, not CSS strings.
+attachElectricity(target, { host, contourSpread: '10%' });
+// @ts-expect-error Ratios use finite numbers, not CSS strings.
+attachKinetic(target, { host, fragmentTravel: '10%' });
+
+const relativeFire = attachFire(target, { host, flameReach: 0.1 });
+const relativeFrost = attachFrost(target, { host, coatingDepth: 0.1, mistReach: 0.2 });
+attachFrost(target, { host, mistReach: 0 }).dispose();
+// @ts-expect-error Material geometry is creation-only.
+relativeFrost.coatingDepth = 0.2;
+// @ts-expect-error Mist reach is a numeric height fraction.
+attachFrost(target, { host, mistReach: '20%' });
+// @ts-expect-error Drip reach belongs to Slime.
+attachFrost(target, { host, dripReach: 0.2 });
+relativeFrost.dispose();
+const relativeSlime = attachSlime(target, { host, coatingDepth: 0.05, dripReach: 0.2 });
+attachSlime(target, { host, dripDensity: 0.9 }).dispose();
+// @ts-expect-error Drip density is a numeric fraction, not percentage text.
+attachSlime(target, { host, dripDensity: '90%' });
+// @ts-expect-error Only Slime supports drip density.
+attachFrost(target, { host, dripDensity: 0.9 });
+// @ts-expect-error Drip density is creation-only, not a writable instance control.
+relativeSlime.dripDensity = 0.9;
+attachSlime(target, { host, dripReach: 0 }).dispose();
+// @ts-expect-error Relative drip travel belongs only to Slime.
+attachBurnedPaper(target, { host, dripReach: 0.2 });
+// @ts-expect-error Relative mist travel belongs only to Frost.
+attachSlime(target, { host, mistReach: 0.2 });
+// @ts-expect-error Material geometry is creation-only.
+relativeSlime.dripReach = 0.3;
+relativeSlime.dispose();
+const relativePaper = attachBurnedPaper(target, { host, scorchDepth: 0.15, ashReach: 0.15 });
+attachBurnedPaper(target, { host, ashReach: 0 }).dispose();
+// @ts-expect-error Scorch depth is a numeric shorter-side fraction.
+attachBurnedPaper(target, { host, scorchDepth: '15%' });
+// @ts-expect-error Coating depth belongs to Frost and Slime.
+attachBurnedPaper(target, { host, coatingDepth: 0.1 });
+// @ts-expect-error Ash reach belongs only to Burned paper.
+attachFrost(target, { host, ashReach: 0.2 });
+// @ts-expect-error Material geometry is creation-only.
+relativePaper.ashReach = 0.3;
+relativePaper.dispose();
+// @ts-expect-error Geometry is fixed when the instance is created.
+relativeFire.flameReach = 0.2;
+// @ts-expect-error Legacy artistic scale and relative reach are mutually exclusive.
+attachFire(target, { host, flameReach: 0.1, flameHeight: 24 });
+// @ts-expect-error Reach is a numeric target-height fraction.
+attachFire(target, { host, flameReach: '10%' });
+// @ts-expect-error Relative Fire reach is not an Electricity option.
+attachElectricity(target, { host, flameReach: 0.1 });
+
 const effect = attachFire(target, {
   host,
   clock: 'manual',
@@ -169,3 +230,41 @@ attachStarShimmer(target, { host, flameHeight: 48 });
 attachBrushFringe(target, shared).dispose();
 // @ts-expect-error Only Fire accepts a flame-height option.
 attachBrushFringe(target, { host, flameHeight: 48 });
+
+// Relative pattern extents are creation-only and effect-owned.
+for (const attach of [
+  attachDither,
+  attachHalftone,
+  attachStipple,
+  attachScanlines,
+  attachCrosshatch,
+  attachDiamonds,
+  attachEngraving,
+  attachWovenMesh,
+  attachHexagons,
+  attachInterference,
+  attachShards,
+  attachCircuits,
+  attachStarShimmer,
+]) {
+  const relative = attach(target, { host, plumeReach: 0.1, bandDepth: 0.05 });
+  relative.dispose();
+  // @ts-expect-error Pattern geometry has no writable extent control.
+  relative.plumeReach = 0.2;
+  // @ts-expect-error Radial echoes use their own options family.
+  attach(target, { host, echoReach: 0.1 });
+}
+attachContourEchoes(target, { host, echoReach: 0.15 }).dispose();
+attachBrushFringe(target, { host, fringeReach: 0.1 }).dispose();
+// @ts-expect-error Contour echoes have radial reach instead of a rising plume.
+attachContourEchoes(target, { host, plumeReach: 0.1 });
+// @ts-expect-error Brush fringe does not expose an inward band.
+attachBrushFringe(target, { host, bandDepth: 0.1 });
+// @ts-expect-error Extent fractions are numeric rather than CSS strings.
+attachDither(target, { host, plumeReach: '10%' });
+const radialPattern = { host, echoReach: 0.1 };
+// @ts-expect-error A radial options variable cannot configure a shared-flow pattern.
+attachHalftone(target, radialPattern);
+const flowingPattern = { host, plumeReach: 0.1 };
+// @ts-expect-error A flowing options variable cannot configure a radial pattern.
+attachContourEchoes(target, flowingPattern);

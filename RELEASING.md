@@ -54,10 +54,12 @@ Before expensive release qualification, compare the PR with its intended base us
 Changesets status policy as CI and inspect local packages without packing or publishing:
 
 ```sh
-node scripts/release-pr-preflight.mjs --base origin/main
+pnpm release:preflight --base origin/main
 ```
 
-The base is required so detached checkouts cannot silently compare against the wrong branch.
+After an unchanged `pnpm check`, use `pnpm release:preflight:built --base origin/main`
+to reuse its library build. The base is required so detached checkouts cannot silently
+compare against the wrong branch.
 The preflight rejects a release plan that omits changed publishable library inputs, including
 source, README, license, changelog, package metadata or declared exports. It is read-only:
 registry metadata, package versions and distribution tags are not changed.

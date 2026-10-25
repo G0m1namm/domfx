@@ -101,6 +101,7 @@ async function gateRendererDevice(page: Page) {
                 writeBuffer(buffer, offset, data, dataOffset, size);
               },
             });
+            document.documentElement.dataset.testRendererDeviceGate = 'held';
             await deviceReady;
             return device;
           },
@@ -516,14 +517,20 @@ test('the docs lab replays writable controls changed before attachment is ready'
     await lab.scrollIntoViewIfNeeded();
     const opacity = lab.locator('[data-docs-lab-writable="mistOpacity"]');
     await expect(lab).toHaveAttribute('data-status', 'initializing');
+    await expect(page.locator('html')).toHaveAttribute('data-test-renderer-device-gate', 'held');
     await opacity.fill('0');
     await expect(lab.locator('[data-docs-lab-writable-code="mistOpacity"]')).toHaveText('0');
     await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
     await expect(lab).toHaveAttribute('data-status', 'active');
     await expect(lab.locator('canvas')).toHaveCount(1);
     await expect
-      .poll(() => page.locator('html').getAttribute('data-test-control-mist-opacity-writes'))
-      .toContain('0');
+      .poll(async () => {
+        const writes = await page
+          .locator('html')
+          .getAttribute('data-test-control-mist-opacity-writes');
+        return writes?.split(',').map(Number) ?? [];
+      })
+      .toContain(0);
   } finally {
     await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
   }

@@ -199,10 +199,8 @@ export function attachWithAdapters(
   const patternGeometry = resolvePatternGeometry(effect, patternOptions, 0, 0);
   const seed = finite(options.seed === undefined ? 0 : options.seed, effect);
   let mistOpacity = 1;
-  const gloss = 1;
   let emberGlow = 1;
   let emberDensity = 1;
-  const dotSpacing = 5.5;
   if (request.effect === 'frost') {
     mistOpacity =
       request.options.mistOpacity === undefined
@@ -890,7 +888,7 @@ export function attachWithAdapters(
         effect,
         geometry,
         dripDensity,
-        { mistOpacity, emberDensity, dotSpacing, gloss, emberGlow } satisfies EffectControls,
+        { mistOpacity, emberDensity, emberGlow, color } satisfies EffectControls,
       );
       prepared.present(output.getCurrentTexture());
       dirty = false;

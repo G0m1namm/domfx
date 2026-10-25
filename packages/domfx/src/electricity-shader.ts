@@ -72,5 +72,5 @@ ${scalarHash}
   let color = (halo * vec3f(.08, .28, .9)
              + arc * vec3f(.32, .62, 1)
              + hot * vec3f(.84, .96, 1)) / max(halo + arc + hot, .0001);
-  return vec4f(color * alpha, alpha);
+  return applyEffectColor(vec4f(color * alpha, alpha));
 }`;

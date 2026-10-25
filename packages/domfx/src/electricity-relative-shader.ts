@@ -77,5 +77,5 @@ ${scalarHash}
              + arc * vec3f(.32, .62, 1)
              + hot * vec3f(.84, .96, 1)) / max(halo + arc + hot, .0001);
   let envelope = 1 - smoothstep(max(0, reach - 1), reach, supportDistance);
-  return vec4f(color * alpha, alpha) * (intensity * envelope);
+  return applyEffectColor(vec4f(color * alpha, alpha) * (intensity * envelope));
 }`;

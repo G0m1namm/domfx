@@ -107,6 +107,6 @@ fn phaseAt(p: vec2f) -> f32 {
       result = shard + result * (1 - shard.a);
     }
   }
-  return result * (pow(intensity, .4) * smoothstep(-3, -.5, distance)
-                 * (1 - smoothstep(27, 30, distance)));
+  return applyEffectColor(result * (pow(intensity, .4) * smoothstep(-3, -.5, distance)
+                 * (1 - smoothstep(27, 30, distance))));
 }`;

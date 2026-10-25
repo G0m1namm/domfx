@@ -3,6 +3,7 @@ import { d, std, tgpu, type TgpuRoot } from 'typegpu';
 
 import type { CaptureFrame } from '@domfx/core';
 
+import type { EffectColor } from './color.js';
 import { EffectError } from './effect-error.js';
 import type { EffectGeometry } from './effect-geometry.js';
 import { EffectPrograms, type RenderEffect } from './effect-programs.js';
@@ -62,17 +63,15 @@ export interface PreparedGpuFrame {
 export interface EffectControls {
   readonly mistOpacity: number;
   readonly emberDensity: number;
-  readonly dotSpacing: number;
-  readonly gloss: number;
   readonly emberGlow: number;
+  readonly color: EffectColor | undefined;
 }
 
 const defaultControls: EffectControls = {
   mistOpacity: 1,
   emberDensity: 1,
-  dotSpacing: 5.5,
-  gloss: 1,
   emberGlow: 1,
+  color: undefined,
 };
 
 /** One experimental renderer service; caller owns it and shares it between targets.
@@ -283,9 +282,10 @@ export class GpuExperiment {
               dripDensity,
               controls.mistOpacity,
               controls.emberDensity,
-              controls.dotSpacing,
-              controls.gloss,
               controls.emberGlow,
+              controls.color?.red ?? 0,
+              controls.color?.green ?? 0,
+              controls.color?.blue ?? 0,
             ].every(Number.isFinite) ||
             pixelsPerCss <= 0 ||
             flameHeight < 8 ||
@@ -296,12 +296,12 @@ export class GpuExperiment {
             controls.mistOpacity > 1 ||
             controls.emberDensity < 0 ||
             controls.emberDensity > 1 ||
-            controls.dotSpacing < 3 ||
-            controls.dotSpacing > 12 ||
-            controls.gloss < 0 ||
-            controls.gloss > 1 ||
             controls.emberGlow < 0 ||
-            controls.emberGlow > 1
+            controls.emberGlow > 1 ||
+            (controls.color !== undefined &&
+              ![controls.color.red, controls.color.green, controls.color.blue].every(
+                (value) => value >= 0 && value <= 1,
+              ))
           ) {
             throw new Error('invalid-parameters');
           }
@@ -347,12 +347,12 @@ export class GpuExperiment {
             new Float32Array([
               controls.mistOpacity,
               controls.emberDensity,
-              controls.dotSpacing,
-              controls.gloss,
               controls.emberGlow,
               0,
-              0,
-              0,
+              controls.color?.red ?? 0,
+              controls.color?.green ?? 0,
+              controls.color?.blue ?? 0,
+              controls.color === undefined ? 0 : 1,
             ]),
           );
           const encoder = device.createCommandEncoder();

@@ -17,12 +17,14 @@ test('selected effect controls validate, retain state and change only their inte
     for (const attach of [
       () => window.controlEffects.fire(target, { host, emberDensity: -0.1 }),
       () => window.controlEffects.fire(target, { host, emberDensity: 1.1 }),
-      () => window.controlEffects.halftone(target, { host, dotSpacing: 2.9 }),
-      () => window.controlEffects.halftone(target, { host, dotSpacing: 12.1 }),
+      // @ts-expect-error Deliberately invalid JavaScript input must fail at the public boundary.
+      () => window.controlEffects.halftone(target, { host, color: null }),
+      // @ts-expect-error Deliberately invalid JavaScript input must fail at the public boundary.
+      () => window.controlEffects.halftone(target, { host, color: 1 }),
       // @ts-expect-error Deliberately invalid JavaScript input must fail at the public boundary.
       () => window.controlEffects.frost(target, { host, mistOpacity: null }),
       // @ts-expect-error Deliberately invalid JavaScript input must fail at the public boundary.
-      () => window.controlEffects.slime(target, { host, gloss: null }),
+      () => window.controlEffects.slime(target, { host, color: null }),
       // @ts-expect-error Deliberately invalid JavaScript input must fail at the public boundary.
       () => window.controlEffects['burned-paper'](target, { host, emberGlow: null }),
     ]) {
@@ -63,21 +65,23 @@ test('selected effect controls validate, retain state and change only their inte
 
     const slime = window.controlEffects.slime(target, { host, time: 2, intensity: 0.8 });
     await slime.ready;
-    const slimeDefault = slime.gloss;
+    const slimeDefault = slime.color;
     const slimeBefore = image();
-    slime.gloss = 0;
+    slime.color = '#000000';
     await settle();
     const slimeAfter = image();
     slime.dispose();
 
-    const slimeExtreme = window.controlEffects.slime(target, {
-      host,
-      time: 2,
-      gloss: -Number.MAX_VALUE,
-    });
+    const slimeExtreme = window.controlEffects.slime(target, { host, time: 2 });
     await slimeExtreme.ready;
-    slimeExtreme.gloss = Number.MAX_VALUE;
-    const slimeExtremeValue = slimeExtreme.gloss;
+    let slimeExtremeError = '';
+    try {
+      // @ts-expect-error Deliberately invalid JavaScript input must fail at the public boundary.
+      slimeExtreme.color = null;
+    } catch (error) {
+      slimeExtremeError = error instanceof Error ? error.message : String(error);
+    }
+    const slimeExtremeValue = slimeExtreme.color;
     slimeExtreme.dispose();
 
     const paper = window.controlEffects['burned-paper'](target, {
@@ -134,22 +138,15 @@ test('selected effect controls validate, retain state and change only their inte
     });
     await halftoneDefault.ready;
     const halftoneDefaultImage = image();
-    halftoneDefault.dispose();
-    const halftoneWide = window.controlEffects.halftone(target, {
-      host,
-      time: 2,
-      intensity: 0.8,
-      dotSpacing: 12,
-    });
-    await halftoneWide.ready;
-    const halftoneWideImage = image();
+    halftoneDefault.color = '#00ff00';
+    await settle();
+    const halftoneColorImage = image();
     const defaults = {
       emberDensity: fireDefault.emberDensity,
-      dotSpacing: halftoneDefault.dotSpacing,
-      gloss: slimeDefault,
+      color: slimeDefault,
       emberGlow: paperDefault,
     };
-    halftoneWide.dispose();
+    halftoneDefault.dispose();
 
     return {
       errors,
@@ -159,11 +156,12 @@ test('selected effect controls validate, retain state and change only their inte
       frostRetained,
       frostExtremeValue,
       slimeChanged: slimeBefore !== slimeAfter,
+      slimeExtremeError,
       slimeExtremeValue,
       paperChanged: paperBefore !== paperAfter,
       paperExtremeValue,
       fireChanged: fireDefaultImages.some((value, index) => value !== fireNoneImages[index]),
-      halftoneChanged: halftoneDefaultImage !== halftoneWideImage,
+      halftoneChanged: halftoneDefaultImage !== halftoneColorImage,
       defaults,
       canvases: host.querySelectorAll('canvas').length,
     };
@@ -184,12 +182,13 @@ test('selected effect controls validate, retain state and change only their inte
     frostRetained: 0,
     frostExtremeValue: 0,
     slimeChanged: true,
-    slimeExtremeValue: 1,
+    slimeExtremeError: 'invalid-slime-parameter',
+    slimeExtremeValue: undefined,
     paperChanged: true,
     paperExtremeValue: 0,
     fireChanged: true,
     halftoneChanged: true,
-    defaults: { emberDensity: 1, dotSpacing: 5.5, gloss: 1, emberGlow: 1 },
+    defaults: { emberDensity: 1, color: undefined, emberGlow: 1 },
     canvases: 0,
   });
 });
@@ -200,7 +199,7 @@ test('public handles expose only their owned controls at runtime', async ({ page
   const result = await page.evaluate(async () => {
     const host = document.querySelector<HTMLElement>('#host')!;
     const target = document.querySelector<HTMLElement>('#target')!;
-    const controls = ['mistOpacity', 'emberDensity', 'dotSpacing', 'gloss', 'emberGlow'];
+    const controls = ['color', 'mistOpacity', 'emberDensity', 'emberGlow'];
     const settle = () =>
       new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
@@ -220,14 +219,14 @@ test('public handles expose only their owned controls at runtime', async ({ page
       },
       {
         name: 'halftone',
-        key: 'dotSpacing',
-        value: 3,
+        key: 'color',
+        value: '#00ff00',
         attach: () => window.controlEffects.halftone(target, { host, time: 2 }),
       },
       {
         name: 'slime',
-        key: 'gloss',
-        value: 0,
+        key: 'color',
+        value: '#00ff00',
         attach: () => window.controlEffects.slime(target, { host, time: 2 }),
       },
       {
@@ -268,38 +267,38 @@ test('public handles expose only their owned controls at runtime', async ({ page
   expect(result).toEqual([
     {
       name: 'frost',
-      controls: ['mistOpacity'],
-      absent: ['emberDensity', 'dotSpacing', 'gloss', 'emberGlow'],
+      controls: ['color', 'mistOpacity'],
+      absent: ['emberDensity', 'emberGlow'],
       write: { accepted: true, value: 0 },
     },
     {
       name: 'fire',
-      controls: ['emberDensity'],
-      absent: ['mistOpacity', 'dotSpacing', 'gloss', 'emberGlow'],
+      controls: ['color', 'emberDensity'],
+      absent: ['mistOpacity', 'emberGlow'],
       write: { accepted: false, value: 1 },
     },
     {
       name: 'halftone',
-      controls: ['dotSpacing'],
-      absent: ['mistOpacity', 'emberDensity', 'gloss', 'emberGlow'],
-      write: { accepted: false, value: 5.5 },
+      controls: ['color'],
+      absent: ['mistOpacity', 'emberDensity', 'emberGlow'],
+      write: { accepted: true, value: 'rgb(0, 255, 0)' },
     },
     {
       name: 'slime',
-      controls: ['gloss'],
-      absent: ['mistOpacity', 'emberDensity', 'dotSpacing', 'emberGlow'],
-      write: { accepted: true, value: 0 },
+      controls: ['color'],
+      absent: ['mistOpacity', 'emberDensity', 'emberGlow'],
+      write: { accepted: true, value: 'rgb(0, 255, 0)' },
     },
     {
       name: 'burned-paper',
       controls: ['emberGlow'],
-      absent: ['mistOpacity', 'emberDensity', 'dotSpacing', 'gloss'],
+      absent: ['color', 'mistOpacity', 'emberDensity'],
       write: { accepted: true, value: 0 },
     },
     {
       name: 'electricity',
-      controls: [],
-      absent: ['mistOpacity', 'emberDensity', 'dotSpacing', 'gloss', 'emberGlow'],
+      controls: ['color'],
+      absent: ['mistOpacity', 'emberDensity', 'emberGlow'],
       write: null,
     },
   ]);
@@ -424,12 +423,12 @@ test('native GSAP drives public writable handles and restores their rendered sta
       };
       const timeline = gsap.timeline({ paused: true });
       timeline.to(frost, { mistOpacity: 0, duration: 1, ease: 'power1.inOut' }, 0);
-      timeline.from(slime, { gloss: 0, duration: 1, ease: 'none' }, 1);
+      timeline.from(slime, { color: '#000000', duration: 1, ease: 'none' }, 1);
       timeline.fromTo(paper, { emberGlow: 0 }, { emberGlow: 1, duration: 1, ease: 'none' }, 2);
       timeline.seek(0.5, true);
       const frostMidpoint = frost.mistOpacity;
       timeline.seek(1.5, true);
-      const slimeMidpoint = slime.gloss;
+      const slimeMidpoint = slime.color;
       timeline.seek(2.5, true);
       const paperMidpoint = paper.emberGlow;
       timeline.reverse();
@@ -442,7 +441,7 @@ test('native GSAP drives public writable handles and restores their rendered sta
       const frostKilled = frost.mistOpacity;
       timeline.kill();
       frost.mistOpacity = 0.8;
-      slime.gloss = 0.7;
+      slime.color = '#77aa44';
       paper.emberGlow = 0.6;
       await settle();
       const preContext = await Promise.all(
@@ -455,11 +454,11 @@ test('native GSAP drives public writable handles and restores their rendered sta
         scoped = gsap
           .timeline({ paused: true })
           .to(frost, { mistOpacity: 0.1, duration: 1, ease: 'none' }, 0)
-          .to(slime, { gloss: 0.1, duration: 1, ease: 'none' }, 0)
+          .to(slime, { color: '#112233', duration: 1, ease: 'none' }, 0)
           .to(paper, { emberGlow: 0.1, duration: 1, ease: 'none' }, 0);
       });
       scoped!.seek(0.5, true);
-      const scopedValues = [frost.mistOpacity, slime.gloss, paper.emberGlow];
+      const scopedValues = [frost.mistOpacity, slime.color, paper.emberGlow];
       context.revert();
       await settle();
       const rendered = await Promise.all(
@@ -467,9 +466,9 @@ test('native GSAP drives public writable handles and restores their rendered sta
           pixelMass(host.querySelector('canvas')!),
         ),
       );
-      const restored = [frost.mistOpacity, slime.gloss, paper.emberGlow];
+      const restored = [frost.mistOpacity, slime.color, paper.emberGlow];
       frost.mistOpacity = 1;
-      slime.gloss = 1;
+      slime.color = undefined;
       paper.emberGlow = 1;
       await settle();
       const defaultRestored = await Promise.all(
@@ -480,7 +479,7 @@ test('native GSAP drives public writable handles and restores their rendered sta
       GPUDevice.prototype.createTexture = createTexture;
       GPUDevice.prototype.createRenderPipeline = createRenderPipeline;
       return {
-        defaults: [frost.mistOpacity, slime.gloss, paper.emberGlow],
+        defaults: [frost.mistOpacity, slime.color, paper.emberGlow],
         frostMidpoint,
         slimeMidpoint,
         paperMidpoint,
@@ -504,13 +503,13 @@ test('native GSAP drives public writable handles and restores their rendered sta
     }
   });
   expect(result.frostMidpoint).toBeCloseTo(0.5, 6);
-  expect(result.slimeMidpoint).toBeCloseTo(0.5, 6);
+  expect(result.slimeMidpoint).toMatch(/^rgba\(/);
   expect(result.paperMidpoint).toBeCloseTo(0.5, 6);
   expect(result.paperReverse).toBeCloseTo(0.25, 6);
   expect(result.frostKilled).toBeCloseTo(0.5, 6);
-  expect(result.scopedValues).toEqual([0.45, 0.4, 0.35]);
-  expect(result.restored).toEqual([0.8, 0.7, 0.6]);
-  expect(result.defaults).toEqual([1, 1, 1]);
+  expect(result.scopedValues).toEqual([0.45, expect.stringMatching(/^rgba\(/), 0.35]);
+  expect(result.restored).toEqual([0.8, expect.stringMatching(/^rgb\(/), 0.6]);
+  expect(result.defaults).toEqual([1, undefined, 1]);
   expect(result.resources).toEqual({ textures: 0, pipelines: 0 });
   expect(result.rendered).toEqual(result.preContext);
   for (const [before, after] of result.initial.map(

@@ -11,7 +11,7 @@ export const patternBodies: Record<PatternEffect, string> = {
   halftone: `
     // Rotated print-screen dots vary in radius rather than turning on/off.
     let rotated = vec2f(p.x + p.y, p.y - p.x) * .70710678;
-    let spacing = controls.material.z;
+    let spacing = 5.5;
     let cell = floor(rotated / spacing);
     let center = (cell + .5) * spacing;
     let sample = vec2f(center.x - center.y, center.x + center.y) * .70710678;
@@ -306,6 +306,6 @@ ${patternBodies[pattern]}
   let exteriorColor = mix(tint, vec3f(.92, .94, 1), heat);
   let color = mix(tint * .8, exteriorColor, smoothstep(-1, 1, distance));
   let alpha = clamp(coverage * .94, 0, .94);
-  return vec4f(color * alpha, alpha);
+  return applyEffectColor(vec4f(color * alpha, alpha));
 }`;
 }

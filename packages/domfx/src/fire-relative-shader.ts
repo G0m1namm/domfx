@@ -74,23 +74,28 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
     let column = floor(p.x / 12);
     for (var neighbor = -1; neighbor <= 1; neighbor++) {
       let id = column + f32(neighbor);
-      let random = hash(vec2f(id, seed + 53));
-      if (random > .6 * controls.material.y) { continue; }
-      let age = fract(time * .65 + hash(vec2f(id + 17, seed)));
-      let emitterX = (id + hash(vec2f(id, seed + 9))) * 12;
-      let drift = sin(age * 5 + random * 6) * age * 2;
-      let dx = p.x - emitterX - drift;
-      if (abs(dx) > 2) { continue; }
-      let source = vec2f(emitterX, p.y + age * reach);
-      let dy = field(source);
-      let facing = field(source - vec2f(0, 1)) - field(source + vec2f(0, 1));
-      let radius = .35 + random * .4;
-      let spark = exp(-dx * dx / (radius * radius) - dy * dy / .7);
-      ember = max(ember, spark * smoothstep(.5, 1.5, facing)
-                  * smoothstep(0, .12, age) * (1 - smoothstep(.65, 1, age)));
+      for (var lane = 0; lane < 2; lane++) {
+        let laneNumber = f32(lane);
+        let rank = (laneNumber + hash(vec2f(id, seed + 53))) / 2;
+        if (rank >= controls.material.y) { continue; }
+        let random = hash(vec2f(id, seed + 61 + laneNumber * 29));
+        if (random > .6) { continue; }
+        let age = fract(time * .65 + hash(vec2f(id + 17, seed + laneNumber * 13)));
+        let emitterX = (id + (laneNumber + hash(vec2f(id, seed + 9 + laneNumber * 7))) / 2) * 12;
+        let drift = sin(age * 5 + random * 6) * age * 2;
+        let dx = p.x - emitterX - drift;
+        if (abs(dx) > 2) { continue; }
+        let source = vec2f(emitterX, p.y + age * reach);
+        let dy = field(source);
+        let facing = field(source - vec2f(0, 1)) - field(source + vec2f(0, 1));
+        let radius = .35 + random * .4;
+        let spark = exp(-dx * dx / (radius * radius) - dy * dy / .7);
+        ember = max(ember, spark * smoothstep(.5, 1.5, facing)
+                    * smoothstep(0, .12, age) * (1 - smoothstep(.65, 1, age)));
+      }
     }
   }
   let emberAlpha = min(ember * exterior * envelope, .9);
-  return vec4f(vec3f(1, .78, .28) * emberAlpha + color * alpha * (1 - emberAlpha),
-               emberAlpha + alpha * (1 - emberAlpha)) * intensity;
+  return applyEffectColor(vec4f(vec3f(1, .78, .28) * emberAlpha + color * alpha * (1 - emberAlpha),
+               emberAlpha + alpha * (1 - emberAlpha)) * intensity);
 }`;

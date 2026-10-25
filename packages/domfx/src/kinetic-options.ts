@@ -1,6 +1,6 @@
-import type { AttachmentOptions } from './attachment-options.js';
+import type { ColorAttachmentOptions } from './color-options.js';
 
-export interface KineticOptions extends AttachmentOptions {
+export interface KineticOptions extends ColorAttachmentOptions {
   /** Maximum outward fragment-center travel as a finite nonnegative fraction of the
    * shorter untransformed border-box side, including transparent margins.
    * Creation-only; omission preserves legacy rendering, zero is transparent.

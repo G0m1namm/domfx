@@ -24,10 +24,9 @@ import {
   attachBrushFringe,
   type AttachmentOptions,
   type BurnedPaperEffectHandle,
+  type ColorEffectHandle,
   type FireEffectHandle,
   type FrostEffectHandle,
-  type HalftoneEffectHandle,
-  type SlimeEffectHandle,
 } from '@domfx/browser';
 import {
   bindEffect,
@@ -44,12 +43,24 @@ declare const target: Element;
 declare const host: HTMLElement;
 declare const svgHost: SVGSVGElement;
 
-const frostControls: FrostEffectHandle = attachFrost(target, { host, mistOpacity: 0.25 });
+const frostControls: FrostEffectHandle = attachFrost(target, {
+  host,
+  mistOpacity: 0.25,
+  color: '#6bf',
+});
 frostControls.mistOpacity = 2;
-const fireControls: FireEffectHandle = attachFire(target, { host, emberDensity: 0.25 });
-const halftoneControls: HalftoneEffectHandle = attachHalftone(target, { host, dotSpacing: 6 });
-const slimeControls: SlimeEffectHandle = attachSlime(target, { host, gloss: 0.25 });
-slimeControls.gloss = 2;
+const fireControls: FireEffectHandle = attachFire(target, {
+  host,
+  emberDensity: 0.25,
+  color: 'rgb(255, 64, 0)',
+});
+const halftoneControls: ColorEffectHandle = attachHalftone(target, { host, color: '#00ff00' });
+const slimeControls: ColorEffectHandle = attachSlime(target, {
+  host,
+  color: 'rgba(0, 128, 255, 1)',
+});
+fireControls.color = '#f60';
+halftoneControls.color = undefined;
 const burnedControls: BurnedPaperEffectHandle = attachBurnedPaper(target, {
   host,
   emberGlow: 0.25,
@@ -57,18 +68,16 @@ const burnedControls: BurnedPaperEffectHandle = attachBurnedPaper(target, {
 burnedControls.emberGlow = -1;
 // @ts-expect-error Ember density is creation-only.
 fireControls.emberDensity = 0.5;
-// @ts-expect-error Dot spacing is creation-only.
-halftoneControls.dotSpacing = 6;
 // @ts-expect-error Frost-only mist opacity is not a Fire option.
 attachFire(target, { host, mistOpacity: 0.5 });
 // @ts-expect-error Ember density is a number, not percentage text.
 attachFire(target, { host, emberDensity: '50%' });
-// @ts-expect-error Dot spacing belongs to Halftone.
-attachStipple(target, { host, dotSpacing: 6 });
-// @ts-expect-error Halftone spacing is a numeric local CSS-pixel value.
-attachHalftone(target, { host, dotSpacing: '6px' });
-// @ts-expect-error Slime gloss is a numeric mix, not a CSS string.
-attachSlime(target, { host, gloss: '50%' });
+// @ts-expect-error Color accepts only CSS color text or undefined.
+fireControls.color = 1;
+// @ts-expect-error Burned paper keeps its authored palette.
+attachBurnedPaper(target, { host, color: '#f60' });
+// @ts-expect-error Burned paper has no color control.
+burnedControls.color = '#f60';
 // @ts-expect-error Ember glow belongs to Burned paper.
 attachFrost(target, { host, emberGlow: 0.5 });
 frostControls.dispose();
@@ -175,6 +184,7 @@ const genericPending: AsyncEffectBinding = bindEffectAsync(Promise.resolve(effec
 generic.dispose();
 genericPending.dispose();
 timeline.to(effect, { time: 4, intensity: 0.4, duration: 4, ease: 'none' });
+timeline.to(fireControls, { color: '#06f', duration: 4, ease: 'none' });
 const refreshed = effect.refresh();
 
 // Exact equality also catches widened promise payloads and permissive escape types.

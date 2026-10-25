@@ -1,6 +1,6 @@
-import type { AttachmentOptions } from './attachment-options.js';
+import type { ColorAttachmentOptions } from './color-options.js';
 
-export interface FrostOptions extends AttachmentOptions {
+export interface FrostOptions extends ColorAttachmentOptions {
   /** Finite values clamp to 0–1. Defaults to 1. */
   readonly mistOpacity?: number;
   /** Creation-only fraction of the shorter untransformed border-box side.

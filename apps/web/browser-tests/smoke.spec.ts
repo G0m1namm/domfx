@@ -150,7 +150,9 @@ test('body, control and code text follow the browser default font preference', a
             await page
               .getByRole('button', { name: 'Search effects and documentation', exact: true })
               .click();
-            await page.getByRole('textbox').fill('frost');
+            await page
+              .getByRole('textbox', { name: 'Search effects and documentation', exact: true })
+              .fill('frost');
             const title = page.locator('#starlight__search .pagefind-ui__result-title').first();
             await expect(title).toBeVisible();
             expect(
@@ -160,7 +162,7 @@ test('body, control and code text follow the browser default font preference', a
             ).toBeCloseTo(1.05 * preference, 2);
             expect(
               await page
-                .getByRole('textbox')
+                .getByRole('textbox', { name: 'Search effects and documentation', exact: true })
                 .evaluate((element) => element.scrollWidth <= element.clientWidth),
             ).toBe(true);
             await page.keyboard.press('Escape');

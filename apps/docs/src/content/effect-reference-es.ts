@@ -42,7 +42,7 @@ export const effectReferenceEs = {
       'El modo anterior extiende la quemadura hacia dentro y refuerza la ceniza. Con scorchDepth o ashReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero. El contenido original permanece intacto.',
   },
   halftone: {
-    description: 'Puntos de semitono siguen el borde.',
+    description: 'Puntos de semitono siguen el borde visible.',
     intensity:
       'Sin opciones de extensión: Refuerza el patrón y amplía su alcance. En modo relativo, intensity escala la opacidad sin cambiar la extensión ni las marcas.',
   },

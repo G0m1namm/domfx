@@ -16,12 +16,10 @@ const effectHandleTypes = {
   attachBurnedPaper: 'BurnedPaperEffectHandle',
   attachFire: 'FireEffectHandle',
   attachFrost: 'FrostEffectHandle',
-  attachHalftone: 'HalftoneEffectHandle',
-  attachSlime: 'SlimeEffectHandle',
 } as const;
 
 function effectHandleType(exportName: string) {
-  return effectHandleTypes[exportName as keyof typeof effectHandleTypes] ?? 'EffectHandle';
+  return effectHandleTypes[exportName as keyof typeof effectHandleTypes] ?? 'ColorEffectHandle';
 }
 
 type RendererDevice = {
@@ -298,19 +296,19 @@ for (const [path, usage] of [
   ['/docs/api/effects/halftone/', 'Halftone usage'],
   ['/docs/es/api/effects/halftone/', 'Uso de Halftone'],
 ] as const) {
-  test(`@smoke ${path} documents HalftoneOptions in its signature and typed snippet`, async ({
+  test(`@smoke ${path} documents PatternOptions in its signature and typed snippet`, async ({
     page,
   }) => {
     await page.goto(path);
     await expect(
       page.getByText(
-        'attachHalftone(target: Element, options: HalftoneOptions): HalftoneEffectHandle',
+        'attachHalftone(target: Element, options: PatternOptions): ColorEffectHandle',
         { exact: true },
       ),
     ).toBeVisible();
     const snippet = page.getByRole('region', { name: usage, exact: true });
-    await expect(snippet).toContainText('import type { HalftoneOptions }');
-    await expect(snippet).toContainText('const options: HalftoneOptions = {');
+    await expect(snippet).toContainText('import type { PatternOptions }');
+    await expect(snippet).toContainText('const options: PatternOptions = {');
   });
 }
 

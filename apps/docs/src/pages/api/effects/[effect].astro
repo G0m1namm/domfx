@@ -30,8 +30,9 @@ const docsPrefix = isEs ? '/docs/es' : '/docs';
 const related = effects.filter((entry) => entry.category === effect.category && entry.id !== effect.id);
 const patternExtent = patternExtentReference(effect);
 const extent = effectExtentReference(effect);
-const optionsType = extent?.optionsType ?? `${effect.exportName.slice('attach'.length)}Options`;
-let handleType = 'EffectHandle';
+const optionsType =
+  patternExtent?.optionsType ?? extent?.optionsType ?? `${effect.exportName.slice('attach'.length)}Options`;
+let handleType = 'ColorEffectHandle';
 switch (effect.exportName) {
   case 'attachFrost':
     handleType = 'FrostEffectHandle';
@@ -39,14 +40,8 @@ switch (effect.exportName) {
   case 'attachFire':
     handleType = 'FireEffectHandle';
     break;
-  case 'attachSlime':
-    handleType = 'SlimeEffectHandle';
-    break;
   case 'attachBurnedPaper':
     handleType = 'BurnedPaperEffectHandle';
-    break;
-  case 'attachHalftone':
-    handleType = 'HalftoneEffectHandle';
     break;
 }
 const extentCode = effectCreationFields(effect)

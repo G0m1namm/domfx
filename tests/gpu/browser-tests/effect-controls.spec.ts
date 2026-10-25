@@ -322,15 +322,23 @@ test('native GSAP drives public writable handles and restores their rendered sta
       timeline.seek(2.5, true);
       const paperMidpoint = paper.emberGlow;
       timeline.reverse();
+      timeline.pause();
       timeline.seek(2.25, true);
       const paperReverse = paper.emberGlow;
       timeline.seek(0.5, true);
       timeline.killTweensOf(frost, 'mistOpacity');
       timeline.seek(1, true);
       const frostKilled = frost.mistOpacity;
+      timeline.kill();
       frost.mistOpacity = 0.8;
       slime.gloss = 0.7;
       paper.emberGlow = 0.6;
+      await settle();
+      const preContext = await Promise.all(
+        [frostTarget, slimeTarget, paperTarget].map(({ host }) =>
+          pixelMass(host.querySelector('canvas')!),
+        ),
+      );
       let scoped: ReturnType<typeof gsap.timeline> | undefined;
       const context = gsap.context(() => {
         scoped = gsap
@@ -348,6 +356,7 @@ test('native GSAP drives public writable handles and restores their rendered sta
           pixelMass(host.querySelector('canvas')!),
         ),
       );
+      const restored = [frost.mistOpacity, slime.gloss, paper.emberGlow];
       frost.mistOpacity = 1;
       slime.gloss = 1;
       paper.emberGlow = 1;
@@ -357,7 +366,6 @@ test('native GSAP drives public writable handles and restores their rendered sta
           pixelMass(host.querySelector('canvas')!),
         ),
       );
-      timeline.kill();
       GPUDevice.prototype.createTexture = createTexture;
       GPUDevice.prototype.createRenderPipeline = createRenderPipeline;
       return {
@@ -368,8 +376,9 @@ test('native GSAP drives public writable handles and restores their rendered sta
         paperReverse,
         frostKilled,
         scopedValues,
-        restored: [frost.mistOpacity, slime.gloss, paper.emberGlow],
+        restored,
         initial,
+        preContext,
         rendered,
         defaultRestored,
         resources: { textures, pipelines },
@@ -392,6 +401,7 @@ test('native GSAP drives public writable handles and restores their rendered sta
   expect(result.restored).toEqual([0.8, 0.7, 0.6]);
   expect(result.defaults).toEqual([1, 1, 1]);
   expect(result.resources).toEqual({ textures: 0, pipelines: 0 });
+  expect(result.rendered).toEqual(result.preContext);
   for (const [before, after] of result.initial.map(
     (value, index) => [value, result.rendered[index]] as const,
   )) {

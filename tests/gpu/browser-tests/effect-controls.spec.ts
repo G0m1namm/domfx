@@ -401,6 +401,9 @@ test('all decorative effects recolor output without recapture or alpha-shape cha
         effect.color = '#000000';
         await settle();
         const black = await rgba();
+        effect.color = '#ff0000';
+        await settle();
+        const red = await rgba();
         effect.color = '#ffffff';
         await settle();
         const white = await rgba();
@@ -413,8 +416,12 @@ test('all decorative effects recolor output without recapture or alpha-shape cha
           name,
           defaultColor: effect.color,
           changedBlack: !equal(authored.bytes, black.bytes),
+          changedRed: !equal(authored.bytes, red.bytes),
           changedWhite: !equal(authored.bytes, white.bytes),
-          alpha: alphaEqual(authored.bytes, black.bytes) && alphaEqual(authored.bytes, white.bytes),
+          alpha:
+            alphaEqual(authored.bytes, black.bytes) &&
+            alphaEqual(authored.bytes, red.bytes) &&
+            alphaEqual(authored.bytes, white.bytes),
           reset: equal(authored.bytes, reset.bytes),
           size:
             equal(authored.size, black.size) &&
@@ -463,6 +470,7 @@ test('all decorative effects recolor output without recapture or alpha-shape cha
     expect(sample).toMatchObject({
       defaultColor: undefined,
       changedBlack: true,
+      changedRed: true,
       changedWhite: true,
       alpha: true,
       reset: true,

@@ -304,6 +304,281 @@ test('public handles expose only their owned controls at runtime', async ({ page
   ]);
 });
 
+test('all decorative effects recolor output without recapture or alpha-shape changes', async ({
+  page,
+}) => {
+  await page.goto('/controls.html');
+  await page.waitForFunction(() => Boolean(window.controlEffects));
+  const result = await page.evaluate(async () => {
+    const host = document.querySelector<HTMLElement>('#host')!;
+    const target = document.querySelector<HTMLElement>('#target')!;
+    const source = target.outerHTML;
+    const settle = () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    const rgba = async () => {
+      const canvas = host.querySelector('canvas')!;
+      const image = new Image();
+      image.src = canvas.toDataURL();
+      await image.decode();
+      const copy = document.createElement('canvas');
+      copy.width = image.width;
+      copy.height = image.height;
+      copy.getContext('2d')!.drawImage(image, 0, 0);
+      return {
+        size: [copy.width, copy.height],
+        bytes: [...copy.getContext('2d')!.getImageData(0, 0, copy.width, copy.height).data],
+      };
+    };
+    const equal = (left: readonly number[], right: readonly number[]) =>
+      left.length === right.length && left.every((value, index) => value === right[index]);
+    const alphaEqual = (left: readonly number[], right: readonly number[]) =>
+      left.every((value, index) => index % 4 !== 3 || value === right[index]);
+    type ColorHandle = {
+      readonly ready: Promise<void>;
+      color: string | undefined;
+      dispose(): void;
+    };
+    type Attach = (
+      target: Element,
+      options: {
+        host: HTMLElement;
+        clock: 'manual';
+        motion: 'static';
+        time: number;
+        seed: number;
+        intensity: number;
+      },
+    ) => ColorHandle;
+    const effects: Array<[string, Attach]> = [
+      ['electricity', window.controlEffects.electricity],
+      ['fire', window.controlEffects.fire],
+      ['frost', window.controlEffects.frost],
+      ['kinetic', window.controlEffects.kinetic],
+      ['slime', window.controlEffects.slime],
+      ['dither', window.controlEffects.dither],
+      ['halftone', window.controlEffects.halftone],
+      ['stipple', window.controlEffects.stipple],
+      ['scanlines', window.controlEffects.scanlines],
+      ['crosshatch', window.controlEffects.crosshatch],
+      ['diamonds', window.controlEffects.diamonds],
+      ['contour-echoes', window.controlEffects['contour-echoes']],
+      ['engraving', window.controlEffects.engraving],
+      ['woven-mesh', window.controlEffects['woven-mesh']],
+      ['hexagons', window.controlEffects.hexagons],
+      ['interference', window.controlEffects.interference],
+      ['shards', window.controlEffects.shards],
+      ['circuits', window.controlEffects.circuits],
+      ['star-shimmer', window.controlEffects['star-shimmer']],
+      ['brush-fringe', window.controlEffects['brush-fringe']],
+    ];
+    const createTexture = GPUDevice.prototype.createTexture;
+    const createPipeline = GPUDevice.prototype.createRenderPipeline;
+    let textures = 0;
+    let pipelines = 0;
+    const samples: Array<Record<string, unknown>> = [];
+    try {
+      for (const [name, attach] of effects) {
+        const effect = attach(target, {
+          host,
+          clock: 'manual',
+          motion: 'static',
+          time: 1.5,
+          seed: 314,
+          intensity: 0.8,
+        });
+        await effect.ready;
+        const authored = await rgba();
+        GPUDevice.prototype.createTexture = function (...args) {
+          textures += 1;
+          return createTexture.apply(this, args);
+        };
+        GPUDevice.prototype.createRenderPipeline = function (...args) {
+          pipelines += 1;
+          return createPipeline.apply(this, args);
+        };
+        effect.color = '#000000';
+        await settle();
+        const black = await rgba();
+        effect.color = '#ffffff';
+        await settle();
+        const white = await rgba();
+        effect.color = undefined;
+        await settle();
+        const reset = await rgba();
+        GPUDevice.prototype.createTexture = createTexture;
+        GPUDevice.prototype.createRenderPipeline = createPipeline;
+        samples.push({
+          name,
+          defaultColor: effect.color,
+          changedBlack: !equal(authored.bytes, black.bytes),
+          changedWhite: !equal(authored.bytes, white.bytes),
+          alpha: alphaEqual(authored.bytes, black.bytes) && alphaEqual(authored.bytes, white.bytes),
+          reset: equal(authored.bytes, reset.bytes),
+          size:
+            equal(authored.size, black.size) &&
+            equal(authored.size, white.size) &&
+            equal(authored.size, reset.size),
+        });
+        effect.dispose();
+      }
+      const paper = window.controlEffects['burned-paper'](target, {
+        host,
+        clock: 'manual',
+        motion: 'static',
+        time: 1.5,
+        seed: 314,
+        intensity: 0.8,
+      });
+      await paper.ready;
+      const paperFirst = await rgba();
+      const paperApi = 'color' in paper;
+      paper.dispose();
+      const paperAgain = window.controlEffects['burned-paper'](target, {
+        host,
+        clock: 'manual',
+        motion: 'static',
+        time: 1.5,
+        seed: 314,
+        intensity: 0.8,
+      });
+      await paperAgain.ready;
+      const paperSecond = await rgba();
+      paperAgain.dispose();
+      return {
+        samples,
+        paper: { api: paperApi, exact: equal(paperFirst.bytes, paperSecond.bytes) },
+        source: target.outerHTML === source,
+        resources: { textures, pipelines },
+        canvases: host.querySelectorAll('canvas').length,
+      };
+    } finally {
+      GPUDevice.prototype.createTexture = createTexture;
+      GPUDevice.prototype.createRenderPipeline = createPipeline;
+    }
+  });
+  expect(result.samples).toHaveLength(20);
+  for (const sample of result.samples) {
+    expect(sample).toMatchObject({
+      defaultColor: undefined,
+      changedBlack: true,
+      changedWhite: true,
+      alpha: true,
+      reset: true,
+      size: true,
+    });
+  }
+  expect(result.paper).toEqual({ api: false, exact: true });
+  expect(result.source).toBe(true);
+  expect(result.resources).toEqual({ textures: 0, pipelines: 0 });
+  expect(result.canvases).toBe(0);
+});
+
+test('Fire half density is deterministic and visibly distinct from full density', async ({
+  page,
+}) => {
+  await page.goto('/controls.html');
+  await page.waitForFunction(() => Boolean(window.controlEffects));
+  const result = await page.evaluate(async () => {
+    const host = document.querySelector<HTMLElement>('#host')!;
+    const settle = () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    const output = async () => {
+      const canvas = host.querySelector('canvas')!;
+      const image = new Image();
+      image.src = canvas.toDataURL();
+      await image.decode();
+      const copy = document.createElement('canvas');
+      copy.width = image.width;
+      copy.height = image.height;
+      copy.getContext('2d')!.drawImage(image, 0, 0);
+      return [...copy.getContext('2d')!.getImageData(0, 0, copy.width, copy.height).data];
+    };
+    const equal = (left: readonly number[], right: readonly number[]) =>
+      left.length === right.length && left.every((value, index) => value === right[index]);
+    const different = (left: readonly number[], right: readonly number[]) =>
+      left.reduce((total, value, index) => total + Number(value !== right[index]), 0);
+    const make = (kind: 'text' | 'svg' | 'image', width: number, height: number) => {
+      const target = document.createElement(kind === 'image' ? 'img' : 'div');
+      target.style.cssText = `display:block;width:${width}px;height:${height}px;background:transparent`;
+      if (kind === 'text') {
+        target.textContent = 'Fi';
+        target.setAttribute('style', `${target.style.cssText};color:white;font:64px/1 sans-serif`);
+      } else if (kind === 'svg') {
+        target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"><path fill="white" fill-rule="evenodd" d="M8 8h${width - 16}v${height - 16}H8zM${Math.floor(width / 3)} ${Math.floor(height / 3)}h${Math.floor(width / 3)}v${Math.floor(height / 3)}H${Math.floor(width / 3)}z"/></svg>`;
+      } else {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const pen = canvas.getContext('2d')!;
+        pen.fillStyle = 'white';
+        pen.fillRect(8, 8, width - 16, height - 16);
+        pen.clearRect(
+          Math.floor(width / 3),
+          Math.floor(height / 3),
+          Math.floor(width / 3),
+          Math.floor(height / 3),
+        );
+        (target as HTMLImageElement).src = canvas.toDataURL();
+      }
+      host.replaceChildren(target);
+      return target;
+    };
+    const samples: Array<{ kind: string; size: number; repeat: boolean; changed: number }> = [];
+    for (const kind of ['text', 'svg', 'image'] as const) {
+      for (const size of [96, 240]) {
+        for (const [time, seed] of [
+          [0.7, 314],
+          [1.4, 271],
+        ] as const) {
+          const target = make(kind, size, Math.round((size * 2) / 3));
+          const render = async (emberDensity: number) => {
+            const effect = window.controlEffects.fire(target, {
+              host,
+              clock: 'manual',
+              motion: 'static',
+              time,
+              seed,
+              intensity: 1,
+              emberDensity,
+            });
+            await effect.ready;
+            await settle();
+            const pixels = await output();
+            effect.dispose();
+            return pixels;
+          };
+          const half = await render(0.5);
+          const full = await render(1);
+          const halfRepeat = await render(0.5);
+          samples.push({
+            kind,
+            size,
+            repeat: equal(half, halfRepeat),
+            changed: different(half, full),
+          });
+        }
+      }
+    }
+    return { samples, canvases: host.querySelectorAll('canvas').length };
+  });
+  expect(result.samples).toHaveLength(12);
+  expect(result.samples.every((sample) => sample.repeat)).toBe(true);
+  for (const kind of ['text', 'svg', 'image']) {
+    for (const size of [96, 240]) {
+      expect(
+        result.samples.some(
+          (sample) => sample.kind === kind && sample.size === size && sample.changed > 0,
+        ),
+      ).toBe(true);
+    }
+  }
+  expect(result.canvases).toBe(0);
+});
+
 test('writable controls coalesce through the existing frame scheduler', async ({ page }) => {
   await page.goto('/controls.html');
   await page.waitForFunction(() => Boolean(window.controlEffects));
@@ -409,6 +684,7 @@ test('native GSAP drives public writable handles and restores their rendered sta
           pixelMass(host.querySelector('canvas')!),
         ),
       );
+      slime.color = '#77aa44';
       let textures = 0;
       let pipelines = 0;
       const createTexture = GPUDevice.prototype.createTexture;
@@ -423,7 +699,12 @@ test('native GSAP drives public writable handles and restores their rendered sta
       };
       const timeline = gsap.timeline({ paused: true });
       timeline.to(frost, { mistOpacity: 0, duration: 1, ease: 'power1.inOut' }, 0);
-      timeline.from(slime, { color: '#000000', duration: 1, ease: 'none' }, 1);
+      timeline.fromTo(
+        slime,
+        { color: '#000000' },
+        { color: '#77aa44', duration: 1, ease: 'none' },
+        1,
+      );
       timeline.fromTo(paper, { emberGlow: 0 }, { emberGlow: 1, duration: 1, ease: 'none' }, 2);
       timeline.seek(0.5, true);
       const frostMidpoint = frost.mistOpacity;
@@ -454,7 +735,7 @@ test('native GSAP drives public writable handles and restores their rendered sta
         scoped = gsap
           .timeline({ paused: true })
           .to(frost, { mistOpacity: 0.1, duration: 1, ease: 'none' }, 0)
-          .to(slime, { color: '#112233', duration: 1, ease: 'none' }, 0)
+          .fromTo(slime, { color: '#000000' }, { color: '#112233', duration: 1, ease: 'none' }, 0)
           .to(paper, { emberGlow: 0.1, duration: 1, ease: 'none' }, 0);
       });
       scoped!.seek(0.5, true);
@@ -503,11 +784,11 @@ test('native GSAP drives public writable handles and restores their rendered sta
     }
   });
   expect(result.frostMidpoint).toBeCloseTo(0.5, 6);
-  expect(result.slimeMidpoint).toMatch(/^rgba\(/);
+  expect(result.slimeMidpoint).toMatch(/^rgb\(/);
   expect(result.paperMidpoint).toBeCloseTo(0.5, 6);
   expect(result.paperReverse).toBeCloseTo(0.25, 6);
   expect(result.frostKilled).toBeCloseTo(0.5, 6);
-  expect(result.scopedValues).toEqual([0.45, expect.stringMatching(/^rgba\(/), 0.35]);
+  expect(result.scopedValues).toEqual([0.45, expect.stringMatching(/^rgb\(/), 0.35]);
   expect(result.restored).toEqual([0.8, expect.stringMatching(/^rgb\(/), 0.6]);
   expect(result.defaults).toEqual([1, undefined, 1]);
   expect(result.resources).toEqual({ textures: 0, pipelines: 0 });

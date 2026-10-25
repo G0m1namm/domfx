@@ -25,7 +25,7 @@ import {
 } from '@domfx/browser';
 import { memoryFor, startEffectDiagnostics } from '@domfx/browser/experimental';
 
-import { qualifyRawAlphaControls } from './controls-raw-alpha.js';
+import { qualifyRawAlphaControls, qualifyRawEffectColors } from './controls-raw-alpha.js';
 
 declare global {
   interface Window {
@@ -55,6 +55,7 @@ declare global {
       diagnostics: typeof startEffectDiagnostics;
       memory: typeof memoryFor;
       qualifyRawAlphaControls: typeof qualifyRawAlphaControls;
+      qualifyRawEffectColors: typeof qualifyRawEffectColors;
     };
   }
 }
@@ -85,4 +86,5 @@ window.controlEffects = {
   diagnostics: startEffectDiagnostics,
   memory: memoryFor,
   qualifyRawAlphaControls,
+  qualifyRawEffectColors,
 };

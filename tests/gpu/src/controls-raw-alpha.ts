@@ -3,6 +3,7 @@ import { GpuExperiment } from '@domfx/browser/experimental';
 type ControlMode = 'legacy' | 'relative';
 type ControlName = 'mistOpacity' | 'emberDensity' | 'emberGlow';
 type SelectedEffect = 'frost' | 'fire' | 'burned-paper';
+type ColorEffect = 'electricity' | 'fire' | 'frost' | 'kinetic' | 'slime' | 'dither' | 'halftone';
 
 interface ControlSample {
   readonly control: ControlName;
@@ -22,6 +23,22 @@ const controls: readonly {
   { control: 'emberDensity', effect: 'fire', values: [0, 0.5, 1] },
   { control: 'emberGlow', effect: 'burned-paper', values: [0, 0.5, 1] },
 ];
+
+const colorEffects: readonly ColorEffect[] = [
+  'electricity',
+  'fire',
+  'frost',
+  'kinetic',
+  'slime',
+  'dither',
+  'halftone',
+];
+
+const selectedColors = [
+  { name: 'black', red: 0, green: 0, blue: 0 },
+  { name: 'red', red: 1, green: 0, blue: 0 },
+  { name: 'white', red: 1, green: 1, blue: 1 },
+] as const;
 
 function silhouette(dpr: number) {
   const padding = 32;
@@ -107,6 +124,85 @@ export async function qualifyRawAlphaControls(mode: ControlMode, dpr: number) {
           rgbWithinAlpha,
           transparentRgbZero,
         });
+      }
+    }
+    errors = [...gpu.errors];
+  } finally {
+    prepared?.destroy();
+    releasedBytes = gpu.managedBytes;
+    gpu.destroy();
+  }
+  return { samples, errors, releasedBytes };
+}
+
+function recolorMismatches(
+  source: Uint8Array,
+  recolored: Uint8Array,
+  selected: (typeof selectedColors)[number],
+) {
+  let mismatches = 0;
+  let alphaExact = true;
+  for (let offset = 0; offset < source.length; offset += 4) {
+    const alpha = source[offset + 3]!;
+    alphaExact &&= alpha === recolored[offset + 3]!;
+    if (alpha === 0) {
+      continue;
+    }
+    const channels = [source[offset]!, source[offset + 1]!, source[offset + 2]!];
+    const lightness = (Math.max(...channels) + Math.min(...channels)) / (2 * alpha);
+    const expected = [selected.red, selected.green, selected.blue].map(
+      (channel) =>
+        (lightness <= 0.5
+          ? channel * 2 * lightness
+          : channel + (1 - channel) * (2 * lightness - 1)) * alpha,
+    );
+    for (let channel = 0; channel < 3; channel++) {
+      if (Math.abs(recolored[offset + channel]! - expected[channel]!) > 3) {
+        mismatches += 1;
+      }
+    }
+  }
+  return { alphaExact, mismatches };
+}
+
+/** Raw RGBA8unorm output before presentation for representative color shader families. */
+export async function qualifyRawEffectColors(dpr: number) {
+  const gpu = await GpuExperiment.create();
+  const frame = silhouette(dpr);
+  let prepared: Awaited<ReturnType<typeof gpu.prepare>> | undefined;
+  const samples: {
+    effect: ColorEffect;
+    color: (typeof selectedColors)[number]['name'];
+    alphaExact: boolean;
+    recolorMismatches: number;
+  }[] = [];
+  let errors: string[] = [];
+  let releasedBytes = -1;
+  try {
+    prepared = await gpu.prepare(frame);
+    for (const effect of colorEffects) {
+      prepared.render(1.5, 314, 1, dpr, undefined, 24, effect, undefined, 0.56, {
+        mistOpacity: 1,
+        emberDensity: 1,
+        emberGlow: 1,
+        color: undefined,
+      });
+      const authored = await prepared.readFire();
+      for (const color of selectedColors) {
+        prepared.render(1.5, 314, 1, dpr, undefined, 24, effect, undefined, 0.56, {
+          mistOpacity: 1,
+          emberDensity: 1,
+          emberGlow: 1,
+          color: {
+            css: `rgb(${color.red * 255}, ${color.green * 255}, ${color.blue * 255})`,
+            red: color.red,
+            green: color.green,
+            blue: color.blue,
+          },
+        });
+        const recolored = await prepared.readFire();
+        const { alphaExact, mismatches } = recolorMismatches(authored, recolored, color);
+        samples.push({ effect, color: color.name, alphaExact, recolorMismatches: mismatches });
       }
     }
     errors = [...gpu.errors];

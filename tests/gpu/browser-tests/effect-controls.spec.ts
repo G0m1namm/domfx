@@ -1,3 +1,6 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
 import { expect, test } from '@playwright/test';
 
 test('selected effect controls validate, retain state and change only their intended output', async ({
@@ -304,7 +307,7 @@ test('public handles expose only their owned controls at runtime', async ({ page
   ]);
 });
 
-test('all decorative effects recolor output without recapture or alpha-shape changes', async ({
+test('all decorative effects recolor presented RGBA without recapture or alpha-shape changes', async ({
   page,
 }) => {
   await page.goto('/controls.html');
@@ -483,6 +486,21 @@ test('all decorative effects recolor output without recapture or alpha-shape cha
   expect(result.canvases).toBe(0);
 });
 
+test('representative color shader families preserve raw alpha and shade mapping', async ({
+  page,
+}) => {
+  await page.goto('/controls.html');
+  await page.waitForFunction(() => Boolean(window.controlEffects));
+  const result = await page.evaluate(() => window.controlEffects.qualifyRawEffectColors(1));
+  expect(result.errors).toEqual([]);
+  expect(result.releasedBytes).toBe(0);
+  expect(result.samples).toHaveLength(21);
+  for (const sample of result.samples) {
+    expect(sample.alphaExact).toBe(true);
+    expect(sample.recolorMismatches).toBe(0);
+  }
+});
+
 test('Fire half density is deterministic and visibly distinct from full density', async ({
   page,
 }) => {
@@ -503,12 +521,13 @@ test('Fire half density is deterministic and visibly distinct from full density'
       copy.width = image.width;
       copy.height = image.height;
       copy.getContext('2d')!.drawImage(image, 0, 0);
-      return [...copy.getContext('2d')!.getImageData(0, 0, copy.width, copy.height).data];
+      return {
+        pixels: [...copy.getContext('2d')!.getImageData(0, 0, copy.width, copy.height).data],
+        png: canvas.toDataURL('image/png'),
+      };
     };
     const equal = (left: readonly number[], right: readonly number[]) =>
       left.length === right.length && left.every((value, index) => value === right[index]);
-    const different = (left: readonly number[], right: readonly number[]) =>
-      left.reduce((total, value, index) => total + Number(value !== right[index]), 0);
     const make = (kind: 'text' | 'svg' | 'image', width: number, height: number) => {
       const target = document.createElement(kind === 'image' ? 'img' : 'div');
       target.style.cssText = `display:block;width:${width}px;height:${height}px;background:transparent`;
@@ -535,7 +554,17 @@ test('Fire half density is deterministic and visibly distinct from full density'
       host.replaceChildren(target);
       return target;
     };
-    const samples: Array<{ kind: string; size: number; repeat: boolean; changed: number }> = [];
+    const samples: Array<{
+      kind: string;
+      size: number;
+      time: number;
+      seed: number;
+      repeat: boolean;
+      changedPixels: number;
+      changedRgbMass: number;
+      half: string;
+      full: string;
+    }> = [];
     for (const kind of ['text', 'svg', 'image'] as const) {
       for (const size of [96, 240]) {
         for (const [time, seed] of [
@@ -562,24 +591,70 @@ test('Fire half density is deterministic and visibly distinct from full density'
           const half = await render(0.5);
           const full = await render(1);
           const halfRepeat = await render(0.5);
+          let changedPixels = 0;
+          let changedRgbMass = 0;
+          for (let index = 0; index < half.pixels.length; index += 4) {
+            const mass =
+              Math.abs(half.pixels[index]! - full.pixels[index]!) +
+              Math.abs(half.pixels[index + 1]! - full.pixels[index + 1]!) +
+              Math.abs(half.pixels[index + 2]! - full.pixels[index + 2]!);
+            changedPixels += Number(mass > 0);
+            changedRgbMass += mass;
+          }
           samples.push({
             kind,
             size,
-            repeat: equal(half, halfRepeat),
-            changed: different(half, full),
+            time,
+            seed,
+            repeat: equal(half.pixels, halfRepeat.pixels),
+            changedPixels,
+            changedRgbMass,
+            half: half.png,
+            full: full.png,
           });
         }
       }
     }
     return { samples, canvases: host.querySelectorAll('canvas').length };
   });
+  const outputDirectory = resolve(
+    import.meta.dirname,
+    '../../../.scratch/194-revision/fire-density-native',
+  );
+  await mkdir(outputDirectory, { recursive: true });
+  for (const sample of result.samples) {
+    const stem = `${sample.kind}-${sample.size}-t${sample.time}-s${sample.seed}`;
+    await writeFile(
+      resolve(outputDirectory, `${stem}-half.png`),
+      Buffer.from(sample.half.split(',', 2)[1]!, 'base64'),
+    );
+    await writeFile(
+      resolve(outputDirectory, `${stem}-full.png`),
+      Buffer.from(sample.full.split(',', 2)[1]!, 'base64'),
+    );
+  }
+  await writeFile(
+    resolve(outputDirectory, 'summary.json'),
+    JSON.stringify(
+      {
+        ...result,
+        samples: result.samples.map(({ half: _half, full: _full, ...sample }) => sample),
+      },
+      null,
+      2,
+    ),
+  );
   expect(result.samples).toHaveLength(12);
   expect(result.samples.every((sample) => sample.repeat)).toBe(true);
   for (const kind of ['text', 'svg', 'image']) {
     for (const size of [96, 240]) {
       expect(
         result.samples.some(
-          (sample) => sample.kind === kind && sample.size === size && sample.changed > 0,
+          (sample) =>
+            sample.kind === kind &&
+            sample.size === size &&
+            sample.changedPixels >= 8 &&
+            sample.changedRgbMass >= 256,
         ),
       ).toBe(true);
     }

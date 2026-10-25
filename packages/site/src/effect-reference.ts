@@ -3,13 +3,13 @@ import type { Effect, EffectId } from './effects';
 // Reader-facing descriptions live here; renderer settings remain in the browser package.
 export const effectReference = {
   electricity: {
-    description:
-      'Branching blue lightning follows the visible shape. Creation-only contourSpread is a finite nonnegative fraction of the shorter untransformed border-box side, transparent margins included: 0.1 permits 10 CSS px outside a 100px shorter side. It bounds positive signed distance; strand thickness, noise and spark detail stay fixed. Zero is transparent; omission keeps legacy rendering.',
+    description: 'Branching blue lightning follows the visible shape.',
     intensity:
       'Changes electrical strength and brightness; it does not move the strands. With contourSpread, scales premultiplied output independently of spread and detail.',
   },
   frost: {
-    description: 'A white-blue ice coating with pale smoke and small frost particles.',
+    description:
+      'A white-blue ice coating with pale smoke and small frost particles. Writable mistOpacity changes smoke opacity without changing the coating or grains.',
     intensity:
       'Legacy mode extends frost inward and strengthens mist and particles. With coatingDepth or mistReach, intensity scales strength only; omitted extents are zero.',
   },
@@ -24,18 +24,19 @@ export const effectReference = {
       'With extent options omitted: Increases dot density, inward coverage and outward reach. In relative mode, intensity scales opacity without changing extent or marks.',
   },
   slime: {
-    description: 'A glossy green coating with drips that stretch and fall.',
+    description: 'A green coating with drips that stretch and fall.',
     intensity:
       'Legacy mode changes coating and drip geometry. With coatingDepth or dripReach, intensity scales strength only; omitted extents are zero.',
   },
   kinetic: {
     description:
-      'A bright pulse travels around the shape with a violet wake and geometric fragments. Creation-only fragmentTravel is a finite nonnegative fraction of the shorter untransformed border-box side, transparent margins included: 0.1 permits 10 CSS px of outward fragment-center travel on a 100px shorter side. A fixed 3px sideways drift and 5px fragment footprint add 8px to exterior support. Zero is transparent; omission keeps legacy rendering.',
+      'A bright pulse travels around the shape with a violet wake and geometric fragments.',
     intensity:
       'With fragmentTravel, scales premultiplied strength while pulse/wake coverage, fragment travel and fine fragment size stay fixed. Omission retains legacy pulse-width and fragment behavior.',
   },
   'burned-paper': {
-    description: 'An uneven charred rim with brown scorching and sparse glowing seams.',
+    description:
+      'An uneven charred rim with brown scorching and sparse glowing seams. Writable emberGlow changes the glow without removing char or scorching.',
     intensity:
       'Legacy mode spreads scorching inward and strengthens ash. With scorchDepth or ashReach, intensity scales strength only; omitted extents are zero. The original content remains intact.',
   },
@@ -162,6 +163,9 @@ export function patternExtentReference(effect: Effect) {
         },
       ],
     } as const;
+  }
+  if (effect.id === 'halftone') {
+    return flowExtent;
   }
   return effect.id === 'dither' ? { ...flowExtent, optionsType: 'DitherOptions' } : flowExtent;
 }

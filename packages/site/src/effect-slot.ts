@@ -1,7 +1,14 @@
 import type * as BrowserEffects from '@domfx/browser';
-import type { AttachmentOptions, EffectHandle, EffectReason } from '@domfx/browser';
+import type {
+  BurnedPaperEffectHandle,
+  ColorAttachmentOptions,
+  ColorEffectHandle,
+  EffectHandle,
+  EffectReason,
+  FrostEffectHandle,
+} from '@domfx/browser';
 
-import type { EffectCreationField } from './effect-extent.js';
+import type { EffectOptionName, EffectWritableField } from './effect-extent.js';
 import type { Effect } from './effects.js';
 
 export interface EffectStatus {
@@ -58,7 +65,7 @@ export function createEffectEnvironment({
 
 type WithoutHost<T> = T extends unknown ? Omit<T, 'host'> : never;
 // Site-only controls; the loader forwards only the selected effect's owned fields.
-type CreationOptions = AttachmentOptions & Partial<Record<EffectCreationField['name'], number>>;
+type CreationOptions = ColorAttachmentOptions & Partial<Record<EffectOptionName, number>>;
 type EffectOptions = WithoutHost<CreationOptions>;
 type EffectFactory = (target: Element, options: CreationOptions) => EffectHandle;
 type EffectLoader = (effect: Effect) => Promise<EffectFactory>;
@@ -77,41 +84,99 @@ async function loadEffect(effect: Effect): Promise<EffectFactory> {
   return (target, options) => {
     const {
       flameReach,
+      emberDensity,
       coatingDepth,
       mistReach,
+      mistOpacity,
       dripReach,
       dripDensity,
       scorchDepth,
       ashReach,
+      emberGlow,
       contourSpread,
       fragmentTravel,
       plumeReach,
       bandDepth,
       echoReach,
       fringeReach,
+      color,
       ...shared
     } = options;
     switch (effect.exportName) {
       case 'attachFire':
-        return api.attachFire(target, { ...shared, flameReach });
+        return api.attachFire(target, { ...shared, color, flameReach, emberDensity });
       case 'attachFrost':
-        return api.attachFrost(target, { ...shared, coatingDepth, mistReach });
+        return api.attachFrost(target, { ...shared, color, coatingDepth, mistReach, mistOpacity });
       case 'attachSlime':
-        return api.attachSlime(target, { ...shared, coatingDepth, dripReach, dripDensity });
+        return api.attachSlime(target, { ...shared, color, coatingDepth, dripReach, dripDensity });
       case 'attachBurnedPaper':
-        return api.attachBurnedPaper(target, { ...shared, scorchDepth, ashReach });
+        return api.attachBurnedPaper(target, { ...shared, scorchDepth, ashReach, emberGlow });
+      case 'attachHalftone':
+        return api.attachHalftone(target, { ...shared, color, plumeReach, bandDepth });
       case 'attachElectricity':
-        return api.attachElectricity(target, { ...shared, contourSpread });
+        return api.attachElectricity(target, { ...shared, color, contourSpread });
       case 'attachKinetic':
-        return api.attachKinetic(target, { ...shared, fragmentTravel });
+        return api.attachKinetic(target, { ...shared, color, fragmentTravel });
       case 'attachContourEchoes':
-        return api.attachContourEchoes(target, { ...shared, echoReach });
+        return api.attachContourEchoes(target, { ...shared, color, echoReach });
       case 'attachBrushFringe':
-        return api.attachBrushFringe(target, { ...shared, fringeReach });
+        return api.attachBrushFringe(target, { ...shared, color, fringeReach });
       default:
-        return api[effect.exportName](target, { ...shared, plumeReach, bandDepth });
+        return api[effect.exportName](target, { ...shared, color, plumeReach, bandDepth });
     }
   };
+}
+
+/** Narrows the selected effect's public handle before a preview writes its own control. */
+export function setEffectWritableControl(
+  effect: Effect,
+  handle: EffectHandle,
+  field: EffectWritableField,
+  value: number,
+) {
+  switch (effect.id) {
+    case 'frost':
+      if (field.name === 'mistOpacity') {
+        if (!isFrostEffectHandle(handle)) {
+          throw new Error('Frost handle is missing mistOpacity');
+        }
+        handle.mistOpacity = value;
+      }
+      return;
+    case 'burned-paper':
+      if (field.name === 'emberGlow') {
+        if (!isBurnedPaperEffectHandle(handle)) {
+          throw new Error('Burned paper handle is missing emberGlow');
+        }
+        handle.emberGlow = value;
+      }
+      return;
+    default:
+      throw new Error(`No writable control ${field.name} on ${effect.id}`);
+  }
+}
+
+function isFrostEffectHandle(handle: EffectHandle): handle is FrostEffectHandle {
+  return 'mistOpacity' in handle;
+}
+
+function isBurnedPaperEffectHandle(handle: EffectHandle): handle is BurnedPaperEffectHandle {
+  return 'emberGlow' in handle;
+}
+
+/** Applies the optional shared decorative color without replacing the current effect. */
+export function setEffectColor(effect: Effect, handle: EffectHandle, color: string | undefined) {
+  if (effect.id === 'burned-paper') {
+    throw new Error('Burned paper does not support color');
+  }
+  if (!isColorEffectHandle(handle)) {
+    throw new Error(`${effect.name} handle is missing color`);
+  }
+  handle.color = color;
+}
+
+function isColorEffectHandle(handle: EffectHandle): handle is ColorEffectHandle {
+  return 'color' in handle;
 }
 
 async function prepareTarget(target: Element) {

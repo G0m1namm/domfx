@@ -1,11 +1,23 @@
 import {
   effectCreationFields,
+  effectSettingApiValue,
+  effectSettingDisplayValue,
   effectSettingValueText,
+  effectWritableFields,
+  effectColorField,
   intensityField,
-  type EffectCreationField,
+  isEffectCreationName,
+  type EffectCreationName,
+  type EffectWritableField,
+  type EffectWritableName,
 } from '@domfx/site/effect-extent';
 import type { EffectSlot, EffectStatus } from '@domfx/site/effect-slot';
-import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
+import {
+  createEffectEnvironment,
+  createEffectSlot,
+  setEffectColor,
+  setEffectWritableControl,
+} from '@domfx/site/effect-slot';
 import type { Effect } from '@domfx/site/effects';
 import { effects, findEffect, patternEffects } from '@domfx/site/effects';
 import { localeFromPath, localePath } from '@domfx/site/locale';
@@ -52,6 +64,8 @@ function initializeMarketing() {
   });
   const intensity = required<HTMLInputElement>('#effect-intensity');
   const creationControls = required<HTMLFieldSetElement>('[data-creation-controls]', dialog);
+  const colorControls = required<HTMLFieldSetElement>('[data-color-controls]', dialog);
+  const writableControls = required<HTMLFieldSetElement>('[data-writable-controls]', dialog);
   const dialogScene = required<HTMLElement>('.dialog-scene', dialog);
   const previewVisibility = required<HTMLElement>('.preview-visibility', dialogScene);
   const dialogStage = required<HTMLElement>('.dialog-stage', dialog);
@@ -72,6 +86,7 @@ function initializeMarketing() {
   let targetKind: 'text' | 'svg' | 'image' = 'text';
   let previewSubject: Element | undefined;
   let paused = false;
+  let selectedColor: string | undefined;
   let previewTime = 2.4;
   let previewNeedsResume = false;
   let previewReturnFocus: HTMLElement | undefined;
@@ -512,20 +527,41 @@ function initializeMarketing() {
 
   function attachmentCode() {
     const effect = selectedEffect;
-    const settings = Object.entries(creationOptions())
+    const settings = [
+      ...Object.entries(creationOptions()),
+      ...(selectedColor ? [['color', JSON.stringify(selectedColor)]] : []),
+    ]
       .map(([name, value]) => `  ${name}: ${value},`)
       .join('\n');
-    return `import { ${effect.exportName} } from '@domfx/browser';\n\nconst effect = ${effect.exportName}(element, {\n  host, clock: 'ambient',\n  intensity: ${(Number(intensity.value) / 100).toFixed(2)},\n${settings}\n});\n\n${m.disposeComment}`;
+    const writes = Object.entries(writableOptions())
+      .map(([name, value]) => `effect.${name} = ${value};`)
+      .join('\n');
+    return `import { ${effect.exportName} } from '@domfx/browser';\n\nconst effect = ${effect.exportName}(element, {\n  host, clock: 'ambient',\n  intensity: ${(Number(intensity.value) / 100).toFixed(2)},\n${settings}\n});${writes ? `\n\n${writes}` : ''}\n\n${m.disposeComment}`;
   }
 
   function creationOptions() {
-    const options: Partial<Record<EffectCreationField['name'], number>> = {};
+    const options: Partial<Record<EffectCreationName, number>> = {};
     for (const field of effectCreationFields(selectedEffect)) {
       const input = required<HTMLInputElement | HTMLSelectElement>(
         `[data-creation-option="${field.name}"]`,
         creationControls,
       );
-      options[field.name] = Number(input.value) / 100;
+      if (!isEffectCreationName(field.name)) {
+        throw new Error(`Unknown creation control: ${field.name}`);
+      }
+      options[field.name] = effectSettingApiValue(field, input.value);
+    }
+    return options;
+  }
+
+  function writableOptions(): Partial<Record<EffectWritableName, number>> {
+    const options: Partial<Record<EffectWritableField['name'], number>> = {};
+    for (const field of effectWritableFields(selectedEffect)) {
+      const input = required<HTMLInputElement>(
+        `[data-writable-option="${field.name}"]`,
+        writableControls,
+      );
+      options[field.name] = effectSettingApiValue(field, input.value);
     }
     return options;
   }
@@ -651,6 +687,18 @@ function initializeMarketing() {
   function updatePreviewStatus(status: EffectStatus) {
     if (dialogSlot.handle) {
       dialogSlot.handle.intensity = Number(intensity.value) / 100;
+      for (const field of effectWritableFields(selectedEffect)) {
+        const input = required<HTMLInputElement>(
+          `[data-writable-option="${field.name}"]`,
+          writableControls,
+        );
+        setEffectWritableControl(
+          selectedEffect,
+          dialogSlot.handle,
+          field,
+          effectSettingApiValue(field, input.value),
+        );
+      }
     }
     let message: string;
     if (status.reason === 'reduced-motion') {
@@ -743,12 +791,16 @@ function initializeMarketing() {
         intensity: Number(intensity.value) / 100,
         time: previewTime,
         ...creationOptions(),
+        ...(selectedColor ? { color: selectedColor } : {}),
+        ...writableOptions(),
       };
     });
   }
 
   function updatePreviewPlayback() {
     creationControls.disabled = reducedMotion.matches || !hasGpu;
+    colorControls.disabled = reducedMotion.matches || !hasGpu;
+    writableControls.disabled = reducedMotion.matches || !hasGpu;
     intensity.disabled = reducedMotion.matches || !hasGpu;
     const button = required<HTMLButtonElement>('[data-pause]', dialog);
     button.disabled = reducedMotion.matches || !hasGpu;
@@ -769,8 +821,19 @@ function initializeMarketing() {
       `[data-creation-template="${effect.id}"]`,
       dialog,
     );
+    const writableTemplate = required<HTMLTemplateElement>(
+      `[data-writable-template="${effect.id}"]`,
+      dialog,
+    );
+    const colorTemplate = effectColorField(effect)
+      ? required<HTMLTemplateElement>(`[data-color-template="${effect.id}"]`, dialog)
+      : undefined;
     creationControls.replaceChildren(template.content.cloneNode(true));
+    writableControls.replaceChildren(writableTemplate.content.cloneNode(true));
+    colorControls.replaceChildren(colorTemplate?.content.cloneNode(true) ?? '');
+    colorControls.hidden = !colorTemplate;
     creationControls.hidden = false;
+    writableControls.hidden = effectWritableFields(effect).length === 0;
     clearCards();
     previewSubject =
       document.querySelector(`[data-card][data-id="${effect.id}"] [data-preview]`) ?? undefined;
@@ -783,6 +846,7 @@ function initializeMarketing() {
     paused = reducedMotion.matches;
     previewNeedsResume = reducedMotion.matches;
     previewTime = 2.4;
+    selectedColor = undefined;
     required('[data-copy-status]', dialog).textContent = '';
     previewReturnFocus = trigger;
     intensity.value = '70';
@@ -838,12 +902,14 @@ function initializeMarketing() {
   });
 
   function setFill(input: HTMLInputElement) {
-    input.style.setProperty('--fill', `${(Number(input.value) / Number(input.max)) * 100}%`);
+    const min = Number(input.min);
+    const max = Number(input.max);
+    input.style.setProperty('--fill', `${((Number(input.value) - min) / (max - min)) * 100}%`);
   }
 
   function updateIntensityValue() {
     required('[data-effect-setting-output="intensity"]', dialog).textContent =
-      `${intensity.value}%`;
+      effectSettingDisplayValue(intensityField, intensity.value);
     intensity.setAttribute(
       'aria-valuetext',
       effectSettingValueText(intensityField, intensity.value, locale),
@@ -872,12 +938,67 @@ function initializeMarketing() {
     }
     if (input instanceof HTMLInputElement) {
       required('output', input.closest('.effect-setting') ?? creationControls).textContent =
-        `${input.value}%`;
+        effectSettingDisplayValue(field, input.value);
       input.setAttribute('aria-valuetext', effectSettingValueText(field, input.value, locale));
       setFill(input);
     }
     required('[data-code]', dialog).textContent = attachmentCode();
     void attachDialogEffect();
+  });
+
+  on(writableControls, 'input', (event) => {
+    if (!(event.target instanceof HTMLInputElement)) {
+      return;
+    }
+    const input = event.target;
+    const field = effectWritableFields(selectedEffect).find(
+      (field) => field.name === input.dataset.writableOption,
+    );
+    if (!field) {
+      return;
+    }
+    required('output', input.closest('.effect-setting') ?? writableControls).textContent =
+      effectSettingDisplayValue(field, input.value);
+    input.setAttribute('aria-valuetext', effectSettingValueText(field, input.value, locale));
+    setFill(input);
+    if (dialogSlot.handle) {
+      setEffectWritableControl(
+        selectedEffect,
+        dialogSlot.handle,
+        field,
+        effectSettingApiValue(field, input.value),
+      );
+    }
+    required('[data-code]', dialog).textContent = attachmentCode();
+  });
+
+  on(colorControls, 'input', (event) => {
+    if (!(event.target instanceof HTMLInputElement) || event.target.type !== 'color') {
+      return;
+    }
+    selectedColor = event.target.value;
+    required<HTMLOutputElement>('[data-color-output]', colorControls).value = selectedColor;
+    required<HTMLElement>('[data-color-setting]', colorControls).dataset.colorUnset = 'false';
+    required<HTMLButtonElement>('[data-color-reset]', colorControls).disabled = false;
+    if (dialogSlot.handle) {
+      setEffectColor(selectedEffect, dialogSlot.handle, selectedColor);
+    }
+    required('[data-code]', dialog).textContent = attachmentCode();
+  });
+
+  on(colorControls, 'click', (event) => {
+    if (!(event.target instanceof Element) || !event.target.closest('[data-color-reset]')) {
+      return;
+    }
+    selectedColor = undefined;
+    required<HTMLOutputElement>('[data-color-output]', colorControls).value =
+      locale === 'es' ? 'Colores originales' : 'Original colors';
+    required<HTMLElement>('[data-color-setting]', colorControls).dataset.colorUnset = 'true';
+    required<HTMLButtonElement>('[data-color-reset]', colorControls).disabled = true;
+    if (dialogSlot.handle) {
+      setEffectColor(selectedEffect, dialogSlot.handle, undefined);
+    }
+    required('[data-code]', dialog).textContent = attachmentCode();
   });
 
   let backdropPointer: number | undefined;

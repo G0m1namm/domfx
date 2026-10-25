@@ -1,7 +1,33 @@
 import { expect, test } from '@playwright/test';
 
-import { effectCreationFields } from '@domfx/site/effect-extent';
+import {
+  effectColorField,
+  effectCreationFields,
+  effectSettingApiValue,
+  effectWritableFields,
+} from '@domfx/site/effect-extent';
 import { effects } from '@domfx/site/effects';
+
+function changedControlValue(field: ReturnType<typeof effectCreationFields>[number]) {
+  if (field.kind === 'preset') {
+    return '100';
+  }
+  if (field.unit === 'css-px') {
+    return '12';
+  }
+  return '17';
+}
+
+function presetLabel(name: string, locale: 'en' | 'es') {
+  if (name === 'dripDensity') {
+    return locale === 'es' ? 'Media' : 'Medium';
+  }
+  return locale === 'es' ? 'Completa' : 'Full';
+}
+
+function presetValues(name: string) {
+  return name === 'dripDensity' ? ['0', '20', '56', '100'] : ['0', '50', '100'];
+}
 
 for (const locale of ['en', 'es'] as const) {
   const prefix = locale === 'es' ? '/docs/es' : '/docs';
@@ -15,6 +41,7 @@ for (const locale of ['en', 'es'] as const) {
     const page = await context.newPage();
     for (const effect of effects) {
       const fields = effectCreationFields(effect);
+      const colorField = effectColorField(effect);
       if (!fields.length) {
         throw new Error(`Missing extent metadata: ${effect.id}`);
       }
@@ -23,27 +50,28 @@ for (const locale of ['en', 'es'] as const) {
       await expect(lab.locator('[data-docs-lab-extent]')).toHaveCount(fields.length);
       for (const field of fields) {
         await expect(lab.locator(`[data-docs-lab-extent="${field.name}"]`)).toHaveValue(
-          String(Math.round(field.example * 100)),
+          String(field.defaultValue),
         );
         const input = lab.locator(`[data-docs-lab-extent="${field.name}"]`);
         await expect(input).toHaveAccessibleName(new RegExp(`^${field.name}`));
         if (field.kind === 'preset') {
-          await expect(input.locator('option:checked')).toHaveText(
-            locale === 'es' ? 'Media' : 'Medium',
-          );
+          await expect(input.locator('option:checked')).toHaveText(presetLabel(field.name, locale));
           expect(
             await input
               .locator('option')
               .evaluateAll((options) => options.map((option) => option.getAttribute('value'))),
-          ).toEqual(['0', '20', '56', '100']);
+          ).toEqual(presetValues(field.name));
         } else {
           await expect(lab.locator(`[data-effect-setting-output="${field.name}"]`)).toHaveText(
-            `${Math.round(field.example * 100)}%`,
+            field.unit === 'css-px' ? `${field.defaultValue} px` : `${field.defaultValue}%`,
           );
-          await expect(input).toHaveAttribute('aria-valuetext', /% .+/);
+          await expect(input).toHaveAttribute(
+            'aria-valuetext',
+            field.unit === 'css-px' ? /px .+/ : /% .+/,
+          );
         }
         await expect(lab.locator('[data-docs-lab-code]')).toContainText(
-          `${field.name}: ${field.example}`,
+          `${field.name}: ${effectSettingApiValue(field, String(field.defaultValue))}`,
         );
         await expect(page.locator('#effect-options + p').first()).toBeVisible();
         await expect(page.locator('main')).toContainText(field.name);
@@ -53,6 +81,17 @@ for (const locale of ['en', 'es'] as const) {
       await expect(lab.locator('[data-docs-lab-code]')).toContainText(
         "clock: 'auto', motion: 'respect'",
       );
+      if (colorField) {
+        await expect(lab.locator('[data-docs-lab-color]')).toBeDisabled();
+        await expect(lab.locator('[data-docs-lab-color]')).toHaveAccessibleName('color');
+        await expect(lab.locator('[data-color-output]')).toHaveText(
+          locale === 'es' ? 'Colores originales' : 'Original colors',
+        );
+        await expect(lab.locator('[data-color-reset]')).toBeDisabled();
+      } else {
+        await expect(lab.locator('[data-docs-lab-color]')).toHaveCount(0);
+      }
+      await expect(lab.locator('[data-docs-lab-code]')).not.toContainText('color:');
       await expect(lab.locator('canvas')).toHaveCount(0);
     }
     await context.close();
@@ -84,6 +123,7 @@ for (const locale of ['en', 'es'] as const) {
       await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
       expect(await firstCanvas.evaluate((canvas) => canvas.isConnected), effect.id).toBe(true);
       const fields = effectCreationFields(effect);
+      const colorField = effectColorField(effect);
       if (!fields.length) {
         throw new Error(`Missing extent metadata: ${effect.id}`);
       }
@@ -96,22 +136,48 @@ for (const locale of ['en', 'es'] as const) {
         if (field.kind === 'preset') {
           await input.selectOption('100');
         } else {
-          await input.fill('17');
+          await input.fill(changedControlValue(field));
         }
         await expect(lab.locator(`[data-docs-lab-extent-code="${field.name}"]`)).toHaveText(
-          field.kind === 'preset' ? '1' : '0.17',
+          effectSettingApiValue(field, changedControlValue(field)).toString(),
         );
         await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
         await expect(lab).toHaveAttribute('data-status', 'active');
         await expect(lab.locator('canvas')).toHaveCount(1);
       }
+      for (const field of effectWritableFields(effect)) {
+        const previous = await lab.locator('canvas').elementHandle();
+        if (!previous) {
+          throw new Error(`Missing writable output: ${effect.id}`);
+        }
+        await lab.locator(`[data-docs-lab-writable="${field.name}"]`).fill('40');
+        expect(await previous.evaluate((canvas) => canvas.isConnected)).toBe(true);
+        await expect(lab.locator('[data-docs-lab-code]')).toContainText(
+          `effect.${field.name} = 0.4`,
+        );
+      }
+      if (colorField) {
+        const color = lab.locator('[data-docs-lab-color]');
+        const colorCanvas = await lab.locator('canvas').elementHandle();
+        if (!colorCanvas) {
+          throw new Error(`Missing color output: ${effect.id}`);
+        }
+        await color.fill('#ff0000');
+        expect(await colorCanvas.evaluate((canvas) => canvas.isConnected)).toBe(true);
+        await expect(lab.locator('[data-docs-lab-code]')).toContainText('color: "#ff0000",');
+      }
       await lab.locator('[data-docs-lab-copy]').click();
       const copied = await page.locator('html').getAttribute('data-copied-settings');
       expect(copied, effect.id).toContain(`const effect = ${effect.exportName}(target`);
       expect(copied, effect.id).toContain('intensity: 0.45');
+      if (colorField) {
+        expect(copied, effect.id).toContain('color: "#ff0000",');
+      } else {
+        expect(copied, effect.id).not.toContain('color:');
+      }
       for (const field of fields) {
         expect(copied, effect.id).toContain(
-          `${field.name}: ${field.kind === 'preset' ? '1' : '0.17'}`,
+          `${field.name}: ${effectSettingApiValue(field, changedControlValue(field))}`,
         );
       }
       for (const subject of ['text', 'svg', 'image']) {
@@ -119,6 +185,14 @@ for (const locale of ['en', 'es'] as const) {
         await expect(lab.locator(`[data-docs-lab-target="${subject}"]`)).toBeVisible();
         await expect(lab).toHaveAttribute('data-status', 'active');
         await expect(lab.locator('canvas')).toHaveCount(1);
+        if (colorField) {
+          await expect(lab.locator('[data-docs-lab-color]')).toHaveValue('#ff0000');
+          await expect(lab.locator('[data-docs-lab-code]')).toContainText('color: "#ff0000",');
+        }
+      }
+      if (colorField) {
+        await lab.locator('[data-color-reset]').click();
+        await expect(lab.locator('[data-docs-lab-code]')).not.toContainText('color:');
       }
     }
   });
@@ -158,6 +232,8 @@ test('logical font rectangles may exceed paint bounds inside the finite source g
   page,
 }) => {
   await page.goto('/docs/api/effects/fire/');
+  // Preserve the known font-overhang case independently of the preview's display size.
+  await page.addStyleTag({ content: '.docs-lab-text { font-size: 92px; }' });
   const lab = page.locator('[data-docs-lab]');
   await lab.scrollIntoViewIfNeeded();
   await lab.locator('[data-docs-lab-subject][value="text"]').check();

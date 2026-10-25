@@ -83,7 +83,7 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
     vapor = strands * .64 * pow(1 - rise, .65)
           * (1 - smoothstep(.86, 1, rise));
   }
-  let mistAlpha = vapor * exterior * sqrt(intensity);
+  let mistAlpha = vapor * exterior * sqrt(intensity) * controls.material.x;
   let mistColor = mix(vec3f(.79, .86, .92), vec3f(.97, .985, 1), cloud);
   var result = vec4f(iceColor * iceAlpha + mistColor * mistAlpha * (1 - iceAlpha),
                      iceAlpha + mistAlpha * (1 - iceAlpha));
@@ -117,5 +117,5 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
   }
   let dustAlpha = min(dust * exterior, .95) * select(0.0, 1.0, reach > 0);
   result = vec4f(vec3f(.96, .985, 1) * dustAlpha, dustAlpha) + result * (1 - dustAlpha);
-  return result * boundaryFade * params.z;
+  return applyEffectColor(result * boundaryFade * params.z);
 }`;

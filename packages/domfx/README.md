@@ -220,7 +220,8 @@ effect.dispose(); // Safe before ready, and safe to call twice.
 `host` must be a connected, positioned HTML element and `target` a strict descendant
 in the same document. Duplicate or nested target ownership throws synchronously,
 as do invalid options, non-HTML or unpositioned hosts and nonfinite/out-of-float32-range
-parameters. Rejected calls never claim ownership. Unavailable attachments release their
+time, seed, intensity or creation-only numeric parameters. Finite normalized effect
+controls instead clamp to `[0, 1]`. Rejected calls never claim ownership. Unavailable attachments release their
 claim automatically; a later attachment can use the target without disposing the failed
 handle first. Disposing that old handle cannot release the new attachment's claim.
 Seed defaults to `0`,
@@ -324,10 +325,10 @@ is used to fit a budget. Pixel rejection reports `capture-budget`, per-target re
 `target-budget`, and Document rejection `aggregate-budget`. Refresh budget failures
 reject the promise and leave the attachment unavailable with stale, hidden output.
 
-For a raster of P pixels, known managed GPU allocations are 36P + 52 bytes (source,
+For a raster of P pixels, known managed GPU allocations are 36P + 84 bytes (source,
 SDF/JFA, fire texture and uniforms). Admission additionally estimates 4P bytes for one
 RGBA output surface and reserves 4P CPU capture bytes until the capture frame is
-released: 44P + 52 pending, then 40P + 52 retained. Actual SnapDOM dimensions are
+released: 44P + 84 pending, then 40P + 84 retained. Actual SnapDOM dimensions are
 checked before rasterization; returned capture dimensions and prepared-frame bytes
 are reconciled before presentation. Reconciliation replaces an entry, so estimates
 and their actual resources are never added twice. The previous frame remains charged
@@ -361,10 +362,10 @@ There is no per-frame capture or automatic retry after failure. Observer-trigger
 failures update lifecycle, raster health and diagnostics through the same refresh
 contract, without an unhandled promise rejection. Disposal removes observers/listeners
 and cancels queued captures. Document hiding suspends existing output and resumes it
-when visible; paint invalidated while hidden or offscreen needs explicit refresh once
-visible. Initial attachment or explicit refresh while offscreen leaves stale output
-suspended; call `refresh()` once the target is in view. Visibility changes invalidate
-pending captures/preparations, whose late results are released without presentation.
+when visible. After a stale capture, observed visibility re-entry schedules a fresh
+capture automatically. This does not retry an unavailable or failed effect; visibility
+changes invalidate pending captures/preparations, whose late results are released without
+presentation.
 
 Zero width or height suspends output with stale raster health. Initial zero size
 does not capture or prepare a GPU frame; retained output stays hidden while zero-sized.
@@ -462,8 +463,9 @@ Retry rechecks target/host connection, ownership, positioned host, supported com
 reduced motion, visibility, asset readiness and allocation budgets. An unavailable handle
 releases its target claim; if a replacement owns that target or an overlapping subtree,
 retry reports `effect-target-owned` without disturbing the replacement. Offscreen retry
-stays suspended with stale raster health; visibility alone does not commit stale paint.
-Call `refresh()` or `retry()` when visible. Static motion continues to render at time zero.
+stays suspended with stale raster health; visibility re-entry can refresh stale capture,
+but unavailable or failed effects still need an explicit retry after their condition is
+corrected. Static motion continues to render at time zero.
 
 Retry invalidates pending refresh promises with `refresh-invalidated`. Refresh during a
 retry cannot start another generation and rejects (`effect-retrying`, or the current
@@ -628,8 +630,8 @@ explicit refresh and synthetic listener/disposal checks are separate evidence.
 Import any of these from `@domfx/browser`. All accept the shared options.
 Fire adds mutually exclusive creation-only `flameHeight` and `flameReach` options;
 the other effects add their own relative extents below. Time and intensity remain
-the shared writable controls. No color, gradient or particle-count controls are
-currently exported.
+the shared writable controls. Every effect except Burned paper also accepts one
+optional main color; gradient and particle-count controls are not exported.
 
 - `attachElectricity`
 - `attachFrost`
@@ -708,6 +710,39 @@ Slime also accepts creation-only `dripDensity`, a finite normalized value from 0
 above the default add extra emission locations. It is not an exact drop count or
 emission rate. Drop size, travel and timing stay unchanged. It works with legacy
 and relative extents, and does not enable relative mode by itself.
+
+### Selected artistic controls
+
+Frost `mistOpacity` and Burned paper `emberGlow` are writable finite normalized
+values. They default to `1`; assignments clamp to 0–1 and schedule the next frame
+without recapturing the target. Invalid writes throw and preserve the previous value.
+
+Fire `emberDensity` is creation-only, finite from 0 to 1 and defaults to `1`.
+It selects nested fixed seeded ember sites without moving the surviving embers or
+changing their glow. Values `0`, `0.5`, and `1` select zero, one, and two lanes per
+12 CSS-pixel ember lattice column. It is readable on the typed Fire handle; dispose
+before attaching a replacement to change it.
+
+All effect attachments except Burned paper accept `color` as `#RGB`, `#RRGGBB`,
+`rgb(r, g, b)`, or opaque `rgba(r, g, b, 1)`, with decimal channels from 0 to 255.
+The getter canonicalizes a selected color to `rgb(r, g, b)`. Assign `undefined` to
+restore the authored palette. Invalid, transparent, out-of-range, or malformed values
+throw and retain the prior color. Recoloring changes decorative effect output only,
+preserves its premultiplied alpha and shading, schedules the next frame, and neither
+recaptures the target nor allocates new GPU resources or pipelines. Halftone uses its
+fixed authored 5.5 CSS-pixel pitch; Slime retains its authored highlights.
+
+GSAP can animate `color` directly. First assign an explicit supported opaque color,
+then use explicit opaque endpoints, for example:
+
+```ts
+effect.color = '#f60';
+const colorTween = gsap.fromTo(effect, { color: '#f60' }, { color: '#69f', duration: 2 });
+```
+
+After setting a color, ordinary `.to()` tweens can read it as their starting value.
+Stop color tweens before assigning `undefined` to restore the original palette;
+`undefined` is not an interpolation endpoint. Dispose owned tweens with the effect.
 
 The extent values above are examples, not defaults. Supplying either field selects relative
 mode and defaults its omitted partner to **zero**. Zero disables that component;

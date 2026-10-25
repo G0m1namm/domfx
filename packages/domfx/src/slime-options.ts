@@ -1,6 +1,6 @@
-import type { AttachmentOptions } from './attachment-options.js';
+import type { ColorAttachmentOptions } from './color-options.js';
 
-export interface SlimeOptions extends AttachmentOptions {
+export interface SlimeOptions extends ColorAttachmentOptions {
   /** Creation-only normalized drip density, from 0 to 1. Defaults to 0.56.
    * Higher values add drip locations; zero disables drips. Does not
    * change drip size, travel, timing or intensity, or enable relative mode.

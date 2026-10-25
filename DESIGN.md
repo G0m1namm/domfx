@@ -118,8 +118,12 @@ component package is required by this document.
 Silver occupies most of a metallic accent. Violet, magenta and pale yellow form
 short transitions along thin edges. Use subtle, static grain or stippling beside
 the main demonstration, away from copy and controls. Keep the contrast low enough
-that the live effect remains the focal point. Do not imply that these CSS colors
-are customizable Fire colors; the current effect has its own warm palette.
+that the live effect remains the focal point. The picker may expose one main decorative
+color for every effect except Burned paper; an unset picker preserves each effect's
+original colors, including Fire's warm colors.
+Use a compact square swatch beside the color value and an icon-only reset with an
+accessible label. Keep both targets at least 44 CSS pixels; the swatch must not
+stretch across the settings panel. Marketing previews and docs share this control.
 
 Main headings, paragraphs, labels and code use solid text. The approved exception is
 `@domfx/gsap` in the post-example title description: use a static brand gradient
@@ -235,9 +239,16 @@ with a label column, a Text/SVG/Image segmented subject switch, thin silver slid
 with numeric readouts, Fire's flame height marked as a creation option, a text status
 indicator and a 44px Pause/Resume icon button with an accessible name. A live settings
 snippet mirrors the controls and offers Copy with a manual-selection fallback. Previews
-attach only while visible, release on pagehide, respect reduced motion, never clip
-the host's output and leave the original subject and disabled controls in place
+attach only while visible, release on pagehide, respect reduced motion, keep the
+effect host unclipped and leave the original subject and disabled controls in place
 without JavaScript or WebGPU. They are demonstrations, not verification evidence.
+Use larger default text, SVG and image targets so their edges are easy to inspect.
+Let artwork fit the available preview width while keeping room for its effect output.
+Match marketing inspection: 2× pointer-directed hover zoom, explicit 100–300% zoom
+and Fit reset, arrow-key and button panning, and touch dragging while zoomed.
+Magnify the target and decorative layer together inside an outer inspection viewport;
+that viewport always clips the camera. Keep controls outside the camera. Suppress
+automatic hover zoom and transitions under reduced motion; reset on target changes.
 
 The GSAP guide includes a compact interactive sequence in English and Spanish,
 using the same graphite preview and control styling. Keep the original clickable
@@ -445,9 +456,9 @@ live target, and a canvas requires an explicit refresh for each desired snapshot
 Avoid animating the target's paint every frame: animate effect controls or supported
 placement instead. Theme changes and unobserved hover/focus paint changes require
 explicit refresh. The metallic face and colored rim can start as CSS or artwork;
-the effect APIs do not expose the brand palette. New controls or effects need
-separate library work and verification; keep proposals distinct from implemented
-catalog effects.
+the effect APIs expose only the approved optional main decorative color, not the
+brand palette. New controls or effects need separate library work and verification;
+keep proposals distinct from implemented catalog effects.
 
 Implementation contracts live in the [browser package](packages/domfx/README.md),
 [GSAP adapter](packages/gsap/README.md) and [domain glossary](GLOSSARY.md).
@@ -466,7 +477,8 @@ Implementation contracts live in the [browser package](packages/domfx/README.md)
 - Verify 360, 768 and 1440px layouts, 200% browser zoom, and actual DPR 1/2 output.
   Content and controls must stay usable even when capture budgets force static fallback.
 - Static metallic accents remain visually distinct from actual warm Fire output.
-  No new palette controls or support/performance claims are implied by the mockups.
+  The approved single-color picker does not imply additional palette or
+  support/performance claims.
 - Astro remains the website framework. Neither app imports the other. Keep fixture
   styles and all diagnostic checks intact; lab redesign is a separate task.
 - Implementation passes `pnpm agent:verify` plus website tests and applicable manual
@@ -520,11 +532,8 @@ colored rim and gravity-driven droplets. On 2026-10-19, the maintainer replaced
 the inward fade with a solid coating and defined inner and outer boundaries;
 antialiasing is limited to contour coverage. Retain the slow stretching motion
 and remove incandescent cracks and heat shading. The maintainer approved the
-solid green coating and drip motion on 2026-10-19 as the checkpoint before
-exploring gloss and translucency.
+solid green coating and drip motion on 2026-10-19.
 
-The glossy Slime pass was approved on 2026-10-19: rounded wet highlights and
-thickness-based green translucency sit inside the defined coating boundaries.
 Preserve the accepted buildup, pinch-off, falling drops and neck retraction.
 
 ### Approved Burned paper direction

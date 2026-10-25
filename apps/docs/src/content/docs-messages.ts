@@ -2,6 +2,22 @@ import type { Locale } from '@domfx/site/locale';
 
 const messages = {
   en: {
+    preview: {
+      region: 'Interactive effect preview',
+      hover: 'Hover to inspect',
+      inspect: 'Zoom to inspect',
+      keys: 'Focus the preview: + and − zoom, arrows pan, 0 resets. Drag to pan on touchscreens.',
+      zoom: 'Preview zoom',
+      in: 'Zoom in',
+      out: 'Zoom out',
+      reset: 'Fit: reset preview zoom',
+      fit: 'Fit',
+      pan: 'Pan preview',
+      left: 'Pan left',
+      right: 'Pan right',
+      up: 'Pan up',
+      down: 'Pan down',
+    },
     gsapLab: {
       title: 'Try the sequence',
       introduction: 'Move through the sequence. Watch GSAP change effect time and intensity.',
@@ -86,6 +102,22 @@ const messages = {
     },
   },
   es: {
+    preview: {
+      region: 'Vista previa interactiva del efecto',
+      hover: 'Pasa el cursor para explorar',
+      inspect: 'Amplía para explorar',
+      keys: 'Enfoca la vista previa: + y − amplían o reducen, las flechas desplazan y 0 restablece. En pantallas táctiles, arrastra para desplazar.',
+      zoom: 'Ampliación de la vista previa',
+      in: 'Ampliar',
+      out: 'Reducir',
+      reset: 'Ajustar: restablecer la ampliación',
+      fit: 'Ajustar',
+      pan: 'Desplazar la vista previa',
+      left: 'Desplazar a la izquierda',
+      right: 'Desplazar a la derecha',
+      up: 'Desplazar hacia arriba',
+      down: 'Desplazar hacia abajo',
+    },
     gsapLab: {
       title: 'Prueba la secuencia',
       introduction:

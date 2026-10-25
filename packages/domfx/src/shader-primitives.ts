@@ -91,4 +91,20 @@ fn noise(p: vec2f) -> f32 {
 export const effectBindings = `
 @group(0) @binding(0) var distances: texture_2d<f32>;
 @group(0) @binding(1) var<uniform> params: vec4f;
+struct EffectControls {
+  material: vec4f,
+  color: vec4f,
+}
+@group(0) @binding(3) var<uniform> controls: EffectControls;
+
+fn applyEffectColor(input: vec4f) -> vec4f {
+  if (controls.color.w == 0 || input.a == 0) { return input; }
+  let source = input.rgb / input.a;
+  let lightness = (max(max(source.r, source.g), source.b)
+                 + min(min(source.r, source.g), source.b)) * .5;
+  let selected = controls.color.rgb;
+  let recolored = select(selected * (2 * lightness),
+                         mix(selected, vec3f(1), 2 * lightness - 1), lightness > .5);
+  return vec4f(recolored * input.a, input.a);
+}
 `;

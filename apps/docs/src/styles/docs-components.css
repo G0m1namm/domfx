@@ -212,6 +212,7 @@
 .docs-gsap-lab .docs-gsap-target {
   background: var(--silver);
   color: #191920;
+  font-size: 1.25rem;
   font-weight: 500;
 }
 .docs-gsap-lab button:disabled {
@@ -327,14 +328,113 @@
   color: var(--muted);
   font-size: 0.875rem;
 }
-/* No overflow clipping on any host ancestor: output must not be cut by the frame. */
+/* The inspection viewport always clips the camera; the effect host stays unclipped. */
 .docs-lab-stage {
   position: relative;
   display: grid;
-  min-height: 300px;
+  min-block-size: 22rem;
   place-items: center;
   border-radius: 9px 9px 0 0;
   background: radial-gradient(ellipse at 50% 115%, var(--lab-tint), transparent 70%), #111218;
+}
+[data-docs-preview] {
+  isolation: isolate;
+  overflow: hidden;
+}
+[data-docs-preview]:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -3px;
+}
+[data-docs-preview][data-zoomed='true'] {
+  touch-action: none;
+  cursor: move;
+}
+[data-docs-preview-camera] {
+  transform-origin: center;
+  transition: transform 160ms ease-out;
+}
+.docs-preview-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-inline-size: 0;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--border);
+  background: var(--raised);
+}
+.docs-preview-toolbar[hidden],
+.docs-preview-pan[hidden] {
+  display: none;
+}
+.sl-markdown-content .docs-preview-toolbar p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.docs-preview-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  min-inline-size: 0;
+}
+.docs-preview-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: max(2.75rem, 44px);
+  min-block-size: max(2.75rem, 44px);
+  padding: 0.5rem;
+  border: 1px solid var(--control-border);
+  border-radius: 0.375rem;
+  background: var(--raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.docs-preview-toolbar button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+.docs-preview-toolbar button:enabled:hover {
+  border-color: var(--silver);
+}
+.docs-preview-toolbar button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.docs-preview-toolbar output {
+  inline-size: 3.5rem;
+  color: var(--muted);
+  font-family: var(--sl-font-mono);
+  font-size: 0.75rem;
+  text-align: center;
+}
+.docs-preview-pan {
+  flex-basis: 100%;
+  justify-content: end;
+}
+.docs-preview-hover-hint {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  [data-docs-preview] {
+    cursor: zoom-in;
+  }
+  .docs-preview-hover-hint {
+    display: inline;
+  }
+  .docs-preview-touch-hint {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-docs-preview-camera] {
+    transition: none;
+  }
 }
 .docs-lab[data-category='Energy'] .docs-lab-stage {
   background: var(--floor-energy), #111218;
@@ -349,10 +449,13 @@
   border-radius: 0;
 }
 .docs-lab-host {
+  box-sizing: border-box;
   position: relative;
   display: grid;
+  inline-size: 100%;
+  min-inline-size: 0;
   place-items: center;
-  padding: 72px 80px 64px;
+  padding: 4.5rem 3rem 4rem;
 }
 .docs-lab-subject {
   position: relative;
@@ -366,19 +469,21 @@
   padding: 0.125em;
   color: #f4f5fb;
   font-family: 'Cabinet Grotesk', ui-sans-serif, sans-serif;
-  /* Keep the 16px design curve while following larger browser font defaults. */
-  font-size: clamp(3.25rem, calc(1rem + 10vw - 16px), 5.75rem);
+  /* Follow browser font preferences while leaving narrow previews room for the effect. */
+  font-size: clamp(3rem, calc(1rem + 10vw - 16px), 7rem);
   letter-spacing: -0.075em;
   line-height: 0.85;
   user-select: text;
 }
 .docs-lab-svg {
-  width: 132px;
-  height: 132px;
+  inline-size: min(12rem, 100%);
+  block-size: auto;
+  aspect-ratio: 1;
 }
 .docs-lab-image {
-  width: 200px;
-  height: 150px;
+  inline-size: min(18rem, 100%);
+  block-size: auto;
+  aspect-ratio: 4 / 3;
   object-fit: contain;
 }
 .docs-lab-overlay {
@@ -682,10 +787,10 @@
 
 @media (max-width: 600px) {
   .docs-lab-stage {
-    min-height: 240px;
+    min-block-size: 18rem;
   }
   .docs-lab-host {
-    padding: 56px 40px 64px;
+    padding: 3.5rem 2rem 4rem;
   }
   .docs-lab-overlay {
     inset: auto 8px 8px;

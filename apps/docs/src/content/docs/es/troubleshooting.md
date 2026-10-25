@@ -56,8 +56,9 @@ de elementos antecesores u hojas de estilo, los estados hover/focus y el dibujo 
 actualización explícita. Cada captura es una instantánea, no una grabación continua de vídeo.
 
 `target-not-visible` y `stale-raster` pueden describir una suspensión, no un
-fallo. La salida actualizada puede reanudarse al hacerse visible; una apariencia
-capturada obsoleta necesita actualización o reintento cuando vuelva a ser visible.
+fallo. La salida actualizada puede reanudarse al hacerse visible y el regreso observado
+a la visibilidad actualiza una captura obsoleta. Esto no reintenta un efecto no disponible
+ni fallido: corrige la condición y llama a `retry()` explícitamente.
 Un objetivo sin borde pero con contorno CSS (`outline`), o un subárbol con `content-visibility: auto`,
 pueden rechazarse para evitar que la captura cambie el contenido original.
 

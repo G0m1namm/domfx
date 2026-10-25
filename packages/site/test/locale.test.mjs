@@ -40,6 +40,10 @@ test('language links keep query and known anchors, dropping unknown anchors', ()
 
 test('Spanish documentation headings map to equivalent English sections', () => {
   assert.equal(
+    languageHref('https://domfx.dev/docs/es/gsap/#anima-el-color', 'en'),
+    '/docs/gsap/#animate-color',
+  );
+  assert.equal(
     languageHref('https://domfx.dev/docs/es/api/effects/?from=toc#energ%C3%ADa', 'en'),
     '/docs/api/effects/?from=toc#energy',
   );

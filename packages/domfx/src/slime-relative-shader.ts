@@ -167,5 +167,5 @@ ${valueNoise}
   let envelope = 1 - smoothstep(max(0, support - 1), support, supportDistance);
   let innerFade = 1 - smoothstep(.9, 1, max(-supportDistance, 0) / max(depth, .000001));
   let alpha = coverage * opacity * envelope * innerFade;
-  return vec4f(color * alpha, alpha) * params.z;
+  return applyEffectColor(vec4f(color * alpha, alpha) * params.z);
 }`;

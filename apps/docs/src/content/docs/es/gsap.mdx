@@ -41,6 +41,23 @@ export const { gsapCode } = examplesForLocale('es');
 
 <p><code>gsap.killTweensOf(fire, 'intensity')</code> detiene solo esa propiedad; no libera el efecto ni detiene una animación de tiempo. Usa un controlador por propiedad y mantén los valores dentro de los <a href="/docs/es/api/shared#control-playback">rangos de control</a>.</p>
 
+<span id="animate-color" />
+
+## Anima el color
+
+<p>Todos los efectos excepto Burned paper permiten modificar <code>color</code>. Inicialízalo con una cadena de color opaca explícita y admitida, y después usa extremos opacos explícitos con <code>fromTo()</code>; la paleta original es <code>undefined</code>, no un valor entre el que interpolar. Esto cambia la decoración y conserva el objetivo y la opacidad del efecto.</p>
+
+```ts
+fire.color = '#ff6600';
+const colorTween = gsap.fromTo(
+  fire,
+  { color: '#ff6600' },
+  { color: '#6699ff', duration: 2, ease: 'power1.inOut' },
+);
+```
+
+<p>Para cambios posteriores, usa <code>{"gsap.to(fire, { color: '#ff6600', duration: 2 })"}</code>. Al limpiar, llama a <code>colorTween.kill()</code> antes de liberar el efecto. Para recuperar la paleta original, detén las animaciones de color y asigna <code>fire.color = undefined</code>.</p>
+
 <span id="own-the-lifetime" />
 
 ## Gestiona el ciclo de vida

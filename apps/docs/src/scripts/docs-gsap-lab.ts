@@ -6,6 +6,7 @@ import { initializePage } from '@domfx/site/page-lifetime';
 
 import { docsMessages } from '../content/docs-messages';
 import { addGsapSequence } from '../content/gsap-sequence';
+import { initializeDocsPreview } from './docs-preview-zoom';
 
 const DURATION = 4.5;
 interface Playback {
@@ -34,6 +35,7 @@ function initializeLab(lab: HTMLElement) {
   const originalOpacity = host.style.opacity;
   const lifetime = new AbortController();
   const { signal } = lifetime;
+  initializeDocsPreview(lab, signal, reducedMotion);
   const playback: Playback = {
     position: 0,
     paused: true,

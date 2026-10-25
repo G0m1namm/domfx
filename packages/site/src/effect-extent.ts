@@ -104,59 +104,176 @@ export function effectExtentReference(effect: Effect) {
 }
 
 export type ExtentField = NonNullable<ReturnType<typeof effectExtentReference>>['fields'][number];
+export type EffectCreationName = ExtentField['name'] | 'emberDensity' | 'dripDensity';
+export type EffectWritableName = 'mistOpacity' | 'emberGlow';
+export type EffectOptionName = EffectCreationName | EffectWritableName;
+const effectCreationNames: readonly string[] = [
+  'flameReach',
+  'coatingDepth',
+  'mistReach',
+  'dripReach',
+  'scorchDepth',
+  'ashReach',
+  'contourSpread',
+  'fragmentTravel',
+  'plumeReach',
+  'bandDepth',
+  'echoReach',
+  'fringeReach',
+  'emberDensity',
+  'dripDensity',
+];
 
-/** Shared creation controls keep marketing and docs previews on the same API. */
-export function effectCreationFields(effect: Effect) {
-  const fields = (effectExtentReference(effect)?.fields ?? []).map((field) => ({
+export function isEffectCreationName(name: string): name is EffectCreationName {
+  return effectCreationNames.includes(name);
+}
+
+export function isEffectWritableName(name: string): name is EffectWritableName {
+  return ['mistOpacity', 'emberGlow'].includes(name);
+}
+
+type RangeSetting = {
+  readonly kind: 'range';
+  readonly name: string;
+  readonly defaultValue: number;
+  readonly min: number;
+  readonly max: number;
+  readonly step: number;
+  readonly scale: number;
+  readonly unit: 'percent' | 'css-px';
+  readonly basis?: 'height' | 'shorter-side';
+  readonly label?: { readonly en: string; readonly es: string };
+};
+type PresetSetting = {
+  readonly kind: 'preset';
+  readonly name: string;
+  readonly defaultValue: number;
+  readonly scale: number;
+  readonly options: readonly {
+    readonly value: number;
+    readonly label: { readonly en: string; readonly es: string };
+  }[];
+};
+export type EffectSetting = RangeSetting | PresetSetting;
+
+/** The single optional decorative color keeps its string value distinct from numeric settings. */
+export type EffectColorSetting = {
+  readonly kind: 'color';
+  readonly name: 'color';
+};
+
+const colorSetting = { kind: 'color', name: 'color' } as const satisfies EffectColorSetting;
+
+export function effectColorField(effect: Effect): EffectColorSetting | undefined {
+  return effect.id === 'burned-paper' ? undefined : colorSetting;
+}
+
+function extentSetting(field: ExtentField): RangeSetting {
+  return {
     ...field,
-    kind: 'range' as const,
+    kind: 'range',
+    defaultValue: field.example * 100,
+    min: 0,
     max: 30,
-  }));
-  if (effect.id !== 'slime') {
-    return fields;
+    step: 1,
+    scale: 100,
+    unit: 'percent',
+  };
+}
+
+/** Effect-owned creation controls replace the current preview instance. */
+export function effectCreationFields(effect: Effect): readonly EffectSetting[] {
+  const fields = (effectExtentReference(effect)?.fields ?? []).map(extentSetting);
+  if (effect.id === 'fire') {
+    return [
+      ...fields,
+      {
+        name: 'emberDensity',
+        kind: 'preset',
+        defaultValue: 100,
+        scale: 100,
+        options: [
+          { value: 0, label: { en: 'None', es: 'Sin brasas' } },
+          { value: 50, label: { en: 'Half', es: 'Media' } },
+          { value: 100, label: { en: 'Full', es: 'Completa' } },
+        ],
+      },
+    ];
   }
-  return [
-    ...fields,
-    {
-      name: 'dripDensity' as const,
-      kind: 'preset' as const,
-      basis: 'drip-density' as const,
-      example: 0.56,
-      max: 100,
-      label: { en: 'Drip density', es: 'Densidad de gotas' },
-      options: [
-        { value: 0, label: { en: 'None', es: 'Sin gotas' } },
-        { value: 20, label: { en: 'Low', es: 'Baja' } },
-        { value: 56, label: { en: 'Medium', es: 'Media' } },
-        { value: 100, label: { en: 'High', es: 'Alta' } },
-      ],
-    },
-  ];
+  if (effect.id === 'slime') {
+    return [
+      ...fields,
+      {
+        name: 'dripDensity',
+        kind: 'preset',
+        defaultValue: 56,
+        scale: 100,
+        options: [
+          { value: 0, label: { en: 'None', es: 'Sin gotas' } },
+          { value: 20, label: { en: 'Low', es: 'Baja' } },
+          { value: 56, label: { en: 'Medium', es: 'Media' } },
+          { value: 100, label: { en: 'High', es: 'Alta' } },
+        ],
+      },
+    ];
+  }
+  return fields;
+}
+
+/** Instance fields update the current effect without recapturing its target. */
+export function effectWritableFields(effect: Effect): readonly EffectSetting[] {
+  switch (effect.id) {
+    case 'frost':
+      return [percentField('mistOpacity')];
+    case 'burned-paper':
+      return [percentField('emberGlow')];
+    default:
+      return [];
+  }
+}
+
+function percentField(name: string): RangeSetting {
+  return {
+    name,
+    kind: 'range',
+    defaultValue: 100,
+    min: 0,
+    max: 100,
+    step: 1,
+    scale: 100,
+    unit: 'percent',
+  };
 }
 
 export type EffectCreationField = ReturnType<typeof effectCreationFields>[number];
+export type EffectWritableField = ReturnType<typeof effectWritableFields>[number];
 
-export const intensityField = {
-  name: 'intensity',
-  kind: 'range',
-  basis: 'strength',
-  max: 100,
-  example: 0.8,
-} as const;
+export const intensityField = percentField('intensity');
 
-export type EffectSetting = EffectCreationField | typeof intensityField;
+export function effectSettingApiValue(field: EffectSetting, value: string) {
+  return Number(value) / field.scale;
+}
+
+export function effectSettingDisplayValue(field: EffectSetting, value: string) {
+  return field.kind === 'range' && field.unit === 'css-px' ? `${value} px` : `${value}%`;
+}
 
 export function effectSettingBasis(field: EffectSetting, locale: 'en' | 'es') {
-  switch (field.basis) {
-    case 'height':
-      return locale === 'es' ? 'de la altura del elemento' : 'of element height';
-    case 'shorter-side':
-      return locale === 'es' ? 'del lado más corto' : 'of the shorter side';
-    default:
-      return '';
+  if (field.kind !== 'range') {
+    return '';
   }
+  if (field.basis === 'height') {
+    return locale === 'es' ? 'de la altura del elemento' : 'of element height';
+  }
+  if (field.basis === 'shorter-side') {
+    return locale === 'es' ? 'del lado más corto' : 'of the shorter side';
+  }
+  if (field.unit === 'css-px') {
+    return locale === 'es' ? 'píxeles CSS locales' : 'local CSS pixels';
+  }
+  return '';
 }
 
 export function effectSettingValueText(field: EffectSetting, value: string, locale: 'en' | 'es') {
-  return `${value}% ${effectSettingBasis(field, locale)}`.trim();
+  return `${effectSettingDisplayValue(field, value)} ${effectSettingBasis(field, locale)}`.trim();
 }

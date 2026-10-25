@@ -1,7 +1,241 @@
 import { expect, test } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
-import { effectCreationFields } from '@domfx/site/effect-extent';
+import {
+  effectColorField,
+  effectCreationFields,
+  effectSettingApiValue,
+  effectWritableFields,
+} from '@domfx/site/effect-extent';
 import { effects } from '@domfx/site/effects';
+
+function changedControlValue(field: ReturnType<typeof effectCreationFields>[number]) {
+  if (field.kind === 'preset') {
+    return '100';
+  }
+  return '17';
+}
+
+function presetLabels(name: string, locale: 'en' | 'es') {
+  if (name === 'dripDensity') {
+    return locale === 'es'
+      ? ['Sin gotas', 'Baja', 'Media', 'Alta']
+      : ['None', 'Low', 'Medium', 'High'];
+  }
+  return locale === 'es' ? ['Sin brasas', 'Media', 'Completa'] : ['None', 'Half', 'Full'];
+}
+
+async function hasVisiblePixels(canvas: Locator) {
+  return canvas.evaluate(async (element) => {
+    const image = new Image();
+    const loaded = new Promise<void>((resolve, reject) => {
+      image.addEventListener('load', () => resolve(), { once: true });
+      image.addEventListener('error', () => reject(new Error('Could not inspect effect canvas')), {
+        once: true,
+      });
+    });
+    image.src = (element as HTMLCanvasElement).toDataURL();
+    await loaded;
+    const copy = document.createElement('canvas');
+    copy.width = image.width;
+    copy.height = image.height;
+    const context = copy.getContext('2d');
+    if (!context) {
+      throw new Error('Could not read effect canvas');
+    }
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, copy.width, copy.height).data;
+    return pixels.some((value, index) => index % 4 === 3 && value > 0);
+  });
+}
+
+type RendererDevice = {
+  createBuffer(descriptor: { label?: string }): object;
+  queue: {
+    writeBuffer(
+      buffer: object,
+      offset: number,
+      data: ArrayBufferView,
+      dataOffset?: number,
+      size?: number,
+    ): void;
+  };
+};
+
+type RendererAdapter = {
+  requestDevice(...options: unknown[]): Promise<RendererDevice>;
+};
+
+type RendererGpu = {
+  requestAdapter(...options: unknown[]): Promise<RendererAdapter | null>;
+};
+
+async function gateRendererDevice(page: Page) {
+  await page.addInitScript(() => {
+    const gpu = (navigator as Navigator & { gpu?: RendererGpu }).gpu;
+    if (!gpu) {
+      return;
+    }
+    let releaseDevice = () => {};
+    const deviceReady = new Promise<void>((resolve) => {
+      releaseDevice = resolve;
+    });
+    document.addEventListener('domfx-test-release-device', () => releaseDevice(), { once: true });
+    const requestAdapter = gpu.requestAdapter.bind(gpu);
+    Object.defineProperty(gpu, 'requestAdapter', {
+      configurable: true,
+      value: async (...args: unknown[]) => {
+        const adapter = await requestAdapter(...args);
+        if (!adapter) {
+          return adapter;
+        }
+        const requestDevice = adapter.requestDevice.bind(adapter);
+        Object.defineProperty(adapter, 'requestDevice', {
+          configurable: true,
+          value: async (...options: unknown[]) => {
+            const device = await requestDevice(...options);
+            const controls = new WeakSet<object>();
+            const createBuffer = device.createBuffer.bind(device);
+            Object.defineProperty(device, 'createBuffer', {
+              configurable: true,
+              value: (descriptor: { label?: string }) => {
+                const buffer = createBuffer(descriptor);
+                if (descriptor.label === 'domfx effect controls') {
+                  controls.add(buffer);
+                }
+                return buffer;
+              },
+            });
+            const queue = device.queue;
+            const writeBuffer = queue.writeBuffer.bind(queue);
+            Object.defineProperty(queue, 'writeBuffer', {
+              configurable: true,
+              value: (
+                buffer: object,
+                offset: number,
+                data: ArrayBufferView,
+                dataOffset?: number,
+                size?: number,
+              ) => {
+                if (controls.has(buffer) && data instanceof Float32Array) {
+                  const previous = document.documentElement.dataset.testControlMistOpacityWrites;
+                  document.documentElement.dataset.testControlMistOpacityWrites = previous
+                    ? `${previous},${data[0]}`
+                    : String(data[0]);
+                }
+                writeBuffer(buffer, offset, data, dataOffset, size);
+              },
+            });
+            document.documentElement.dataset.testRendererDeviceGate = 'held';
+            await deviceReady;
+            return device;
+          },
+        });
+        return adapter;
+      },
+    });
+  });
+}
+
+test('Halftone forwards relative geometry', async ({ page }) => {
+  await page.goto('/effects/');
+  await page.locator('[data-card][data-id="halftone"]').click();
+  const dialog = page.locator('.effect-dialog');
+  const stage = dialog.locator('.dialog-stage');
+  const controls = dialog.locator('[data-creation-controls]');
+
+  await expect(stage).toHaveAttribute('data-status', 'active');
+  await controls.locator('[data-creation-option="plumeReach"]').fill('0');
+  await controls.locator('[data-creation-option="bandDepth"]').fill('0');
+  await expect(stage).toHaveAttribute('data-status', 'active');
+  expect(await hasVisiblePixels(stage.locator('canvas'))).toBe(false);
+
+  await controls.locator('[data-creation-option="plumeReach"]').fill('17');
+  await controls.locator('[data-creation-option="bandDepth"]').fill('17');
+  await expect(stage).toHaveAttribute('data-status', 'active');
+  expect(await hasVisiblePixels(stage.locator('canvas'))).toBe(true);
+});
+
+test('marketing color control updates live code and restores original colors', async ({ page }) => {
+  await page.goto('/effects/');
+  await page.locator('[data-card][data-id="frost"]').click();
+  const dialog = page.locator('.effect-dialog');
+  const controls = dialog.locator('[data-color-controls]');
+  const color = controls.locator('input[type="color"]');
+
+  await expect(controls).toBeVisible();
+  expect(
+    await controls.evaluate((element) => {
+      const styles = getComputedStyle(element);
+      return [styles.borderTopWidth, styles.paddingLeft, styles.paddingRight];
+    }),
+  ).toEqual(['0px', '0px', '0px']);
+  await expect(color).toHaveAccessibleName('color');
+  await expect(controls.locator('[data-color-output]')).toHaveText('Original colors');
+  await expect(controls.locator('[data-color-reset]')).toBeDisabled();
+  await color.fill('#ff0000');
+  await expect(controls.locator('[data-color-reset]')).toBeEnabled();
+  await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
+  await dialog.locator('[data-target="svg"]').click();
+  await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
+  await controls.locator('[data-color-reset]').click();
+  await expect(dialog.locator('[data-code]')).not.toContainText('color:');
+  await expect(controls.locator('[data-color-reset]')).toBeDisabled();
+
+  await dialog.locator('[data-close]').click();
+  await page.locator('[data-card][data-id="burned-paper"]').click();
+  await expect(dialog.locator('[data-color-controls]')).toBeHidden();
+});
+
+test('marketing writable controls use the compact fieldset reset', async ({ page }) => {
+  await page.goto('/effects/');
+  await page.locator('[data-card][data-id="frost"]').click();
+  const controls = page.locator('[data-writable-controls]');
+  await expect(controls).toBeVisible();
+  expect(
+    await controls.evaluate((element) => {
+      const styles = getComputedStyle(element);
+      return {
+        borders: [
+          styles.borderTopWidth,
+          styles.borderRightWidth,
+          styles.borderBottomWidth,
+          styles.borderLeftWidth,
+        ],
+        padding: [styles.paddingTop, styles.paddingRight, styles.paddingBottom, styles.paddingLeft],
+      };
+    }),
+  ).toEqual({ borders: ['0px', '0px', '0px', '0px'], padding: ['0px', '0px', '0px', '0px'] });
+});
+
+test('marketing preview replays writable controls changed before attachment is ready', async ({
+  page,
+}) => {
+  await gateRendererDevice(page);
+  try {
+    await page.goto('/effects/', { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-card][data-id="frost"]').click();
+    const dialog = page.locator('.effect-dialog');
+    const stage = dialog.locator('.dialog-stage');
+    const opacity = dialog.locator('[data-writable-option="mistOpacity"]');
+    await expect(stage).toHaveAttribute('data-status', 'initializing');
+    await expect(page.locator('html')).toHaveAttribute('data-test-renderer-device-gate', 'held');
+    await opacity.fill('0');
+    await expect(dialog.locator('[data-code]')).toContainText('effect.mistOpacity = 0');
+    await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
+    await expect(stage).toHaveAttribute('data-status', 'active');
+    await expect
+      .poll(async () => {
+        const writes = await page
+          .locator('html')
+          .getAttribute('data-test-control-mist-opacity-writes');
+        return writes?.split(',').map(Number) ?? [];
+      })
+      .toContain(0);
+  } finally {
+    await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
+  }
+});
 
 for (const locale of ['en', 'es'] as const) {
   for (const gallery of [false, true]) {
@@ -41,15 +275,14 @@ for (const locale of ['en', 'es'] as const) {
         for (const field of fields) {
           const input = controls.locator(`[data-creation-option="${field.name}"]`);
           await expect(input).toHaveAccessibleName(new RegExp(`^${field.name}`));
-          await expect(input).toHaveValue(String(Math.round(field.example * 100)));
+          await expect(input).toHaveValue(String(field.defaultValue));
           if (field.kind === 'preset') {
-            await expect(input.locator('option')).toHaveText(
-              locale === 'es'
-                ? ['Sin gotas', 'Baja', 'Media', 'Alta']
-                : ['None', 'Low', 'Medium', 'High'],
-            );
+            await expect(input.locator('option')).toHaveText(presetLabels(field.name, locale));
           } else {
-            await expect(input).toHaveAttribute('aria-valuetext', /% .+/);
+            await expect(input).toHaveAttribute(
+              'aria-valuetext',
+              field.unit === 'css-px' ? /px .+/ : /% .+/,
+            );
             const aligned = await input.evaluate((element) => {
               const row = element.closest('.effect-setting');
               const label = row?.querySelector('.effect-setting-label')?.getBoundingClientRect();
@@ -70,7 +303,7 @@ for (const locale of ['en', 'es'] as const) {
           if (field.kind === 'preset') {
             await input.selectOption('100');
           } else {
-            await input.fill('17');
+            await input.fill(changedControlValue(field));
           }
           await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
           await expect(dialog.locator('.dialog-stage'), effect.id).toHaveAttribute(
@@ -79,12 +312,42 @@ for (const locale of ['en', 'es'] as const) {
           );
           await expect(dialog.locator('canvas')).toHaveCount(1);
         }
+        for (const field of effectWritableFields(effect)) {
+          const previous = await dialog.locator('canvas').elementHandle();
+          if (!previous) {
+            throw new Error(`Missing writable canvas for ${effect.id}`);
+          }
+          const input = dialog.locator(`[data-writable-option="${field.name}"]`);
+          await input.fill('40');
+          expect(await previous.evaluate((canvas) => canvas.isConnected)).toBe(true);
+          await expect(dialog.locator('[data-code]')).toContainText(`effect.${field.name} = 0.4`);
+        }
+        if (effectColorField(effect)) {
+          const colorCanvas = await dialog.locator('canvas').elementHandle();
+          if (!colorCanvas) {
+            throw new Error(`Missing color canvas for ${effect.id}`);
+          }
+          await dialog.locator('input[type="color"]').fill('#ff0000');
+          expect(await colorCanvas.evaluate((canvas) => canvas.isConnected)).toBe(true);
+          await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
+        } else {
+          await expect(dialog.locator('[data-color-controls]')).toBeHidden();
+        }
         await dialog.locator('[data-copy-code]').click();
         const copied = await page.locator('html').getAttribute('data-copied-settings');
         expect(copied).toContain(effect.exportName);
         expect(copied).toContain('intensity: 0.45');
+        if (effectColorField(effect)) {
+          expect(copied).toContain('color: "#ff0000",');
+        } else {
+          expect(copied).not.toContain('color:');
+        }
         for (const field of fields) {
-          expect(copied).toContain(`${field.name}: ${field.name === 'dripDensity' ? '1' : '0.17'}`);
+          const value = changedControlValue(field);
+          expect(copied).toContain(`${field.name}: ${effectSettingApiValue(field, value)}`);
+        }
+        for (const field of effectWritableFields(effect)) {
+          expect(copied).toContain(`effect.${field.name} = 0.4`);
         }
         await page.keyboard.press('Escape');
         await expect(dialog).not.toBeVisible();

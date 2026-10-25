@@ -406,7 +406,9 @@ footer nav {
 .target-options button[aria-pressed='true'] {
   background: var(--raised);
 }
-.effect-creation-controls {
+.effect-creation-controls,
+.effect-color-controls,
+.effect-writable-controls {
   border: 0;
   padding: 0;
   margin: 0 0 1rem;

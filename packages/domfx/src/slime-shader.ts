@@ -160,5 +160,5 @@ ${valueNoise}
   // Reflections stay more opaque; output remains premultiplied RGBA.
   let opacity = clamp(.62 + thickness * .24 + specular * .3, 0, 1);
   let alpha = coverage * opacity;
-  return vec4f(color * alpha, alpha);
+  return applyEffectColor(vec4f(color * alpha, alpha));
 }`;

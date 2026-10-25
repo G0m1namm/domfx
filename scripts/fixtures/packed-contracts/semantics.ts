@@ -23,6 +23,10 @@ import {
   attachStarShimmer,
   attachBrushFringe,
   type AttachmentOptions,
+  type BurnedPaperEffectHandle,
+  type ColorEffectHandle,
+  type FireEffectHandle,
+  type FrostEffectHandle,
 } from '@domfx/browser';
 import {
   bindEffect,
@@ -38,6 +42,49 @@ import {
 declare const target: Element;
 declare const host: HTMLElement;
 declare const svgHost: SVGSVGElement;
+
+const frostControls: FrostEffectHandle = attachFrost(target, {
+  host,
+  mistOpacity: 0.25,
+  color: '#6bf',
+});
+frostControls.mistOpacity = 2;
+const fireControls: FireEffectHandle = attachFire(target, {
+  host,
+  emberDensity: 0.25,
+  color: 'rgb(255, 64, 0)',
+});
+const halftoneControls: ColorEffectHandle = attachHalftone(target, { host, color: '#00ff00' });
+const slimeControls: ColorEffectHandle = attachSlime(target, {
+  host,
+  color: 'rgba(0, 128, 255, 1)',
+});
+fireControls.color = '#f60';
+halftoneControls.color = undefined;
+const burnedControls: BurnedPaperEffectHandle = attachBurnedPaper(target, {
+  host,
+  emberGlow: 0.25,
+});
+burnedControls.emberGlow = -1;
+// @ts-expect-error Ember density is creation-only.
+fireControls.emberDensity = 0.5;
+// @ts-expect-error Frost-only mist opacity is not a Fire option.
+attachFire(target, { host, mistOpacity: 0.5 });
+// @ts-expect-error Ember density is a number, not percentage text.
+attachFire(target, { host, emberDensity: '50%' });
+// @ts-expect-error Color accepts only CSS color text or undefined.
+fireControls.color = 1;
+// @ts-expect-error Burned paper keeps its authored palette.
+attachBurnedPaper(target, { host, color: '#f60' });
+// @ts-expect-error Burned paper has no color control.
+burnedControls.color = '#f60';
+// @ts-expect-error Ember glow belongs to Burned paper.
+attachFrost(target, { host, emberGlow: 0.5 });
+frostControls.dispose();
+fireControls.dispose();
+halftoneControls.dispose();
+slimeControls.dispose();
+burnedControls.dispose();
 
 const relativeElectricity = attachElectricity(target, { host, contourSpread: 0.1 });
 const relativeKinetic = attachKinetic(target, { host, fragmentTravel: 0.2 });
@@ -137,6 +184,7 @@ const genericPending: AsyncEffectBinding = bindEffectAsync(Promise.resolve(effec
 generic.dispose();
 genericPending.dispose();
 timeline.to(effect, { time: 4, intensity: 0.4, duration: 4, ease: 'none' });
+timeline.to(fireControls, { color: '#06f', duration: 4, ease: 'none' });
 const refreshed = effect.refresh();
 
 // Exact equality also catches widened promise payloads and permissive escape types.

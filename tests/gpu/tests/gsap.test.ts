@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { gsap } from 'gsap';
 
+import type { BurnedPaperEffectHandle, ColorEffectHandle, FrostEffectHandle } from '@domfx/browser';
 import type { EffectHandle } from '@domfx/core';
 import { bindEffect, bindEffectAsync, bindFire, bindFireAsync } from '@domfx/gsap';
 
@@ -86,6 +87,65 @@ function host(t: test.TestContext) {
   t.after(() => timeline.kill());
   return { timeline, sibling };
 }
+
+function materialAttachments() {
+  const base = attachment().effect;
+  let mistOpacity = 1;
+  let frostColor: string | undefined;
+  let slimeColor: string | undefined;
+  let emberGlow = 1;
+  const frost: FrostEffectHandle = {
+    ...base,
+    get color() {
+      return frostColor;
+    },
+    set color(value) {
+      frostColor = value;
+    },
+    get mistOpacity() {
+      return mistOpacity;
+    },
+    set mistOpacity(value) {
+      mistOpacity = value;
+    },
+  };
+  const slime: ColorEffectHandle = {
+    ...base,
+    get color() {
+      return slimeColor;
+    },
+    set color(value) {
+      slimeColor = value;
+    },
+  };
+  const burnedPaper: BurnedPaperEffectHandle = {
+    ...base,
+    get emberGlow() {
+      return emberGlow;
+    },
+    set emberGlow(value) {
+      emberGlow = value;
+    },
+  };
+  return { frost, slime, burnedPaper };
+}
+
+test('native GSAP property tweens update each writable material control', (t) => {
+  const timeline = gsap.timeline({ paused: true });
+  t.after(() => timeline.kill());
+  const { frost, slime, burnedPaper } = materialAttachments();
+  timeline.to(frost, { mistOpacity: 0, duration: 1, ease: 'none' });
+  timeline.fromTo(slime, { color: '#000000' }, { color: '#ffffff', duration: 1, ease: 'none' });
+  timeline.to(burnedPaper, { emberGlow: 0, duration: 1, ease: 'none' });
+
+  timeline.seek(0.5, true);
+  assert.equal(frost.mistOpacity, 0.5);
+  timeline.seek(1.5, true);
+  assert.equal(slime.color, 'rgba(128,128,128,1)');
+  timeline.reverse();
+  timeline.seek(2.5, true);
+  assert.equal(burnedPaper.emberGlow, 0.5);
+});
 
 test('effect disposal detaches every binding and disposed effects reject new bindings', (t) => {
   const { effect, callbacks } = attachment();

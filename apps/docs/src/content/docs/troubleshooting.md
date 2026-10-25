@@ -44,7 +44,9 @@ ancestor/stylesheet paint, hover/focus and canvas drawing need explicit refresh.
 This is snapshot capture, not continuous video capture.
 
 `target-not-visible` and `stale-raster` can describe suspension rather than failure.
-Up-to-date output can resume on visibility; out-of-date captured appearance needs refresh or retry when visible.
+Up-to-date output can resume on visibility, and observed visibility re-entry refreshes a
+stale capture. This does not retry an unavailable or failed effect; correct its condition
+and call `retry()` explicitly.
 A borderless outlined target or `content-visibility: auto` subtree can reject to
 prevent capture from mutating source content.
 

@@ -70,5 +70,5 @@ fn rootHeight(p: vec2f, bend: f32) -> f32 {
   let exteriorColor = mix(vec3f(.48, .37, .83), vec3f(.91, .94, 1), heat);
   let color = mix(vec3f(.38, .3, .65), exteriorColor, smoothstep(-1, 1, distance));
   let alpha = dotCoverage * .95;
-  return vec4f(color * alpha, alpha);
+  return applyEffectColor(vec4f(color * alpha, alpha));
 }`;

@@ -12,6 +12,104 @@ import * as browserEffects from '@domfx/browser';
 import type { FireBinding } from '@domfx/gsap';
 import { effects } from '@domfx/site/effects';
 
+const effectHandleTypes = {
+  attachBurnedPaper: 'BurnedPaperEffectHandle',
+  attachFire: 'FireEffectHandle',
+  attachFrost: 'FrostEffectHandle',
+} as const;
+
+function effectHandleType(exportName: string) {
+  return effectHandleTypes[exportName as keyof typeof effectHandleTypes] ?? 'ColorEffectHandle';
+}
+
+type RendererDevice = {
+  createBuffer(descriptor: { label?: string }): object;
+  queue: {
+    writeBuffer(
+      buffer: object,
+      offset: number,
+      data: ArrayBufferView,
+      dataOffset?: number,
+      size?: number,
+    ): void;
+  };
+};
+
+type RendererAdapter = {
+  requestDevice(...options: unknown[]): Promise<RendererDevice>;
+};
+
+type RendererGpu = {
+  requestAdapter(...options: unknown[]): Promise<RendererAdapter | null>;
+};
+
+async function gateRendererDevice(page: Page) {
+  await page.addInitScript(() => {
+    const gpu = (navigator as Navigator & { gpu?: RendererGpu }).gpu;
+    if (!gpu) {
+      return;
+    }
+    let releaseDevice = () => {};
+    const deviceReady = new Promise<void>((resolve) => {
+      releaseDevice = resolve;
+    });
+    document.addEventListener('domfx-test-release-device', () => releaseDevice(), { once: true });
+    const requestAdapter = gpu.requestAdapter.bind(gpu);
+    Object.defineProperty(gpu, 'requestAdapter', {
+      configurable: true,
+      value: async (...args: unknown[]) => {
+        const adapter = await requestAdapter(...args);
+        if (!adapter) {
+          return adapter;
+        }
+        const requestDevice = adapter.requestDevice.bind(adapter);
+        Object.defineProperty(adapter, 'requestDevice', {
+          configurable: true,
+          value: async (...options: unknown[]) => {
+            const device = await requestDevice(...options);
+            const controls = new WeakSet<object>();
+            const createBuffer = device.createBuffer.bind(device);
+            Object.defineProperty(device, 'createBuffer', {
+              configurable: true,
+              value: (descriptor: { label?: string }) => {
+                const buffer = createBuffer(descriptor);
+                if (descriptor.label === 'domfx effect controls') {
+                  controls.add(buffer);
+                }
+                return buffer;
+              },
+            });
+            const queue = device.queue;
+            const writeBuffer = queue.writeBuffer.bind(queue);
+            Object.defineProperty(queue, 'writeBuffer', {
+              configurable: true,
+              value: (
+                buffer: object,
+                offset: number,
+                data: ArrayBufferView,
+                dataOffset?: number,
+                size?: number,
+              ) => {
+                if (controls.has(buffer) && data instanceof Float32Array) {
+                  const previous = document.documentElement.dataset.testControlMistOpacityWrites;
+                  document.documentElement.dataset.testControlMistOpacityWrites = previous
+                    ? `${previous},${data[0]}`
+                    : String(data[0]);
+                }
+                writeBuffer(buffer, offset, data, dataOffset, size);
+              },
+            });
+            document.documentElement.dataset.testRendererDeviceGate = 'held';
+            await deviceReady;
+            return device;
+          },
+        });
+        return adapter;
+      },
+    });
+  });
+}
+
 type TestGpu = {
   requestAdapter(options?: unknown): Promise<{
     info: {
@@ -174,6 +272,9 @@ test('@smoke all catalog references retain their public options and usable sourc
         page.getByRole('region', { name: `${effect.name} usage`, exact: true }),
       ).toContainText(`import { ${effect.exportName} } from '@domfx/browser'`);
       await expect(
+        page.getByRole('heading', { name: 'Usage', level: 2 }).locator('..'),
+      ).toContainText(`): ${effectHandleType(effect.exportName)}`);
+      await expect(
         page.getByRole('table', { name: 'Shared creation options', exact: true }),
       ).toContainText("'manual' | 'auto' | 'ambient'");
       await expect(
@@ -190,6 +291,26 @@ test('@smoke all catalog references retain their public options and usable sourc
     await context.close();
   }
 });
+
+for (const [path, usage] of [
+  ['/docs/api/effects/halftone/', 'Halftone usage'],
+  ['/docs/es/api/effects/halftone/', 'Uso de Halftone'],
+] as const) {
+  test(`@smoke ${path} documents PatternOptions in its signature and typed snippet`, async ({
+    page,
+  }) => {
+    await page.goto(path);
+    await expect(
+      page.getByText(
+        'attachHalftone(target: Element, options: PatternOptions): ColorEffectHandle',
+        { exact: true },
+      ),
+    ).toBeVisible();
+    const snippet = page.getByRole('region', { name: usage, exact: true });
+    await expect(snippet).toContainText('import type { PatternOptions }');
+    await expect(snippet).toContainText('const options: PatternOptions = {');
+  });
+}
 
 test('@smoke keyboard users can scroll code and API tables, and follow page sections', async ({
   page,
@@ -312,6 +433,7 @@ test('@smoke back to top appears after scrolling and returns focus to the title'
 const labPages = [
   { path: '/docs/standalone/', effect: 'Fire', text: true },
   { path: '/docs/api/effects/frost/', effect: 'Frost', text: false },
+  { path: '/docs/es/api/effects/frost/', effect: 'Frost', text: false },
 ] as const;
 
 for (const { path, effect, text } of labPages) {
@@ -328,7 +450,11 @@ for (const { path, effect, text } of labPages) {
     }
     await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
     await expect(lab.locator('canvas')).toHaveCount(0);
-    await expect(lab.getByRole('button', { name: 'Effects unavailable' })).toBeDisabled();
+    await expect(
+      lab.getByRole('button', {
+        name: path.startsWith('/docs/es/') ? 'Efectos no disponibles' : 'Effects unavailable',
+      }),
+    ).toBeDisabled();
     await expect(lab.getByRole('slider', { name: 'intensity', exact: true })).toBeDisabled();
   });
 
@@ -361,7 +487,9 @@ for (const { path, effect, text } of labPages) {
       await expect(canvas).toHaveCount(1);
     }
 
-    for (const subject of ['SVG', 'Image', 'Text']) {
+    const spanish = path.startsWith('/docs/es/');
+    const subjects = spanish ? ['SVG', 'Imagen', 'Texto'] : ['SVG', 'Image', 'Text'];
+    for (const subject of subjects) {
       await lab.getByRole('radio', { name: subject, exact: true }).check();
       await expect(lab).toHaveAttribute('data-status', 'active');
       await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
@@ -371,7 +499,7 @@ for (const { path, effect, text } of labPages) {
     const toggle = lab.locator('[data-docs-lab-toggle]');
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await expect(toggle).toHaveAccessibleName('Resume effect');
+    await expect(toggle).toHaveAccessibleName(spanish ? 'Reanudar efecto' : 'Resume effect');
     await expect(lab).toHaveAttribute('data-status', 'active');
     await expect(lab).toHaveAttribute('data-paused', 'true');
     await toggle.click();
@@ -399,6 +527,35 @@ test('the docs lab restarts after pagehide and persisted pageshow', async ({ pag
   const intensity = lab.locator('[data-docs-lab-intensity]');
   await intensity.fill('45');
   await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+});
+
+test('the docs lab replays writable controls changed before attachment is ready', async ({
+  page,
+}) => {
+  await gateRendererDevice(page);
+  try {
+    await page.goto('/docs/api/effects/frost/', { waitUntil: 'domcontentloaded' });
+    const lab = page.locator('[data-docs-lab]');
+    await lab.scrollIntoViewIfNeeded();
+    const opacity = lab.locator('[data-docs-lab-writable="mistOpacity"]');
+    await expect(lab).toHaveAttribute('data-status', 'initializing');
+    await expect(page.locator('html')).toHaveAttribute('data-test-renderer-device-gate', 'held');
+    await opacity.fill('0');
+    await expect(lab.locator('[data-docs-lab-writable-code="mistOpacity"]')).toHaveText('0');
+    await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
+    await expect(lab).toHaveAttribute('data-status', 'active');
+    await expect(lab.locator('canvas')).toHaveCount(1);
+    await expect
+      .poll(async () => {
+        const writes = await page
+          .locator('html')
+          .getAttribute('data-test-control-mist-opacity-writes');
+        return writes?.split(',').map(Number) ?? [];
+      })
+      .toContain(0);
+  } finally {
+    await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
+  }
 });
 
 test('the docs lab preserves pause and requires Start after reduced-motion recovery', async ({

@@ -11,11 +11,12 @@ export const patternBodies: Record<PatternEffect, string> = {
   halftone: `
     // Rotated print-screen dots vary in radius rather than turning on/off.
     let rotated = vec2f(p.x + p.y, p.y - p.x) * .70710678;
-    let cell = floor(rotated / 5.5);
-    let center = (cell + .5) * 5.5;
+    let spacing = 5.5;
+    let cell = floor(rotated / spacing);
+    let center = (cell + .5) * spacing;
     let sample = vec2f(center.x - center.y, center.x + center.y) * .70710678;
     let density = densityAt(sample);
-    let radius = 2.5 * sqrt(clamp(density.x, 0, 1));
+    let radius = 2.5 * (spacing / 5.5) * sqrt(clamp(density.x, 0, 1));
     coverage = (1 - smoothstep(radius - aa, radius + aa, length(rotated - center)))
              * smoothstep(0, .07, density.x);
     heat = density.z;
@@ -305,6 +306,6 @@ ${patternBodies[pattern]}
   let exteriorColor = mix(tint, vec3f(.92, .94, 1), heat);
   let color = mix(tint * .8, exteriorColor, smoothstep(-1, 1, distance));
   let alpha = clamp(coverage * .94, 0, .94);
-  return vec4f(color * alpha, alpha);
+  return applyEffectColor(vec4f(color * alpha, alpha));
 }`;
 }

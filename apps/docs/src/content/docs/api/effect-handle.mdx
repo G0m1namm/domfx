@@ -6,7 +6,7 @@ description: "Read effect state, update the captured image and release resources
 import DocsEffectMethods from "../../../components/docs-effect-methods.astro";
 import DocsEffectState from "../../../components/docs-effect-state.astro";
 
-<p>An effect instance (<code>EffectHandle</code>) is returned immediately by every effect function. Keep it to control animation, check setup results and release resources. <a href="/docs/api/shared#control-playback">Time and intensity</a> are its writable controls.</p>
+<p>An effect instance (<code>EffectHandle</code>) is returned immediately by every effect function. Keep it to control animation, check setup results and release resources. <a href="/docs/api/shared#control-playback">Time and intensity</a> are its writable controls. Every typed handle except Burned paper extends <code>ColorEffectHandle</code>: its <code>color</code> property returns normalized <code>rgb(...)</code>, or <code>undefined</code> for the effect’s original colors. Frost also exposes <code>mistOpacity</code>, Burned paper exposes <code>emberGlow</code>, and Fire exposes its resolved creation-only <code>emberDensity</code>.</p>
 
 <span id="read-state" />
 

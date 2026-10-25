@@ -1,5 +1,3 @@
-import type { EffectHandle } from '@domfx/core';
-
 import {
   attachBurnedPaperWithAdapters,
   attachDitherWithAdapters,
@@ -13,6 +11,12 @@ import {
 import { captureElementWithReservation } from './browser.js';
 import type { BurnedPaperOptions } from './burned-paper-options.js';
 import type { DitherOptions } from './dither-options.js';
+import type {
+  BurnedPaperEffectHandle,
+  ColorEffectHandle,
+  FireEffectHandle,
+  FrostEffectHandle,
+} from './effect-controls.js';
 import type { ElectricityOptions } from './electricity-options.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
@@ -26,7 +30,7 @@ import { acquireRenderer } from './renderer-service.js';
 import type { SlimeOptions } from './slime-options.js';
 
 /** Batch control writes and refresh observed changes to captured paint. */
-export function attachFire(target: Element, options: FireOptions): EffectHandle {
+export function attachFire(target: Element, options: FireOptions): FireEffectHandle {
   return attachFireWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -34,7 +38,7 @@ export function attachFire(target: Element, options: FireOptions): EffectHandle 
 }
 
 /** Attach deterministic electric filaments to a captured silhouette. */
-export function attachElectricity(target: Element, options: ElectricityOptions): EffectHandle {
+export function attachElectricity(target: Element, options: ElectricityOptions): ColorEffectHandle {
   return attachElectricityWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -42,7 +46,7 @@ export function attachElectricity(target: Element, options: ElectricityOptions):
 }
 
 /** Attach an icy rim, white mist and fine frost particles to a captured silhouette. */
-export function attachFrost(target: Element, options: FrostOptions): EffectHandle {
+export function attachFrost(target: Element, options: FrostOptions): FrostEffectHandle {
   return attachFrostWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -50,7 +54,7 @@ export function attachFrost(target: Element, options: FrostOptions): EffectHandl
 }
 
 /** Attach a traveling light pulse and geometric fragments to a silhouette. */
-export function attachKinetic(target: Element, options: KineticOptions): EffectHandle {
+export function attachKinetic(target: Element, options: KineticOptions): ColorEffectHandle {
   return attachKineticWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -58,7 +62,7 @@ export function attachKinetic(target: Element, options: KineticOptions): EffectH
 }
 
 /** Attach a solid slime rim and gravity-driven drips to a captured silhouette. */
-export function attachSlime(target: Element, options: SlimeOptions): EffectHandle {
+export function attachSlime(target: Element, options: SlimeOptions): ColorEffectHandle {
   return attachSlimeWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -66,7 +70,10 @@ export function attachSlime(target: Element, options: SlimeOptions): EffectHandl
 }
 
 /** Attach a charred paper overlay without erasing or deforming the source. */
-export function attachBurnedPaper(target: Element, options: BurnedPaperOptions): EffectHandle {
+export function attachBurnedPaper(
+  target: Element,
+  options: BurnedPaperOptions,
+): BurnedPaperEffectHandle {
   return attachBurnedPaperWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -74,7 +81,7 @@ export function attachBurnedPaper(target: Element, options: BurnedPaperOptions):
 }
 
 /** Attach an ordered-dot edge and rising dither wisps without erasing the source. */
-export function attachDither(target: Element, options: DitherOptions): EffectHandle {
+export function attachDither(target: Element, options: DitherOptions): ColorEffectHandle {
   return attachDitherWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -82,7 +89,7 @@ export function attachDither(target: Element, options: DitherOptions): EffectHan
 }
 
 /** Attach the halftone pattern exploration to a captured silhouette. */
-export function attachHalftone(target: Element, options: PatternOptions): EffectHandle {
+export function attachHalftone(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'halftone', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -90,7 +97,7 @@ export function attachHalftone(target: Element, options: PatternOptions): Effect
 }
 
 /** Attach the stipple pattern exploration to a captured silhouette. */
-export function attachStipple(target: Element, options: PatternOptions): EffectHandle {
+export function attachStipple(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'stipple', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -98,7 +105,7 @@ export function attachStipple(target: Element, options: PatternOptions): EffectH
 }
 
 /** Attach the scanlines pattern exploration to a captured silhouette. */
-export function attachScanlines(target: Element, options: PatternOptions): EffectHandle {
+export function attachScanlines(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'scanlines', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -106,7 +113,7 @@ export function attachScanlines(target: Element, options: PatternOptions): Effec
 }
 
 /** Attach the crosshatch pattern exploration to a captured silhouette. */
-export function attachCrosshatch(target: Element, options: PatternOptions): EffectHandle {
+export function attachCrosshatch(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'crosshatch', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -114,7 +121,7 @@ export function attachCrosshatch(target: Element, options: PatternOptions): Effe
 }
 
 /** Attach the diamond lattice pattern exploration to a captured silhouette. */
-export function attachDiamonds(target: Element, options: PatternOptions): EffectHandle {
+export function attachDiamonds(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'diamonds', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -122,7 +129,10 @@ export function attachDiamonds(target: Element, options: PatternOptions): Effect
 }
 
 /** Attach the contour echoes pattern exploration to a captured silhouette. */
-export function attachContourEchoes(target: Element, options: ContourEchoesOptions): EffectHandle {
+export function attachContourEchoes(
+  target: Element,
+  options: ContourEchoesOptions,
+): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'contour-echoes', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -130,7 +140,7 @@ export function attachContourEchoes(target: Element, options: ContourEchoesOptio
 }
 
 /** Attach the engraving exploration to a captured silhouette. */
-export function attachEngraving(target: Element, options: PatternOptions): EffectHandle {
+export function attachEngraving(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'engraving', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -138,7 +148,7 @@ export function attachEngraving(target: Element, options: PatternOptions): Effec
 }
 
 /** Attach the woven mesh exploration to a captured silhouette. */
-export function attachWovenMesh(target: Element, options: PatternOptions): EffectHandle {
+export function attachWovenMesh(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'woven-mesh', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -146,7 +156,7 @@ export function attachWovenMesh(target: Element, options: PatternOptions): Effec
 }
 
 /** Attach the hexagonal dissolve exploration to a captured silhouette. */
-export function attachHexagons(target: Element, options: PatternOptions): EffectHandle {
+export function attachHexagons(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'hexagons', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -154,7 +164,7 @@ export function attachHexagons(target: Element, options: PatternOptions): Effect
 }
 
 /** Attach the wave interference exploration to a captured silhouette. */
-export function attachInterference(target: Element, options: PatternOptions): EffectHandle {
+export function attachInterference(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'interference', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -162,7 +172,7 @@ export function attachInterference(target: Element, options: PatternOptions): Ef
 }
 
 /** Attach the prismatic shards exploration to a captured silhouette. */
-export function attachShards(target: Element, options: PatternOptions): EffectHandle {
+export function attachShards(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'shards', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -170,7 +180,7 @@ export function attachShards(target: Element, options: PatternOptions): EffectHa
 }
 
 /** Attach the circuit traces exploration to a captured silhouette. */
-export function attachCircuits(target: Element, options: PatternOptions): EffectHandle {
+export function attachCircuits(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'circuits', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -178,7 +188,7 @@ export function attachCircuits(target: Element, options: PatternOptions): Effect
 }
 
 /** Attach the star shimmer exploration to a captured silhouette. */
-export function attachStarShimmer(target: Element, options: PatternOptions): EffectHandle {
+export function attachStarShimmer(target: Element, options: PatternOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'star-shimmer', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -186,7 +196,7 @@ export function attachStarShimmer(target: Element, options: PatternOptions): Eff
 }
 
 /** Attach the brush fringe exploration to a captured silhouette. */
-export function attachBrushFringe(target: Element, options: BrushFringeOptions): EffectHandle {
+export function attachBrushFringe(target: Element, options: BrushFringeOptions): ColorEffectHandle {
   return attachPatternWithAdapters(target, 'brush-fringe', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -201,6 +211,13 @@ export type {
 } from './pattern-options.js';
 export type { DitherOptions } from './dither-options.js';
 export type { BurnedPaperOptions } from './burned-paper-options.js';
+export type {
+  BurnedPaperEffectHandle,
+  ColorEffectHandle,
+  FireEffectHandle,
+  FrostEffectHandle,
+} from './effect-controls.js';
+export type { ColorAttachmentOptions } from './color-options.js';
 export type { SlimeOptions } from './slime-options.js';
 export type { KineticOptions } from './kinetic-options.js';
 export type { FireOptions } from './fire-options.js';

@@ -3,8 +3,15 @@ import type { EffectHandle, EffectReason } from '@domfx/core';
 import { type captureElementWithReservation, measureCapture } from './browser.js';
 import type { BurnedPaperOptions } from './burned-paper-options.js';
 import { createCaptureRevisions } from './capture-revision.js';
+import { parseEffectColor, type EffectColor } from './color.js';
 import { diagnosticsFor } from './diagnostics.js';
 import type { DitherOptions } from './dither-options.js';
+import type {
+  BurnedPaperEffectHandle,
+  ColorEffectHandle,
+  FireEffectHandle,
+  FrostEffectHandle,
+} from './effect-controls.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
 import {
   assertEffectPaintMargin,
@@ -16,7 +23,7 @@ import type { ElectricityOptions } from './electricity-options.js';
 import { energyExtentPadding, energyExtentSupport } from './energy-geometry.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
-import type { RenderEffect } from './gpu.js';
+import type { EffectControls, RenderEffect } from './gpu.js';
 import type { KineticOptions } from './kinetic-options.js';
 import {
   materialExtentOptions,
@@ -47,13 +54,67 @@ import type { SlimeOptions } from './slime-options.js';
 
 const owners = new WeakMap<Document, Set<Element>>();
 
-function finite(value: number, effect: RenderEffect): number {
-  if (!Number.isFinite(value) || !Number.isFinite(Math.fround(value))) {
+function finite(value: unknown, effect: RenderEffect): number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isFinite(Math.fround(value))
+  ) {
     throw new Error(`invalid-${effect}-parameter`);
   }
 
   return value;
 }
+
+function normalizedControl(value: unknown, effect: RenderEffect): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+
+  // Clamp before the value crosses the float32 transport boundary. A finite
+  // JavaScript number such as Number.MAX_VALUE is a valid normalized mix.
+  return Math.max(0, Math.min(1, value));
+}
+
+function creationControl(
+  value: unknown | undefined,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+  effect: RenderEffect,
+): number {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  const resolved = finite(value, effect);
+  if (resolved < minimum || resolved > maximum) {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+
+  return resolved;
+}
+
+function colorControl(value: unknown, effect: RenderEffect): EffectColor | undefined {
+  try {
+    return parseEffectColor(value);
+  } catch {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+}
+
+type AttachmentRequest =
+  | { effect: 'fire'; options: FireOptions }
+  | { effect: 'electricity'; options: ElectricityOptions }
+  | { effect: 'frost'; options: FrostOptions }
+  | { effect: 'kinetic'; options: KineticOptions }
+  | { effect: 'slime'; options: SlimeOptions }
+  | { effect: 'burned-paper'; options: BurnedPaperOptions }
+  | { effect: 'dither'; options: DitherOptions }
+  | {
+      effect: PatternEffect;
+      options: PatternOptions | ContourEchoesOptions | BrushFringeOptions;
+    };
 
 /** Internal adapter seam for controlled lifecycle verification in the lab. */
 export interface AttachmentAdapters {
@@ -64,18 +125,37 @@ export interface AttachmentAdapters {
 
 export function attachWithAdapters(
   target: Element,
-  request:
-    | { effect: 'fire'; options: FireOptions }
-    | { effect: 'electricity'; options: ElectricityOptions }
-    | { effect: 'frost'; options: FrostOptions }
-    | { effect: 'kinetic'; options: KineticOptions }
-    | { effect: 'slime'; options: SlimeOptions }
-    | { effect: 'burned-paper'; options: BurnedPaperOptions }
-    | { effect: 'dither'; options: DitherOptions }
-    | {
-        effect: PatternEffect;
-        options: PatternOptions | ContourEchoesOptions | BrushFringeOptions;
-      },
+  request: { effect: 'fire'; options: FireOptions },
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): FireEffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: { effect: 'frost'; options: FrostOptions },
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): FrostEffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: { effect: 'slime'; options: SlimeOptions },
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): ColorEffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: { effect: 'burned-paper'; options: BurnedPaperOptions },
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): BurnedPaperEffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: AttachmentRequest,
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): EffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: AttachmentRequest,
   adapters: AttachmentAdapters,
   measurePlacement = measureEffectPlacement,
 ): EffectHandle {
@@ -118,6 +198,26 @@ export function attachWithAdapters(
   const patternOptions = { ...options };
   const patternGeometry = resolvePatternGeometry(effect, patternOptions, 0, 0);
   const seed = finite(options.seed === undefined ? 0 : options.seed, effect);
+  let mistOpacity = 1;
+  let emberGlow = 1;
+  let emberDensity = 1;
+  if (request.effect === 'frost') {
+    mistOpacity =
+      request.options.mistOpacity === undefined
+        ? 1
+        : normalizedControl(request.options.mistOpacity, effect);
+  } else if (request.effect === 'fire') {
+    emberDensity = creationControl(request.options.emberDensity, 1, 0, 1, effect);
+  } else if (request.effect === 'burned-paper') {
+    emberGlow =
+      request.options.emberGlow === undefined
+        ? 1
+        : normalizedControl(request.options.emberGlow, effect);
+  }
+  let color: EffectColor | undefined;
+  if (request.effect !== 'burned-paper') {
+    color = colorControl(request.options.color, effect);
+  }
   const flameReach = request.effect === 'fire' ? request.options.flameReach : undefined;
   const dripDensity =
     request.effect === 'slime' && request.options.dripDensity !== undefined
@@ -574,10 +674,14 @@ export function attachWithAdapters(
       intersectionObserver.observe(target);
     }
     checkMutations(observer.takeRecords());
-    if (checkComposition() && syncVisibility() && revisions.raster === 'fresh') {
-      // Re-entry must place the retained raster before making it visible. It
-      // does not itself change pixels or the caller's manual/paused time.
-      scheduler.schedule(commit);
+    if (checkComposition() && syncVisibility()) {
+      if (revisions.raster === 'fresh') {
+        // Re-entry must place the retained raster before making it visible. It
+        // does not itself change pixels or the caller's manual/paused time.
+        scheduler.schedule(commit);
+      } else if (revisions.raster === 'stale') {
+        scheduler.schedule(refreshObserved);
+      }
     }
   }
 
@@ -784,6 +888,7 @@ export function attachWithAdapters(
         effect,
         geometry,
         dripDensity,
+        { mistOpacity, emberDensity, emberGlow, color } satisfies EffectControls,
       );
       prepared.present(output.getCurrentTexture());
       dirty = false;
@@ -1008,7 +1113,7 @@ export function attachWithAdapters(
   initialize();
   const ready = revisions.start();
 
-  return {
+  const handle: EffectHandle = {
     ready,
     refresh,
     retry,
@@ -1091,13 +1196,55 @@ export function attachWithAdapters(
 
     dispose,
   };
+
+  if (effect === 'frost') {
+    Object.defineProperty(handle, 'mistOpacity', {
+      configurable: true,
+      enumerable: true,
+      get: () => mistOpacity,
+      set: (value: unknown) => {
+        mistOpacity = normalizedControl(value, effect);
+        invalidate();
+      },
+    });
+  } else if (effect === 'fire') {
+    Object.defineProperty(handle, 'emberDensity', {
+      configurable: true,
+      enumerable: true,
+      get: () => emberDensity,
+    });
+  } else if (effect === 'burned-paper') {
+    Object.defineProperty(handle, 'emberGlow', {
+      configurable: true,
+      enumerable: true,
+      get: () => emberGlow,
+      set: (value: unknown) => {
+        emberGlow = normalizedControl(value, effect);
+        invalidate();
+      },
+    });
+  }
+
+  if (effect !== 'burned-paper') {
+    Object.defineProperty(handle, 'color', {
+      configurable: true,
+      enumerable: true,
+      get: () => color?.css,
+      set: (value: unknown) => {
+        color = colorControl(value, effect);
+        invalidate();
+      },
+    });
+  }
+
+  return handle;
 }
 
 export function attachFireWithAdapters(
   target: Element,
   options: FireOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
+): FireEffectHandle {
   return attachWithAdapters(target, { effect: 'fire', options }, adapters);
 }
 
@@ -1105,15 +1252,19 @@ export function attachElectricityWithAdapters(
   target: Element,
   options: ElectricityOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
-  return attachWithAdapters(target, { effect: 'electricity', options }, adapters);
+): ColorEffectHandle {
+  return attachWithAdapters(
+    target,
+    { effect: 'electricity', options },
+    adapters,
+  ) as ColorEffectHandle;
 }
 
 export function attachFrostWithAdapters(
   target: Element,
   options: FrostOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
+): FrostEffectHandle {
   return attachWithAdapters(target, { effect: 'frost', options }, adapters);
 }
 
@@ -1121,15 +1272,15 @@ export function attachKineticWithAdapters(
   target: Element,
   options: KineticOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
-  return attachWithAdapters(target, { effect: 'kinetic', options }, adapters);
+): ColorEffectHandle {
+  return attachWithAdapters(target, { effect: 'kinetic', options }, adapters) as ColorEffectHandle;
 }
 
 export function attachSlimeWithAdapters(
   target: Element,
   options: SlimeOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
+): ColorEffectHandle {
   return attachWithAdapters(target, { effect: 'slime', options }, adapters);
 }
 
@@ -1137,7 +1288,7 @@ export function attachBurnedPaperWithAdapters(
   target: Element,
   options: BurnedPaperOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
+): BurnedPaperEffectHandle {
   return attachWithAdapters(target, { effect: 'burned-paper', options }, adapters);
 }
 
@@ -1145,8 +1296,8 @@ export function attachDitherWithAdapters(
   target: Element,
   options: DitherOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
-  return attachWithAdapters(target, { effect: 'dither', options }, adapters);
+): ColorEffectHandle {
+  return attachWithAdapters(target, { effect: 'dither', options }, adapters) as ColorEffectHandle;
 }
 
 export function attachPatternWithAdapters(
@@ -1154,6 +1305,6 @@ export function attachPatternWithAdapters(
   effect: PatternEffect,
   options: PatternOptions | ContourEchoesOptions | BrushFringeOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
-  return attachWithAdapters(target, { effect, options }, adapters);
+): ColorEffectHandle {
+  return attachWithAdapters(target, { effect, options }, adapters) as ColorEffectHandle;
 }

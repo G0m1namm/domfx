@@ -2,10 +2,18 @@
 import piercedRing from '../assets/brand/pierced-ring.png';
 import { effects, type Effect } from '@domfx/site/effects';
 import EffectSetting from '@domfx/site/components/effect-setting.astro';
-import { effectCreationFields, intensityField } from '@domfx/site/effect-extent';
+import EffectColorSetting from '@domfx/site/components/effect-color-setting.astro';
+import {
+  effectCreationFields,
+  effectColorField,
+  effectSettingApiValue,
+  effectWritableFields,
+  intensityField,
+} from '@domfx/site/effect-extent';
 import { localeFromPath } from '@domfx/site/locale';
 
 import { docsMessages } from '../content/docs-messages';
+import DocsPreview from './DocsPreview.astro';
 
 type Subject = 'text' | 'svg' | 'image';
 interface Props {
@@ -26,7 +34,9 @@ const gallerySubjects: Subject[] = ['image', 'text', 'svg', 'text', 'svg'];
 const { effect, heading, description } = Astro.props;
 const subject = Astro.props.subject ?? (effect.id === 'fire' || effect.id === 'slime' ? 'image' : gallerySubjects[effects.indexOf(effect) % gallerySubjects.length]);
 const id = `docs-lab-${effect.id}`;
-const fields = effectCreationFields(effect);
+const creationFields = effectCreationFields(effect);
+const writableFields = effectWritableFields(effect);
+const colorField = effectColorField(effect);
 // Spread so SVG accepts the global hidden attribute, which its typings omit.
 const visibility = (kind: Subject) => (kind === subject ? {} : { hidden: true });
 const intensity = 80;
@@ -37,8 +47,8 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
 
 <section class="docs-lab not-content" data-docs-lab data-effect={effect.id} data-category={effect.category} data-status="suspended" data-paused="false" aria-labelledby={heading ? `${id}-title` : undefined} aria-label={heading ? undefined : effectLabel(messages.livePreview)}>
   {heading && <div class="docs-lab-heading"><h3 id={`${id}-title`}>{heading}</h3>{description && <p>{description}</p>}</div>}
-  <div class="docs-lab-stage">
-    <div class="docs-lab-host" data-docs-lab-host>
+  <DocsPreview id={id}>
+    <div class="docs-lab-host" data-docs-lab-host data-docs-preview-camera>
       <span class="docs-lab-subject docs-lab-text" data-docs-lab-target="text" {...visibility('text')}>domfx</span>
       <svg class="docs-lab-subject docs-lab-svg" data-docs-lab-target="svg" {...visibility('svg')} width="132" height="132" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg>
       <img class="docs-lab-subject docs-lab-image" data-docs-lab-target="image" {...visibility('image')} src={piercedRing.src} width="200" height="150" alt="" decoding="async" />
@@ -47,7 +57,7 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
       <p class="docs-lab-status" aria-live="polite"><span class="docs-lab-dot" aria-hidden="true"></span><span data-docs-lab-status>{messages.needsGpu}</span></p>
       <button type="button" class="docs-lab-toggle" data-docs-lab-toggle aria-pressed="false" aria-label={messages.start} title={messages.start} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-play"/></svg></button>
     </div>
-  </div>
+  </DocsPreview>
   <fieldset class="docs-lab-controls effect-settings" data-docs-lab-controls disabled>
     <legend class="visually-hidden">{effectLabel(messages.settings)}</legend>
     <div class="docs-lab-row">
@@ -57,14 +67,17 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
       </div>
     </div>
     <EffectSetting field={intensityField} locale={locale} id={`${id}-intensity`} value={intensity} inputAttributes={{ 'data-docs-lab-intensity': true }}/>
-    {fields.map((field) => <EffectSetting field={field} locale={locale} id={`${id}-${field.name}`} inputAttributes={{ 'data-docs-lab-extent': field.name }}/>) }
+    {colorField && <EffectColorSetting locale={locale} id={`${id}-color`} inputAttributes={{ 'data-docs-lab-color': true }}/>}
+    {creationFields.map((field) => <EffectSetting field={field} locale={locale} id={`${id}-${field.name}`} inputAttributes={{ 'data-docs-lab-extent': field.name }}/>) }
+    {writableFields.map((field) => <EffectSetting field={field} locale={locale} id={`${id}-${field.name}`} inputAttributes={{ 'data-docs-lab-writable': field.name }}/>) }
   </fieldset>
   <div class="docs-lab-code">
     <div class="docs-lab-code-bar"><span>{messages.currentSettings}</span><button type="button" class="docs-lab-copy" data-docs-lab-copy><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg><span data-docs-lab-copy-label>{messages.copy}</span></button></div>
     <pre tabindex="0" aria-label={effectLabel(messages.liveSettings)}><code data-docs-lab-code>{`const effect = ${effect.exportName}(target, {
   host, clock: 'auto', motion: 'respect',
-  intensity: `}<output data-docs-lab-intensity-code>{intensity / 100}</output>{','}{fields.map((field) => <>{`\n  ${field.name}: `}<output data-docs-lab-extent-code={field.name}>{field.example}</output>{','}</>)}{`
+  intensity: `}<output data-docs-lab-intensity-code>{intensity / 100}</output>{','}{creationFields.map((field) => <>{`\n  ${field.name}: `}<output data-docs-lab-extent-code={field.name}>{effectSettingApiValue(field, String(field.defaultValue))}</output>{','}</>)}{`
+`}<span data-docs-lab-color-code></span>{`
   seed: 314,
-});`}</code></pre>
+});`}{writableFields.map((field) => <>{`\neffect.${field.name} = `}<output data-docs-lab-writable-code={field.name}>{effectSettingApiValue(field, String(field.defaultValue))}</output>{';'}</>)}</code></pre>
   </div>
 </section>

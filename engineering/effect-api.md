@@ -52,6 +52,13 @@ seeks; no extra frame loop or onUpdate copy is required. Keep GSAP outside core
 and browser. Resource ownership remains explicit: a tween's lifetime is not its
 target's lifetime. Register teardown before asynchronous initialization settles.
 
+For `color`, first assign an explicit supported opaque color string, then interpolate
+between explicit opaque color strings. An unset color is `undefined` and preserves
+the authored palette; it is not a tween endpoint. Use `fromTo()` with the initialized
+first color, then native `.to()` calls can read the current color. Stop color tweens
+before resetting to `undefined`. Color writes retain the existing capture, geometry
+and GPU resources.
+
 The optional snapshot bindings preserve their existing starts and proxy targets
 under both generic and Fire-named exports. They add scoped disposal and cancellation
 of late results. They are not registered property plugins. Do not change these

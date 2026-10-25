@@ -5,6 +5,7 @@ import { localeFromPath } from '@domfx/site/locale';
 
 import { docsMessages } from '../content/docs-messages';
 import { codeTheme, gsapSequenceCode } from '../content/examples';
+import DocsPreview from './DocsPreview.astro';
 
 const messages = docsMessages(localeFromPath(Astro.url.pathname)).gsapLab;
 const id = 'docs-gsap';
@@ -15,12 +16,12 @@ const id = 'docs-gsap';
     <h3 id={`${id}-title`}>{messages.title}</h3>
     <p>{messages.introduction}</p>
   </div>
-  <div class="docs-lab-stage">
-    <div class="docs-lab-host" data-gsap-host>
+  <DocsPreview id={id}>
+    <div class="docs-lab-host" data-gsap-host data-docs-preview-camera>
       <button type="button" class="docs-gsap-target" data-gsap-target>{messages.target}</button>
     </div>
     <p class="docs-gsap-clicks">{messages.clicks}: <output data-gsap-clicks aria-live="off">0</output></p>
-  </div>
+  </DocsPreview>
   <div class="docs-gsap-panel">
     <p class="docs-gsap-status" role="status" data-gsap-status>{messages.needsGpu}</p>
     <div class="docs-gsap-actions" role="group" aria-label={messages.controls}>

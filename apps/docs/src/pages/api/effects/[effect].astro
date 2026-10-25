@@ -8,7 +8,7 @@ import DocsSharedOptions from '../../../components/docs-shared-options.astro';
 import { effectReference, patternExtentReference } from '@domfx/site/effect-reference';
 import DocsPatternOptions from '../../../components/docs-pattern-options.astro';
 import DocsExtentOptions from '../../../components/docs-extent-options.astro';
-import { effectExtentReference } from '@domfx/site/effect-extent';
+import { effectCreationFields, effectExtentReference } from '@domfx/site/effect-extent';
 import { effects, type Effect } from '@domfx/site/effects';
 import { localeFromPath } from '@domfx/site/locale';
 import { effectReferenceEs } from '../../../content/effect-reference-es';
@@ -30,8 +30,23 @@ const docsPrefix = isEs ? '/docs/es' : '/docs';
 const related = effects.filter((entry) => entry.category === effect.category && entry.id !== effect.id);
 const patternExtent = patternExtentReference(effect);
 const extent = effectExtentReference(effect);
-const optionsType = extent?.optionsType ?? `${effect.exportName.slice('attach'.length)}Options`;
-const extentCode = extent?.fields.map((field) => `\n  ${field.name}: ${field.example},`).join('') ?? '';
+const optionsType =
+  patternExtent?.optionsType ?? extent?.optionsType ?? `${effect.exportName.slice('attach'.length)}Options`;
+let handleType = 'ColorEffectHandle';
+switch (effect.exportName) {
+  case 'attachFrost':
+    handleType = 'FrostEffectHandle';
+    break;
+  case 'attachFire':
+    handleType = 'FireEffectHandle';
+    break;
+  case 'attachBurnedPaper':
+    handleType = 'BurnedPaperEffectHandle';
+    break;
+}
+const extentCode = effectCreationFields(effect)
+  .map((field) => `\n  ${field.name}: ${field.defaultValue / field.scale},`)
+  .join('');
 const code = `import { ${effect.exportName} } from '@domfx/browser';
 import type { ${optionsType} } from '@domfx/browser';
 
@@ -66,28 +81,32 @@ if (effect.lifecycle !== 'active') {
     <div><dt>{isEs ? 'Paquete' : 'Package'}</dt><dd><code>@domfx/browser</code></dd></div>
   </dl>
   <h2 id="usage">{isEs ? 'Uso' : 'Usage'}</h2>
-  <p><code>{`${effect.exportName}(target: Element, options: ${optionsType}): EffectHandle`}</code></p>
+  <p><code>{`${effect.exportName}(target: Element, options: ${optionsType}): ${handleType}`}</code></p>
   <p>{isEs ? 'Devuelve una instancia de efecto de inmediato. Las importaciones son seguras durante el renderizado en servidor; llama a la función en el navegador después de montar los elementos. La' : 'Returns an effect instance immediately. Imports are safe during server rendering; call the function in the browser after the elements are mounted. The'} <a href={`${docsPrefix}/standalone`}>{isEs ? 'guía de uso independiente' : 'Standalone guide'}</a> {isEs ? 'incluye el HTML y CSS necesarios.' : 'includes the required HTML and CSS.'}</p>
   <div class="docs-code-scroll" tabindex="0" role="region" aria-label={isEs ? `Uso de ${effect.name}` : `${effect.name} usage`}><Code code={code} lang="ts" theme={codeTheme} /></div>
   <h2 id="effect-options">{isEs ? 'Opciones del efecto' : 'Effect options'}</h2>
   {patternExtent && <DocsPatternOptions effect={effect} />}
   {!patternExtent && effect.id !== 'fire' && <DocsExtentOptions effect={effect} />}
   {effect.id === 'fire' ? <>
-    <p><code>FireOptions</code> {isEs ? 'amplía' : 'extends'} <code>AttachmentOptions</code> {isEs ? 'con dos opciones de creación excluyentes.' : 'with two mutually exclusive creation options.'}</p>
+    <p><code>FireOptions</code> {isEs ? 'amplía' : 'extends'} <code>AttachmentOptions</code> {isEs ? 'con dos opciones geométricas de creación excluyentes.' : 'with two mutually exclusive geometry creation options.'}</p>
     <DocsApiTable label={isEs ? 'Opciones de creación específicas de Fire' : 'Fire-specific creation options'}>
       <thead><tr><th scope="col">{isEs ? 'Propiedad' : 'Property'}</th><th scope="col">{isEs ? 'Tipo' : 'Type'}</th><th scope="col">{isEs ? 'Predeterminado' : 'Default'}</th></tr></thead>
       <tbody><tr><th scope="row"><code>flameReach</code><p>{isEs ? 'Fracción finita no negativa de la altura del border box sin transformar, incluidos los márgenes transparentes. 0.1 equivale a 10 px CSS en un objetivo de 100 px y a 40 px en uno de 400 px. Limita la distancia exterior y el recorrido ascendente; no garantiza una punta visible en cada fotograma. La intensidad cambia la fuerza, sin cambiar el alcance ni el detalle fino. Cero produce salida transparente. Solo al crear la instancia; se recalcula en cada captura tras un cambio de tamaño. No se puede combinar con flameHeight.' : 'Finite nonnegative fraction of the untransformed target border-box height, including transparent margins. 0.1 means 10 CSS px on a 100 px target and 40 px on a 400 px target. Bounds exterior distance and upward travel; it does not guarantee a visible tip in every frame. Intensity changes strength independently of reach and fine detail. Zero produces transparent output. Creation-only; resolved again on capture after resize. Cannot be combined with flameHeight.'}</p></th><td><code>number</code></td><td>{isEs ? 'Omitido (modo anterior)' : 'Omitted (legacy mode)'}</td></tr><tr><th scope="row"><code>flameHeight</code><p>{isEs ? 'Escala de las llamas en píxeles CSS del sistema de coordenadas del elemento objetivo, de 8 a 64. Es una escala artística, no una extensión máxima garantizada en píxeles. Se fija al crear el efecto; cambiarla requiere otra instancia.' : 'Flame scale in target-local CSS pixels, from 8 to 64. This is an artistic scale, not a guaranteed maximum pixel extent. Set at creation; changing it requires a new effect instance.'}</p></th><td><code>number</code></td><td><code>24</code></td></tr></tbody>
+    </DocsApiTable>
+    <DocsApiTable label={isEs ? 'Densidad de brasas de Fire' : 'Fire ember density'}>
+      <thead><tr><th scope="col">{isEs ? 'Propiedad' : 'Property'}</th><th scope="col">{isEs ? 'Tipo y rango' : 'Type and range'}</th><th scope="col">{isEs ? 'Predeterminado' : 'Default'}</th></tr></thead>
+      <tbody><tr><th scope="row"><code>emberDensity</code><p>{isEs ? 'Selecciona cuántas brasas aparecen sin cambiar el tamaño ni el recorrido de las restantes. Es una opción de creación: usa una instancia nueva para cambiarla. La instancia expone el valor resuelto como solo lectura.' : 'Selects fixed seeded ember sites without moving survivors or changing their glow. This is a creation option: use a new instance to change it. The instance exposes the resolved value as read-only.'}</p></th><td><code>number</code> · 0–1</td><td><code>1</code></td></tr></tbody>
     </DocsApiTable>
   </> : null}
   <h2 id="shared-options">{isEs ? 'Opciones compartidas' : 'Shared options'}</h2>
   <DocsSharedOptions />
   <h2 id="controls">{isEs ? 'Controles' : 'Controls'}</h2>
   <p>{reference.intensity}</p>
-  <DocsEffectControls />
+  <DocsEffectControls effect={effect} />
   <p>{isEs ? 'Consulta la sección sobre' : 'See'} <a href={`${docsPrefix}/api/shared#animation-control`}>{isEs ? 'animación automática y control externo' : 'automatic animation and external control'}</a> {isEs ? 'y la' : 'and the'} <a href={`${docsPrefix}/gsap`}>{isEs ? 'guía de GSAP' : 'GSAP guide'}</a>. {isEs ? 'La' : 'The'} <a href={`${docsPrefix}/api/effect-handle`}>{isEs ? 'referencia de la instancia de efecto' : 'effect instance reference'}</a> {isEs ? 'documenta el estado, las actualizaciones de captura y la liberación de recursos.' : 'documents state, capture updates and cleanup.'}</p>
   <h2 id="limits">{isEs ? 'Límites' : 'Limits'}</h2>
   <p>{isEs ? 'El efecto sigue la forma visible capturada, incluidos los huecos y las regiones separadas. Una imagen opaca tiene una forma rectangular. La capa decorativa conserva intacto el contenido original.' : 'The effect follows the captured visible shape, including holes and disconnected regions. An opaque image has a rectangular shape. The decorative layer leaves the original content intact.'}</p>
-  <p>{isEs ? 'Solo las opciones enumeradas son públicas: no se pueden configurar colores, degradados, cantidad de partículas ni procesamiento del elemento completo. Mantén utilizable el contenido original cuando la salida no esté disponible. Para los límites de WebGPU, captura y composición, consulta' : 'Only the listed options are public: colors, gradients, particle counts and whole-element processing are not configurable. Keep the original content usable when output is unavailable. For WebGPU, capture and composition limits, see'} <a href={`${docsPrefix}/support`}>{isEs ? 'compatibilidad con navegadores' : 'browser support'}</a> {isEs ? 'y' : 'and'} <a href={`${docsPrefix}/troubleshooting`}>{isEs ? 'solución de problemas' : 'troubleshooting'}</a>.</p>
+  <p>{isEs ? 'Solo las opciones enumeradas son públicas. Todos los efectos salvo Burned paper permiten configurar un color decorativo principal; los degradados, la cantidad de partículas y el procesamiento del elemento completo no se pueden configurar. Mantén utilizable el contenido original cuando la salida no esté disponible. Para los límites de WebGPU, captura y composición, consulta' : 'Only the listed options are public. Every effect except Burned paper permits one main decorative color; gradients, particle counts and whole-element processing are not configurable. Keep the original content usable when output is unavailable. For WebGPU, capture and composition limits, see'} <a href={`${docsPrefix}/support`}>{isEs ? 'compatibilidad con navegadores' : 'browser support'}</a> {isEs ? 'y' : 'and'} <a href={`${docsPrefix}/troubleshooting`}>{isEs ? 'solución de problemas' : 'troubleshooting'}</a>.</p>
   {effect.id === 'fire' && <p>{isEs ? 'flameReach reserva un margen simétrico independiente de la intensidad: alcance + 2 px CSS de pintura exterior + una protección de muestreo de 2 px CSS y 2 píxeles de trama, redondeado hacia arriba y con un mínimo de 8 px CSS. Solo admite cajas descendientes contenidas y pintura dentro del border box más 2 px CSS; no admite sombras, filtros, contornos ni pseudoelementos generados. Comprueba todo el alfa capturado y rechaza el margen insuficiente con missing-exterior. Los límites existentes de un millón de píxeles, memoria y dimensiones del dispositivo pueden producir capture-budget u otro estado no disponible; no se recorta el alcance ni se reduce la calidad. La conversión fraccional de trama y el DPR se aplican una vez; las traslaciones y escalas positivas admitidas solo cambian la colocación.' : 'flameReach reserves symmetric padding independently of intensity: reach + 2 CSS px of paint overflow + a sampling guard of 2 CSS px and 2 raster pixels, rounded up with an 8 CSS px minimum. Requires contained descendant boxes and paint within the border box plus 2 CSS px; shadows, filters, outlines and generated pseudo-elements are unsupported. Every captured alpha sample is checked; insufficient margin reports missing-exterior. Existing one-million-pixel, memory and device-dimension limits can report capture-budget or another unavailable state; reach and quality are never silently reduced. Fractional raster mapping and DPR apply once; supported translation and positive scale change placement only.'}</p>}
   <h2 id="related">{isEs ? `Más efectos de ${category.toLowerCase()}` : `More ${effect.category.toLowerCase()} effects`}</h2>
   <DocsEffectLinks effects={related} />

@@ -60,6 +60,38 @@ for (const target of ['text', 'svg', 'image']) {
   }
 }
 
+for (const target of ['text', 'svg', 'image']) {
+  for (const dpr of [1, 2]) {
+    test(`non-Fire defaults retain immutable raw RGBA on ${target} at DPR ${dpr}`, async ({
+      page,
+    }) => {
+      await page.goto('/effects.html');
+      await page.waitForFunction(() => Boolean(window.renderEffects));
+      const result = await page.evaluate(([target, dpr]) => window.renderEffects(target, dpr), [
+        target,
+        dpr,
+      ] as const);
+      const samples = result.samples.filter(
+        (sample, index) => sample.effect !== 'fire' && index % 3 !== 2,
+      );
+      expect(samples).toHaveLength(40);
+      const baselineDirectory = resolve(
+        import.meta.dirname,
+        '../../../.scratch/effect-controls-specs/legacy-baseline',
+      );
+      for (const sample of samples) {
+        const path = resolve(
+          baselineDirectory,
+          `${target}-${dpr}-${sample.effect}-${sample.time}.rgba`,
+        );
+        expect(Buffer.from(sample.pixels, 'base64').equals(await readFile(path)), path).toBe(true);
+      }
+      expect(result.errors).toEqual([]);
+      expect(result.cleanup.managedBytes).toBe(0);
+    });
+  }
+}
+
 test('public attachments trace target/revision stages through real presentation', async ({
   page,
 }) => {

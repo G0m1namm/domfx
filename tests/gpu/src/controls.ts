@@ -1,3 +1,5 @@
+import { gsap } from 'gsap';
+
 import {
   attachBurnedPaper,
   attachFire,
@@ -14,6 +16,7 @@ declare global {
       halftone: typeof attachHalftone;
       slime: typeof attachSlime;
       'burned-paper': typeof attachBurnedPaper;
+      gsap: typeof gsap;
     };
   }
 }
@@ -24,4 +27,5 @@ window.controlEffects = {
   halftone: attachHalftone,
   slime: attachSlime,
   'burned-paper': attachBurnedPaper,
+  gsap,
 };

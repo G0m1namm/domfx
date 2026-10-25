@@ -59,23 +59,25 @@ fn rootHeight(p: vec2f, bend: f32) -> f32 {
   // Each column emits occasional embers from an upward-facing silhouette edge.
   // Absolute-time lifetimes preserve seeking, reverse playback and seed determinism.
   var ember = 0.0;
-  let column = floor(p.x / 12);
-  for (var neighbor = -1; neighbor <= 1; neighbor++) {
-    let id = column + f32(neighbor);
-    let random = hash(vec2f(id, seed + 53));
-    if (random > intensity * .6 * controls.material.y) { continue; }
-    let age = fract(time * .65 + hash(vec2f(id + 17, seed)));
-    let emitterX = (id + hash(vec2f(id, seed + 9))) * 12;
-    let drift = sin(age * 5 + random * 6) * age * 2;
-    let dx = p.x - emitterX - drift;
-    if (abs(dx) > 2) { continue; }
-    let source = vec2f(emitterX, p.y + age * 28) * params.w;
-    let dy = field(source);
-    let facing = field(source - vec2f(0, params.w)) - field(source + vec2f(0, params.w));
-    let radius = .35 + random * .4;
-    let spark = exp(-dx * dx / (radius * radius) - dy * dy / .7);
-    ember = max(ember, spark * smoothstep(.5, 1.5, facing)
-                * smoothstep(0, .12, age) * (1 - smoothstep(.65, 1, age)));
+  if (controls.material.y > 0) {
+    let column = floor(p.x / 12);
+    for (var neighbor = -1; neighbor <= 1; neighbor++) {
+      let id = column + f32(neighbor);
+      let random = hash(vec2f(id, seed + 53));
+      if (random > intensity * .6 * controls.material.y) { continue; }
+      let age = fract(time * .65 + hash(vec2f(id + 17, seed)));
+      let emitterX = (id + hash(vec2f(id, seed + 9))) * 12;
+      let drift = sin(age * 5 + random * 6) * age * 2;
+      let dx = p.x - emitterX - drift;
+      if (abs(dx) > 2) { continue; }
+      let source = vec2f(emitterX, p.y + age * 28) * params.w;
+      let dy = field(source);
+      let facing = field(source - vec2f(0, params.w)) - field(source + vec2f(0, params.w));
+      let radius = .35 + random * .4;
+      let spark = exp(-dx * dx / (radius * radius) - dy * dy / .7);
+      ember = max(ember, spark * smoothstep(.5, 1.5, facing)
+                  * smoothstep(0, .12, age) * (1 - smoothstep(.65, 1, age)));
+    }
   }
   ember *= exterior * intensity;
   let emberAlpha = min(ember, .9);

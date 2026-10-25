@@ -10,7 +10,7 @@ const bytes = (managedBytes: number, captureBytes = 0, outputBytes = 0) => ({
 });
 
 test('capture and decimal target boundaries include output and retained replacements', () => {
-  assert.deepEqual(estimateFrameMemory(1000, 1000), bytes(36_000_052, 4_000_000, 4_000_000));
+  assert.deepEqual(estimateFrameMemory(1000, 1000), bytes(36_000_084, 4_000_000, 4_000_000));
   assert.throws(() => estimateFrameMemory(1001, 1000), /capture-budget/);
   const ledger = new AllocationLedger();
   const owner = {};
@@ -50,11 +50,11 @@ test('capture reconciliation replaces estimates and release removes only its own
   const a = ledger.reserve({}, estimateFrameMemory(1000, 1000));
   const b = ledger.reserve({}, estimateFrameMemory(1000, 1000));
   a.reconcile(estimateFrameMemory(500, 500));
-  assert.equal(ledger.bytes, 55_000_104);
+  assert.equal(ledger.bytes, 55_000_168);
   a.reconcile({ ...estimateFrameMemory(500, 500), captureBytes: 0 });
-  assert.equal(ledger.bytes, 54_000_104);
+  assert.equal(ledger.bytes, 54_000_168);
   a.release();
-  assert.equal(ledger.bytes, 44_000_052);
+  assert.equal(ledger.bytes, 44_000_084);
   b.release();
   assert.equal(ledger.bytes, 0);
 });

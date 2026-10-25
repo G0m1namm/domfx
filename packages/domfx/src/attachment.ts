@@ -75,7 +75,13 @@ function normalizedControl(
     return fallback;
   }
 
-  return Math.max(0, Math.min(1, finite(value, effect)));
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+
+  // Clamp before the value crosses the float32 transport boundary. A finite
+  // JavaScript number such as Number.MAX_VALUE is a valid normalized mix.
+  return Math.max(0, Math.min(1, value));
 }
 
 function creationControl(
@@ -1154,7 +1160,7 @@ export function attachWithAdapters(
     },
 
     set mistOpacity(value) {
-      mistOpacity = Math.max(0, Math.min(1, finite(value, effect)));
+      mistOpacity = normalizedControl(value, 1, effect);
       invalidate();
     },
 
@@ -1171,7 +1177,7 @@ export function attachWithAdapters(
     },
 
     set gloss(value) {
-      gloss = Math.max(0, Math.min(1, finite(value, effect)));
+      gloss = normalizedControl(value, 1, effect);
       invalidate();
     },
 
@@ -1180,7 +1186,7 @@ export function attachWithAdapters(
     },
 
     set emberGlow(value) {
-      emberGlow = Math.max(0, Math.min(1, finite(value, effect)));
+      emberGlow = normalizedControl(value, 1, effect);
       invalidate();
     },
 

@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev --host 127.0.0.1",
-    "build": "astro build",
+    "build": "astro build --force",
     "preview": "astro preview --host 127.0.0.1",
     "typecheck": "astro check",
     "test": "node --experimental-strip-types --test src/scripts/*.test.mjs",

@@ -1,7 +1,7 @@
 # Releases
 
 The first alpha uses Changesets, a reviewed release PR and manual publication of
-verified tarballs. The three libraries are published as experimental `0.1.0-alpha.1`. All other workspaces remain private. Hosted publication
+verified tarballs. The three libraries are published as experimental `0.1.0-alpha.2`. All other workspaces remain private. Hosted publication
 is disabled.
 Repository visibility and npm publication are separate maintainer actions.
 

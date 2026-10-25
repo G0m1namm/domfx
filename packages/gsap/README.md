@@ -4,7 +4,7 @@ Start with the [consumer quickstart](https://github.com/G0m1namm/domfx/blob/main
 for npm installation and a tested GSAP walkthrough.
 
 Optional, experimental binding for a manual domfx attachment and a caller-owned
-GSAP 3.15 timeline. Install it with `pnpm add -E @domfx/gsap@0.1.0-alpha.1 gsap@3.15.0`.
+GSAP 3.15 timeline. Use the quickstart’s pinned versions for installation.
 GSAP is a peer dependency supplied by the consumer. Core and browser imports remain
 GSAP-free. This adapter imports only core types and GSAP, with no browser/GPU internals.
 

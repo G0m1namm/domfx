@@ -33,8 +33,8 @@ Run `mkdir my-domfx-preview`, then `cd my-domfx-preview`. Save this as `package.
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "0.1.0-alpha.1",
-    "@domfx/browser": "0.1.0-alpha.1"
+    "@domfx/core": "0.1.0-alpha.2",
+    "@domfx/browser": "0.1.0-alpha.2"
   },
   "devDependencies": { "typescript": "5.9.3", "vite": "7.3.7" }
 }
@@ -155,7 +155,7 @@ container and animates effect time and intensity with a timeline you own.
 The guide includes seeking, reverse playback and cleanup during setup.
 
 Native property tweens need only GSAP and `@domfx/browser`. Install
-`@domfx/gsap@0.1.0-alpha.1` only if you need its
+`@domfx/gsap@0.1.0-alpha.2` only if you need its
 [optional snapshot helpers](https://domfx.dev/docs/api/gsap/#snapshot-bindings).
 A borrowed timeline stays with its owner; remove only your own child tweens.
 
@@ -177,8 +177,7 @@ limits and [the API](https://domfx.dev/docs/api/) for placement and capture rest
 
 ### Target-relative extent
 
-These additive options are implemented in this branch and await release. Check
-the installed package declarations before using them with the pinned npm version.
+These additive options are available in `0.1.0-alpha.2`.
 
 Use `flameReach: 0.1` instead of `flameHeight` for creation-only reach of 10% of
 the untransformed target border-box height. In this mode intensity changes strength

@@ -61,7 +61,10 @@ After an unchanged `pnpm check`, use `pnpm release:preflight:built --base origin
 to reuse its library build. The base is required so detached checkouts cannot silently
 compare against the wrong branch.
 The preflight rejects a release plan that omits changed publishable library inputs, including
-source, README, license, changelog, package metadata or declared exports. It is read-only:
+source, README, license, changelog, package metadata or declared exports. After Changesets
+consumes the plan, a preparation PR may contain only a version-only manifest bump to
+the next alpha and a matching changelog heading for each package; other packed-input
+changes still require an active changeset. It is read-only:
 registry metadata, package versions and distribution tags are not changed.
 
 ## Local artifact rehearsal

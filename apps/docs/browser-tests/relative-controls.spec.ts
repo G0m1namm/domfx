@@ -1,7 +1,32 @@
 import { expect, test } from '@playwright/test';
 
-import { effectCreationFields } from '@domfx/site/effect-extent';
+import {
+  effectCreationFields,
+  effectSettingApiValue,
+  effectWritableFields,
+} from '@domfx/site/effect-extent';
 import { effects } from '@domfx/site/effects';
+
+function changedControlValue(field: ReturnType<typeof effectCreationFields>[number]) {
+  if (field.kind === 'preset') {
+    return '100';
+  }
+  if (field.unit === 'css-px') {
+    return '12';
+  }
+  return '17';
+}
+
+function presetLabel(name: string, locale: 'en' | 'es') {
+  if (name === 'dripDensity') {
+    return locale === 'es' ? 'Media' : 'Medium';
+  }
+  return locale === 'es' ? 'Completa' : 'Full';
+}
+
+function presetValues(name: string) {
+  return name === 'dripDensity' ? ['0', '20', '56', '100'] : ['0', '50', '100'];
+}
 
 for (const locale of ['en', 'es'] as const) {
   const prefix = locale === 'es' ? '/docs/es' : '/docs';
@@ -23,27 +48,28 @@ for (const locale of ['en', 'es'] as const) {
       await expect(lab.locator('[data-docs-lab-extent]')).toHaveCount(fields.length);
       for (const field of fields) {
         await expect(lab.locator(`[data-docs-lab-extent="${field.name}"]`)).toHaveValue(
-          String(Math.round(field.example * 100)),
+          String(field.defaultValue),
         );
         const input = lab.locator(`[data-docs-lab-extent="${field.name}"]`);
         await expect(input).toHaveAccessibleName(new RegExp(`^${field.name}`));
         if (field.kind === 'preset') {
-          await expect(input.locator('option:checked')).toHaveText(
-            locale === 'es' ? 'Media' : 'Medium',
-          );
+          await expect(input.locator('option:checked')).toHaveText(presetLabel(field.name, locale));
           expect(
             await input
               .locator('option')
               .evaluateAll((options) => options.map((option) => option.getAttribute('value'))),
-          ).toEqual(['0', '20', '56', '100']);
+          ).toEqual(presetValues(field.name));
         } else {
           await expect(lab.locator(`[data-effect-setting-output="${field.name}"]`)).toHaveText(
-            `${Math.round(field.example * 100)}%`,
+            field.unit === 'css-px' ? `${field.defaultValue} px` : `${field.defaultValue}%`,
           );
-          await expect(input).toHaveAttribute('aria-valuetext', /% .+/);
+          await expect(input).toHaveAttribute(
+            'aria-valuetext',
+            field.unit === 'css-px' ? /px .+/ : /% .+/,
+          );
         }
         await expect(lab.locator('[data-docs-lab-code]')).toContainText(
-          `${field.name}: ${field.example}`,
+          `${field.name}: ${effectSettingApiValue(field, String(field.defaultValue))}`,
         );
         await expect(page.locator('#effect-options + p').first()).toBeVisible();
         await expect(page.locator('main')).toContainText(field.name);
@@ -96,14 +122,25 @@ for (const locale of ['en', 'es'] as const) {
         if (field.kind === 'preset') {
           await input.selectOption('100');
         } else {
-          await input.fill('17');
+          await input.fill(changedControlValue(field));
         }
         await expect(lab.locator(`[data-docs-lab-extent-code="${field.name}"]`)).toHaveText(
-          field.kind === 'preset' ? '1' : '0.17',
+          effectSettingApiValue(field, changedControlValue(field)).toString(),
         );
         await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
         await expect(lab).toHaveAttribute('data-status', 'active');
         await expect(lab.locator('canvas')).toHaveCount(1);
+      }
+      for (const field of effectWritableFields(effect)) {
+        const previous = await lab.locator('canvas').elementHandle();
+        if (!previous) {
+          throw new Error(`Missing writable output: ${effect.id}`);
+        }
+        await lab.locator(`[data-docs-lab-writable="${field.name}"]`).fill('40');
+        expect(await previous.evaluate((canvas) => canvas.isConnected)).toBe(true);
+        await expect(lab.locator('[data-docs-lab-code]')).toContainText(
+          `effect.${field.name} = 0.4`,
+        );
       }
       await lab.locator('[data-docs-lab-copy]').click();
       const copied = await page.locator('html').getAttribute('data-copied-settings');
@@ -111,7 +148,7 @@ for (const locale of ['en', 'es'] as const) {
       expect(copied, effect.id).toContain('intensity: 0.45');
       for (const field of fields) {
         expect(copied, effect.id).toContain(
-          `${field.name}: ${field.kind === 'preset' ? '1' : '0.17'}`,
+          `${field.name}: ${effectSettingApiValue(field, changedControlValue(field))}`,
         );
       }
       for (const subject of ['text', 'svg', 'image']) {

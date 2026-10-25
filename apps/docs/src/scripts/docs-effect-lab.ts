@@ -1,11 +1,21 @@
 import {
   effectCreationFields,
+  effectSettingApiValue,
+  effectSettingDisplayValue,
   effectSettingValueText,
+  effectWritableFields,
   intensityField,
-  type EffectCreationField,
+  isEffectCreationName,
+  isEffectWritableName,
+  type EffectCreationName,
+  type EffectWritableName,
 } from '@domfx/site/effect-extent';
 import type { EffectStatus } from '@domfx/site/effect-slot';
-import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
+import {
+  createEffectEnvironment,
+  createEffectSlot,
+  setEffectWritableControl,
+} from '@domfx/site/effect-slot';
 import { findEffect, type Effect } from '@domfx/site/effects';
 import { localeFromPath } from '@domfx/site/locale';
 import { initializePage } from '@domfx/site/page-lifetime';
@@ -61,6 +71,12 @@ function initializeLab(
     output: lab.querySelector<HTMLOutputElement>(`[data-effect-setting-output="${field.name}"]`),
     code: required<HTMLOutputElement>(`[data-docs-lab-extent-code="${field.name}"]`, lab),
   }));
+  const writableInputs = effectWritableFields(effect).map((field) => ({
+    field,
+    input: required<HTMLInputElement>(`[data-docs-lab-writable="${field.name}"]`, lab),
+    output: required<HTMLOutputElement>(`[data-effect-setting-output="${field.name}"]`, lab),
+    code: required<HTMLOutputElement>(`[data-docs-lab-writable-code="${field.name}"]`, lab),
+  }));
   const status = required<HTMLElement>('[data-docs-lab-status]', lab);
   const toggle = required<HTMLButtonElement>('[data-docs-lab-toggle]', lab);
   const toggleIcon = required<SVGUseElement>('use', toggle);
@@ -94,11 +110,17 @@ function initializeLab(
     setFill(intensityInput);
     for (const { field, input, output, code } of extentInputs) {
       if (input instanceof HTMLInputElement && output) {
-        output.value = `${input.value}%`;
+        output.value = effectSettingDisplayValue(field, input.value);
         input.setAttribute('aria-valuetext', effectSettingValueText(field, input.value, locale));
         setFill(input);
       }
-      code.value = String(Number(input.value) / 100);
+      code.value = String(effectSettingApiValue(field, input.value));
+    }
+    for (const { field, input, output, code } of writableInputs) {
+      output.value = effectSettingDisplayValue(field, input.value);
+      input.setAttribute('aria-valuetext', effectSettingValueText(field, input.value, locale));
+      code.value = String(effectSettingApiValue(field, input.value));
+      setFill(input);
     }
   }
 
@@ -158,9 +180,19 @@ function initializeLab(
     if (!visible) {
       return;
     }
-    const extents: Partial<Record<EffectCreationField['name'], number>> = {};
-    for (const { name, input } of extentInputs) {
-      extents[name] = Number(input.value) / 100;
+    const extents: Partial<Record<EffectCreationName, number>> = {};
+    for (const { name, field, input } of extentInputs) {
+      if (!isEffectCreationName(name)) {
+        throw new Error(`Unknown creation control: ${name}`);
+      }
+      extents[name] = effectSettingApiValue(field, input.value);
+    }
+    const writable: Partial<Record<EffectWritableName, number>> = {};
+    for (const { field, input } of writableInputs) {
+      if (!isEffectWritableName(field.name)) {
+        throw new Error(`Unknown writable control: ${field.name}`);
+      }
+      writable[field.name] = effectSettingApiValue(field, input.value);
     }
     return slot.show(currentTarget(), effect, () => ({
       clock: 'auto',
@@ -168,6 +200,7 @@ function initializeLab(
       intensity: intensity(),
       seed: SEED,
       ...extents,
+      ...writable,
     }));
   }
 
@@ -236,6 +269,23 @@ function initializeLab(
   for (const { input } of extentInputs) {
     input.addEventListener('input', updateValues, { signal });
     input.addEventListener('change', () => void attach(), { signal });
+  }
+  for (const { field, input } of writableInputs) {
+    input.addEventListener(
+      'input',
+      () => {
+        updateValues();
+        if (slot.handle) {
+          setEffectWritableControl(
+            effect,
+            slot.handle,
+            field,
+            effectSettingApiValue(field, input.value),
+          );
+        }
+      },
+      { signal },
+    );
   }
   for (const subject of subjects) {
     subject.addEventListener('change', () => selectSubject(subject.value), { signal });

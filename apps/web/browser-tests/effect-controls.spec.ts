@@ -1,7 +1,30 @@
 import { expect, test } from '@playwright/test';
 
-import { effectCreationFields } from '@domfx/site/effect-extent';
+import {
+  effectCreationFields,
+  effectSettingApiValue,
+  effectWritableFields,
+} from '@domfx/site/effect-extent';
 import { effects } from '@domfx/site/effects';
+
+function changedControlValue(field: ReturnType<typeof effectCreationFields>[number]) {
+  if (field.kind === 'preset') {
+    return '100';
+  }
+  if (field.unit === 'css-px') {
+    return '12';
+  }
+  return '17';
+}
+
+function presetLabels(name: string, locale: 'en' | 'es') {
+  if (name === 'dripDensity') {
+    return locale === 'es'
+      ? ['Sin gotas', 'Baja', 'Media', 'Alta']
+      : ['None', 'Low', 'Medium', 'High'];
+  }
+  return locale === 'es' ? ['Sin brasas', 'Media', 'Completa'] : ['None', 'Half', 'Full'];
+}
 
 for (const locale of ['en', 'es'] as const) {
   for (const gallery of [false, true]) {
@@ -41,15 +64,14 @@ for (const locale of ['en', 'es'] as const) {
         for (const field of fields) {
           const input = controls.locator(`[data-creation-option="${field.name}"]`);
           await expect(input).toHaveAccessibleName(new RegExp(`^${field.name}`));
-          await expect(input).toHaveValue(String(Math.round(field.example * 100)));
+          await expect(input).toHaveValue(String(field.defaultValue));
           if (field.kind === 'preset') {
-            await expect(input.locator('option')).toHaveText(
-              locale === 'es'
-                ? ['Sin gotas', 'Baja', 'Media', 'Alta']
-                : ['None', 'Low', 'Medium', 'High'],
-            );
+            await expect(input.locator('option')).toHaveText(presetLabels(field.name, locale));
           } else {
-            await expect(input).toHaveAttribute('aria-valuetext', /% .+/);
+            await expect(input).toHaveAttribute(
+              'aria-valuetext',
+              field.unit === 'css-px' ? /px .+/ : /% .+/,
+            );
             const aligned = await input.evaluate((element) => {
               const row = element.closest('.effect-setting');
               const label = row?.querySelector('.effect-setting-label')?.getBoundingClientRect();
@@ -70,7 +92,7 @@ for (const locale of ['en', 'es'] as const) {
           if (field.kind === 'preset') {
             await input.selectOption('100');
           } else {
-            await input.fill('17');
+            await input.fill(changedControlValue(field));
           }
           await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
           await expect(dialog.locator('.dialog-stage'), effect.id).toHaveAttribute(
@@ -79,12 +101,26 @@ for (const locale of ['en', 'es'] as const) {
           );
           await expect(dialog.locator('canvas')).toHaveCount(1);
         }
+        for (const field of effectWritableFields(effect)) {
+          const previous = await dialog.locator('canvas').elementHandle();
+          if (!previous) {
+            throw new Error(`Missing writable canvas for ${effect.id}`);
+          }
+          const input = dialog.locator(`[data-writable-option="${field.name}"]`);
+          await input.fill('40');
+          expect(await previous.evaluate((canvas) => canvas.isConnected)).toBe(true);
+          await expect(dialog.locator('[data-code]')).toContainText(`effect.${field.name} = 0.4`);
+        }
         await dialog.locator('[data-copy-code]').click();
         const copied = await page.locator('html').getAttribute('data-copied-settings');
         expect(copied).toContain(effect.exportName);
         expect(copied).toContain('intensity: 0.45');
         for (const field of fields) {
-          expect(copied).toContain(`${field.name}: ${field.name === 'dripDensity' ? '1' : '0.17'}`);
+          const value = changedControlValue(field);
+          expect(copied).toContain(`${field.name}: ${effectSettingApiValue(field, value)}`);
+        }
+        for (const field of effectWritableFields(effect)) {
+          expect(copied).toContain(`effect.${field.name} = 0.4`);
         }
         await page.keyboard.press('Escape');
         await expect(dialog).not.toBeVisible();

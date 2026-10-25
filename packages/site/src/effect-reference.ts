@@ -9,12 +9,14 @@ export const effectReference = {
       'Changes electrical strength and brightness; it does not move the strands. With contourSpread, scales premultiplied output independently of spread and detail.',
   },
   frost: {
-    description: 'A white-blue ice coating with pale smoke and small frost particles.',
+    description:
+      'A white-blue ice coating with pale smoke and small frost particles. Writable mistOpacity changes smoke opacity without changing the coating or grains.',
     intensity:
       'Legacy mode extends frost inward and strengthens mist and particles. With coatingDepth or mistReach, intensity scales strength only; omitted extents are zero.',
   },
   fire: {
-    description: 'Warm flames and sparks rise from the visible shape.',
+    description:
+      'Warm flames and sparks rise from the visible shape. Creation-only emberDensity selects fixed seeded ember sites; the resolved value is read-only on the handle.',
     intensity:
       'With flameReach, scales visual strength without changing reach or fine detail. Omitted flameReach preserves legacy intensity and flameHeight behavior.',
   },
@@ -24,7 +26,8 @@ export const effectReference = {
       'With extent options omitted: Increases dot density, inward coverage and outward reach. In relative mode, intensity scales opacity without changing extent or marks.',
   },
   slime: {
-    description: 'A glossy green coating with drips that stretch and fall.',
+    description:
+      'A glossy green coating with drips that stretch and fall. Writable gloss changes highlights without moving the coating or drip contours.',
     intensity:
       'Legacy mode changes coating and drip geometry. With coatingDepth or dripReach, intensity scales strength only; omitted extents are zero.',
   },
@@ -35,12 +38,14 @@ export const effectReference = {
       'With fragmentTravel, scales premultiplied strength while pulse/wake coverage, fragment travel and fine fragment size stay fixed. Omission retains legacy pulse-width and fragment behavior.',
   },
   'burned-paper': {
-    description: 'An uneven charred rim with brown scorching and sparse glowing seams.',
+    description:
+      'An uneven charred rim with brown scorching and sparse glowing seams. Writable emberGlow changes the glow without removing char or scorching.',
     intensity:
       'Legacy mode spreads scorching inward and strengthens ash. With scorchDepth or ashReach, intensity scales strength only; omitted extents are zero. The original content remains intact.',
   },
   halftone: {
-    description: 'Halftone dots follow the edge.',
+    description:
+      'Halftone dots follow the edge. Creation-only dotSpacing sets local CSS-pixel pitch and proportionally scales dot radius without extending support.',
     intensity:
       'With extent options omitted: Strengthens the pattern and extends its reach. In relative mode, intensity scales opacity without changing extent or marks.',
   },

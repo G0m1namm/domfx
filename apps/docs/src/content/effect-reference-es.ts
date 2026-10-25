@@ -9,12 +9,13 @@ export const effectReferenceEs = {
   },
   frost: {
     description:
-      'Una capa de hielo blanco azulado con humo tenue y pequeñas partículas de escarcha.',
+      'Una capa de hielo blanco azulado con humo tenue y pequeñas partículas de escarcha. mistOpacity, modificable, cambia la opacidad de la niebla sin alterar la capa ni los granos.',
     intensity:
       'El modo anterior extiende la escarcha hacia dentro y refuerza la niebla y las partículas. Con coatingDepth o mistReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero.',
   },
   fire: {
-    description: 'Llamas cálidas y chispas se elevan desde la forma visible.',
+    description:
+      'Llamas cálidas y chispas se elevan desde la forma visible. emberDensity, definido al crear, selecciona ubicaciones fijas de brasas sembradas; la instancia expone el valor resuelto como solo lectura.',
     intensity:
       'Con flameReach, cambia la fuerza visual sin cambiar el alcance ni el detalle fino. Omitir flameReach conserva la intensidad y flameHeight anteriores.',
   },
@@ -24,7 +25,8 @@ export const effectReferenceEs = {
       'Sin opciones de extensión: Aumenta la densidad de puntos, la cobertura interior y el alcance exterior. En modo relativo, intensity escala la opacidad sin cambiar la extensión ni las marcas.',
   },
   slime: {
-    description: 'Una capa verde brillante con gotas que se estiran y caen.',
+    description:
+      'Una capa verde brillante con gotas que se estiran y caen. gloss, modificable, cambia los brillos sin mover los contornos de la capa ni las gotas.',
     intensity:
       'El modo anterior cambia la geometría de la capa y las gotas. Con coatingDepth o dripReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero.',
   },
@@ -36,12 +38,13 @@ export const effectReferenceEs = {
   },
   'burned-paper': {
     description:
-      'Un borde carbonizado irregular con zonas quemadas marrones y algunas grietas luminosas.',
+      'Un borde carbonizado irregular con zonas quemadas marrones y algunas grietas luminosas. emberGlow, modificable, cambia el brillo sin eliminar el carbón ni la quemadura.',
     intensity:
       'El modo anterior extiende la quemadura hacia dentro y refuerza la ceniza. Con scorchDepth o ashReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero. El contenido original permanece intacto.',
   },
   halftone: {
-    description: 'Puntos de semitono siguen el borde.',
+    description:
+      'Puntos de semitono siguen el borde. dotSpacing, definido al crear, fija el espaciado local en píxeles CSS y escala el radio proporcionalmente sin ampliar el soporte.',
     intensity:
       'Sin opciones de extensión: Refuerza el patrón y amplía su alcance. En modo relativo, intensity escala la opacidad sin cambiar la extensión ni las marcas.',
   },

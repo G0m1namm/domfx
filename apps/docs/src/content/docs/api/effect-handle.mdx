@@ -6,7 +6,7 @@ description: "Read effect state, update the captured image and release resources
 import DocsEffectMethods from "../../../components/docs-effect-methods.astro";
 import DocsEffectState from "../../../components/docs-effect-state.astro";
 
-<p>An effect instance (<code>EffectHandle</code>) is returned immediately by every effect function. Keep it to control animation, check setup results and release resources. <a href="/docs/api/shared#control-playback">Time and intensity</a> are its writable controls.</p>
+<p>An effect instance (<code>EffectHandle</code>) is returned immediately by every effect function. Keep it to control animation, check setup results and release resources. <a href="/docs/api/shared#control-playback">Time and intensity</a> are its writable controls. The Frost, Slime and Burned paper typed handles also expose <code>mistOpacity</code>, <code>gloss</code> and <code>emberGlow</code>; Fire and Halftone typed handles expose their resolved creation-only <code>emberDensity</code> and <code>dotSpacing</code> as read-only.</p>
 
 <span id="read-state" />
 

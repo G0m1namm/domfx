@@ -709,6 +709,20 @@ above the default add extra emission locations. It is not an exact drop count or
 emission rate. Drop size, travel and timing stay unchanged. It works with legacy
 and relative extents, and does not enable relative mode by itself.
 
+### Selected artistic controls
+
+Frost `mistOpacity`, Slime `gloss` and Burned paper `emberGlow` are writable finite
+normalized values. They default to `1`; assignments clamp to 0–1 and schedule the
+next frame without recapturing the target. Invalid writes throw and preserve the
+previous value.
+
+Fire `emberDensity` is creation-only, finite from 0 to 1 and defaults to `1`.
+It selects fixed seeded ember sites without moving the surviving embers or changing
+their glow. Halftone `dotSpacing` is creation-only, finite from 3 to 12 local CSS
+pixels and defaults to `5.5`; it changes pitch and proportionally scales dot radius
+without extending support. Both creation-only values are readable on their typed
+effect handles; dispose before attaching a replacement to change either value.
+
 The extent values above are examples, not defaults. Supplying either field selects relative
 mode and defaults its omitted partner to **zero**. Zero disables that component;
 both zero produce transparent output. Omit both for the original sizing and

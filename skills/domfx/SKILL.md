@@ -49,6 +49,15 @@ density, independent of size, travel and timing. Zero disables drips; higher val
 add more locations, including extra emission locations above the default. It works
 in legacy and relative modes and does not opt into relative geometry by itself.
 
+When the installed declarations expose the selected artistic controls, keep creation
+and writable semantics distinct. Frost `mistOpacity`, Slime `gloss` and Burned paper
+`emberGlow` are writable normalized values (default `1`): assignments clamp to 0–1,
+render on the next frame and do not recapture. Invalid writes throw and retain the
+previous value. Fire `emberDensity` is creation-only (finite 0–1, default `1`) and
+Halftone `dotSpacing` is creation-only (finite 3–12 local CSS pixels, default `5.5`);
+dispose before replacement to change them. The corresponding typed handles expose
+the resolved creation value as read-only.
+
 Relative extents are finite nonnegative numeric fractions of the untransformed target border
 box, excluding capture padding; transparent image margins count. `0.1` means 10%,
 not 10 pixels. Resolve again after resize. All omitted retains legacy behavior;

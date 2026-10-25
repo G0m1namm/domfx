@@ -1,9 +1,32 @@
 ---
 import { localeFromPath } from '@domfx/site/locale';
+import { effectWritableFields } from '@domfx/site/effect-extent';
+import type { Effect } from '@domfx/site/effects';
 
 import DocsApiTable from './DocsApiTable.astro';
 
+interface Props { effect?: Effect; }
+const { effect } = Astro.props;
 const isEs = localeFromPath(Astro.url.pathname) === 'es';
+const fields = effect ? effectWritableFields(effect) : [];
+function description(name: string) {
+  switch (name) {
+    case 'mistOpacity':
+      return isEs
+        ? 'Opacidad de la niebla; no cambia la capa de hielo ni sus granos.'
+        : 'Mist opacity; it does not change the ice coating or grains.';
+    case 'gloss':
+      return isEs
+        ? 'Intensidad de los brillos; no mueve los contornos de la capa ni las gotas.'
+        : 'Highlight strength; it does not move coating or drip contours.';
+    case 'emberGlow':
+      return isEs
+        ? 'Brillo de las brasas; no elimina el carbón ni la quemadura.'
+        : 'Ember glow; it does not remove char or scorching.';
+    default:
+      throw new Error(`Unknown writable control: ${name}`);
+  }
+}
 ---
 <p>{isEs ? 'Lee y modifica estas propiedades de la instancia de efecto. Los cambios pueden leerse de inmediato. Cuando la salida está disponible, se dibujan en el siguiente fotograma sin volver a capturar el elemento.' : 'Read and write these properties on the effect instance. Writes are immediately readable. When output is available, they render on the next frame without recapturing the target.'}</p>
 <DocsApiTable label={isEs ? 'Controles modificables del efecto' : 'Writable effect controls'}>
@@ -11,6 +34,7 @@ const isEs = localeFromPath(Astro.url.pathname) === 'es';
   <tbody>
     <tr><th scope="row"><code>time</code><p>{isEs ? 'Tiempo del efecto en segundos. Permite avanzar y retroceder, incluso a tiempos negativos.' : 'Effect time in seconds. Supports forward and backward seeking, including negative time.'}</p></th><td><code>number</code></td></tr>
     <tr><th scope="row"><code>intensity</code><p>{isEs ? 'Intensidad del efecto, limitada al intervalo de 0 a 1 después de validar el valor. No es un ajuste universal de altura ni de opacidad.' : 'Effect strength, clamped to 0–1 after validation. It is not a universal height or opacity setting.'}</p></th><td><code>number</code></td></tr>
+    {fields.map((field) => <tr><th scope="row"><code>{field.name}</code><p>{description(field.name)}</p></th><td><code>number</code> · 0–1 · <code>1</code></td></tr>)}
   </tbody>
 </DocsApiTable>
-<p>{isEs ? 'Ambos valores deben ser finitos y representables como float32. Usa un solo controlador por propiedad: asignaciones directas, una línea de tiempo u otro controlador de animación.' : 'Both values must be finite and representable as float32. Use one writer per property: direct assignments, a timeline or another animation driver.'}</p>
+<p>{isEs ? 'Todos los valores deben ser finitos y representables como float32. intensity y los controles específicos se limitan a 0–1; una asignación no válida genera un error y conserva el valor anterior. Usa un solo controlador por propiedad: asignaciones directas, una línea de tiempo u otro controlador de animación.' : 'Every value must be finite and representable as float32. intensity and effect-specific controls clamp to 0–1; an invalid assignment throws and preserves the previous value. Use one writer per property: direct assignments, a timeline or another animation driver.'}</p>

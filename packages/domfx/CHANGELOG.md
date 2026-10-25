@@ -20,6 +20,9 @@
 
 ### Patch Changes
 
+- 39966bc: Recover visible stale effects after fast viewport re-entry when a delayed native
+  intersection callback misses the offscreen position. Retain paused/manual time
+  and capture once on recovery without polling hidden targets.
 - b9125a5: Keep opt-in relative captures at exact DPR and rasterize supported bounded source paint independently of effect padding, preserving PNG silhouettes and procedural phase as extent changes. Reject escaping direct and boxless text before bounded rasterization, while allowing logical font rectangles inside the finite source guard. Existing allocation gates and omitted-option output remain unchanged.
 - d94b29b: Recover a visible effect after its initial capture becomes stale during viewport entry.
 - Updated dependencies

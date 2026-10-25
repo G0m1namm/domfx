@@ -194,6 +194,117 @@ test('selected effect controls validate, retain state and change only their inte
   });
 });
 
+test('public handles expose only their owned controls at runtime', async ({ page }) => {
+  await page.goto('/controls.html');
+  await page.waitForFunction(() => Boolean(window.controlEffects));
+  const result = await page.evaluate(async () => {
+    const host = document.querySelector<HTMLElement>('#host')!;
+    const target = document.querySelector<HTMLElement>('#target')!;
+    const controls = ['mistOpacity', 'emberDensity', 'dotSpacing', 'gloss', 'emberGlow'];
+    const settle = () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    const attachments = [
+      {
+        name: 'frost',
+        key: 'mistOpacity',
+        value: 0,
+        attach: () => window.controlEffects.frost(target, { host, time: 2 }),
+      },
+      {
+        name: 'fire',
+        key: 'emberDensity',
+        value: 0,
+        attach: () => window.controlEffects.fire(target, { host, time: 2 }),
+      },
+      {
+        name: 'halftone',
+        key: 'dotSpacing',
+        value: 3,
+        attach: () => window.controlEffects.halftone(target, { host, time: 2 }),
+      },
+      {
+        name: 'slime',
+        key: 'gloss',
+        value: 0,
+        attach: () => window.controlEffects.slime(target, { host, time: 2 }),
+      },
+      {
+        name: 'burned-paper',
+        key: 'emberGlow',
+        value: 0,
+        attach: () => window.controlEffects['burned-paper'](target, { host, time: 2 }),
+      },
+      {
+        name: 'electricity',
+        key: undefined,
+        value: undefined,
+        attach: () => window.controlEffects.electricity(target, { host, time: 2 }),
+      },
+    ];
+
+    const values = [];
+    for (const attachment of attachments) {
+      const handle = attachment.attach();
+      await handle.ready;
+      let write: { accepted: boolean; value: unknown } | null = null;
+      if (attachment.key !== undefined && attachment.value !== undefined) {
+        const accepted = Reflect.set(handle, attachment.key, attachment.value);
+        await settle();
+        write = { accepted, value: Reflect.get(handle, attachment.key) };
+      }
+      values.push({
+        name: attachment.name,
+        controls: controls.filter((key) => key in handle),
+        absent: controls.filter((key) => !(key in handle)),
+        write,
+      });
+      handle.dispose();
+    }
+    return values;
+  });
+
+  expect(result).toEqual([
+    {
+      name: 'frost',
+      controls: ['mistOpacity'],
+      absent: ['emberDensity', 'dotSpacing', 'gloss', 'emberGlow'],
+      write: { accepted: true, value: 0 },
+    },
+    {
+      name: 'fire',
+      controls: ['emberDensity'],
+      absent: ['mistOpacity', 'dotSpacing', 'gloss', 'emberGlow'],
+      write: { accepted: false, value: 1 },
+    },
+    {
+      name: 'halftone',
+      controls: ['dotSpacing'],
+      absent: ['mistOpacity', 'emberDensity', 'gloss', 'emberGlow'],
+      write: { accepted: false, value: 5.5 },
+    },
+    {
+      name: 'slime',
+      controls: ['gloss'],
+      absent: ['mistOpacity', 'emberDensity', 'dotSpacing', 'emberGlow'],
+      write: { accepted: true, value: 0 },
+    },
+    {
+      name: 'burned-paper',
+      controls: ['emberGlow'],
+      absent: ['mistOpacity', 'emberDensity', 'dotSpacing', 'gloss'],
+      write: { accepted: true, value: 0 },
+    },
+    {
+      name: 'electricity',
+      controls: [],
+      absent: ['mistOpacity', 'emberDensity', 'dotSpacing', 'gloss', 'emberGlow'],
+      write: null,
+    },
+  ]);
+});
+
 test('writable controls coalesce through the existing frame scheduler', async ({ page }) => {
   await page.goto('/controls.html');
   await page.waitForFunction(() => Boolean(window.controlEffects));

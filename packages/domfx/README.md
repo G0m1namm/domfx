@@ -220,7 +220,8 @@ effect.dispose(); // Safe before ready, and safe to call twice.
 `host` must be a connected, positioned HTML element and `target` a strict descendant
 in the same document. Duplicate or nested target ownership throws synchronously,
 as do invalid options, non-HTML or unpositioned hosts and nonfinite/out-of-float32-range
-parameters. Rejected calls never claim ownership. Unavailable attachments release their
+time, seed, intensity or creation-only numeric parameters. Finite normalized effect
+controls instead clamp to `[0, 1]`. Rejected calls never claim ownership. Unavailable attachments release their
 claim automatically; a later attachment can use the target without disposing the failed
 handle first. Disposing that old handle cannot release the new attachment's claim.
 Seed defaults to `0`,
@@ -361,10 +362,10 @@ There is no per-frame capture or automatic retry after failure. Observer-trigger
 failures update lifecycle, raster health and diagnostics through the same refresh
 contract, without an unhandled promise rejection. Disposal removes observers/listeners
 and cancels queued captures. Document hiding suspends existing output and resumes it
-when visible; paint invalidated while hidden or offscreen needs explicit refresh once
-visible. Initial attachment or explicit refresh while offscreen leaves stale output
-suspended; call `refresh()` once the target is in view. Visibility changes invalidate
-pending captures/preparations, whose late results are released without presentation.
+when visible. After a stale capture, observed visibility re-entry schedules a fresh
+capture automatically. This does not retry an unavailable or failed effect; visibility
+changes invalidate pending captures/preparations, whose late results are released without
+presentation.
 
 Zero width or height suspends output with stale raster health. Initial zero size
 does not capture or prepare a GPU frame; retained output stays hidden while zero-sized.
@@ -462,8 +463,9 @@ Retry rechecks target/host connection, ownership, positioned host, supported com
 reduced motion, visibility, asset readiness and allocation budgets. An unavailable handle
 releases its target claim; if a replacement owns that target or an overlapping subtree,
 retry reports `effect-target-owned` without disturbing the replacement. Offscreen retry
-stays suspended with stale raster health; visibility alone does not commit stale paint.
-Call `refresh()` or `retry()` when visible. Static motion continues to render at time zero.
+stays suspended with stale raster health; visibility re-entry can refresh stale capture,
+but unavailable or failed effects still need an explicit retry after their condition is
+corrected. Static motion continues to render at time zero.
 
 Retry invalidates pending refresh promises with `refresh-invalidated`. Refresh during a
 retry cannot start another generation and rejects (`effect-retrying`, or the current

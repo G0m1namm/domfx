@@ -9,6 +9,7 @@ import type {
   BurnedPaperEffectHandle,
   FireEffectHandle,
   FrostEffectHandle,
+  HalftoneEffectHandle,
   SlimeEffectHandle,
 } from './effect-controls.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
@@ -95,13 +96,18 @@ function creationControl(
   return resolved;
 }
 
-interface EffectControlHandle extends EffectHandle {
-  mistOpacity: number;
-  readonly emberDensity: number;
-  readonly dotSpacing: number;
-  gloss: number;
-  emberGlow: number;
-}
+type AttachmentRequest =
+  | { effect: 'fire'; options: FireOptions }
+  | { effect: 'electricity'; options: ElectricityOptions }
+  | { effect: 'frost'; options: FrostOptions }
+  | { effect: 'kinetic'; options: KineticOptions }
+  | { effect: 'slime'; options: SlimeOptions }
+  | { effect: 'burned-paper'; options: BurnedPaperOptions }
+  | { effect: 'dither'; options: DitherOptions }
+  | {
+      effect: PatternEffect;
+      options: PatternOptions | HalftoneOptions | ContourEchoesOptions | BrushFringeOptions;
+    };
 
 /** Internal adapter seam for controlled lifecycle verification in the lab. */
 export interface AttachmentAdapters {
@@ -112,21 +118,46 @@ export interface AttachmentAdapters {
 
 export function attachWithAdapters(
   target: Element,
-  request:
-    | { effect: 'fire'; options: FireOptions }
-    | { effect: 'electricity'; options: ElectricityOptions }
-    | { effect: 'frost'; options: FrostOptions }
-    | { effect: 'kinetic'; options: KineticOptions }
-    | { effect: 'slime'; options: SlimeOptions }
-    | { effect: 'burned-paper'; options: BurnedPaperOptions }
-    | { effect: 'dither'; options: DitherOptions }
-    | {
-        effect: PatternEffect;
-        options: PatternOptions | HalftoneOptions | ContourEchoesOptions | BrushFringeOptions;
-      },
+  request: { effect: 'fire'; options: FireOptions },
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): FireEffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: { effect: 'frost'; options: FrostOptions },
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): FrostEffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: { effect: 'slime'; options: SlimeOptions },
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): SlimeEffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: { effect: 'burned-paper'; options: BurnedPaperOptions },
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): BurnedPaperEffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: { effect: 'halftone'; options: HalftoneOptions },
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): HalftoneEffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: AttachmentRequest,
+  adapters: AttachmentAdapters,
+  measurePlacement?: typeof measureEffectPlacement,
+): EffectHandle;
+export function attachWithAdapters(
+  target: Element,
+  request: AttachmentRequest,
   adapters: AttachmentAdapters,
   measurePlacement = measureEffectPlacement,
-): EffectControlHandle {
+): EffectHandle {
   const { effect, options } = request;
   const document = target?.ownerDocument;
   const view = document?.defaultView;
@@ -1084,7 +1115,7 @@ export function attachWithAdapters(
   initialize();
   const ready = revisions.start();
 
-  return {
+  const handle: EffectHandle = {
     ready,
     refresh,
     retry,
@@ -1154,41 +1185,6 @@ export function attachWithAdapters(
       invalidate();
     },
 
-    get mistOpacity() {
-      return mistOpacity;
-    },
-
-    set mistOpacity(value) {
-      mistOpacity = normalizedControl(value, effect);
-      invalidate();
-    },
-
-    get emberDensity() {
-      return emberDensity;
-    },
-
-    get dotSpacing() {
-      return dotSpacing;
-    },
-
-    get gloss() {
-      return gloss;
-    },
-
-    set gloss(value) {
-      gloss = normalizedControl(value, effect);
-      invalidate();
-    },
-
-    get emberGlow() {
-      return emberGlow;
-    },
-
-    set emberGlow(value) {
-      emberGlow = normalizedControl(value, effect);
-      invalidate();
-    },
-
     onDispose(callback) {
       if (lifecycle === 'disposed') {
         callback();
@@ -1202,6 +1198,52 @@ export function attachWithAdapters(
 
     dispose,
   };
+
+  if (effect === 'frost') {
+    Object.defineProperty(handle, 'mistOpacity', {
+      configurable: true,
+      enumerable: true,
+      get: () => mistOpacity,
+      set: (value: unknown) => {
+        mistOpacity = normalizedControl(value, effect);
+        invalidate();
+      },
+    });
+  } else if (effect === 'fire') {
+    Object.defineProperty(handle, 'emberDensity', {
+      configurable: true,
+      enumerable: true,
+      get: () => emberDensity,
+    });
+  } else if (effect === 'halftone') {
+    Object.defineProperty(handle, 'dotSpacing', {
+      configurable: true,
+      enumerable: true,
+      get: () => dotSpacing,
+    });
+  } else if (effect === 'slime') {
+    Object.defineProperty(handle, 'gloss', {
+      configurable: true,
+      enumerable: true,
+      get: () => gloss,
+      set: (value: unknown) => {
+        gloss = normalizedControl(value, effect);
+        invalidate();
+      },
+    });
+  } else if (effect === 'burned-paper') {
+    Object.defineProperty(handle, 'emberGlow', {
+      configurable: true,
+      enumerable: true,
+      get: () => emberGlow,
+      set: (value: unknown) => {
+        emberGlow = normalizedControl(value, effect);
+        invalidate();
+      },
+    });
+  }
+
+  return handle;
 }
 
 export function attachFireWithAdapters(
@@ -1262,9 +1304,21 @@ export function attachDitherWithAdapters(
 
 export function attachPatternWithAdapters(
   target: Element,
+  effect: 'halftone',
+  options: HalftoneOptions,
+  adapters: AttachmentAdapters,
+): HalftoneEffectHandle;
+export function attachPatternWithAdapters(
+  target: Element,
   effect: PatternEffect,
   options: PatternOptions | HalftoneOptions | ContourEchoesOptions | BrushFringeOptions,
   adapters: AttachmentAdapters,
-): EffectControlHandle {
+): EffectHandle;
+export function attachPatternWithAdapters(
+  target: Element,
+  effect: PatternEffect,
+  options: PatternOptions | HalftoneOptions | ContourEchoesOptions | BrushFringeOptions,
+  adapters: AttachmentAdapters,
+): EffectHandle {
   return attachWithAdapters(target, { effect, options }, adapters);
 }

@@ -2,6 +2,7 @@ import { gsap } from 'gsap';
 
 import {
   attachBurnedPaper,
+  attachElectricity,
   attachFire,
   attachFrost,
   attachHalftone,
@@ -14,6 +15,7 @@ declare global {
     controlEffects: {
       frost: typeof attachFrost;
       fire: typeof attachFire;
+      electricity: typeof attachElectricity;
       halftone: typeof attachHalftone;
       slime: typeof attachSlime;
       'burned-paper': typeof attachBurnedPaper;
@@ -27,6 +29,7 @@ declare global {
 window.controlEffects = {
   frost: attachFrost,
   fire: attachFire,
+  electricity: attachElectricity,
   halftone: attachHalftone,
   slime: attachSlime,
   'burned-paper': attachBurnedPaper,

@@ -146,6 +146,6 @@ ${body}
   let exteriorColor = mix(tint, vec3f(${dither ? '.91' : '.92'}, .94, 1), heat);
   let color = mix(tint * ${dither ? '1' : '.8'}, exteriorColor, smoothstep(-1, 1, distance));
   let alpha = clamp(coverage * ${dither ? '.95' : '.94'}, 0, ${dither ? '.95' : '.94'});
-  return vec4f(color * alpha, alpha) * clamp(params.z, 0, 1);
+  return applyEffectColor(vec4f(color * alpha, alpha) * clamp(params.z, 0, 1));
 }`;
 }

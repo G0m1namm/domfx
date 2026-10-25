@@ -112,6 +112,6 @@ fn phaseAt(p: vec2f) -> f32 {
       result = shard + result * (1 - shard.a);
     }
   }
-  return result * (params.z * smoothstep(-3, -.5, distance)
-                 * (1 - smoothstep(max(0, support - 1), support, supportDistance)));
+  return applyEffectColor(result * (params.z * smoothstep(-3, -.5, distance)
+                 * (1 - smoothstep(max(0, support - 1), support, supportDistance))));
 }`;

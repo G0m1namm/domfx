@@ -1,8 +1,8 @@
 import { GpuExperiment } from '@domfx/browser/experimental';
 
 type ControlMode = 'legacy' | 'relative';
-type ControlName = 'mistOpacity' | 'emberDensity' | 'dotSpacing' | 'gloss' | 'emberGlow';
-type SelectedEffect = 'frost' | 'fire' | 'halftone' | 'slime' | 'burned-paper';
+type ControlName = 'mistOpacity' | 'emberDensity' | 'emberGlow';
+type SelectedEffect = 'frost' | 'fire' | 'burned-paper';
 
 interface ControlSample {
   readonly control: ControlName;
@@ -20,8 +20,6 @@ const controls: readonly {
 }[] = [
   { control: 'mistOpacity', effect: 'frost', values: [0, 0.5, 1] },
   { control: 'emberDensity', effect: 'fire', values: [0, 0.5, 1] },
-  { control: 'dotSpacing', effect: 'halftone', values: [3, 5.5, 12] },
-  { control: 'gloss', effect: 'slime', values: [0, 0.5, 1] },
   { control: 'emberGlow', effect: 'burned-paper', values: [0, 0.5, 1] },
 ];
 
@@ -82,9 +80,8 @@ export async function qualifyRawAlphaControls(mode: ControlMode, dpr: number) {
           {
             mistOpacity: selection.control === 'mistOpacity' ? value : 1,
             emberDensity: selection.control === 'emberDensity' ? value : 1,
-            dotSpacing: selection.control === 'dotSpacing' ? value : 5.5,
-            gloss: selection.control === 'gloss' ? value : 1,
             emberGlow: selection.control === 'emberGlow' ? value : 1,
+            color: undefined,
           },
         );
         const pixels = await prepared.readFire();

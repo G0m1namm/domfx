@@ -109,5 +109,5 @@ fn rootHeight(p: vec2f, bend: f32) -> f32 {
   }
   let dustAlpha = min(dust * exterior * sqrt(intensity), .95);
   result = vec4f(vec3f(.96, .985, 1) * dustAlpha, dustAlpha) + result * (1 - dustAlpha);
-  return result * boundaryFade;
+  return applyEffectColor(result * boundaryFade);
 }`;

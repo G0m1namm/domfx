@@ -211,14 +211,12 @@ for (const dpr of [1, 2]) {
               const defaults = {
                 frost: await defaultPair('frost', 'mistOpacity', 1),
                 fire: await defaultPair('fire', 'emberDensity', 1),
-                halftone: await defaultPair('halftone', 'dotSpacing', 5.5),
-                slime: await defaultPair('slime', 'gloss', 1),
                 paper: await defaultPair('burned-paper', 'emberGlow', 1),
               };
 
-              const writable = async <T extends 'frost' | 'slime' | 'burned-paper'>(
+              const writable = async <T extends 'frost' | 'burned-paper'>(
                 effect: T,
-                key: 'mistOpacity' | 'gloss' | 'emberGlow',
+                key: 'mistOpacity' | 'emberGlow',
               ) => {
                 const attached = await attach(effect);
                 const initial = await canvasPixels();
@@ -304,7 +302,6 @@ for (const dpr of [1, 2]) {
               };
 
               const frost = await writable('frost', 'mistOpacity');
-              const slime = await writable('slime', 'gloss');
               const paper = await writable('burned-paper', 'emberGlow');
 
               const frostGrains = count(
@@ -319,26 +316,6 @@ for (const dpr of [1, 2]) {
                   alpha(frost.zero, index) > 24 &&
                   Math.floor(index / frost.zero.width) >= frost.zero.height / 2,
               );
-              const slimeGeometry = {
-                zero: count(slime.zero, (index) => alpha(slime.zero, index) > 24),
-                full: count(slime.initial, (index) => alpha(slime.initial, index) > 24),
-                highlights: count(slime.initial, (index) => {
-                  const offset = index * 4;
-                  return (
-                    alpha(slime.initial, index) > 32 &&
-                    slime.initial.rgba[offset + 1]! > 220 &&
-                    slime.initial.rgba[offset]! > 150
-                  );
-                }),
-                withoutHighlights: count(slime.zero, (index) => {
-                  const offset = index * 4;
-                  return (
-                    alpha(slime.zero, index) > 32 &&
-                    slime.zero.rgba[offset + 1]! > 220 &&
-                    slime.zero.rgba[offset]! > 150
-                  );
-                }),
-              };
               const paperBands = {
                 retained: count(paper.zero, (index) => alpha(paper.zero, index) > 24),
                 glowing: count(paper.initial, (index) => {
@@ -362,9 +339,13 @@ for (const dpr of [1, 2]) {
               };
 
               const fire: Array<{ density: number; pixels: Pixels }> = [];
+              let representative = '';
               for (const density of [0, 0.5, 1]) {
                 const attached = await attach('fire', { emberDensity: density });
                 fire.push({ density, pixels: await canvasPixels() });
+                if (density === 0.5) {
+                  representative = host.querySelector('canvas')!.toDataURL();
+                }
                 attached.handle.dispose();
                 attached.element.remove();
               }
@@ -387,58 +368,6 @@ for (const dpr of [1, 2]) {
                 ),
               );
 
-              const halftone = [];
-              let representative = '';
-              for (const spacing of [3, 5.5, 12]) {
-                const attached = await attach('halftone', { dotSpacing: spacing });
-                halftone.push({ spacing, pixels: await canvasPixels() });
-                if (spacing === 5.5) {
-                  representative = host.querySelector('canvas')!.toDataURL();
-                }
-                attached.handle.dispose();
-                attached.element.remove();
-              }
-              const dots = halftone.map(({ pixels }) => {
-                const parts = components(
-                  Uint8Array.from({ length: pixels.width * pixels.height }, (_, index) =>
-                    Number(alpha(pixels, index) > 64),
-                  ),
-                  pixels.width,
-                  pixels.height,
-                ).filter((part) => part.area >= 2 && part.area <= 1000);
-                const radii = parts
-                  .map((part) => Math.sqrt(part.area / Math.PI))
-                  .sort((a, b) => a - b);
-                const distances: number[] = [];
-                for (const part of parts) {
-                  const centerX = (part.left + part.right) / 2;
-                  const centerY = (part.top + part.bottom) / 2;
-                  let nearest = Infinity;
-                  for (const other of parts) {
-                    if (other === part) {
-                      continue;
-                    }
-                    nearest = Math.min(
-                      nearest,
-                      Math.hypot(
-                        centerX - (other.left + other.right) / 2,
-                        centerY - (other.top + other.bottom) / 2,
-                      ),
-                    );
-                  }
-                  if (Number.isFinite(nearest)) {
-                    distances.push(nearest);
-                  }
-                }
-                return {
-                  components: parts.length,
-                  radius: radii[Math.floor(radii.length / 2)] ?? 0,
-                  pitch: distances.sort((a, b) => a - b)[Math.floor(distances.length / 2)] ?? 0,
-                  size: [pixels.width, pixels.height],
-                  boundary: boundaryAlpha(pixels),
-                };
-              });
-
               return {
                 defaults,
                 writable: {
@@ -450,14 +379,6 @@ for (const dpr of [1, 2]) {
                     unchanged: frost.unchanged,
                     resources: frost.resources,
                   },
-                  slime: {
-                    exact: slime.exact,
-                    changed: slime.changed,
-                    retained: slime.retained,
-                    invalid: slime.invalid,
-                    unchanged: slime.unchanged,
-                    resources: slime.resources,
-                  },
                   paper: {
                     exact: paper.exact,
                     changed: paper.changed,
@@ -467,7 +388,7 @@ for (const dpr of [1, 2]) {
                     resources: paper.resources,
                   },
                 },
-                components: { frostGrains, frostCoating, slimeGeometry, paperBands },
+                components: { frostGrains, frostCoating, paperBands },
                 fire: {
                   halfComponents: fireMasks[0]!.length,
                   fullComponents: fireMasks[1]!.length,
@@ -476,7 +397,6 @@ for (const dpr of [1, 2]) {
                     ...fireMasks.flatMap((parts) => parts.map((part) => part.area)),
                   ),
                 },
-                halftone: dots,
                 representative,
                 released: window.controlEffects.memory(document).bytes - baselineBytes,
                 canvases: host.querySelectorAll('canvas').length,
@@ -512,7 +432,7 @@ for (const dpr of [1, 2]) {
         });
         expect(rawAlpha.errors).toEqual([]);
         expect(rawAlpha.releasedBytes).toBe(0);
-        expect(rawAlpha.samples).toHaveLength(15);
+        expect(rawAlpha.samples).toHaveLength(9);
         for (const sample of rawAlpha.samples) {
           expect(sample.nontransparentPixels).toBeGreaterThan(0);
           expect(sample.coloredPixels).toBeGreaterThan(0);
@@ -539,13 +459,6 @@ for (const dpr of [1, 2]) {
         }
         expect(result.components.frostGrains).toBeGreaterThan(0);
         expect(result.components.frostCoating).toBeGreaterThan(0);
-        expect(result.components.slimeGeometry.zero).toBeGreaterThan(0);
-        expect(result.components.slimeGeometry.zero).toBeGreaterThan(
-          result.components.slimeGeometry.full * 0.9,
-        );
-        expect(result.components.slimeGeometry.highlights).toBeGreaterThan(
-          result.components.slimeGeometry.withoutHighlights,
-        );
         expect(result.components.paperBands.retained).toBeGreaterThan(0);
         expect(result.components.paperBands.glowing).toBeGreaterThan(
           result.components.paperBands.withoutGlow,
@@ -555,19 +468,6 @@ for (const dpr of [1, 2]) {
         expect(result.fire.halfMatchesFull).toBe(true);
         // Density may only change compact spark components, never the broad flame body.
         expect(result.fire.maxChangedArea).toBeLessThan(32 * dpr * dpr);
-        expect(result.halftone.map((sample) => sample.components)).toEqual(
-          expect.arrayContaining([expect.any(Number), expect.any(Number), expect.any(Number)]),
-        );
-        expect(result.halftone[0]!.pitch).toBeLessThan(result.halftone[1]!.pitch);
-        expect(result.halftone[1]!.pitch).toBeLessThan(result.halftone[2]!.pitch);
-        expect(result.halftone[0]!.radius).toBeLessThan(result.halftone[1]!.radius);
-        expect(result.halftone[1]!.radius).toBeLessThan(result.halftone[2]!.radius);
-        expect(result.halftone.map((sample) => sample.size)).toEqual([
-          result.halftone[0]!.size,
-          result.halftone[0]!.size,
-          result.halftone[0]!.size,
-        ]);
-        expect(result.halftone.map((sample) => sample.boundary)).toEqual([0, 0, 0]);
         expect(result).toMatchObject({ released: 0, canvases: 0 });
       });
     }

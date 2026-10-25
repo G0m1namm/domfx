@@ -630,8 +630,8 @@ explicit refresh and synthetic listener/disposal checks are separate evidence.
 Import any of these from `@domfx/browser`. All accept the shared options.
 Fire adds mutually exclusive creation-only `flameHeight` and `flameReach` options;
 the other effects add their own relative extents below. Time and intensity remain
-the shared writable controls. No color, gradient or particle-count controls are
-currently exported.
+the shared writable controls. Every effect except Burned paper also accepts one
+optional main color; gradient and particle-count controls are not exported.
 
 - `attachElectricity`
 - `attachFrost`
@@ -713,17 +713,24 @@ and relative extents, and does not enable relative mode by itself.
 
 ### Selected artistic controls
 
-Frost `mistOpacity`, Slime `gloss` and Burned paper `emberGlow` are writable finite
-normalized values. They default to `1`; assignments clamp to 0–1 and schedule the
-next frame without recapturing the target. Invalid writes throw and preserve the
-previous value.
+Frost `mistOpacity` and Burned paper `emberGlow` are writable finite normalized
+values. They default to `1`; assignments clamp to 0–1 and schedule the next frame
+without recapturing the target. Invalid writes throw and preserve the previous value.
 
 Fire `emberDensity` is creation-only, finite from 0 to 1 and defaults to `1`.
-It selects fixed seeded ember sites without moving the surviving embers or changing
-their glow. Halftone `dotSpacing` is creation-only, finite from 3 to 12 local CSS
-pixels and defaults to `5.5`; it changes pitch and proportionally scales dot radius
-without extending support. Both creation-only values are readable on their typed
-effect handles; dispose before attaching a replacement to change either value.
+It selects nested fixed seeded ember sites without moving the surviving embers or
+changing their glow. Values `0`, `0.5`, and `1` select zero, one, and two lanes per
+12 CSS-pixel ember lattice column. It is readable on the typed Fire handle; dispose
+before attaching a replacement to change it.
+
+All effect attachments except Burned paper accept `color` as `#RGB`, `#RRGGBB`,
+`rgb(r, g, b)`, or opaque `rgba(r, g, b, 1)`, with decimal channels from 0 to 255.
+The getter canonicalizes a selected color to `rgb(r, g, b)`. Assign `undefined` to
+restore the authored palette. Invalid, transparent, out-of-range, or malformed values
+throw and retain the prior color. Recoloring changes decorative effect output only,
+preserves its premultiplied alpha and shading, schedules the next frame, and neither
+recaptures the target nor allocates new GPU resources or pipelines. Halftone uses its
+fixed authored 5.5 CSS-pixel pitch; Slime retains its authored highlights.
 
 The extent values above are examples, not defaults. Supplying either field selects relative
 mode and defaults its omitted partner to **zero**. Zero disables that component;

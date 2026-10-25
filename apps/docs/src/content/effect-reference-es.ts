@@ -15,7 +15,7 @@ export const effectReferenceEs = {
   },
   fire: {
     description:
-      'Llamas cálidas y chispas se elevan desde la forma visible. emberDensity, definido al crear, selecciona ubicaciones fijas de brasas sembradas; la instancia expone el valor resuelto como solo lectura.',
+      'Llamas cálidas y chispas se elevan desde la forma visible. emberDensity, definido al crear, selecciona cuántas brasas aparecen sin cambiar el tamaño ni el recorrido de las que quedan; la instancia expone el valor resuelto como solo lectura.',
     intensity:
       'Con flameReach, cambia la fuerza visual sin cambiar el alcance ni el detalle fino. Omitir flameReach conserva la intensidad y flameHeight anteriores.',
   },

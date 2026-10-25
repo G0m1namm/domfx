@@ -278,11 +278,10 @@ export function effectSettingBasis(field: EffectSetting, locale: 'en' | 'es') {
   if (field.basis === 'shorter-side') {
     return locale === 'es' ? 'del lado más corto' : 'of the shorter side';
   }
-  return field.unit === 'css-px'
-    ? locale === 'es'
-      ? 'píxeles CSS locales'
-      : 'local CSS pixels'
-    : '';
+  if (field.unit === 'css-px') {
+    return locale === 'es' ? 'píxeles CSS locales' : 'local CSS pixels';
+  }
+  return '';
 }
 
 export function effectSettingValueText(field: EffectSetting, value: string, locale: 'en' | 'es') {

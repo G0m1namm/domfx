@@ -45,7 +45,7 @@ run `pnpm agent:verify`; its smoke command consumes the preceding built output a
 does not rebuild it. Reuse that output only while the report's source, build input,
 runtime and check-set identities still match. This is sequencing within one run, not
 a cross-run cache, hook bypass or substitute for CI. When repeating a full run, record
-the cause, for example `pnpm agent:verify -- --rerun-reason "source changed after review"`.
+the cause, for example `pnpm agent:verify --rerun-reason "source changed after review"`.
 
 CI runs the same routine gates plus release metadata validation. Install Chromium
 using the [browser verification guide](engineering/browser-verification.md).

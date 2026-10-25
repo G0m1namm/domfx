@@ -5,6 +5,11 @@ import { join } from 'node:path';
 import { chromium, expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+// These route and layout regressions must also pass when WebGPU is unavailable.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
+});
+
 async function expectHeaderControlsFit(page: Page) {
   const bounds = await page.locator('.nav-inner').evaluate((inner) => {
     const header = inner.closest('.site-nav')?.getBoundingClientRect();
@@ -45,7 +50,9 @@ test('language links preserve query and matching anchors across marketing and do
   );
 });
 
-test('changing language keeps the header actions and mobile gallery in place', async ({ page }) => {
+test('@routine changing language keeps the header actions and mobile gallery in place', async ({
+  page,
+}) => {
   for (const width of [768, 1440]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/es/');
@@ -77,7 +84,9 @@ test('changing language keeps the header actions and mobile gallery in place', a
   }
 });
 
-test('Home does not shift its gallery when the translated page starts', async ({ page }) => {
+test('@routine Home does not shift its gallery when the translated page starts', async ({
+  page,
+}) => {
   for (const width of [360, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.addInitScript(() => {

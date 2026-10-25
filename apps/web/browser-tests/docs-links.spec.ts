@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test';
 
+// These route and layout regressions must also pass when WebGPU is unavailable.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
+});
+
 for (const locale of ['', 'es/']) {
-  test(`docs ${locale || 'en/'} navigation retains query strings and fragments`, async ({
+  test(`@routine docs ${locale || 'en/'} navigation retains query strings and fragments`, async ({
     page,
   }) => {
     await page.goto(`/docs/${locale}troubleshooting/`);
@@ -17,7 +22,7 @@ for (const locale of ['', 'es/']) {
     await expect(page.locator('#capture-and-composition-limits')).toBeAttached();
   });
 
-  test(`docs ${locale || 'en/'} slashless links preserve queries and legacy anchors`, async ({
+  test(`@routine docs ${locale || 'en/'} slashless links preserve queries and legacy anchors`, async ({
     request,
   }, testInfo) => {
     for (const [page, fragment] of [
@@ -44,7 +49,7 @@ for (const locale of ['', 'es/']) {
   });
 }
 
-test('slashless marketing routes retain slashed canonicals and missing routes return 404', async ({
+test('@routine slashless marketing routes retain slashed canonicals and missing routes return 404', async ({
   request,
 }) => {
   for (const path of ['/effects', '/es/effects']) {

@@ -70,7 +70,7 @@
     "test:gpu:full": "pnpm build:gpu && pnpm test:gpu:built",
     "test:gpu:built": "pnpm --filter @domfx/gpu-tests test:browser",
     "test:web:smoke": "pnpm build:web && pnpm test:web:smoke:built",
-    "test:web:smoke:built": "node scripts/browser-session.mjs pnpm --filter @domfx/web exec playwright test smoke.spec.ts",
+    "test:web:smoke:built": "node scripts/browser-session.mjs pnpm --filter @domfx/web exec playwright test --config playwright.routine.config.ts",
     "test:visual": "pnpm build:web && node scripts/browser-session.mjs pnpm --filter @domfx/web exec playwright test --config playwright.visual.config.ts",
     "check:artifacts": "node scripts/check-tracked-artifacts.mjs",
     "browser:run": "node scripts/browser-session.mjs"

@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-test('composed docs load their assets and interactive lab independently of marketing', async ({
+test('@routine composed docs load assets directly without marketing or WebGPU', async ({
   page,
   baseURL,
 }, testInfo) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
   const errors: string[] = [];
   const failedAssets: string[] = [];
   const connectedSockets: string[] = [];
@@ -33,6 +34,19 @@ test('composed docs load their assets and interactive lab independently of marke
   if (testInfo.project.name === 'development') {
     expect(connectedSockets).toContain('/docs/__vite_hmr');
   }
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Frost');
+  await expect(page.locator('[data-docs-lab]')).toBeVisible();
+  expect(
+    await page.evaluate(() => (navigator as Navigator & { gpu?: unknown }).gpu),
+  ).toBeUndefined();
+});
+
+test('composed docs interactive lab and marketing navigation render with WebGPU', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/docs/api/effects/frost/');
   const lab = page.locator('[data-docs-lab]');
   await lab.scrollIntoViewIfNeeded();
   await expect(lab).toHaveAttribute('data-status', 'active');
@@ -50,6 +64,5 @@ test('composed docs load their assets and interactive lab independently of marke
   await page.getByRole('link', { name: 'Docs', exact: true }).first().click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Introduction');
   await page.waitForLoadState('networkidle');
-  expect(failedAssets).toEqual([]);
   expect(errors).toEqual([]);
 });

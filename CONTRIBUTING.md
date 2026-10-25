@@ -153,7 +153,9 @@ establish type acceptance/rejection, not browser/GPU behavior or browser-package
 Before proposing a change:
 
 1. Run `pnpm agent:verify`: repository checks, website build, and a small website
-   smoke suite with WebGPU unavailable. This verifies page usability, not rendering.
+   smoke and regression suite with WebGPU unavailable. It covers startup/reload
+   header geometry, EN/ES layout, docs routes/anchors and direct docs assets;
+   the separate GPU suite verifies rendering.
 2. For capture/rendering/lifecycle changes, run `pnpm test:gpu` and relevant focused
    fixture tests. Inspect affected website examples in development and production.
    Use `pnpm test:visual` for local screenshot comparisons; review baseline changes.

@@ -67,7 +67,7 @@ jobs:
       - name: Install Chromium and system dependencies
         timeout-minutes: 5
         run: pnpm --filter @domfx/web exec playwright install --with-deps chromium
-      - name: Website smoke (no GPU required)
+      - name: Website smoke and routine regressions (no GPU required)
         run: pnpm test:web:smoke:built
       - name: Docs smoke (no GPU required)
         run: pnpm test:docs:smoke:built

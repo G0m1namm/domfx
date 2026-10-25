@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 
 import { checkReleaseArtifacts, releaseLibraries } from './check-release-artifacts.mjs';
 
@@ -55,6 +56,27 @@ function changedPublishablePackages(root, base) {
   return packages;
 }
 
+function preparedAlphaRelease(root, base, directory, files) {
+  const manifestPath = `${directory}/package.json`;
+  const changelogPath = `${directory}/CHANGELOG.md`;
+  if (files.length !== 2 || !files.includes(manifestPath) || !files.includes(changelogPath)) {
+    return false;
+  }
+  const previous = JSON.parse(git(root, ['show', `${base}:${manifestPath}`]));
+  const current = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'));
+  const alpha = /^(\d+\.\d+\.\d+)-alpha\.(\d+)$/;
+  const from = previous.version.match(alpha);
+  const to = current.version.match(alpha);
+  if (!from || !to || from[1] !== to[1] || Number(to[2]) !== Number(from[2]) + 1) {
+    return false;
+  }
+  const changelog = readFileSync(join(root, changelogPath), 'utf8');
+  return (
+    isDeepStrictEqual({ ...current, version: previous.version }, previous) &&
+    changelog.startsWith(`# ${current.name}\n\n## ${current.version}\n`)
+  );
+}
+
 /** Read-only PR release preflight matching CI's base-relative Changesets policy. */
 export function releasePlanPreflight(root = '.', base, options = {}) {
   assert.ok(base, 'provide an explicit PR base, for example origin/main');
@@ -63,8 +85,14 @@ export function releasePlanPreflight(root = '.', base, options = {}) {
     plan.releases.filter(({ type }) => type !== 'none').map(({ name }) => name),
   );
   const changedPackages = changedPublishablePackages(root, base);
+  const preparedReleases = Object.entries(releaseLibraries)
+    .filter(([directory, name]) =>
+      preparedAlphaRelease(root, base, directory, changedPackages.get(name)),
+    )
+    .map(([, name]) => name);
+  const prepared = new Set(preparedReleases);
   const omitted = [...changedPackages]
-    .filter(([name, files]) => files.length > 0 && !releases.has(name))
+    .filter(([name, files]) => files.length > 0 && !releases.has(name) && !prepared.has(name))
     .map(([name, files]) => `${name}: ${files.join(', ')}`);
   assert.equal(
     omitted.length,
@@ -72,7 +100,7 @@ export function releasePlanPreflight(root = '.', base, options = {}) {
     `release plan omits changed publishable inputs:\n${omitted.join('\n')}`,
   );
   (options.artifactCheck ?? checkReleaseArtifacts)(root);
-  return plan;
+  return { ...plan, preparedReleases };
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
@@ -80,6 +108,6 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
   assert.ok(process.argv[3], 'usage: release-pr-preflight.mjs --base <base-ref>');
   const plan = releasePlanPreflight('.', process.argv[3]);
   console.log(
-    `Release PR preflight passed for ${process.argv[3]}; ${plan.releases.filter(({ type }) => type !== 'none').length} planned package releases.`,
+    `Release PR preflight passed for ${process.argv[3]}; ${plan.releases.filter(({ type }) => type !== 'none').length} pending package releases; ${plan.preparedReleases.length} prepared alpha packages.`,
   );
 }

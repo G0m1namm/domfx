@@ -277,6 +277,60 @@ test('local PR preflight blocks changed packed contents omitted from the release
   assert.doesNotThrow(() => releasePlanPreflight(root, 'origin/main', { artifactCheck: () => {} }));
 });
 
+test('local PR preflight accepts consumed alpha metadata but rejects unplanned package changes', (t) => {
+  const { root, write } = workspace(t);
+  const manifestPath = 'packages/core/package.json';
+  const manifest = { ...readJson(join(root, manifestPath)), version: '0.1.0-alpha.1' };
+  write(manifestPath, JSON.stringify(manifest));
+  write('packages/core/CHANGELOG.md', '# @domfx/core\n\n## 0.1.0-alpha.1\n');
+  write('.changeset/release-metadata.md', '---\n---\n');
+  const run = (args) =>
+    execFileSync('git', args, {
+      cwd: root,
+      encoding: 'utf8',
+      env: { ...process.env, LEFTHOOK: '0' },
+    });
+  run(['init', '-b', 'main']);
+  run(['add', '.']);
+  run([
+    '-c',
+    'user.name=Release Test',
+    '-c',
+    'user.email=release@example.invalid',
+    '-c',
+    'commit.gpgsign=false',
+    'commit',
+    '-m',
+    'test: fixture',
+  ]);
+  run(['update-ref', 'refs/remotes/origin/main', 'HEAD']);
+  write('.changeset/next-metadata.md', '---\n---\n');
+  write(manifestPath, JSON.stringify({ ...manifest, version: '0.1.0-alpha.2' }));
+  write(
+    'packages/core/CHANGELOG.md',
+    '# @domfx/core\n\n## 0.1.0-alpha.2\n\n### Patch Changes\n\n- Update packaged guides.\n\n## 0.1.0-alpha.1\n',
+  );
+  run(['add', '.']);
+  const preflight = () => releasePlanPreflight(root, 'origin/main', { artifactCheck: () => {} });
+  assert.doesNotThrow(preflight);
+
+  write('packages/core/src/change.ts', 'export const changed = true;');
+  run(['add', '.']);
+  assert.throws(preflight, /@domfx\/core.*src\/change\.ts/);
+  run(['rm', '-f', 'packages/core/src/change.ts']);
+
+  write(
+    manifestPath,
+    JSON.stringify({ ...manifest, version: '0.1.0-alpha.2', description: 'Changed contract' }),
+  );
+  assert.throws(preflight, /@domfx\/core/);
+  write(manifestPath, JSON.stringify({ ...manifest, version: '0.1.0-alpha.0' }));
+  assert.throws(preflight, /@domfx\/core/);
+  write(manifestPath, JSON.stringify({ ...manifest, version: '0.1.0-alpha.2' }));
+  write('packages/core/CHANGELOG.md', '# @domfx/core\n\n## 0.1.0-alpha.1\n');
+  assert.throws(preflight, /@domfx\/core/);
+});
+
 test('artifact inspection skips lifecycle scripts and creates no tarballs', (t) => {
   const { root, write } = workspace(t);
   write('LICENSE', 'Fixture license');

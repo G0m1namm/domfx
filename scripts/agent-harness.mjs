@@ -16,6 +16,11 @@ import { fileURLToPath } from 'node:url';
 import { boundaries } from '../workspace-boundaries.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
+const checkCommands = ['check', 'build:web:built', 'test:web:smoke:built'];
+
+function digest(value) {
+  return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
 
 export function snapshotWorktree(directory) {
   const git = (...args) => execFileSync('git', args, { cwd: directory, encoding: 'utf8' });
@@ -70,7 +75,7 @@ function validateBrowserReport(path) {
   }
 }
 
-export function runVerification(directory, run) {
+export function runVerification(directory, run, { rerunReason } = {}) {
   const reports = join(directory, '.scratch', 'agent');
   mkdirSync(reports, { recursive: true });
   const reportPath = join(mkdtempSync(join(reports, 'run-')), 'verification.json');
@@ -78,12 +83,14 @@ export function runVerification(directory, run) {
     status: 'running',
     startedAt: new Date().toISOString(),
     runtime: { node: process.version, platform: process.platform, arch: process.arch },
+    checkSet: { commands: checkCommands, digest: digest(checkCommands) },
+    rerunReason: rerunReason ?? null,
     browserVerification: 'not-run',
     verificationScope: 'website-smoke',
     gpuVerification: 'not-run',
     browserReport: join(dirname(reportPath), 'browser', 'report.json'),
     designReview: 'not-run',
-    checks: ['check', 'build:web:built', 'test:web:smoke:built'].map((command) => ({
+    checks: checkCommands.map((command) => ({
       command,
       status: 'skipped',
     })),
@@ -121,6 +128,13 @@ export function runVerification(directory, run) {
         report.browserVerification = check.status;
       }
       report.sourceAfter = snapshotWorktree(directory);
+      if (check.command === 'build:web:built' && check.status === 'passed') {
+        report.buildIdentity = {
+          command: check.command,
+          source: report.sourceAfter,
+          checkSetDigest: report.checkSet.digest,
+        };
+      }
       if (report.sourceBefore.digest !== report.sourceAfter.digest) {
         report.error = `Source changed during verification after ${check.command}. Run again after edits finish.`;
       }
@@ -156,8 +170,14 @@ if (
   fileURLToPath(import.meta.url) === realpathSync(process.argv[1])
 ) {
   const [command, ...extra] = process.argv.slice(2);
-  if (extra.length || !['brief', 'verify'].includes(command)) {
-    console.error('Usage: pnpm agent:brief | pnpm agent:verify');
+  const rerunReason =
+    command === 'verify' && extra[0] === '--rerun-reason' && extra.length === 2 ? extra[1] : null;
+  if (
+    !['brief', 'verify'].includes(command) ||
+    (command === 'brief' && extra.length) ||
+    (command === 'verify' && (rerunReason === null || !rerunReason.trim()) && extra.length)
+  ) {
+    console.error('Usage: pnpm agent:brief | pnpm agent:verify [--rerun-reason <reason>]');
     process.exitCode = 1;
   } else if (command === 'brief') {
     const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
@@ -173,18 +193,22 @@ if (
   } else {
     // Reuse pnpm's current launcher, including on systems where pnpm is a command shim.
     const launcher = process.env.npm_execpath;
-    const { report, reportPath } = runVerification(root, (script, environment) => {
-      console.log(`\nRunning pnpm ${script}`);
-      return spawnSync(
-        launcher ? process.execPath : 'pnpm',
-        launcher ? [launcher, script] : [script],
-        {
-          cwd: root,
-          stdio: 'inherit',
-          env: { ...process.env, ...environment },
-        },
-      );
-    });
+    const { report, reportPath } = runVerification(
+      root,
+      (script, environment) => {
+        console.log(`\nRunning pnpm ${script}`);
+        return spawnSync(
+          launcher ? process.execPath : 'pnpm',
+          launcher ? [launcher, script] : [script],
+          {
+            cwd: root,
+            stdio: 'inherit',
+            env: { ...process.env, ...environment },
+          },
+        );
+      },
+      { rerunReason },
+    );
     console.log(`\nAutomated verification: ${report.status}. Report: ${reportPath}`);
     console.log(
       `Website smoke verification: ${report.browserVerification}. Evidence: ${report.browserReport}`,

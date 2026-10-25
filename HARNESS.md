@@ -40,6 +40,13 @@ verify navigation, layout, examples and documentation. GPU correctness is explic
 `not-run` in this report. Rendering changes and releases need the local GPU checks
 listed in [CONTRIBUTING.md](CONTRIBUTING.md).
 
+During iteration, run the narrow check that observes the edit. After edits settle,
+run `pnpm agent:verify`; its smoke command consumes the preceding built output and
+does not rebuild it. Reuse that output only while the report's source, build input,
+runtime and check-set identities still match. This is sequencing within one run, not
+a cross-run cache, hook bypass or substitute for CI. When repeating a full run, record
+the cause, for example `pnpm agent:verify --rerun-reason "source changed after review"`.
+
 CI runs the same routine gates plus release metadata validation. Install Chromium
 using the [browser verification guide](engineering/browser-verification.md).
 CI also runs `pnpm test:discovery:built`: file and Astro preview checks for indexing
@@ -80,7 +87,11 @@ ignored dependencies/build output are outside that scope. A source change observ
 after any command fails the run and skips remaining commands. `sourceAfter` is the
 last completed snapshot. These are checkpoints, not a continuous file watch: edits
 made and restored within one command are not detected. Keep the worktree idle while
-verifying. A report marked `running` is incomplete, never a pass.
+verifying. A report marked `running` is incomplete, never a pass. The report also
+records the fixed check-set digest, per-check durations, an optional rerun reason and
+the successful build's input identity. A build identity identifies the source consumed
+by `build:web:built`; it is not a digest of generated output or permission to reuse
+output after any recorded identity changes.
 Keep terminal output with the report when diagnosing a failure. The summary does not
 contain source contents or environment-variable dumps. Its `browserReport` points to
 per-run test evidence, including website screenshots and browser errors; failures retain traces.
@@ -119,3 +130,13 @@ needed. More rules, layers, agents, and coverage percentages do not establish qu
 Use the [harness evaluation guide](engineering/harness-evaluation.md) when changing
 the workflow or skills. Compare task outcomes and verification cost, and distinguish
 deterministic tooling tests from evidence about an agent's engineering decisions.
+
+## Inspect local evidence
+
+Use `pnpm agent:evidence <log-or-jsonl>...` to review selected
+JSONL fields and text-log lines without copying raw sessions into a handoff. It omits
+image, base64 and tool-payload fields, caps each entry and the aggregate preview, and
+prints source line references and a bounded list of full-evidence paths. The complete
+input files stay unchanged; the programmatic result retains every full path. Keep those
+source files under ignored local storage; the summary is navigation, not a replacement
+for required verification evidence.

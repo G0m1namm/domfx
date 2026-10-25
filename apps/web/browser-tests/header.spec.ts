@@ -1,8 +1,13 @@
 import { expect, test } from '@playwright/test';
 
+// These route and layout regressions must also pass when WebGPU is unavailable.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
+});
+
 for (const width of [360, 1440]) {
   for (const route of ['/', '/es/', '/effects/', '/es/effects/']) {
-    test(`header actions stay in place during startup and reload: ${route} at ${width}px`, async ({
+    test(`@routine header actions stay in place during startup and reload: ${route} at ${width}px`, async ({
       page,
     }) => {
       await page.setViewportSize({ width, height: 900 });

@@ -1,0 +1,2 @@
+{"event":"worker","message":"started focused UI check","prompt":"LONG_WORKER_PROMPT Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.","image":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB","tool":{"payload":"tool payload that must not be shown"}}
+{"status":"failed","error":{"message":"FAILURE_OUTPUT expected smoke assertion after focused UI change"},"base64":"VGhpcyBtdXN0IG5vdCBiZSBzaG93bi4=","result":{"text":"large tool output that must not be shown"}}

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +10,15 @@ export const releaseLibraries = {
   'packages/domfx': '@domfx/browser',
   'packages/gsap': '@domfx/gsap',
 };
+
+const npmRegistry = 'https://registry.npmjs.org';
+const npmNetworkTimeout = 30_000;
+const npmTransportOptions = [
+  '--fetch-timeout=30000',
+  '--fetch-retries=2',
+  '--fetch-retry-mintimeout=1000',
+  '--fetch-retry-maxtimeout=5000',
+];
 
 function git(root, args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
@@ -186,14 +195,18 @@ export function publishableTestedReleaseArtifacts(directory, revision, source, n
   return artifacts;
 }
 
-export function registryMetadata(spec) {
+export function registryMetadata(spec, execute = execFileSync) {
   try {
     return JSON.parse(
-      execFileSync('npm', ['view', spec, '--json', '--registry=https://registry.npmjs.org'], {
-        encoding: 'utf8',
-        stdio: 'pipe',
-        timeout: 30_000,
-      }),
+      execute(
+        'npm',
+        ['view', spec, '--json', `--registry=${npmRegistry}`, ...npmTransportOptions],
+        {
+          encoding: 'utf8',
+          stdio: 'pipe',
+          timeout: npmNetworkTimeout,
+        },
+      ),
     );
   } catch (error) {
     // Only an explicit registry E404 means absent. Network/auth errors must stop.
@@ -215,32 +228,144 @@ export function publishedArtifactMatches(artifact, metadata) {
   );
 }
 
-function publishTestedRelease(directory, revision) {
-  assertCleanReleaseCheckout();
-  const artifacts = publishableTestedReleaseArtifacts(directory, revision, releaseSourceIdentity());
+export function assertInteractivePublishTerminal(io = process) {
+  assert.ok(
+    io.stdin?.isTTY === true && io.stdout?.isTTY === true,
+    'manual publication requires an interactive terminal with input and output; attach a terminal before authentication',
+  );
+}
+
+function checkpointPath(directory) {
+  return join(directory, 'publication-state.json');
+}
+
+function loadPublicationCheckpoint(directory) {
+  const path = checkpointPath(directory);
+  if (!existsSync(path)) {
+    return { artifacts: {} };
+  }
+  const checkpoint = JSON.parse(readFileSync(path, 'utf8'));
+  assert.equal(typeof checkpoint.artifacts, 'object', 'invalid publication checkpoint');
+  return checkpoint;
+}
+
+function savePublicationCheckpoint(directory, checkpoint) {
+  writeFileSync(checkpointPath(directory), JSON.stringify(checkpoint, null, 2) + '\n');
+}
+
+const defaultSleep = (milliseconds) =>
+  new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds));
+
+export async function waitForRegistryVisibility(artifact, options = {}) {
+  const lookup = options.lookup ?? registryMetadata;
+  const now = options.now ?? Date.now;
+  const sleep = options.sleep ?? defaultSleep;
+  const write = options.write ?? console.log;
+  const timeoutMs = options.visibilityTimeoutMs ?? 120_000;
+  const intervalMs = options.visibilityIntervalMs ?? 5_000;
+  const spec = `${artifact.name}@${artifact.version}`;
+  const deadline = now() + timeoutMs;
+  while (true) {
+    const metadata = await lookup(spec);
+    if (metadata) {
+      publishedArtifactMatches(artifact, metadata);
+      return;
+    }
+    const remaining = deadline - now();
+    if (remaining <= 0) {
+      throw new Error(
+        `${spec}: registry visibility is still pending; the publication checkpoint is retained and a rerun will not publish it again`,
+      );
+    }
+    write(`${spec}: accepted publication is not visible yet; waiting for registry metadata`);
+    await sleep(Math.min(intervalMs, remaining));
+  }
+}
+
+export async function publishArtifacts(artifacts, directory, options = {}) {
+  const lookup = options.lookup ?? registryMetadata;
+  const publish = options.publish ?? ((artifact) => publishArtifact(artifact));
+  const write = options.write ?? console.log;
+  const checkpoint = loadPublicationCheckpoint(directory);
   for (const artifact of artifacts) {
     const spec = `${artifact.name}@${artifact.version}`;
-    const existing = registryMetadata(spec);
+    const existing = await lookup(spec);
     if (existing) {
       publishedArtifactMatches(artifact, existing);
-      console.log(`${spec}: identical published bytes and alpha tag; retained`);
+      checkpoint.artifacts[spec] = { integrity: artifact.integrity, status: 'verified' };
+      savePublicationCheckpoint(directory, checkpoint);
+      write(`${spec}: identical published bytes and alpha tag; retained`);
       continue;
     }
-    execFileSync(
-      'npm',
-      [
-        'publish',
-        artifact.tarball,
-        '--access=public',
-        '--tag=alpha',
-        '--ignore-scripts',
-        '--registry=https://registry.npmjs.org',
-      ],
-      { stdio: 'inherit', timeout: 120_000 },
-    );
-    publishedArtifactMatches(artifact, registryMetadata(spec));
-    console.log(`${spec}: registry bytes and alpha tag verified`);
+    const saved = checkpoint.artifacts[spec];
+    if (saved) {
+      assert.equal(
+        saved.integrity,
+        artifact.integrity,
+        `${spec}: publication checkpoint bytes differ`,
+      );
+      await waitForRegistryVisibility(artifact, { ...options, lookup, write });
+      checkpoint.artifacts[spec] = { integrity: artifact.integrity, status: 'verified' };
+      savePublicationCheckpoint(directory, checkpoint);
+      write(`${spec}: registry bytes and alpha tag verified`);
+      continue;
+    }
+    checkpoint.artifacts[spec] = { integrity: artifact.integrity, status: 'requested' };
+    savePublicationCheckpoint(directory, checkpoint);
+    try {
+      await publish(artifact);
+    } catch (error) {
+      throw new Error(
+        `${spec}: publish request outcome is unresolved; inspect the registry and retain the checkpoint before any manual recovery`,
+        { cause: error },
+      );
+    }
+    checkpoint.artifacts[spec] = { integrity: artifact.integrity, status: 'accepted' };
+    savePublicationCheckpoint(directory, checkpoint);
+    await waitForRegistryVisibility(artifact, { ...options, lookup, write });
+    checkpoint.artifacts[spec] = { integrity: artifact.integrity, status: 'verified' };
+    savePublicationCheckpoint(directory, checkpoint);
+    write(`${spec}: registry bytes and alpha tag verified`);
   }
+}
+
+export function publishArtifact(artifact, execute = execFileSync) {
+  execute(
+    'npm',
+    [
+      'publish',
+      artifact.tarball,
+      '--access=public',
+      '--tag=alpha',
+      '--ignore-scripts',
+      `--registry=${npmRegistry}`,
+      ...npmTransportOptions,
+    ],
+    { stdio: 'inherit' },
+  );
+}
+
+export function authenticatePublisher(execute = execFileSync) {
+  try {
+    execute('npm', ['whoami', `--registry=${npmRegistry}`, ...npmTransportOptions], {
+      encoding: 'utf8',
+      stdio: 'pipe',
+      timeout: npmNetworkTimeout,
+    });
+  } catch (error) {
+    throw new Error('npm authentication failed; run npm login in this terminal before publishing', {
+      cause: error,
+    });
+  }
+}
+
+export async function publishTestedRelease(directory, revision, options = {}) {
+  assertInteractivePublishTerminal(options.io ?? process);
+  const authenticate = options.authenticate ?? authenticatePublisher;
+  await authenticate();
+  assertCleanReleaseCheckout();
+  const artifacts = publishableTestedReleaseArtifacts(directory, revision, releaseSourceIdentity());
+  await publishArtifacts(artifacts, directory);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
@@ -262,7 +387,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
       process.argv[3] && process.argv[4],
       'provide tested evidence directory and approved revision',
     );
-    publishTestedRelease(resolve(process.argv[3]), process.argv[4]);
+    await publishTestedRelease(resolve(process.argv[3]), process.argv[4]);
   } else {
     checkReleaseArtifacts();
   }

@@ -15,6 +15,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { checkReleaseArtifacts } from './check-release-artifacts.mjs';
+import { releasePlanPreflight } from './release-pr-preflight.mjs';
 
 // Git hooks export repository-local variables; fixtures must discover their own repositories.
 for (const name of execFileSync('git', ['rev-parse', '--local-env-vars'], { encoding: 'utf8' })
@@ -200,6 +201,80 @@ test('manual alpha release metadata passes ordinary changeset CI without another
   assert.equal(readJson(join(root, 'package.json')).private, true);
   assert.equal(readJson(join(root, 'tests/gpu/package.json')).private, true);
   assert.equal(run('git', ['tag']).trim(), '');
+});
+
+test('local PR preflight requires an explicit base and matches Changesets release policy', (t) => {
+  const { root, write } = workspace(t);
+  const run = (command, args) =>
+    execFileSync(command, args, {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 30_000,
+      env: { ...process.env, LEFTHOOK: '0' },
+    });
+  run('git', ['init', '-b', 'main']);
+  write('.changeset/no-release.md', '---\n---\n');
+  run('git', ['add', '.']);
+  run('git', [
+    '-c',
+    'user.name=Release Test',
+    '-c',
+    'user.email=release@example.invalid',
+    '-c',
+    'commit.gpgsign=false',
+    'commit',
+    '-m',
+    'test: fixture',
+  ]);
+  run('git', ['update-ref', 'refs/remotes/origin/main', 'HEAD']);
+  write('apps/docs/src/change.ts', 'export const changed = true;');
+  run('git', ['add', 'apps/docs/src/change.ts']);
+
+  assert.throws(() => releasePlanPreflight(root, undefined, { artifactCheck: () => {} }), /base/);
+  assert.doesNotThrow(() => releasePlanPreflight(root, 'origin/main', { artifactCheck: () => {} }));
+});
+
+test('local PR preflight blocks changed packed contents omitted from the release plan', (t) => {
+  const { root, write } = workspace(t);
+  const run = (command, args) =>
+    execFileSync(command, args, {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 30_000,
+      env: { ...process.env, LEFTHOOK: '0' },
+    });
+  run('git', ['init', '-b', 'main']);
+  run('git', ['add', '.']);
+  run('git', [
+    '-c',
+    'user.name=Release Test',
+    '-c',
+    'user.email=release@example.invalid',
+    '-c',
+    'commit.gpgsign=false',
+    'commit',
+    '-m',
+    'test: fixture',
+  ]);
+  run('git', ['update-ref', 'refs/remotes/origin/main', 'HEAD']);
+  write('packages/core/README.md', 'Changed packed documentation.');
+  write(
+    '.changeset/browser-only.md',
+    '---\n"@domfx/browser": patch\n---\n\nBrowser-only consumer change.\n',
+  );
+  run('git', ['add', '.']);
+
+  assert.throws(
+    () => releasePlanPreflight(root, 'origin/main', { artifactCheck: () => {} }),
+    /@domfx\/core.*README\.md/,
+  );
+
+  write(
+    '.changeset/core.md',
+    '---\n"@domfx/core": patch\n---\n\nCore documentation is part of the immutable package.\n',
+  );
+  run('git', ['add', '.changeset/core.md']);
+  assert.doesNotThrow(() => releasePlanPreflight(root, 'origin/main', { artifactCheck: () => {} }));
 });
 
 test('artifact inspection skips lifecycle scripts and creates no tarballs', (t) => {

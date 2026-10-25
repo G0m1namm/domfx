@@ -40,7 +40,19 @@ Only mark a check as passed after observing it. Keep secrets out of briefs and r
 
 ## Continuation (interruption, milestone or task switch)
 
-Update the contract when scope changes. Record the branch/worktree and source
-revision/diff, completed checks and evidence paths, unresolved decisions or blockers,
-and the next concrete action. Link existing issues and artifacts instead of copying
-them. On resuming, compare the worktree with this record before reusing evidence.
+Update the contract when scope changes. Record the active PR (or explicitly say none),
+branch/worktree and source revision/diff; required acceptance separately from external
+follow-ups; the current observable test boundary and evidence paths; and the next
+concrete action. Add a preview URL when UI review is expected. Link issues and artifacts
+instead of copying session history. On resuming, compare the worktree with this record
+before reusing evidence. Corrections to feedback stay in the active PR unless changed
+scope or explicit instructions justify a split.
+
+Example:
+
+```text
+Active: PR #123; branch fix/example; worktree ../example; revision abc123 (dirty: docs only)
+Required acceptance: smoke navigation regression; external follow-up: #124 mobile audit (not a blocker)
+Test boundary: node --test scripts/example.test.mjs passed; browser/UI verification not run
+Next: run the assigned smoke check, then review https://preview.example.test/pr-123
+```

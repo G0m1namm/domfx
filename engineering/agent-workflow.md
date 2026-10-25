@@ -60,8 +60,10 @@ instructions take precedence over upstream examples.
   approve a new visual direction; [DESIGN.md](../DESIGN.md) still governs the website.
 - **Task context:** keep the current outcome, approved direction, non-goals and
   acceptance checks in the issue or task brief. Update these when scope changes.
-  At a milestone or task switch, use `handoff` with revision, evidence and next-action
-  pointers; the next session should not need to reconstruct the conversation.
+  At a milestone or task switch, record the active PR, branch/worktree, revision/diff,
+  required acceptance versus external follow-ups, observable test boundary, evidence,
+  next action and any UI preview URL. Keep corrections in the active PR unless scope
+  or explicit instructions justify a split; the next session should not reconstruct history.
 - **Implementation:** use the TypeScript and relevant browser/GPU/GSAP skills in
   [skills.md](skills.md). Prefer pnpm; use the existing Oxfmt/Oxlint and package
   boundaries. RTK is a local CLI preference when installed, not a new contributor
@@ -69,9 +71,11 @@ instructions take precedence over upstream examples.
   merely because it appears in a skill.
 - **Evidence:** start implementation with `pnpm agent:brief`. A linked issue/spec is
   the brief; avoid writing a duplicate. Run focused checks while editing, then
-  `pnpm agent:verify` and applicable checks in [CONTRIBUTING.md](../CONTRIBUTING.md).
-  The harness includes `pnpm check`; GPU correctness needs real GPU evidence.
-  Review and fix actionable findings, rerunning affected checks after changes.
+  `pnpm agent:verify` after edits settle. Its built smoke command consumes the same
+  run's built output; never reuse output when source, build input, runtime or check-set
+  identity changes. Record rerun causes with `--rerun-reason`; do not add a cache or
+  bypass hooks/CI. The harness includes `pnpm check`; GPU correctness needs real GPU
+  evidence. Review and fix actionable findings, rerunning affected checks after changes.
 - **Parallel work:** `implement-spec` may run independent ready tickets concurrently,
   within the environment’s available agent slots. Give each worker explicit ownership,
   its own clean worktree based on the integration branch, and notice that other

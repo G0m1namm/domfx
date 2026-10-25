@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import type { Locator } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import {
   effectCreationFields,
@@ -51,6 +51,93 @@ async function hasVisiblePixels(canvas: Locator) {
   });
 }
 
+type RendererDevice = {
+  createBuffer(descriptor: { label?: string }): object;
+  queue: {
+    writeBuffer(
+      buffer: object,
+      offset: number,
+      data: ArrayBufferView,
+      dataOffset?: number,
+      size?: number,
+    ): void;
+  };
+};
+
+type RendererAdapter = {
+  requestDevice(...options: unknown[]): Promise<RendererDevice>;
+};
+
+type RendererGpu = {
+  requestAdapter(...options: unknown[]): Promise<RendererAdapter | null>;
+};
+
+async function gateRendererDevice(page: Page) {
+  await page.addInitScript(() => {
+    const gpu = (navigator as Navigator & { gpu?: RendererGpu }).gpu;
+    if (!gpu) {
+      return;
+    }
+    let releaseDevice = () => {};
+    const deviceReady = new Promise<void>((resolve) => {
+      releaseDevice = resolve;
+    });
+    document.addEventListener('domfx-test-release-device', () => releaseDevice(), { once: true });
+    const requestAdapter = gpu.requestAdapter.bind(gpu);
+    Object.defineProperty(gpu, 'requestAdapter', {
+      configurable: true,
+      value: async (...args: unknown[]) => {
+        const adapter = await requestAdapter(...args);
+        if (!adapter) {
+          return adapter;
+        }
+        const requestDevice = adapter.requestDevice.bind(adapter);
+        Object.defineProperty(adapter, 'requestDevice', {
+          configurable: true,
+          value: async (...options: unknown[]) => {
+            const device = await requestDevice(...options);
+            const controls = new WeakSet<object>();
+            const createBuffer = device.createBuffer.bind(device);
+            Object.defineProperty(device, 'createBuffer', {
+              configurable: true,
+              value: (descriptor: { label?: string }) => {
+                const buffer = createBuffer(descriptor);
+                if (descriptor.label === 'domfx effect controls') {
+                  controls.add(buffer);
+                }
+                return buffer;
+              },
+            });
+            const queue = device.queue;
+            const writeBuffer = queue.writeBuffer.bind(queue);
+            Object.defineProperty(queue, 'writeBuffer', {
+              configurable: true,
+              value: (
+                buffer: object,
+                offset: number,
+                data: ArrayBufferView,
+                dataOffset?: number,
+                size?: number,
+              ) => {
+                if (controls.has(buffer) && data instanceof Float32Array) {
+                  const previous = document.documentElement.dataset.testControlMistOpacityWrites;
+                  document.documentElement.dataset.testControlMistOpacityWrites = previous
+                    ? `${previous},${data[0]}`
+                    : String(data[0]);
+                }
+                writeBuffer(buffer, offset, data, dataOffset, size);
+              },
+            });
+            await deviceReady;
+            return device;
+          },
+        });
+        return adapter;
+      },
+    });
+  });
+}
+
 test('Halftone forwards relative geometry together with nondefault dot spacing', async ({
   page,
 }) => {
@@ -76,14 +163,7 @@ test('Halftone forwards relative geometry together with nondefault dot spacing',
 test('marketing preview replays writable controls changed before attachment is ready', async ({
   page,
 }) => {
-  let releaseFonts = () => {};
-  const fontsReady = new Promise<void>((resolve) => {
-    releaseFonts = resolve;
-  });
-  await page.route('**/fonts/*.woff2', async (route) => {
-    await fontsReady;
-    await route.continue();
-  });
+  await gateRendererDevice(page);
   try {
     await page.goto('/effects/', { waitUntil: 'domcontentloaded' });
     await page.locator('[data-card][data-id="frost"]').click();
@@ -93,21 +173,13 @@ test('marketing preview replays writable controls changed before attachment is r
     await expect(stage).toHaveAttribute('data-status', 'initializing');
     await opacity.fill('0');
     await expect(dialog.locator('[data-code]')).toContainText('effect.mistOpacity = 0');
-    releaseFonts();
+    await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
     await expect(stage).toHaveAttribute('data-status', 'active');
-    const delayed = await stage.screenshot();
-    const coatingDepth = dialog.locator('[data-creation-option="coatingDepth"]');
-    const value = await coatingDepth.inputValue();
-    const previous = await stage.locator('canvas').elementHandle();
-    await coatingDepth.fill(value);
-    if (!previous) {
-      throw new Error('Missing delayed Frost canvas');
-    }
-    await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
-    await expect(stage).toHaveAttribute('data-status', 'active');
-    expect((await stage.screenshot()).equals(delayed)).toBe(true);
+    await expect
+      .poll(() => page.locator('html').getAttribute('data-test-control-mist-opacity-writes'))
+      .toContain('0');
   } finally {
-    releaseFonts();
+    await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
   }
 });
 

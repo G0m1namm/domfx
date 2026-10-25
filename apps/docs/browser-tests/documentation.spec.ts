@@ -24,6 +24,93 @@ function effectHandleType(exportName: string) {
   return effectHandleTypes[exportName as keyof typeof effectHandleTypes] ?? 'EffectHandle';
 }
 
+type RendererDevice = {
+  createBuffer(descriptor: { label?: string }): object;
+  queue: {
+    writeBuffer(
+      buffer: object,
+      offset: number,
+      data: ArrayBufferView,
+      dataOffset?: number,
+      size?: number,
+    ): void;
+  };
+};
+
+type RendererAdapter = {
+  requestDevice(...options: unknown[]): Promise<RendererDevice>;
+};
+
+type RendererGpu = {
+  requestAdapter(...options: unknown[]): Promise<RendererAdapter | null>;
+};
+
+async function gateRendererDevice(page: Page) {
+  await page.addInitScript(() => {
+    const gpu = (navigator as Navigator & { gpu?: RendererGpu }).gpu;
+    if (!gpu) {
+      return;
+    }
+    let releaseDevice = () => {};
+    const deviceReady = new Promise<void>((resolve) => {
+      releaseDevice = resolve;
+    });
+    document.addEventListener('domfx-test-release-device', () => releaseDevice(), { once: true });
+    const requestAdapter = gpu.requestAdapter.bind(gpu);
+    Object.defineProperty(gpu, 'requestAdapter', {
+      configurable: true,
+      value: async (...args: unknown[]) => {
+        const adapter = await requestAdapter(...args);
+        if (!adapter) {
+          return adapter;
+        }
+        const requestDevice = adapter.requestDevice.bind(adapter);
+        Object.defineProperty(adapter, 'requestDevice', {
+          configurable: true,
+          value: async (...options: unknown[]) => {
+            const device = await requestDevice(...options);
+            const controls = new WeakSet<object>();
+            const createBuffer = device.createBuffer.bind(device);
+            Object.defineProperty(device, 'createBuffer', {
+              configurable: true,
+              value: (descriptor: { label?: string }) => {
+                const buffer = createBuffer(descriptor);
+                if (descriptor.label === 'domfx effect controls') {
+                  controls.add(buffer);
+                }
+                return buffer;
+              },
+            });
+            const queue = device.queue;
+            const writeBuffer = queue.writeBuffer.bind(queue);
+            Object.defineProperty(queue, 'writeBuffer', {
+              configurable: true,
+              value: (
+                buffer: object,
+                offset: number,
+                data: ArrayBufferView,
+                dataOffset?: number,
+                size?: number,
+              ) => {
+                if (controls.has(buffer) && data instanceof Float32Array) {
+                  const previous = document.documentElement.dataset.testControlMistOpacityWrites;
+                  document.documentElement.dataset.testControlMistOpacityWrites = previous
+                    ? `${previous},${data[0]}`
+                    : String(data[0]);
+                }
+                writeBuffer(buffer, offset, data, dataOffset, size);
+              },
+            });
+            await deviceReady;
+            return device;
+          },
+        });
+        return adapter;
+      },
+    });
+  });
+}
+
 type TestGpu = {
   requestAdapter(options?: unknown): Promise<{
     info: {
@@ -422,14 +509,7 @@ test('the docs lab restarts after pagehide and persisted pageshow', async ({ pag
 test('the docs lab replays writable controls changed before attachment is ready', async ({
   page,
 }) => {
-  let releaseFonts = () => {};
-  const fontsReady = new Promise<void>((resolve) => {
-    releaseFonts = resolve;
-  });
-  await page.route('**/fonts/*.woff2', async (route) => {
-    await fontsReady;
-    await route.continue();
-  });
+  await gateRendererDevice(page);
   try {
     await page.goto('/docs/api/effects/frost/', { waitUntil: 'domcontentloaded' });
     const lab = page.locator('[data-docs-lab]');
@@ -438,11 +518,14 @@ test('the docs lab replays writable controls changed before attachment is ready'
     await expect(lab).toHaveAttribute('data-status', 'initializing');
     await opacity.fill('0');
     await expect(lab.locator('[data-docs-lab-writable-code="mistOpacity"]')).toHaveText('0');
-    releaseFonts();
+    await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
     await expect(lab).toHaveAttribute('data-status', 'active');
     await expect(lab.locator('canvas')).toHaveCount(1);
+    await expect
+      .poll(() => page.locator('html').getAttribute('data-test-control-mist-opacity-writes'))
+      .toContain('0');
   } finally {
-    releaseFonts();
+    await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
   }
 });
 

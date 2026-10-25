@@ -232,6 +232,8 @@ test('logical font rectangles may exceed paint bounds inside the finite source g
   page,
 }) => {
   await page.goto('/docs/api/effects/fire/');
+  // Preserve the known font-overhang case independently of the preview's display size.
+  await page.addStyleTag({ content: '.docs-lab-text { font-size: 92px; }' });
   const lab = page.locator('[data-docs-lab]');
   await lab.scrollIntoViewIfNeeded();
   await lab.locator('[data-docs-lab-subject][value="text"]').check();

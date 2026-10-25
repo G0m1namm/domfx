@@ -242,6 +242,8 @@ snippet mirrors the controls and offers Copy with a manual-selection fallback. P
 attach only while visible, release on pagehide, respect reduced motion, never clip
 the host's output and leave the original subject and disabled controls in place
 without JavaScript or WebGPU. They are demonstrations, not verification evidence.
+Use larger default text, SVG and image targets so their edges are easy to inspect.
+Let artwork fit the available preview width while keeping room for its effect output.
 
 The GSAP guide includes a compact interactive sequence in English and Spanish,
 using the same graphite preview and control styling. Keep the original clickable

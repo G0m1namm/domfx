@@ -161,6 +161,27 @@ test('Halftone forwards relative geometry together with nondefault dot spacing',
   expect(await hasVisiblePixels(stage.locator('canvas'))).toBe(true);
 });
 
+test('marketing writable controls use the compact fieldset reset', async ({ page }) => {
+  await page.goto('/effects/');
+  await page.locator('[data-card][data-id="frost"]').click();
+  const controls = page.locator('[data-writable-controls]');
+  await expect(controls).toBeVisible();
+  expect(
+    await controls.evaluate((element) => {
+      const styles = getComputedStyle(element);
+      return {
+        borders: [
+          styles.borderTopWidth,
+          styles.borderRightWidth,
+          styles.borderBottomWidth,
+          styles.borderLeftWidth,
+        ],
+        padding: [styles.paddingTop, styles.paddingRight, styles.paddingBottom, styles.paddingLeft],
+      };
+    }),
+  ).toEqual({ borders: ['0px', '0px', '0px', '0px'], padding: ['0px', '0px', '0px', '0px'] });
+});
+
 test('marketing preview replays writable controls changed before attachment is ready', async ({
   page,
 }) => {

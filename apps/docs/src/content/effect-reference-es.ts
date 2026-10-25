@@ -44,7 +44,7 @@ export const effectReferenceEs = {
   },
   halftone: {
     description:
-      'Puntos de semitono siguen el borde. dotSpacing, definido al crear, fija el espaciado local en píxeles CSS y escala el radio proporcionalmente sin ampliar el soporte.',
+      'Puntos de semitono siguen el borde. HalftoneOptions extiende PatternOptions con dotSpacing, definido al crear, que fija el espaciado local en píxeles CSS y escala el radio proporcionalmente sin ampliar el soporte.',
     intensity:
       'Sin opciones de extensión: Refuerza el patrón y amplía su alcance. En modo relativo, intensity escala la opacidad sin cambiar la extensión ni las marcas.',
   },

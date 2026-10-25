@@ -294,6 +294,26 @@ test('@smoke all catalog references retain their public options and usable sourc
   }
 });
 
+for (const [path, usage] of [
+  ['/docs/api/effects/halftone/', 'Halftone usage'],
+  ['/docs/es/api/effects/halftone/', 'Uso de Halftone'],
+] as const) {
+  test(`@smoke ${path} documents HalftoneOptions in its signature and typed snippet`, async ({
+    page,
+  }) => {
+    await page.goto(path);
+    await expect(
+      page.getByText(
+        'attachHalftone(target: Element, options: HalftoneOptions): HalftoneEffectHandle',
+        { exact: true },
+      ),
+    ).toBeVisible();
+    const snippet = page.getByRole('region', { name: usage, exact: true });
+    await expect(snippet).toContainText('import type { HalftoneOptions }');
+    await expect(snippet).toContainText('const options: HalftoneOptions = {');
+  });
+}
+
 test('@smoke keyboard users can scroll code and API tables, and follow page sections', async ({
   page,
 }) => {
@@ -432,7 +452,11 @@ for (const { path, effect, text } of labPages) {
     }
     await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
     await expect(lab.locator('canvas')).toHaveCount(0);
-    await expect(lab.getByRole('button', { name: 'Effects unavailable' })).toBeDisabled();
+    await expect(
+      lab.getByRole('button', {
+        name: path.startsWith('/docs/es/') ? 'Efectos no disponibles' : 'Effects unavailable',
+      }),
+    ).toBeDisabled();
     await expect(lab.getByRole('slider', { name: 'intensity', exact: true })).toBeDisabled();
   });
 

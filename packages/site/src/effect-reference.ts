@@ -168,5 +168,8 @@ export function patternExtentReference(effect: Effect) {
       ],
     } as const;
   }
+  if (effect.id === 'halftone') {
+    return { ...flowExtent, optionsType: 'HalftoneOptions' };
+  }
   return effect.id === 'dither' ? { ...flowExtent, optionsType: 'DitherOptions' } : flowExtent;
 }

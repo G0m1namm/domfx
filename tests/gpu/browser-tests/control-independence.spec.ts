@@ -74,24 +74,6 @@ for (const dpr of [1, 2]) {
               }
               return total;
             };
-            const validPremultiplied = (sample: Pixels) => {
-              for (let index = 0; index < sample.rgba.length; index += 4) {
-                const opacity = sample.rgba[index + 3]! / 255;
-                const premultiplied = [
-                  (sample.rgba[index]! / 255) * opacity,
-                  (sample.rgba[index + 1]! / 255) * opacity,
-                  (sample.rgba[index + 2]! / 255) * opacity,
-                  opacity,
-                ];
-                if (
-                  !premultiplied.every(Number.isFinite) ||
-                  premultiplied.some((value) => value < 0 || value > 1)
-                ) {
-                  return false;
-                }
-              }
-              return true;
-            };
             const count = (sample: Pixels, predicate: (index: number) => boolean) => {
               let total = 0;
               for (let index = 0; index < sample.width * sample.height; index++) {
@@ -220,7 +202,6 @@ for (const dpr of [1, 2]) {
                 exact: equal(omittedPixels.rgba, explicitPixels.rgba),
                 unchanged,
                 boundary: [boundaryAlpha(omittedPixels), boundaryAlpha(explicitPixels)],
-                finite: [validPremultiplied(omittedPixels), validPremultiplied(explicitPixels)],
               };
             };
 
@@ -520,7 +501,23 @@ for (const dpr of [1, 2]) {
           expect(value.exact).toBe(true);
           expect(value.unchanged).toBe(true);
           expect(value.boundary).toEqual([0, 0]);
-          expect(value.finite).toEqual([true, true]);
+        }
+        const rawAlpha = await page.evaluate(
+          ({ mode, dpr }) => window.controlEffects.qualifyRawAlphaControls(mode, dpr),
+          { mode, dpr },
+        );
+        await info.attach('control-raw-alpha.json', {
+          body: JSON.stringify(rawAlpha),
+          contentType: 'application/json',
+        });
+        expect(rawAlpha.errors).toEqual([]);
+        expect(rawAlpha.releasedBytes).toBe(0);
+        expect(rawAlpha.samples).toHaveLength(15);
+        for (const sample of rawAlpha.samples) {
+          expect(sample.nontransparentPixels).toBeGreaterThan(0);
+          expect(sample.coloredPixels).toBeGreaterThan(0);
+          expect(sample.rgbWithinAlpha).toBe(true);
+          expect(sample.transparentRgbZero).toBe(true);
         }
         for (const [effect, value] of Object.entries(result.writable)) {
           expect(value.exact).toBe(true);

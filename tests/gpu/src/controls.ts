@@ -10,6 +10,8 @@ import {
 } from '@domfx/browser';
 import { memoryFor, startEffectDiagnostics } from '@domfx/browser/experimental';
 
+import { qualifyRawAlphaControls } from './controls-raw-alpha.js';
+
 declare global {
   interface Window {
     controlEffects: {
@@ -22,6 +24,7 @@ declare global {
       gsap: typeof gsap;
       diagnostics: typeof startEffectDiagnostics;
       memory: typeof memoryFor;
+      qualifyRawAlphaControls: typeof qualifyRawAlphaControls;
     };
   }
 }
@@ -36,4 +39,5 @@ window.controlEffects = {
   gsap,
   diagnostics: startEffectDiagnostics,
   memory: memoryFor,
+  qualifyRawAlphaControls,
 };

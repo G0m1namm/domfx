@@ -5,6 +5,12 @@ import type { BurnedPaperOptions } from './burned-paper-options.js';
 import { createCaptureRevisions } from './capture-revision.js';
 import { diagnosticsFor } from './diagnostics.js';
 import type { DitherOptions } from './dither-options.js';
+import type {
+  BurnedPaperEffectHandle,
+  FireEffectHandle,
+  FrostEffectHandle,
+  SlimeEffectHandle,
+} from './effect-controls.js';
 import { cssEffectError, EffectError, normalizeEffectError } from './effect-error.js';
 import {
   assertEffectPaintMargin,
@@ -16,7 +22,8 @@ import type { ElectricityOptions } from './electricity-options.js';
 import { energyExtentPadding, energyExtentSupport } from './energy-geometry.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
-import type { RenderEffect } from './gpu.js';
+import type { EffectControls, RenderEffect } from './gpu.js';
+import type { HalftoneOptions } from './halftone-options.js';
 import type { KineticOptions } from './kinetic-options.js';
 import {
   materialExtentOptions,
@@ -47,12 +54,55 @@ import type { SlimeOptions } from './slime-options.js';
 
 const owners = new WeakMap<Document, Set<Element>>();
 
-function finite(value: number, effect: RenderEffect): number {
-  if (!Number.isFinite(value) || !Number.isFinite(Math.fround(value))) {
+function finite(value: unknown, effect: RenderEffect): number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isFinite(Math.fround(value))
+  ) {
     throw new Error(`invalid-${effect}-parameter`);
   }
 
   return value;
+}
+
+function normalizedControl(
+  value: unknown | undefined,
+  fallback: number,
+  effect: RenderEffect,
+): number {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  return Math.max(0, Math.min(1, finite(value, effect)));
+}
+
+function creationControl(
+  value: unknown | undefined,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+  effect: RenderEffect,
+): number {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  const resolved = finite(value, effect);
+  if (resolved < minimum || resolved > maximum) {
+    throw new Error(`invalid-${effect}-parameter`);
+  }
+
+  return resolved;
+}
+
+interface EffectControlHandle extends EffectHandle {
+  mistOpacity: number;
+  readonly emberDensity: number;
+  readonly dotSpacing: number;
+  gloss: number;
+  emberGlow: number;
 }
 
 /** Internal adapter seam for controlled lifecycle verification in the lab. */
@@ -74,11 +124,11 @@ export function attachWithAdapters(
     | { effect: 'dither'; options: DitherOptions }
     | {
         effect: PatternEffect;
-        options: PatternOptions | ContourEchoesOptions | BrushFringeOptions;
+        options: PatternOptions | HalftoneOptions | ContourEchoesOptions | BrushFringeOptions;
       },
   adapters: AttachmentAdapters,
   measurePlacement = measureEffectPlacement,
-): EffectHandle {
+): EffectControlHandle {
   const { effect, options } = request;
   const document = target?.ownerDocument;
   const view = document?.defaultView;
@@ -118,6 +168,22 @@ export function attachWithAdapters(
   const patternOptions = { ...options };
   const patternGeometry = resolvePatternGeometry(effect, patternOptions, 0, 0);
   const seed = finite(options.seed === undefined ? 0 : options.seed, effect);
+  let mistOpacity = 1;
+  let gloss = 1;
+  let emberGlow = 1;
+  let emberDensity = 1;
+  let dotSpacing = 5.5;
+  if (request.effect === 'frost') {
+    mistOpacity = normalizedControl(request.options.mistOpacity, 1, effect);
+  } else if (request.effect === 'fire') {
+    emberDensity = creationControl(request.options.emberDensity, 1, 0, 1, effect);
+  } else if (request.effect === 'halftone' && 'dotSpacing' in request.options) {
+    dotSpacing = creationControl(request.options.dotSpacing, 5.5, 3, 12, effect);
+  } else if (request.effect === 'slime') {
+    gloss = normalizedControl(request.options.gloss, 1, effect);
+  } else if (request.effect === 'burned-paper') {
+    emberGlow = normalizedControl(request.options.emberGlow, 1, effect);
+  }
   const flameReach = request.effect === 'fire' ? request.options.flameReach : undefined;
   const dripDensity =
     request.effect === 'slime' && request.options.dripDensity !== undefined
@@ -784,6 +850,7 @@ export function attachWithAdapters(
         effect,
         geometry,
         dripDensity,
+        { mistOpacity, emberDensity, dotSpacing, gloss, emberGlow } satisfies EffectControls,
       );
       prepared.present(output.getCurrentTexture());
       dirty = false;
@@ -1078,6 +1145,41 @@ export function attachWithAdapters(
       invalidate();
     },
 
+    get mistOpacity() {
+      return mistOpacity;
+    },
+
+    set mistOpacity(value) {
+      mistOpacity = Math.max(0, Math.min(1, finite(value, effect)));
+      invalidate();
+    },
+
+    get emberDensity() {
+      return emberDensity;
+    },
+
+    get dotSpacing() {
+      return dotSpacing;
+    },
+
+    get gloss() {
+      return gloss;
+    },
+
+    set gloss(value) {
+      gloss = Math.max(0, Math.min(1, finite(value, effect)));
+      invalidate();
+    },
+
+    get emberGlow() {
+      return emberGlow;
+    },
+
+    set emberGlow(value) {
+      emberGlow = Math.max(0, Math.min(1, finite(value, effect)));
+      invalidate();
+    },
+
     onDispose(callback) {
       if (lifecycle === 'disposed') {
         callback();
@@ -1097,7 +1199,7 @@ export function attachFireWithAdapters(
   target: Element,
   options: FireOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
+): FireEffectHandle {
   return attachWithAdapters(target, { effect: 'fire', options }, adapters);
 }
 
@@ -1113,7 +1215,7 @@ export function attachFrostWithAdapters(
   target: Element,
   options: FrostOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
+): FrostEffectHandle {
   return attachWithAdapters(target, { effect: 'frost', options }, adapters);
 }
 
@@ -1129,7 +1231,7 @@ export function attachSlimeWithAdapters(
   target: Element,
   options: SlimeOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
+): SlimeEffectHandle {
   return attachWithAdapters(target, { effect: 'slime', options }, adapters);
 }
 
@@ -1137,7 +1239,7 @@ export function attachBurnedPaperWithAdapters(
   target: Element,
   options: BurnedPaperOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
+): BurnedPaperEffectHandle {
   return attachWithAdapters(target, { effect: 'burned-paper', options }, adapters);
 }
 
@@ -1152,8 +1254,8 @@ export function attachDitherWithAdapters(
 export function attachPatternWithAdapters(
   target: Element,
   effect: PatternEffect,
-  options: PatternOptions | ContourEchoesOptions | BrushFringeOptions,
+  options: PatternOptions | HalftoneOptions | ContourEchoesOptions | BrushFringeOptions,
   adapters: AttachmentAdapters,
-): EffectHandle {
+): EffectControlHandle {
   return attachWithAdapters(target, { effect, options }, adapters);
 }

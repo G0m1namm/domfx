@@ -23,6 +23,11 @@ import {
   attachStarShimmer,
   attachBrushFringe,
   type AttachmentOptions,
+  type BurnedPaperEffectHandle,
+  type FireEffectHandle,
+  type FrostEffectHandle,
+  type HalftoneEffectHandle,
+  type SlimeEffectHandle,
 } from '@domfx/browser';
 import {
   bindEffect,
@@ -38,6 +43,39 @@ import {
 declare const target: Element;
 declare const host: HTMLElement;
 declare const svgHost: SVGSVGElement;
+
+const frostControls: FrostEffectHandle = attachFrost(target, { host, mistOpacity: 0.25 });
+frostControls.mistOpacity = 2;
+const fireControls: FireEffectHandle = attachFire(target, { host, emberDensity: 0.25 });
+const halftoneControls: HalftoneEffectHandle = attachHalftone(target, { host, dotSpacing: 6 });
+const slimeControls: SlimeEffectHandle = attachSlime(target, { host, gloss: 0.25 });
+slimeControls.gloss = 2;
+const burnedControls: BurnedPaperEffectHandle = attachBurnedPaper(target, {
+  host,
+  emberGlow: 0.25,
+});
+burnedControls.emberGlow = -1;
+// @ts-expect-error Ember density is creation-only.
+fireControls.emberDensity = 0.5;
+// @ts-expect-error Dot spacing is creation-only.
+halftoneControls.dotSpacing = 6;
+// @ts-expect-error Frost-only mist opacity is not a Fire option.
+attachFire(target, { host, mistOpacity: 0.5 });
+// @ts-expect-error Ember density is a number, not percentage text.
+attachFire(target, { host, emberDensity: '50%' });
+// @ts-expect-error Dot spacing belongs to Halftone.
+attachStipple(target, { host, dotSpacing: 6 });
+// @ts-expect-error Halftone spacing is a numeric local CSS-pixel value.
+attachHalftone(target, { host, dotSpacing: '6px' });
+// @ts-expect-error Slime gloss is a numeric mix, not a CSS string.
+attachSlime(target, { host, gloss: '50%' });
+// @ts-expect-error Ember glow belongs to Burned paper.
+attachFrost(target, { host, emberGlow: 0.5 });
+frostControls.dispose();
+fireControls.dispose();
+halftoneControls.dispose();
+slimeControls.dispose();
+burnedControls.dispose();
 
 const relativeElectricity = attachElectricity(target, { host, contourSpread: 0.1 });
 const relativeKinetic = attachKinetic(target, { host, fragmentTravel: 0.2 });

@@ -51,11 +51,29 @@ export interface PreparedGpuFrame {
     effect?: RenderEffect,
     geometry?: EffectGeometry,
     dripDensity?: number,
+    controls?: EffectControls,
   ): void;
   present(destination: GPUTexture): void;
   readFire(): Promise<Uint8Array>;
   destroy(): void;
 }
+
+/** Renderer-private scalar controls shared by the selected effect programs. */
+export interface EffectControls {
+  readonly mistOpacity: number;
+  readonly emberDensity: number;
+  readonly dotSpacing: number;
+  readonly gloss: number;
+  readonly emberGlow: number;
+}
+
+const defaultControls: EffectControls = {
+  mistOpacity: 1,
+  emberDensity: 1,
+  dotSpacing: 5.5,
+  gloss: 1,
+  emberGlow: 1,
+};
 
 /** One experimental renderer service; caller owns it and shares it between targets.
  * No DOM Elements or layout reads cross this boundary.
@@ -159,7 +177,7 @@ export class GpuExperiment {
     if (!pixels.some((value, i) => i % 4 === 3 && value < 128)) {
       throw new EffectError('missing-exterior');
     }
-    if (this.managedBytes + width * height * 36 + 52 > 144_000_000) {
+    if (this.managedBytes + width * height * 36 + 84 > 144_000_000) {
       throw new EffectError('aggregate-budget');
     }
 
@@ -173,6 +191,7 @@ export class GpuExperiment {
     let output: GPUTexture | undefined;
     let uniform: GPUBuffer | undefined;
     let geometryUniform: GPUBuffer | undefined;
+    let controlsUniform: GPUBuffer | undefined;
     let scopeOpen = true;
     device.pushErrorScope('validation');
     try {
@@ -210,16 +229,27 @@ export class GpuExperiment {
         size: 32,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
+      controlsUniform = device.createBuffer({
+        label: 'domfx effect controls',
+        size: 32,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      });
       const outputTexture = output;
       const parameters = uniform;
       const geometricParameters = geometryUniform;
-      const bindings = this.programs.bind(sdfTexture, parameters, geometricParameters);
+      const effectControls = controlsUniform;
+      const bindings = this.programs.bind(
+        sdfTexture,
+        parameters,
+        geometricParameters,
+        effectControls,
+      );
       let disposed = false;
       const prepared: PreparedGpuFrame = {
         width,
         height,
-        // Textures + legacy vec4f (16), geometry (32), patched JFA i32 (4).
-        managedBytes: width * height * 36 + 52,
+        // Textures + legacy vec4f (16), geometry (32), controls (32), patched JFA i32 (4).
+        managedBytes: width * height * 36 + 84,
         prepareMs: performance.now() - started,
         readSdf: async () => {
           const bytes = await this.readTexture(sdfTexture, width, height, 8);
@@ -238,19 +268,40 @@ export class GpuExperiment {
           effect = 'fire',
           geometry,
           dripDensity = 0.56,
+          controls = defaultControls,
         ) => {
           if (disposed) {
             throw new Error('frame-disposed');
           }
           if (
-            ![time, seed, intensity, pixelsPerCss, flameHeight, dripDensity].every(
-              Number.isFinite,
-            ) ||
+            ![
+              time,
+              seed,
+              intensity,
+              pixelsPerCss,
+              flameHeight,
+              dripDensity,
+              controls.mistOpacity,
+              controls.emberDensity,
+              controls.dotSpacing,
+              controls.gloss,
+              controls.emberGlow,
+            ].every(Number.isFinite) ||
             pixelsPerCss <= 0 ||
             flameHeight < 8 ||
             flameHeight > 64 ||
             dripDensity < 0 ||
-            dripDensity > 1
+            dripDensity > 1 ||
+            controls.mistOpacity < 0 ||
+            controls.mistOpacity > 1 ||
+            controls.emberDensity < 0 ||
+            controls.emberDensity > 1 ||
+            controls.dotSpacing < 3 ||
+            controls.dotSpacing > 12 ||
+            controls.gloss < 0 ||
+            controls.gloss > 1 ||
+            controls.emberGlow < 0 ||
+            controls.emberGlow > 1
           ) {
             throw new Error('invalid-parameters');
           }
@@ -288,6 +339,20 @@ export class GpuExperiment {
               seed,
               Math.max(0, Math.min(1, intensity)),
               (pixelsPerCss * flameHeight) / 24,
+            ]),
+          );
+          device.queue.writeBuffer(
+            effectControls,
+            0,
+            new Float32Array([
+              controls.mistOpacity,
+              controls.emberDensity,
+              controls.dotSpacing,
+              controls.gloss,
+              controls.emberGlow,
+              0,
+              0,
+              0,
             ]),
           );
           const encoder = device.createCommandEncoder();
@@ -331,6 +396,7 @@ export class GpuExperiment {
           outputTexture.destroy();
           parameters.destroy();
           geometricParameters.destroy();
+          effectControls.destroy();
           this.prepared.delete(prepared);
         },
       };
@@ -348,6 +414,7 @@ export class GpuExperiment {
       output?.destroy();
       uniform?.destroy();
       geometryUniform?.destroy();
+      controlsUniform?.destroy();
       if (scopeOpen) {
         await device.popErrorScope();
       }

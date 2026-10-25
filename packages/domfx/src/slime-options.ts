@@ -1,6 +1,8 @@
 import type { AttachmentOptions } from './attachment-options.js';
 
 export interface SlimeOptions extends AttachmentOptions {
+  /** Finite values clamp to 0–1. Defaults to 1. */
+  readonly gloss?: number;
   /** Creation-only normalized drip density, from 0 to 1. Defaults to 0.56.
    * Higher values add drip locations; zero disables drips. Does not
    * change drip size, travel, timing or intensity, or enable relative mode.

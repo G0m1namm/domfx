@@ -40,6 +40,12 @@ Search the repo for every file that documents how code should be written. When `
 
 For UI changes, include `DESIGN.md` and [UI conventions](../../../engineering/ui-conventions.md) in the Standards sources. Check changed styles against its rules and report missing applicable review evidence.
 
+For workflow changes or resumed work, also check the continuation record: active PR,
+branch/worktree, required acceptance versus external follow-ups, observable test
+boundary, next action and a UI preview URL when applicable. Flag an in-PR correction
+that was moved to a new PR without changed scope or explicit instruction, and flag an
+external follow-up silently treated as a release blocker.
+
 On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below: a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
 
 - **The repo overrides.** A documented repo standard always wins; where it endorses something the baseline would flag, suppress the smell.

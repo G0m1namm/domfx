@@ -51,6 +51,21 @@ successful run or a larger rule catalog does not establish that improvement.
 Change one failure-driven part of the harness at a time. Keep it only when the
 observed benefit justifies the extra instructions, runtime, and maintenance.
 
+## #184 workflow exercise
+
+For a representative small UI correction, run its focused check while editing, then
+run `pnpm agent:verify` once the source is settled. The smoke step consumes the build
+from that same run; a source or identity change requires a new run with its reason
+recorded. For an interrupted task, resume from the continuation record, compare its
+revision/diff and test boundary, then perform the listed next action rather than
+replaying a session transcript.
+
+On 2026-10-25, the integrated smoke selection expanded from 22 to 54 development/
+production cases. The prior 22-case run took 41.6 s and the 54-case run took 57.8 s
+using existing built output; four representative restored UI cases then passed in
+8.5 s. These runs establish the exercised sequence and expanded coverage, not a
+general speedup: coverage differs, and timing needs comparable repeated measurements.
+
 ## Current limits
 
 - Runner regressions do not measure skill-trigger accuracy or agent coding quality.

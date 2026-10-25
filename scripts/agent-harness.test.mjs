@@ -18,6 +18,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { runVerification, snapshotWorktree } from './agent-harness.mjs';
+import { summarizeEvidence } from './evidence-inspection.mjs';
 
 // Git hooks export repository-local variables; fixtures must discover their own repositories.
 for (const name of execFileSync('git', ['rev-parse', '--local-env-vars'], { encoding: 'utf8' })
@@ -92,9 +93,41 @@ test('verification records sequential checks for the unchanged source tree', (t)
   assert.equal(report.gpuVerification, 'not-run');
   assert.equal(report.status, 'passed');
   assert.equal(report.sourceBefore.digest, report.sourceAfter.digest);
+  assert.deepEqual(report.checkSet.commands, ['check', 'build:web:built', 'test:web:smoke:built']);
+  assert.equal(report.checkSet.digest.length, 64);
+  assert.equal(report.buildIdentity.command, 'build:web:built');
+  assert.equal(report.buildIdentity.source.digest, report.sourceBefore.digest);
   assert.equal(report.browserVerification, 'passed');
   assert.equal(report.designReview, 'not-run');
   assert.deepEqual(JSON.parse(readFileSync(reportPath, 'utf8')), report);
+});
+
+test('verification records a supplied rerun reason with its identities', (t) => {
+  const { root } = fixture(t);
+  const { report } = runVerification(root, pass, {
+    rerunReason: 'source changed after the prior report',
+  });
+  assert.equal(report.rerunReason, 'source changed after the prior report');
+  assert.equal(report.runtime.node, process.version);
+  assert.equal(report.buildIdentity.checkSetDigest, report.checkSet.digest);
+});
+
+test('evidence inspection bounds selected JSONL and log previews', () => {
+  const fixtures = fileURLToPath(new URL('./fixtures/evidence-inspection/', import.meta.url));
+  const result = summarizeEvidence(
+    [join(fixtures, 'worker.jsonl'), join(fixtures, 'failure.log')],
+    { entryChars: 96, totalChars: 260 },
+  );
+  assert.deepEqual(result.fullEvidence, [
+    join(fixtures, 'worker.jsonl'),
+    join(fixtures, 'failure.log'),
+  ]);
+  assert.ok(result.entries.every((entry) => entry.preview.length <= 96));
+  assert.ok(result.preview.length <= 260);
+  assert.match(result.preview, /worker\.jsonl:1/);
+  assert.match(result.preview, /worker\.jsonl:2.*failed/);
+  assert.match(result.preview, /failure\.log:1/);
+  assert.doesNotMatch(result.preview, /LONG_WORKER_PROMPT|data:image|base64|tool payload/i);
 });
 
 for (const [label, result] of [

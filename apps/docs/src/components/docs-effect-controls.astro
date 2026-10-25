@@ -9,6 +9,7 @@ interface Props { effect?: Effect; }
 const { effect } = Astro.props;
 const isEs = localeFromPath(Astro.url.pathname) === 'es';
 const fields = effect ? effectWritableFields(effect) : [];
+const supportsColor = effect?.id !== 'burned-paper';
 function description(name: string) {
   switch (name) {
     case 'mistOpacity':
@@ -30,7 +31,8 @@ function description(name: string) {
   <tbody>
     <tr><th scope="row"><code>time</code><p>{isEs ? 'Tiempo del efecto en segundos. Permite avanzar y retroceder, incluso a tiempos negativos.' : 'Effect time in seconds. Supports forward and backward seeking, including negative time.'}</p></th><td><code>number</code></td></tr>
     <tr><th scope="row"><code>intensity</code><p>{isEs ? 'Intensidad del efecto, limitada al intervalo de 0 a 1 después de validar el valor. No es un ajuste universal de altura ni de opacidad.' : 'Effect strength, clamped to 0–1 after validation. It is not a universal height or opacity setting.'}</p></th><td><code>number</code></td></tr>
+    {supportsColor && <tr><th scope="row"><code>color</code><p>{isEs ? 'Color decorativo principal opcional. Todos los efectos excepto Burned paper lo admiten; asigna undefined para recuperar los colores originales.' : 'Optional main decorative color. Every effect except Burned paper supports it; assign undefined to restore the original colors.'}</p></th><td><code>string | undefined</code></td></tr>}
     {fields.map((field) => <tr><th scope="row"><code>{field.name}</code><p>{description(field.name)}</p></th><td><code>number</code> · 0–1 · <code>1</code></td></tr>)}
   </tbody>
 </DocsApiTable>
-<p>{isEs ? 'Todos los valores deben ser finitos. time e intensity deben ser representables como float32. intensity y los controles específicos se limitan a 0–1; estos últimos aceptan cualquier número finito. Una asignación no válida genera un error y conserva el valor anterior. Usa un solo controlador por propiedad: asignaciones directas, una línea de tiempo u otro controlador de animación.' : 'All values must be finite. time and intensity must fit float32. intensity and effect-specific controls clamp to 0–1; the latter accept any finite number. An invalid assignment throws and preserves the previous value. Use one writer per property: direct assignments, a timeline or another animation driver.'}</p>
+<p>{isEs ? 'Todos los valores numéricos deben ser finitos. time e intensity deben ser representables como float32. intensity y los controles específicos se limitan a 0–1; estos últimos aceptan cualquier número finito. Una asignación no válida genera un error y conserva el valor anterior. Usa un solo controlador por propiedad: asignaciones directas, una línea de tiempo u otro controlador de animación.' : 'All numeric values must be finite. time and intensity must fit float32. intensity and effect-specific controls clamp to 0–1; the latter accept any finite number. An invalid assignment throws and preserves the previous value. Use one writer per property: direct assignments, a timeline or another animation driver.'}</p>

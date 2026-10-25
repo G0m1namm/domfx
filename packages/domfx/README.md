@@ -732,6 +732,18 @@ preserves its premultiplied alpha and shading, schedules the next frame, and nei
 recaptures the target nor allocates new GPU resources or pipelines. Halftone uses its
 fixed authored 5.5 CSS-pixel pitch; Slime retains its authored highlights.
 
+GSAP can animate `color` directly. First assign an explicit supported opaque color,
+then use explicit opaque endpoints, for example:
+
+```ts
+effect.color = '#f60';
+const colorTween = gsap.fromTo(effect, { color: '#f60' }, { color: '#69f', duration: 2 });
+```
+
+After setting a color, ordinary `.to()` tweens can read it as their starting value.
+Stop color tweens before assigning `undefined` to restore the original palette;
+`undefined` is not an interpolation endpoint. Dispose owned tweens with the effect.
+
 The extent values above are examples, not defaults. Supplying either field selects relative
 mode and defaults its omitted partner to **zero**. Zero disables that component;
 both zero produce transparent output. Omit both for the original sizing and

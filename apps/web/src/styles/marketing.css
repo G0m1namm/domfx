@@ -407,6 +407,7 @@ footer nav {
   background: var(--raised);
 }
 .effect-creation-controls,
+.effect-color-controls,
 .effect-writable-controls {
   border: 0;
   padding: 0;

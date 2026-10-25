@@ -33,6 +33,21 @@ import { codeTheme, gsapCode } from "../examples";
 
 <p><code>gsap.killTweensOf(fire, 'intensity')</code> stops only that property; it does not dispose the effect or stop a time tween. Keep one driver per property and keep values within the <a href="/docs/api/shared#control-playback">control ranges</a>.</p>
 
+## Animate color
+
+<p>Every effect except Burned paper supports a writable <code>color</code>. Initialize it with an explicit supported opaque color string, then use explicit opaque endpoints with <code>fromTo()</code>; the original palette is <code>undefined</code>, not an interpolation endpoint. This changes the decoration, preserving the target and effect opacity.</p>
+
+```ts
+fire.color = '#ff6600';
+const colorTween = gsap.fromTo(
+  fire,
+  { color: '#ff6600' },
+  { color: '#6699ff', duration: 2, ease: 'power1.inOut' },
+);
+```
+
+<p>For subsequent changes, use <code>{"gsap.to(fire, { color: '#ff6600', duration: 2 })"}</code>. During cleanup, call <code>colorTween.kill()</code> before disposing the effect. To restore the original palette, stop color tweens and assign <code>fire.color = undefined</code>.</p>
+
 ## Own the lifetime
 
 <p>Register <code>cleanup()</code> in your framework’s unmount hook before calling <code>setup()</code>. It removes listeners, reverts and kills this example’s timeline, and disposes the effect. This works while fonts or <code>ready</code> are pending. The disposal listener also restores opacity if the target is removed. On remount, create fresh variables, an effect and a timeline.</p>

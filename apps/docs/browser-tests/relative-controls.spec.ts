@@ -158,13 +158,23 @@ for (const locale of ['en', 'es'] as const) {
       }
       if (colorField) {
         const color = lab.locator('[data-docs-lab-color]');
+        const colorCanvas = await lab.locator('canvas').elementHandle();
+        if (!colorCanvas) {
+          throw new Error(`Missing color output: ${effect.id}`);
+        }
         await color.fill('#ff0000');
+        expect(await colorCanvas.evaluate((canvas) => canvas.isConnected)).toBe(true);
         await expect(lab.locator('[data-docs-lab-code]')).toContainText('color: "#ff0000",');
       }
       await lab.locator('[data-docs-lab-copy]').click();
       const copied = await page.locator('html').getAttribute('data-copied-settings');
       expect(copied, effect.id).toContain(`const effect = ${effect.exportName}(target`);
       expect(copied, effect.id).toContain('intensity: 0.45');
+      if (colorField) {
+        expect(copied, effect.id).toContain('color: "#ff0000",');
+      } else {
+        expect(copied, effect.id).not.toContain('color:');
+      }
       for (const field of fields) {
         expect(copied, effect.id).toContain(
           `${field.name}: ${effectSettingApiValue(field, changedControlValue(field))}`,
@@ -175,6 +185,10 @@ for (const locale of ['en', 'es'] as const) {
         await expect(lab.locator(`[data-docs-lab-target="${subject}"]`)).toBeVisible();
         await expect(lab).toHaveAttribute('data-status', 'active');
         await expect(lab.locator('canvas')).toHaveCount(1);
+        if (colorField) {
+          await expect(lab.locator('[data-docs-lab-color]')).toHaveValue('#ff0000');
+          await expect(lab.locator('[data-docs-lab-code]')).toContainText('color: "#ff0000",');
+        }
       }
       if (colorField) {
         await lab.locator('[data-color-reset]').click();

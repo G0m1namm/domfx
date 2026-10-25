@@ -121,6 +121,9 @@ the main demonstration, away from copy and controls. Keep the contrast low enoug
 that the live effect remains the focal point. The picker may expose one main decorative
 color for every effect except Burned paper; an unset picker preserves each effect's
 original colors, including Fire's warm colors.
+Use a compact square swatch beside the color value and an icon-only reset with an
+accessible label. Keep both targets at least 44 CSS pixels; the swatch must not
+stretch across the settings panel. Marketing previews and docs share this control.
 
 Main headings, paragraphs, labels and code use solid text. The approved exception is
 `@domfx/gsap` in the post-example title description: use a static brand gradient

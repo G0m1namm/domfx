@@ -861,7 +861,6 @@ test('native GSAP drives public writable handles and restores their rendered sta
           pixelMass(host.querySelector('canvas')!),
         ),
       );
-      slime.color = '#77aa44';
       let textures = 0;
       let pipelines = 0;
       const createTexture = GPUDevice.prototype.createTexture;
@@ -874,6 +873,7 @@ test('native GSAP drives public writable handles and restores their rendered sta
         pipelines += 1;
         return createRenderPipeline.apply(this, args);
       };
+      slime.color = '#77aa44';
       const timeline = gsap.timeline({ paused: true });
       timeline.to(frost, { mistOpacity: 0, duration: 1, ease: 'power1.inOut' }, 0);
       timeline.fromTo(
@@ -883,16 +883,25 @@ test('native GSAP drives public writable handles and restores their rendered sta
         1,
       );
       timeline.fromTo(paper, { emberGlow: 0 }, { emberGlow: 1, duration: 1, ease: 'none' }, 2);
+      timeline.to(slime, { color: '#0000ff', duration: 1, ease: 'none' }, 2);
       timeline.seek(0.5, true);
       const frostMidpoint = frost.mistOpacity;
       timeline.seek(1.5, true);
       const slimeMidpoint = slime.color;
       timeline.seek(2.5, true);
       const paperMidpoint = paper.emberGlow;
-      timeline.reverse();
-      timeline.pause();
+      const chainedColor = slime.color;
       timeline.seek(2.25, true);
       const paperReverse = paper.emberGlow;
+      const reverseSeekColor = slime.color;
+      const reverseStart = timeline.time();
+      timeline.reverse();
+      for (let frame = 0; frame < 60 && timeline.time() >= reverseStart; frame += 1) {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      }
+      timeline.pause();
+      const reverseTime = timeline.time();
+      const reversedColor = slime.color;
       timeline.seek(0.5, true);
       timeline.killTweensOf(frost, 'mistOpacity');
       timeline.seek(1, true);
@@ -941,6 +950,11 @@ test('native GSAP drives public writable handles and restores their rendered sta
         frostMidpoint,
         slimeMidpoint,
         paperMidpoint,
+        chainedColor,
+        reverseSeekColor,
+        reverseStart,
+        reverseTime,
+        reversedColor,
         paperReverse,
         frostKilled,
         scopedValues,
@@ -961,7 +975,11 @@ test('native GSAP drives public writable handles and restores their rendered sta
     }
   });
   expect(result.frostMidpoint).toBeCloseTo(0.5, 6);
-  expect(result.slimeMidpoint).toMatch(/^rgb\(/);
+  expect(result.slimeMidpoint).toBe('rgb(60, 85, 34)');
+  expect(result.chainedColor).toBe('rgb(60, 85, 162)');
+  expect(result.reverseSeekColor).toBe('rgb(89, 128, 115)');
+  expect(result.reverseTime).toBeLessThan(result.reverseStart);
+  expect(result.reversedColor).not.toBe(result.reverseSeekColor);
   expect(result.paperMidpoint).toBeCloseTo(0.5, 6);
   expect(result.paperReverse).toBeCloseTo(0.25, 6);
   expect(result.frostKilled).toBeCloseTo(0.5, 6);

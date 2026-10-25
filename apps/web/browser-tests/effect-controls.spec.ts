@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
 import {
+  effectColorField,
   effectCreationFields,
   effectSettingApiValue,
   effectWritableFields,
@@ -163,6 +164,12 @@ test('marketing color control updates live code and restores original colors', a
   const color = controls.locator('input[type="color"]');
 
   await expect(controls).toBeVisible();
+  expect(
+    await controls.evaluate((element) => {
+      const styles = getComputedStyle(element);
+      return [styles.borderTopWidth, styles.paddingLeft, styles.paddingRight];
+    }),
+  ).toEqual(['0px', '0px', '0px']);
   await expect(color).toHaveAccessibleName('color');
   await expect(controls.locator('[data-color-output]')).toHaveText('Original colors');
   await expect(controls.locator('[data-color-reset]')).toBeDisabled();
@@ -315,10 +322,26 @@ for (const locale of ['en', 'es'] as const) {
           expect(await previous.evaluate((canvas) => canvas.isConnected)).toBe(true);
           await expect(dialog.locator('[data-code]')).toContainText(`effect.${field.name} = 0.4`);
         }
+        if (effectColorField(effect)) {
+          const colorCanvas = await dialog.locator('canvas').elementHandle();
+          if (!colorCanvas) {
+            throw new Error(`Missing color canvas for ${effect.id}`);
+          }
+          await dialog.locator('input[type="color"]').fill('#ff0000');
+          expect(await colorCanvas.evaluate((canvas) => canvas.isConnected)).toBe(true);
+          await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
+        } else {
+          await expect(dialog.locator('[data-color-controls]')).toBeHidden();
+        }
         await dialog.locator('[data-copy-code]').click();
         const copied = await page.locator('html').getAttribute('data-copied-settings');
         expect(copied).toContain(effect.exportName);
         expect(copied).toContain('intensity: 0.45');
+        if (effectColorField(effect)) {
+          expect(copied).toContain('color: "#ff0000",');
+        } else {
+          expect(copied).not.toContain('color:');
+        }
         for (const field of fields) {
           const value = changedControlValue(field);
           expect(copied).toContain(`${field.name}: ${effectSettingApiValue(field, value)}`);

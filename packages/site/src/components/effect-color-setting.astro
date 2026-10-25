@@ -16,5 +16,5 @@ const originalColors = locale === 'es' ? 'Colores originales' : 'Original colors
   <label class="effect-setting-label" for={id}>color</label>
   <input id={id} type="color" value="#c2c5db" aria-describedby={`${id}-value`} {...inputAttributes}/>
   <output id={`${id}-value`} data-color-output>{originalColors}</output>
-  <button type="button" class="effect-color-reset" data-color-reset disabled>{resetLabel}</button>
+  <button type="button" class="effect-color-reset" data-color-reset aria-label={resetLabel} title={resetLabel} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-counter-clockwise"/></svg></button>
 </div>

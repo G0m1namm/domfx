@@ -159,7 +159,10 @@ Before proposing a change:
 2. For capture/rendering/lifecycle changes, run `pnpm test:gpu` and relevant focused
    fixture tests. Inspect affected website examples in development and production.
    Use `pnpm test:visual` for local screenshot comparisons; review baseline changes.
-3. Before a release, run `pnpm test:gpu:full`, `pnpm test:web`, and
+3. Before release qualification, run `pnpm release:preflight --base <PR-base>` to
+   check the package/version plan and artifacts. After an unchanged `pnpm check`,
+   use `pnpm release:preflight:built --base <PR-base>` to reuse its library build.
+   Before a release, run `pnpm test:gpu:full`, `pnpm test:web`, and
    `pnpm release:rehearse` on a WebGPU-capable machine. Record environment and results.
 4. Describe observable changes and remaining limitations. Never infer GPU success
    from website smoke or static checks.

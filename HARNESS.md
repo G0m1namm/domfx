@@ -133,9 +133,10 @@ deterministic tooling tests from evidence about an agent's engineering decisions
 
 ## Inspect local evidence
 
-Use `node scripts/evidence-inspection.mjs <log-or-jsonl>...` to review selected
+Use `pnpm agent:evidence <log-or-jsonl>...` to review selected
 JSONL fields and text-log lines without copying raw sessions into a handoff. It omits
 image, base64 and tool-payload fields, caps each entry and the aggregate preview, and
-prints source line references plus paths to the complete local evidence. Keep those
+prints source line references and a bounded list of full-evidence paths. The complete
+input files stay unchanged; the programmatic result retains every full path. Keep those
 source files under ignored local storage; the summary is navigation, not a replacement
 for required verification evidence.

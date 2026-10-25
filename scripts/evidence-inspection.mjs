@@ -119,7 +119,11 @@ if (
     process.exitCode = 1;
   } else {
     const result = summarizeEvidence(paths);
-    console.log(result.preview);
-    console.log(`\nFull local evidence:\n${result.fullEvidence.join('\n')}`);
+    console.log(
+      truncate(
+        `${result.preview}\n\nFull local evidence:\n${result.fullEvidence.join('\n')}`,
+        1_200,
+      ),
+    );
   }
 }

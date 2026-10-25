@@ -85,5 +85,12 @@ jobs:
           path: .scratch/docs/report.json
           include-hidden-files: true
           retention-days: 7
-      - run: pnpm release:status --since origin/main
-      - run: pnpm release:artifacts
+      - name: Pull request release preflight
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: pnpm release:preflight:built --base "$BASE_SHA"
+      - if: github.event_name != 'pull_request'
+        run: pnpm release:status --since origin/main
+      - if: github.event_name != 'pull_request'
+        run: pnpm release:artifacts

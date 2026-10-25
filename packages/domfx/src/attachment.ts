@@ -646,6 +646,7 @@ export function attachWithAdapters(
     if (!checkConnection() || motionSuspended) {
       return false;
     }
+    const wasSuspended = visibilitySuspended;
     try {
       visibilitySuspended = document.hidden || !isTargetVisible(target);
     } catch (error) {
@@ -653,6 +654,12 @@ export function attachWithAdapters(
       return false;
     }
     if (visibilitySuspended) {
+      if (!wasSuspended && !document.hidden) {
+        // A delayed visible sample may arrive after scrolling out. Reset its
+        // cached intersection so a same-task return still wakes this target.
+        intersectionObserver.unobserve(target);
+        intersectionObserver.observe(target);
+      }
       scheduler.cancel(refreshObserved);
       if (revisions.raster === 'refreshing' || presenting) {
         stale();

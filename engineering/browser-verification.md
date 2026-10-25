@@ -42,7 +42,7 @@ pnpm --filter @domfx/gpu-tests exec playwright test failures.spec.ts --project p
 
 `pnpm test:browser` remains an alias for `pnpm test:gpu:full`. Tests never treat
 missing GPU as a passing rendering check. The full fixture suite has one worker,
-zero retries, and a ten-minute native limit. Long observations remain in the full
+zero retries, and a fifteen-minute native limit. Long observations remain in the full
 suite and the explicit `measure:*` commands, outside routine CI/harness verification.
 
 Set `DOMFX_GPU_BACKEND=native` (default) for hardware rendering, or `swiftshader`

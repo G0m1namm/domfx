@@ -361,12 +361,20 @@ async function runSeed(seed: number) {
           );
         }
         if (transition === 'visibility') {
+          const captures = fixtures.map((f) => f.counts.captures);
           op(cycle, 'show-stale');
           hide(false);
-          await frame();
+          await until(
+            () =>
+              fixtures.every((f) => f.effect.lifecycle === 'active' && f.effect.raster === 'fresh'),
+            'visible stale recovery',
+          );
           check(
-            fixtures.every((f) => f.effect.raster === 'stale'),
-            'stale re-entry committed',
+            fixtures.every(
+              (f, index) =>
+                f.counts.captures === captures[index] + 1 && f.effect.time === before[index].time,
+            ),
+            'stale re-entry changed time or captured more than once',
           );
         }
         if (transition === 'zero') {

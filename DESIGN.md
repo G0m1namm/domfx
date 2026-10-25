@@ -327,6 +327,10 @@ edge or prototype dock.
   effects are unavailable. Header links use CSS hover/focus states without Fire attachments.
 - **Selectors and sliders:** associated labels and readable values; selected state
   uses fill or underline plus semantic state. Focus treatment must remain distinct.
+- **Selects:** use the shared native select component for settings: graphite fill,
+  a padded Phosphor chevron, silver hover and yellow keyboard focus. Keep at least
+  44px targets and native keyboard/mobile picker behavior. Disabled controls remain
+  legible; forced-color mode restores the browser arrow.
 - **Effect settings:** the maintainer selected compact layout A on 2026-10-24 for
   marketing dialogs and docs previews: aligned label, control and value columns,
   with settings visible together. Share slider track, thumb, focus and target-area

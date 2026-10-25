@@ -1,0 +1,19 @@
+import type { Locale } from '../locale';
+import '../styles/effect-controls.css';
+
+interface Props {
+  locale: Locale;
+  id: string;
+  inputAttributes?: Record<string, string | boolean>;
+}
+
+const { locale, id, inputAttributes = {} } = Astro.props;
+const resetLabel = locale === 'es' ? 'Usar paleta original' : 'Use authored palette';
+const authoredPalette = locale === 'es' ? 'Paleta original' : 'Authored palette';
+---
+<div class="effect-setting effect-color-setting" data-color-setting>
+  <label class="effect-setting-label" for={id}>color</label>
+  <input id={id} type="color" value="#c2c5db" aria-describedby={`${id}-value`} {...inputAttributes}/>
+  <output id={`${id}-value`} data-color-output>{authoredPalette}</output>
+  <button type="button" class="effect-color-reset" data-color-reset>{resetLabel}</button>
+</div>

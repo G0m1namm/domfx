@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  effectColorField,
   effectCreationFields,
   effectSettingApiValue,
   effectWritableFields,
@@ -40,6 +41,7 @@ for (const locale of ['en', 'es'] as const) {
     const page = await context.newPage();
     for (const effect of effects) {
       const fields = effectCreationFields(effect);
+      const colorField = effectColorField(effect);
       if (!fields.length) {
         throw new Error(`Missing extent metadata: ${effect.id}`);
       }
@@ -79,6 +81,13 @@ for (const locale of ['en', 'es'] as const) {
       await expect(lab.locator('[data-docs-lab-code]')).toContainText(
         "clock: 'auto', motion: 'respect'",
       );
+      if (colorField) {
+        await expect(lab.locator('[data-docs-lab-color]')).toBeDisabled();
+        await expect(lab.locator('[data-docs-lab-color]')).toHaveAccessibleName('color');
+      } else {
+        await expect(lab.locator('[data-docs-lab-color]')).toHaveCount(0);
+      }
+      await expect(lab.locator('[data-docs-lab-code]')).not.toContainText('color:');
       await expect(lab.locator('canvas')).toHaveCount(0);
     }
     await context.close();
@@ -110,6 +119,7 @@ for (const locale of ['en', 'es'] as const) {
       await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
       expect(await firstCanvas.evaluate((canvas) => canvas.isConnected), effect.id).toBe(true);
       const fields = effectCreationFields(effect);
+      const colorField = effectColorField(effect);
       if (!fields.length) {
         throw new Error(`Missing extent metadata: ${effect.id}`);
       }
@@ -142,6 +152,11 @@ for (const locale of ['en', 'es'] as const) {
           `effect.${field.name} = 0.4`,
         );
       }
+      if (colorField) {
+        const color = lab.locator('[data-docs-lab-color]');
+        await color.fill('#ff0000');
+        await expect(lab.locator('[data-docs-lab-code]')).toContainText('color: "#ff0000",');
+      }
       await lab.locator('[data-docs-lab-copy]').click();
       const copied = await page.locator('html').getAttribute('data-copied-settings');
       expect(copied, effect.id).toContain(`const effect = ${effect.exportName}(target`);
@@ -156,6 +171,10 @@ for (const locale of ['en', 'es'] as const) {
         await expect(lab.locator(`[data-docs-lab-target="${subject}"]`)).toBeVisible();
         await expect(lab).toHaveAttribute('data-status', 'active');
         await expect(lab.locator('canvas')).toHaveCount(1);
+      }
+      if (colorField) {
+        await lab.locator('[data-color-reset]').click();
+        await expect(lab.locator('[data-docs-lab-code]')).not.toContainText('color:');
       }
     }
   });

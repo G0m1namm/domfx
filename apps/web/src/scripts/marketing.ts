@@ -4,6 +4,7 @@ import {
   effectSettingDisplayValue,
   effectSettingValueText,
   effectWritableFields,
+  effectColorField,
   intensityField,
   isEffectCreationName,
   type EffectCreationName,
@@ -14,6 +15,7 @@ import type { EffectSlot, EffectStatus } from '@domfx/site/effect-slot';
 import {
   createEffectEnvironment,
   createEffectSlot,
+  setEffectColor,
   setEffectWritableControl,
 } from '@domfx/site/effect-slot';
 import type { Effect } from '@domfx/site/effects';
@@ -62,6 +64,7 @@ function initializeMarketing() {
   });
   const intensity = required<HTMLInputElement>('#effect-intensity');
   const creationControls = required<HTMLFieldSetElement>('[data-creation-controls]', dialog);
+  const colorControls = required<HTMLFieldSetElement>('[data-color-controls]', dialog);
   const writableControls = required<HTMLFieldSetElement>('[data-writable-controls]', dialog);
   const dialogScene = required<HTMLElement>('.dialog-scene', dialog);
   const previewVisibility = required<HTMLElement>('.preview-visibility', dialogScene);
@@ -83,6 +86,7 @@ function initializeMarketing() {
   let targetKind: 'text' | 'svg' | 'image' = 'text';
   let previewSubject: Element | undefined;
   let paused = false;
+  let selectedColor: string | undefined;
   let previewTime = 2.4;
   let previewNeedsResume = false;
   let previewReturnFocus: HTMLElement | undefined;
@@ -523,7 +527,10 @@ function initializeMarketing() {
 
   function attachmentCode() {
     const effect = selectedEffect;
-    const settings = Object.entries(creationOptions())
+    const settings = [
+      ...Object.entries(creationOptions()),
+      ...(selectedColor ? [['color', JSON.stringify(selectedColor)]] : []),
+    ]
       .map(([name, value]) => `  ${name}: ${value},`)
       .join('\n');
     const writes = Object.entries(writableOptions())
@@ -784,6 +791,7 @@ function initializeMarketing() {
         intensity: Number(intensity.value) / 100,
         time: previewTime,
         ...creationOptions(),
+        ...(selectedColor ? { color: selectedColor } : {}),
         ...writableOptions(),
       };
     });
@@ -791,6 +799,7 @@ function initializeMarketing() {
 
   function updatePreviewPlayback() {
     creationControls.disabled = reducedMotion.matches || !hasGpu;
+    colorControls.disabled = reducedMotion.matches || !hasGpu;
     writableControls.disabled = reducedMotion.matches || !hasGpu;
     intensity.disabled = reducedMotion.matches || !hasGpu;
     const button = required<HTMLButtonElement>('[data-pause]', dialog);
@@ -816,8 +825,13 @@ function initializeMarketing() {
       `[data-writable-template="${effect.id}"]`,
       dialog,
     );
+    const colorTemplate = effectColorField(effect)
+      ? required<HTMLTemplateElement>(`[data-color-template="${effect.id}"]`, dialog)
+      : undefined;
     creationControls.replaceChildren(template.content.cloneNode(true));
     writableControls.replaceChildren(writableTemplate.content.cloneNode(true));
+    colorControls.replaceChildren(colorTemplate?.content.cloneNode(true) ?? '');
+    colorControls.hidden = !colorTemplate;
     creationControls.hidden = false;
     writableControls.hidden = effectWritableFields(effect).length === 0;
     clearCards();
@@ -832,6 +846,7 @@ function initializeMarketing() {
     paused = reducedMotion.matches;
     previewNeedsResume = reducedMotion.matches;
     previewTime = 2.4;
+    selectedColor = undefined;
     required('[data-copy-status]', dialog).textContent = '';
     previewReturnFocus = trigger;
     intensity.value = '70';
@@ -953,6 +968,31 @@ function initializeMarketing() {
         field,
         effectSettingApiValue(field, input.value),
       );
+    }
+    required('[data-code]', dialog).textContent = attachmentCode();
+  });
+
+  on(colorControls, 'input', (event) => {
+    if (!(event.target instanceof HTMLInputElement) || event.target.type !== 'color') {
+      return;
+    }
+    selectedColor = event.target.value;
+    required<HTMLOutputElement>('[data-color-output]', colorControls).value = selectedColor;
+    if (dialogSlot.handle) {
+      setEffectColor(selectedEffect, dialogSlot.handle, selectedColor);
+    }
+    required('[data-code]', dialog).textContent = attachmentCode();
+  });
+
+  on(colorControls, 'click', (event) => {
+    if (!(event.target instanceof Element) || !event.target.closest('[data-color-reset]')) {
+      return;
+    }
+    selectedColor = undefined;
+    required<HTMLOutputElement>('[data-color-output]', colorControls).value =
+      locale === 'es' ? 'Paleta original' : 'Authored palette';
+    if (dialogSlot.handle) {
+      setEffectColor(selectedEffect, dialogSlot.handle, undefined);
     }
     required('[data-code]', dialog).textContent = attachmentCode();
   });

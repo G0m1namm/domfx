@@ -104,12 +104,8 @@ export function effectExtentReference(effect: Effect) {
 }
 
 export type ExtentField = NonNullable<ReturnType<typeof effectExtentReference>>['fields'][number];
-export type EffectCreationName =
-  | ExtentField['name']
-  | 'emberDensity'
-  | 'dripDensity'
-  | 'dotSpacing';
-export type EffectWritableName = 'mistOpacity' | 'gloss' | 'emberGlow';
+export type EffectCreationName = ExtentField['name'] | 'emberDensity' | 'dripDensity';
+export type EffectWritableName = 'mistOpacity' | 'emberGlow';
 export type EffectOptionName = EffectCreationName | EffectWritableName;
 const effectCreationNames: readonly string[] = [
   'flameReach',
@@ -126,7 +122,6 @@ const effectCreationNames: readonly string[] = [
   'fringeReach',
   'emberDensity',
   'dripDensity',
-  'dotSpacing',
 ];
 
 export function isEffectCreationName(name: string): name is EffectCreationName {
@@ -134,7 +129,7 @@ export function isEffectCreationName(name: string): name is EffectCreationName {
 }
 
 export function isEffectWritableName(name: string): name is EffectWritableName {
-  return ['mistOpacity', 'gloss', 'emberGlow'].includes(name);
+  return ['mistOpacity', 'emberGlow'].includes(name);
 }
 
 type RangeSetting = {
@@ -160,6 +155,18 @@ type PresetSetting = {
   }[];
 };
 export type EffectSetting = RangeSetting | PresetSetting;
+
+/** The single optional decorative color keeps its string value distinct from numeric settings. */
+export type EffectColorSetting = {
+  readonly kind: 'color';
+  readonly name: 'color';
+};
+
+const colorSetting = { kind: 'color', name: 'color' } as const satisfies EffectColorSetting;
+
+export function effectColorField(effect: Effect): EffectColorSetting | undefined {
+  return effect.id === 'burned-paper' ? undefined : colorSetting;
+}
 
 function extentSetting(field: ExtentField): RangeSetting {
   return {
@@ -210,21 +217,6 @@ export function effectCreationFields(effect: Effect): readonly EffectSetting[] {
       },
     ];
   }
-  if (effect.id === 'halftone') {
-    return [
-      ...fields,
-      {
-        name: 'dotSpacing',
-        kind: 'range',
-        defaultValue: 5.5,
-        min: 3,
-        max: 12,
-        step: 0.5,
-        scale: 1,
-        unit: 'css-px',
-      },
-    ];
-  }
   return fields;
 }
 
@@ -233,8 +225,6 @@ export function effectWritableFields(effect: Effect): readonly EffectSetting[] {
   switch (effect.id) {
     case 'frost':
       return [percentField('mistOpacity')];
-    case 'slime':
-      return [percentField('gloss')];
     case 'burned-paper':
       return [percentField('emberGlow')];
     default:

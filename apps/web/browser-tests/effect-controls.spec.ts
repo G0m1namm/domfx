@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { Locator } from '@playwright/test';
 
 import {
   effectCreationFields,
@@ -25,6 +26,90 @@ function presetLabels(name: string, locale: 'en' | 'es') {
   }
   return locale === 'es' ? ['Sin brasas', 'Media', 'Completa'] : ['None', 'Half', 'Full'];
 }
+
+async function hasVisiblePixels(canvas: Locator) {
+  return canvas.evaluate(async (element) => {
+    const image = new Image();
+    const loaded = new Promise<void>((resolve, reject) => {
+      image.addEventListener('load', () => resolve(), { once: true });
+      image.addEventListener('error', () => reject(new Error('Could not inspect effect canvas')), {
+        once: true,
+      });
+    });
+    image.src = (element as HTMLCanvasElement).toDataURL();
+    await loaded;
+    const copy = document.createElement('canvas');
+    copy.width = image.width;
+    copy.height = image.height;
+    const context = copy.getContext('2d');
+    if (!context) {
+      throw new Error('Could not read effect canvas');
+    }
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, copy.width, copy.height).data;
+    return pixels.some((value, index) => index % 4 === 3 && value > 0);
+  });
+}
+
+test('Halftone forwards relative geometry together with nondefault dot spacing', async ({
+  page,
+}) => {
+  await page.goto('/effects/');
+  await page.locator('[data-card][data-id="halftone"]').click();
+  const dialog = page.locator('.effect-dialog');
+  const stage = dialog.locator('.dialog-stage');
+  const controls = dialog.locator('[data-creation-controls]');
+
+  await expect(stage).toHaveAttribute('data-status', 'active');
+  await controls.locator('[data-creation-option="dotSpacing"]').fill('12');
+  await controls.locator('[data-creation-option="plumeReach"]').fill('0');
+  await controls.locator('[data-creation-option="bandDepth"]').fill('0');
+  await expect(stage).toHaveAttribute('data-status', 'active');
+  expect(await hasVisiblePixels(stage.locator('canvas'))).toBe(false);
+
+  await controls.locator('[data-creation-option="plumeReach"]').fill('17');
+  await controls.locator('[data-creation-option="bandDepth"]').fill('17');
+  await expect(stage).toHaveAttribute('data-status', 'active');
+  expect(await hasVisiblePixels(stage.locator('canvas'))).toBe(true);
+});
+
+test('marketing preview replays writable controls changed before attachment is ready', async ({
+  page,
+}) => {
+  let releaseFonts = () => {};
+  const fontsReady = new Promise<void>((resolve) => {
+    releaseFonts = resolve;
+  });
+  await page.route('**/fonts/*.woff2', async (route) => {
+    await fontsReady;
+    await route.continue();
+  });
+  try {
+    await page.goto('/effects/', { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-card][data-id="frost"]').click();
+    const dialog = page.locator('.effect-dialog');
+    const stage = dialog.locator('.dialog-stage');
+    const opacity = dialog.locator('[data-writable-option="mistOpacity"]');
+    await expect(stage).toHaveAttribute('data-status', 'initializing');
+    await opacity.fill('0');
+    await expect(dialog.locator('[data-code]')).toContainText('effect.mistOpacity = 0');
+    releaseFonts();
+    await expect(stage).toHaveAttribute('data-status', 'active');
+    const delayed = await stage.screenshot();
+    const coatingDepth = dialog.locator('[data-creation-option="coatingDepth"]');
+    const value = await coatingDepth.inputValue();
+    const previous = await stage.locator('canvas').elementHandle();
+    await coatingDepth.fill(value);
+    if (!previous) {
+      throw new Error('Missing delayed Frost canvas');
+    }
+    await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
+    await expect(stage).toHaveAttribute('data-status', 'active');
+    expect((await stage.screenshot()).equals(delayed)).toBe(true);
+  } finally {
+    releaseFonts();
+  }
+});
 
 for (const locale of ['en', 'es'] as const) {
   for (const gallery of [false, true]) {

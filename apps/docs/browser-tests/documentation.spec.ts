@@ -12,6 +12,18 @@ import * as browserEffects from '@domfx/browser';
 import type { FireBinding } from '@domfx/gsap';
 import { effects } from '@domfx/site/effects';
 
+const effectHandleTypes = {
+  attachBurnedPaper: 'BurnedPaperEffectHandle',
+  attachFire: 'FireEffectHandle',
+  attachFrost: 'FrostEffectHandle',
+  attachHalftone: 'HalftoneEffectHandle',
+  attachSlime: 'SlimeEffectHandle',
+} as const;
+
+function effectHandleType(exportName: string) {
+  return effectHandleTypes[exportName as keyof typeof effectHandleTypes] ?? 'EffectHandle';
+}
+
 type TestGpu = {
   requestAdapter(options?: unknown): Promise<{
     info: {
@@ -173,6 +185,9 @@ test('@smoke all catalog references retain their public options and usable sourc
       await expect(
         page.getByRole('region', { name: `${effect.name} usage`, exact: true }),
       ).toContainText(`import { ${effect.exportName} } from '@domfx/browser'`);
+      await expect(
+        page.getByRole('heading', { name: 'Usage', level: 2 }).locator('..'),
+      ).toContainText(`): ${effectHandleType(effect.exportName)}`);
       await expect(
         page.getByRole('table', { name: 'Shared creation options', exact: true }),
       ).toContainText("'manual' | 'auto' | 'ambient'");
@@ -402,6 +417,33 @@ test('the docs lab restarts after pagehide and persisted pageshow', async ({ pag
   const intensity = lab.locator('[data-docs-lab-intensity]');
   await intensity.fill('45');
   await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+});
+
+test('the docs lab replays writable controls changed before attachment is ready', async ({
+  page,
+}) => {
+  let releaseFonts = () => {};
+  const fontsReady = new Promise<void>((resolve) => {
+    releaseFonts = resolve;
+  });
+  await page.route('**/fonts/*.woff2', async (route) => {
+    await fontsReady;
+    await route.continue();
+  });
+  try {
+    await page.goto('/docs/api/effects/frost/', { waitUntil: 'domcontentloaded' });
+    const lab = page.locator('[data-docs-lab]');
+    await lab.scrollIntoViewIfNeeded();
+    const opacity = lab.locator('[data-docs-lab-writable="mistOpacity"]');
+    await expect(lab).toHaveAttribute('data-status', 'initializing');
+    await opacity.fill('0');
+    await expect(lab.locator('[data-docs-lab-writable-code="mistOpacity"]')).toHaveText('0');
+    releaseFonts();
+    await expect(lab).toHaveAttribute('data-status', 'active');
+    await expect(lab.locator('canvas')).toHaveCount(1);
+  } finally {
+    releaseFonts();
+  }
 });
 
 test('the docs lab preserves pause and requires Start after reduced-motion recovery', async ({

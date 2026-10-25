@@ -31,6 +31,24 @@ const related = effects.filter((entry) => entry.category === effect.category && 
 const patternExtent = patternExtentReference(effect);
 const extent = effectExtentReference(effect);
 const optionsType = extent?.optionsType ?? `${effect.exportName.slice('attach'.length)}Options`;
+let handleType = 'EffectHandle';
+switch (effect.exportName) {
+  case 'attachFrost':
+    handleType = 'FrostEffectHandle';
+    break;
+  case 'attachFire':
+    handleType = 'FireEffectHandle';
+    break;
+  case 'attachSlime':
+    handleType = 'SlimeEffectHandle';
+    break;
+  case 'attachBurnedPaper':
+    handleType = 'BurnedPaperEffectHandle';
+    break;
+  case 'attachHalftone':
+    handleType = 'HalftoneEffectHandle';
+    break;
+}
 const extentCode = effectCreationFields(effect)
   .map((field) => `\n  ${field.name}: ${field.defaultValue / field.scale},`)
   .join('');
@@ -68,7 +86,7 @@ if (effect.lifecycle !== 'active') {
     <div><dt>{isEs ? 'Paquete' : 'Package'}</dt><dd><code>@domfx/browser</code></dd></div>
   </dl>
   <h2 id="usage">{isEs ? 'Uso' : 'Usage'}</h2>
-  <p><code>{`${effect.exportName}(target: Element, options: ${optionsType}): EffectHandle`}</code></p>
+  <p><code>{`${effect.exportName}(target: Element, options: ${optionsType}): ${handleType}`}</code></p>
   <p>{isEs ? 'Devuelve una instancia de efecto de inmediato. Las importaciones son seguras durante el renderizado en servidor; llama a la función en el navegador después de montar los elementos. La' : 'Returns an effect instance immediately. Imports are safe during server rendering; call the function in the browser after the elements are mounted. The'} <a href={`${docsPrefix}/standalone`}>{isEs ? 'guía de uso independiente' : 'Standalone guide'}</a> {isEs ? 'incluye el HTML y CSS necesarios.' : 'includes the required HTML and CSS.'}</p>
   <div class="docs-code-scroll" tabindex="0" role="region" aria-label={isEs ? `Uso de ${effect.name}` : `${effect.name} usage`}><Code code={code} lang="ts" theme={codeTheme} /></div>
   <h2 id="effect-options">{isEs ? 'Opciones del efecto' : 'Effect options'}</h2>

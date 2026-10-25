@@ -113,7 +113,7 @@ async function loadEffect(effect: Effect): Promise<EffectFactory> {
       case 'attachBurnedPaper':
         return api.attachBurnedPaper(target, { ...shared, scorchDepth, ashReach, emberGlow });
       case 'attachHalftone':
-        return api.attachHalftone(target, { ...shared, dotSpacing });
+        return api.attachHalftone(target, { ...shared, dotSpacing, plumeReach, bandDepth });
       case 'attachElectricity':
         return api.attachElectricity(target, { ...shared, contourSpread });
       case 'attachKinetic':

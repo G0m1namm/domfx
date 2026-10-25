@@ -138,6 +138,14 @@ function initializeLab(
       }
       if (slot.handle) {
         slot.handle.intensity = intensity();
+        for (const { field, input } of writableInputs) {
+          setEffectWritableControl(
+            effect,
+            slot.handle,
+            field,
+            effectSettingApiValue(field, input.value),
+          );
+        }
       }
       status.textContent = paused ? messages.paused : messages.live;
     } else if (next.reason === 'no-webgpu') {

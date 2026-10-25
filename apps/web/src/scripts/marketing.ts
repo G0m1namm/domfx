@@ -680,6 +680,18 @@ function initializeMarketing() {
   function updatePreviewStatus(status: EffectStatus) {
     if (dialogSlot.handle) {
       dialogSlot.handle.intensity = Number(intensity.value) / 100;
+      for (const field of effectWritableFields(selectedEffect)) {
+        const input = required<HTMLInputElement>(
+          `[data-writable-option="${field.name}"]`,
+          writableControls,
+        );
+        setEffectWritableControl(
+          selectedEffect,
+          dialogSlot.handle,
+          field,
+          effectSettingApiValue(field, input.value),
+        );
+      }
     }
     let message: string;
     if (status.reason === 'reduced-motion') {

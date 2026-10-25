@@ -312,6 +312,7 @@ test('@smoke back to top appears after scrolling and returns focus to the title'
 const labPages = [
   { path: '/docs/standalone/', effect: 'Fire', text: true },
   { path: '/docs/api/effects/frost/', effect: 'Frost', text: false },
+  { path: '/docs/es/api/effects/frost/', effect: 'Frost', text: false },
 ] as const;
 
 for (const { path, effect, text } of labPages) {
@@ -361,7 +362,9 @@ for (const { path, effect, text } of labPages) {
       await expect(canvas).toHaveCount(1);
     }
 
-    for (const subject of ['SVG', 'Image', 'Text']) {
+    const spanish = path.startsWith('/docs/es/');
+    const subjects = spanish ? ['SVG', 'Imagen', 'Texto'] : ['SVG', 'Image', 'Text'];
+    for (const subject of subjects) {
       await lab.getByRole('radio', { name: subject, exact: true }).check();
       await expect(lab).toHaveAttribute('data-status', 'active');
       await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
@@ -371,7 +374,7 @@ for (const { path, effect, text } of labPages) {
     const toggle = lab.locator('[data-docs-lab-toggle]');
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await expect(toggle).toHaveAccessibleName('Resume effect');
+    await expect(toggle).toHaveAccessibleName(spanish ? 'Reanudar efecto' : 'Resume effect');
     await expect(lab).toHaveAttribute('data-status', 'active');
     await expect(lab).toHaveAttribute('data-paused', 'true');
     await toggle.click();

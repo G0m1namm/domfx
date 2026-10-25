@@ -574,10 +574,14 @@ export function attachWithAdapters(
       intersectionObserver.observe(target);
     }
     checkMutations(observer.takeRecords());
-    if (checkComposition() && syncVisibility() && revisions.raster === 'fresh') {
-      // Re-entry must place the retained raster before making it visible. It
-      // does not itself change pixels or the caller's manual/paused time.
-      scheduler.schedule(commit);
+    if (checkComposition() && syncVisibility()) {
+      if (revisions.raster === 'fresh') {
+        // Re-entry must place the retained raster before making it visible. It
+        // does not itself change pixels or the caller's manual/paused time.
+        scheduler.schedule(commit);
+      } else if (revisions.raster === 'stale') {
+        scheduler.schedule(refreshObserved);
+      }
     }
   }
 

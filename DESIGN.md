@@ -239,11 +239,16 @@ with a label column, a Text/SVG/Image segmented subject switch, thin silver slid
 with numeric readouts, Fire's flame height marked as a creation option, a text status
 indicator and a 44px Pause/Resume icon button with an accessible name. A live settings
 snippet mirrors the controls and offers Copy with a manual-selection fallback. Previews
-attach only while visible, release on pagehide, respect reduced motion, never clip
-the host's output and leave the original subject and disabled controls in place
+attach only while visible, release on pagehide, respect reduced motion, keep the
+effect host unclipped and leave the original subject and disabled controls in place
 without JavaScript or WebGPU. They are demonstrations, not verification evidence.
 Use larger default text, SVG and image targets so their edges are easy to inspect.
 Let artwork fit the available preview width while keeping room for its effect output.
+Match marketing inspection: 2× pointer-directed hover zoom, explicit 100–300% zoom
+and Fit reset, arrow-key and button panning, and touch dragging while zoomed.
+Magnify the target and decorative layer together inside an outer inspection viewport;
+only that viewport clips the camera while zoomed. Keep controls outside the camera. Suppress
+automatic hover zoom and transitions under reduced motion; reset on target changes.
 
 The GSAP guide includes a compact interactive sequence in English and Spanish,
 using the same graphite preview and control styling. Keep the original clickable

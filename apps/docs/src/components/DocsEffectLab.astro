@@ -13,6 +13,7 @@ import {
 import { localeFromPath } from '@domfx/site/locale';
 
 import { docsMessages } from '../content/docs-messages';
+import DocsPreview from './DocsPreview.astro';
 
 type Subject = 'text' | 'svg' | 'image';
 interface Props {
@@ -46,8 +47,8 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
 
 <section class="docs-lab not-content" data-docs-lab data-effect={effect.id} data-category={effect.category} data-status="suspended" data-paused="false" aria-labelledby={heading ? `${id}-title` : undefined} aria-label={heading ? undefined : effectLabel(messages.livePreview)}>
   {heading && <div class="docs-lab-heading"><h3 id={`${id}-title`}>{heading}</h3>{description && <p>{description}</p>}</div>}
-  <div class="docs-lab-stage">
-    <div class="docs-lab-host" data-docs-lab-host>
+  <DocsPreview id={id}>
+    <div class="docs-lab-host" data-docs-lab-host data-docs-preview-camera>
       <span class="docs-lab-subject docs-lab-text" data-docs-lab-target="text" {...visibility('text')}>domfx</span>
       <svg class="docs-lab-subject docs-lab-svg" data-docs-lab-target="svg" {...visibility('svg')} width="132" height="132" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg>
       <img class="docs-lab-subject docs-lab-image" data-docs-lab-target="image" {...visibility('image')} src={piercedRing.src} width="200" height="150" alt="" decoding="async" />
@@ -56,7 +57,7 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
       <p class="docs-lab-status" aria-live="polite"><span class="docs-lab-dot" aria-hidden="true"></span><span data-docs-lab-status>{messages.needsGpu}</span></p>
       <button type="button" class="docs-lab-toggle" data-docs-lab-toggle aria-pressed="false" aria-label={messages.start} title={messages.start} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-play"/></svg></button>
     </div>
-  </div>
+  </DocsPreview>
   <fieldset class="docs-lab-controls effect-settings" data-docs-lab-controls disabled>
     <legend class="visually-hidden">{effectLabel(messages.settings)}</legend>
     <div class="docs-lab-row">

@@ -23,6 +23,7 @@ import { localeFromPath } from '@domfx/site/locale';
 import { initializePage } from '@domfx/site/page-lifetime';
 
 import { docsMessages } from '../content/docs-messages';
+import { initializeDocsPreview } from './docs-preview-zoom';
 
 const SEED = 314;
 const COPY_RESET_MS = 2000;
@@ -95,6 +96,7 @@ function initializeLab(
   const code = required<HTMLElement>('[data-docs-lab-code]', lab);
   const lifetime = new AbortController();
   const { signal } = lifetime;
+  initializeDocsPreview(lab, signal, reducedMotion);
   let visible = false;
   let paused = savedPlayback.get(lab)?.paused ?? false;
   let needsResume = reducedMotion.matches || (savedPlayback.get(lab)?.needsResume ?? false);
@@ -227,10 +229,13 @@ function initializeLab(
 
   function selectSubject(value: string) {
     paused = false;
+    visible = false;
+    slot.clear();
     for (const target of targets) {
       target.toggleAttribute('hidden', target.dataset.docsLabTarget !== value);
     }
-    void attach();
+    observer.disconnect();
+    observer.observe(currentTarget());
   }
 
   async function copySettings() {
@@ -275,7 +280,7 @@ function initializeLab(
   updateToggle();
   status.textContent = hasGpu ? messages.waiting : messages.noGpu;
   lab.dataset.paused = String(paused);
-  observer.observe(host);
+  observer.observe(currentTarget());
 
   intensityInput.addEventListener(
     'input',

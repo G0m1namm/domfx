@@ -1,0 +1,26 @@
+---
+import { localeFromPath } from '@domfx/site/locale';
+
+import { docsMessages } from '../content/docs-messages';
+
+interface Props { id: string }
+const { id } = Astro.props;
+const messages = docsMessages(localeFromPath(Astro.url.pathname)).preview;
+const directions = ['left', 'right', 'up', 'down'] as const;
+---
+
+<div class="docs-lab-stage" data-docs-preview tabindex="0" role="region" aria-label={messages.region} aria-describedby={`${id}-zoom-help`}>
+  <slot />
+</div>
+<div class="docs-preview-toolbar" data-docs-preview-tools hidden>
+  <p id={`${id}-zoom-help`}><span class="docs-preview-hover-hint">{messages.hover}</span><span class="docs-preview-touch-hint">{messages.inspect}</span><span class="visually-hidden"> {messages.keys}</span></p>
+  <div class="docs-preview-buttons" role="group" aria-label={messages.zoom}>
+    <button type="button" data-docs-zoom-out aria-label={messages.out} title={messages.out} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-minus"/></svg></button>
+    <output data-docs-zoom-label aria-live="polite" aria-atomic="true">100%</output>
+    <button type="button" data-docs-zoom-in aria-label={messages.in} title={messages.in}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-plus"/></svg></button>
+    <button type="button" data-docs-zoom-reset aria-label={messages.reset} title={messages.reset}>{messages.fit}</button>
+  </div>
+  <div class="docs-preview-buttons docs-preview-pan" data-docs-pan-controls role="group" aria-label={messages.pan} hidden>
+    {directions.map((direction) => <button type="button" data-docs-pan={direction} aria-label={messages[direction]} title={messages[direction]}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href={`#ph-arrow-${direction}`}/></svg></button>)}
+  </div>
+</div>

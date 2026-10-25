@@ -25,8 +25,7 @@ export const effectReferenceEs = {
       'Sin opciones de extensión: Aumenta la densidad de puntos, la cobertura interior y el alcance exterior. En modo relativo, intensity escala la opacidad sin cambiar la extensión ni las marcas.',
   },
   slime: {
-    description:
-      'Una capa verde brillante con gotas que se estiran y caen. gloss, modificable, cambia los brillos sin mover los contornos de la capa ni las gotas.',
+    description: 'Una capa verde con gotas que se estiran y caen.',
     intensity:
       'El modo anterior cambia la geometría de la capa y las gotas. Con coatingDepth o dripReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero.',
   },
@@ -43,8 +42,7 @@ export const effectReferenceEs = {
       'El modo anterior extiende la quemadura hacia dentro y refuerza la ceniza. Con scorchDepth o ashReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero. El contenido original permanece intacto.',
   },
   halftone: {
-    description:
-      'Puntos de semitono siguen el borde. HalftoneOptions extiende PatternOptions con dotSpacing, definido al crear, que fija el espaciado local en píxeles CSS y escala el radio proporcionalmente sin ampliar el soporte.',
+    description: 'Puntos de semitono siguen el borde.',
     intensity:
       'Sin opciones de extensión: Refuerza el patrón y amplía su alcance. En modo relativo, intensity escala la opacidad sin cambiar la extensión ni las marcas.',
   },

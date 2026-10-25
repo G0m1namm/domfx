@@ -2,8 +2,10 @@
 import piercedRing from '../assets/brand/pierced-ring.png';
 import { effects, type Effect } from '@domfx/site/effects';
 import EffectSetting from '@domfx/site/components/effect-setting.astro';
+import EffectColorSetting from '@domfx/site/components/effect-color-setting.astro';
 import {
   effectCreationFields,
+  effectColorField,
   effectSettingApiValue,
   effectWritableFields,
   intensityField,
@@ -33,6 +35,7 @@ const subject = Astro.props.subject ?? (effect.id === 'fire' || effect.id === 's
 const id = `docs-lab-${effect.id}`;
 const creationFields = effectCreationFields(effect);
 const writableFields = effectWritableFields(effect);
+const colorField = effectColorField(effect);
 // Spread so SVG accepts the global hidden attribute, which its typings omit.
 const visibility = (kind: Subject) => (kind === subject ? {} : { hidden: true });
 const intensity = 80;
@@ -63,6 +66,7 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
       </div>
     </div>
     <EffectSetting field={intensityField} locale={locale} id={`${id}-intensity`} value={intensity} inputAttributes={{ 'data-docs-lab-intensity': true }}/>
+    {colorField && <EffectColorSetting locale={locale} id={`${id}-color`} inputAttributes={{ 'data-docs-lab-color': true }}/>}
     {creationFields.map((field) => <EffectSetting field={field} locale={locale} id={`${id}-${field.name}`} inputAttributes={{ 'data-docs-lab-extent': field.name }}/>) }
     {writableFields.map((field) => <EffectSetting field={field} locale={locale} id={`${id}-${field.name}`} inputAttributes={{ 'data-docs-lab-writable': field.name }}/>) }
   </fieldset>
@@ -71,6 +75,7 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
     <pre tabindex="0" aria-label={effectLabel(messages.liveSettings)}><code data-docs-lab-code>{`const effect = ${effect.exportName}(target, {
   host, clock: 'auto', motion: 'respect',
   intensity: `}<output data-docs-lab-intensity-code>{intensity / 100}</output>{','}{creationFields.map((field) => <>{`\n  ${field.name}: `}<output data-docs-lab-extent-code={field.name}>{effectSettingApiValue(field, String(field.defaultValue))}</output>{','}</>)}{`
+`}<span data-docs-lab-color-code></span>{`
   seed: 314,
 });`}{writableFields.map((field) => <>{`\neffect.${field.name} = `}<output data-docs-lab-writable-code={field.name}>{effectSettingApiValue(field, String(field.defaultValue))}</output>{';'}</>)}</code></pre>
   </div>

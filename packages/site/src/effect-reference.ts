@@ -26,8 +26,7 @@ export const effectReference = {
       'With extent options omitted: Increases dot density, inward coverage and outward reach. In relative mode, intensity scales opacity without changing extent or marks.',
   },
   slime: {
-    description:
-      'A glossy green coating with drips that stretch and fall. Writable gloss changes highlights without moving the coating or drip contours.',
+    description: 'A green coating with drips that stretch and fall.',
     intensity:
       'Legacy mode changes coating and drip geometry. With coatingDepth or dripReach, intensity scales strength only; omitted extents are zero.',
   },
@@ -44,8 +43,7 @@ export const effectReference = {
       'Legacy mode spreads scorching inward and strengthens ash. With scorchDepth or ashReach, intensity scales strength only; omitted extents are zero. The original content remains intact.',
   },
   halftone: {
-    description:
-      'Halftone dots follow the edge. Creation-only dotSpacing sets local CSS-pixel pitch and proportionally scales dot radius without extending support.',
+    description: 'Halftone dots follow the edge.',
     intensity:
       'With extent options omitted: Strengthens the pattern and extends its reach. In relative mode, intensity scales opacity without changing extent or marks.',
   },

@@ -1,5 +1,6 @@
 import {
   effectCreationFields,
+  effectColorField,
   effectSettingApiValue,
   effectSettingDisplayValue,
   effectSettingValueText,
@@ -14,6 +15,7 @@ import type { EffectStatus } from '@domfx/site/effect-slot';
 import {
   createEffectEnvironment,
   createEffectSlot,
+  setEffectColor,
   setEffectWritableControl,
 } from '@domfx/site/effect-slot';
 import { findEffect, type Effect } from '@domfx/site/effects';
@@ -77,6 +79,14 @@ function initializeLab(
     output: required<HTMLOutputElement>(`[data-effect-setting-output="${field.name}"]`, lab),
     code: required<HTMLOutputElement>(`[data-docs-lab-writable-code="${field.name}"]`, lab),
   }));
+  const colorField = effectColorField(effect);
+  const colorInput = colorField
+    ? required<HTMLInputElement>('[data-docs-lab-color]', lab)
+    : undefined;
+  const colorOutput = colorField
+    ? required<HTMLOutputElement>('[data-color-output]', lab)
+    : undefined;
+  const colorCode = required<HTMLElement>('[data-docs-lab-color-code]', lab);
   const status = required<HTMLElement>('[data-docs-lab-status]', lab);
   const toggle = required<HTMLButtonElement>('[data-docs-lab-toggle]', lab);
   const toggleIcon = required<SVGUseElement>('use', toggle);
@@ -89,6 +99,7 @@ function initializeLab(
   let paused = savedPlayback.get(lab)?.paused ?? false;
   let needsResume = reducedMotion.matches || (savedPlayback.get(lab)?.needsResume ?? false);
   let copyTimer = 0;
+  let color: string | undefined;
   const environment = createEffectEnvironment({
     document: lab.ownerDocument,
     reducedMotion,
@@ -122,6 +133,7 @@ function initializeLab(
       code.value = String(effectSettingApiValue(field, input.value));
       setFill(input);
     }
+    colorCode.textContent = color ? `\n  color: ${JSON.stringify(color)},` : '';
   }
 
   function updateStatus(next: EffectStatus) {
@@ -208,6 +220,7 @@ function initializeLab(
       intensity: intensity(),
       seed: SEED,
       ...extents,
+      ...(color ? { color } : {}),
       ...writable,
     }));
   }
@@ -290,6 +303,36 @@ function initializeLab(
             field,
             effectSettingApiValue(field, input.value),
           );
+        }
+      },
+      { signal },
+    );
+  }
+  if (colorInput && colorOutput) {
+    colorInput.addEventListener(
+      'input',
+      () => {
+        color = colorInput.value;
+        colorOutput.value = color;
+        required<HTMLElement>('[data-color-setting]', lab).dataset.colorUnset = 'false';
+        required<HTMLButtonElement>('[data-color-reset]', lab).disabled = false;
+        updateValues();
+        if (slot.handle) {
+          setEffectColor(effect, slot.handle, color);
+        }
+      },
+      { signal },
+    );
+    required<HTMLButtonElement>('[data-color-reset]', lab).addEventListener(
+      'click',
+      () => {
+        color = undefined;
+        colorOutput.value = locale === 'es' ? 'Colores originales' : 'Original colors';
+        required<HTMLElement>('[data-color-setting]', lab).dataset.colorUnset = 'true';
+        required<HTMLButtonElement>('[data-color-reset]', lab).disabled = true;
+        updateValues();
+        if (slot.handle) {
+          setEffectColor(effect, slot.handle, undefined);
         }
       },
       { signal },

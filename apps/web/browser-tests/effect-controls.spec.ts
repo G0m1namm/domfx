@@ -12,9 +12,6 @@ function changedControlValue(field: ReturnType<typeof effectCreationFields>[numb
   if (field.kind === 'preset') {
     return '100';
   }
-  if (field.unit === 'css-px') {
-    return '12';
-  }
   return '17';
 }
 
@@ -139,9 +136,7 @@ async function gateRendererDevice(page: Page) {
   });
 }
 
-test('Halftone forwards relative geometry together with nondefault dot spacing', async ({
-  page,
-}) => {
+test('Halftone forwards relative geometry', async ({ page }) => {
   await page.goto('/effects/');
   await page.locator('[data-card][data-id="halftone"]').click();
   const dialog = page.locator('.effect-dialog');
@@ -149,7 +144,6 @@ test('Halftone forwards relative geometry together with nondefault dot spacing',
   const controls = dialog.locator('[data-creation-controls]');
 
   await expect(stage).toHaveAttribute('data-status', 'active');
-  await controls.locator('[data-creation-option="dotSpacing"]').fill('12');
   await controls.locator('[data-creation-option="plumeReach"]').fill('0');
   await controls.locator('[data-creation-option="bandDepth"]').fill('0');
   await expect(stage).toHaveAttribute('data-status', 'active');
@@ -159,6 +153,31 @@ test('Halftone forwards relative geometry together with nondefault dot spacing',
   await controls.locator('[data-creation-option="bandDepth"]').fill('17');
   await expect(stage).toHaveAttribute('data-status', 'active');
   expect(await hasVisiblePixels(stage.locator('canvas'))).toBe(true);
+});
+
+test('marketing color control updates live code and restores original colors', async ({ page }) => {
+  await page.goto('/effects/');
+  await page.locator('[data-card][data-id="frost"]').click();
+  const dialog = page.locator('.effect-dialog');
+  const controls = dialog.locator('[data-color-controls]');
+  const color = controls.locator('input[type="color"]');
+
+  await expect(controls).toBeVisible();
+  await expect(color).toHaveAccessibleName('color');
+  await expect(controls.locator('[data-color-output]')).toHaveText('Original colors');
+  await expect(controls.locator('[data-color-reset]')).toBeDisabled();
+  await color.fill('#ff0000');
+  await expect(controls.locator('[data-color-reset]')).toBeEnabled();
+  await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
+  await dialog.locator('[data-target="svg"]').click();
+  await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
+  await controls.locator('[data-color-reset]').click();
+  await expect(dialog.locator('[data-code]')).not.toContainText('color:');
+  await expect(controls.locator('[data-color-reset]')).toBeDisabled();
+
+  await dialog.locator('[data-close]').click();
+  await page.locator('[data-card][data-id="burned-paper"]').click();
+  await expect(dialog.locator('[data-color-controls]')).toBeHidden();
 });
 
 test('marketing writable controls use the compact fieldset reset', async ({ page }) => {

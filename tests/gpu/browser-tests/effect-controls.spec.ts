@@ -221,3 +221,154 @@ test('writable controls coalesce through the existing frame scheduler', async ({
   expect(result.requests).toBeLessThanOrEqual(2);
   expect(result.canvases).toBe(0);
 });
+
+test('native GSAP drives public writable handles and restores their rendered state', async ({
+  page,
+}) => {
+  await page.goto('/controls.html');
+  await page.waitForFunction(() => Boolean(window.controlEffects));
+  const result = await page.evaluate(async () => {
+    const source = document.querySelector<HTMLElement>('#target')!;
+    const { gsap } = window.controlEffects;
+    const settle = () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    const pixelMass = async (canvas: HTMLCanvasElement) => {
+      const image = new Image();
+      image.src = canvas.toDataURL();
+      await image.decode();
+      const copy = document.createElement('canvas');
+      copy.width = image.width;
+      copy.height = image.height;
+      const context = copy.getContext('2d')!;
+      context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(0, 0, copy.width, copy.height).data;
+      let alpha = 0;
+      let luminance = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        alpha += pixels[index + 3];
+        luminance +=
+          pixels[index] * 0.2126 + pixels[index + 1] * 0.7152 + pixels[index + 2] * 0.0722;
+      }
+      return { alpha, luminance };
+    };
+    const makeTarget = () => {
+      const host = document.createElement('div');
+      host.style.cssText = 'position:relative;width:240px;height:160px';
+      const target = source.cloneNode(true) as HTMLElement;
+      target.removeAttribute('id');
+      host.append(target);
+      document.body.append(host);
+      return { host, target };
+    };
+    const frostTarget = makeTarget();
+    const slimeTarget = makeTarget();
+    const paperTarget = makeTarget();
+    const frost = window.controlEffects.frost(frostTarget.target, {
+      host: frostTarget.host,
+      clock: 'manual',
+      time: 2,
+      intensity: 0.8,
+      seed: 314,
+      coatingDepth: 0.05,
+      mistReach: 0.1,
+    });
+    const slime = window.controlEffects.slime(slimeTarget.target, {
+      host: slimeTarget.host,
+      clock: 'manual',
+      time: 2,
+      intensity: 0.8,
+      seed: 314,
+      coatingDepth: 0.05,
+      dripReach: 0.1,
+    });
+    const paper = window.controlEffects['burned-paper'](paperTarget.target, {
+      host: paperTarget.host,
+      clock: 'manual',
+      time: 2,
+      intensity: 0.8,
+      seed: 314,
+      scorchDepth: 0.05,
+      ashReach: 0.1,
+    });
+    try {
+      await Promise.all([frost.ready, slime.ready, paper.ready]);
+      const initial = await Promise.all(
+        [frostTarget, slimeTarget, paperTarget].map(({ host }) =>
+          pixelMass(host.querySelector('canvas')!),
+        ),
+      );
+      const timeline = gsap.timeline({ paused: true });
+      timeline.to(frost, { mistOpacity: 0, duration: 1, ease: 'power1.inOut' }, 0);
+      timeline.from(slime, { gloss: 0, duration: 1, ease: 'none' }, 1);
+      timeline.fromTo(paper, { emberGlow: 0 }, { emberGlow: 1, duration: 1, ease: 'none' }, 2);
+      timeline.seek(0.5, true);
+      const frostMidpoint = frost.mistOpacity;
+      timeline.seek(1.5, true);
+      const slimeMidpoint = slime.gloss;
+      timeline.seek(2.5, true);
+      const paperMidpoint = paper.emberGlow;
+      timeline.reverse();
+      timeline.seek(2.25, true);
+      const paperReverse = paper.emberGlow;
+      timeline.seek(0.5, true);
+      timeline.killTweensOf(frost, 'mistOpacity');
+      timeline.seek(1, true);
+      const frostKilled = frost.mistOpacity;
+      frost.mistOpacity = 0.8;
+      slime.gloss = 0.7;
+      paper.emberGlow = 0.6;
+      let scoped: ReturnType<typeof gsap.timeline> | undefined;
+      const context = gsap.context(() => {
+        scoped = gsap
+          .timeline({ paused: true })
+          .to(frost, { mistOpacity: 0.1, duration: 1, ease: 'none' }, 0)
+          .to(slime, { gloss: 0.1, duration: 1, ease: 'none' }, 0)
+          .to(paper, { emberGlow: 0.1, duration: 1, ease: 'none' }, 0);
+      });
+      scoped!.seek(0.5, true);
+      const scopedValues = [frost.mistOpacity, slime.gloss, paper.emberGlow];
+      context.revert();
+      await settle();
+      const rendered = await Promise.all(
+        [frostTarget, slimeTarget, paperTarget].map(({ host }) =>
+          pixelMass(host.querySelector('canvas')!),
+        ),
+      );
+      timeline.kill();
+      return {
+        frostMidpoint,
+        slimeMidpoint,
+        paperMidpoint,
+        paperReverse,
+        frostKilled,
+        scopedValues,
+        restored: [frost.mistOpacity, slime.gloss, paper.emberGlow],
+        initial,
+        rendered,
+      };
+    } finally {
+      frost.dispose();
+      slime.dispose();
+      paper.dispose();
+      frostTarget.host.remove();
+      slimeTarget.host.remove();
+      paperTarget.host.remove();
+    }
+  });
+  expect(result.frostMidpoint).toBeCloseTo(0.5, 6);
+  expect(result.slimeMidpoint).toBeCloseTo(0.5, 6);
+  expect(result.paperMidpoint).toBeCloseTo(0.5, 6);
+  expect(result.paperReverse).toBeCloseTo(0.25, 6);
+  expect(result.frostKilled).toBeCloseTo(0.5, 6);
+  expect(result.scopedValues).toEqual([0.45, 0.4, 0.35]);
+  expect(result.restored).toEqual([0.8, 0.7, 0.6]);
+  for (const [before, after] of result.initial.map(
+    (value, index) => [value, result.rendered[index]] as const,
+  )) {
+    expect(before.alpha).toBeGreaterThan(0);
+    expect(after.alpha).toBeGreaterThan(0);
+    expect(before.luminance).not.toBe(after.luminance);
+  }
+});

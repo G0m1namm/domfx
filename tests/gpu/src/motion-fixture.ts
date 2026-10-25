@@ -16,6 +16,7 @@ export function createMotionFixture(
   motion: FireOptions['motion'],
   initialStage?: Stage,
   ancestor?: HTMLElement,
+  options: Pick<FireOptions, 'flameReach'> = {},
 ) {
   const host = document.createElement('div');
   host.style.cssText = 'position:absolute;left:0;top:0;width:80px;height:80px';
@@ -51,7 +52,7 @@ export function createMotionFixture(
   }
   const effect = attachFireWithAdapters(
     target,
-    { host, motion, clock: 'ambient', time: 7, seed: 314 },
+    { host, motion, clock: 'ambient', time: 7, seed: 314, ...options },
     {
       capture: async () => {
         stats.captures += 1;
@@ -124,6 +125,7 @@ export function createMotionFixture(
         canvases: host.querySelectorAll('canvas').length,
         previousWidth: output?.width ?? 0,
         lifecycle: effect.lifecycle,
+        paused: effect.paused,
         raster: effect.raster,
         reason: effect.reason,
       };

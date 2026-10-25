@@ -299,6 +299,18 @@ test('native GSAP drives public writable handles and restores their rendered sta
           pixelMass(host.querySelector('canvas')!),
         ),
       );
+      let textures = 0;
+      let pipelines = 0;
+      const createTexture = GPUDevice.prototype.createTexture;
+      const createRenderPipeline = GPUDevice.prototype.createRenderPipeline;
+      GPUDevice.prototype.createTexture = function (...args) {
+        textures += 1;
+        return createTexture.apply(this, args);
+      };
+      GPUDevice.prototype.createRenderPipeline = function (...args) {
+        pipelines += 1;
+        return createRenderPipeline.apply(this, args);
+      };
       const timeline = gsap.timeline({ paused: true });
       timeline.to(frost, { mistOpacity: 0, duration: 1, ease: 'power1.inOut' }, 0);
       timeline.from(slime, { gloss: 0, duration: 1, ease: 'none' }, 1);
@@ -336,8 +348,20 @@ test('native GSAP drives public writable handles and restores their rendered sta
           pixelMass(host.querySelector('canvas')!),
         ),
       );
+      frost.mistOpacity = 1;
+      slime.gloss = 1;
+      paper.emberGlow = 1;
+      await settle();
+      const defaultRestored = await Promise.all(
+        [frostTarget, slimeTarget, paperTarget].map(({ host }) =>
+          pixelMass(host.querySelector('canvas')!),
+        ),
+      );
       timeline.kill();
+      GPUDevice.prototype.createTexture = createTexture;
+      GPUDevice.prototype.createRenderPipeline = createRenderPipeline;
       return {
+        defaults: [frost.mistOpacity, slime.gloss, paper.emberGlow],
         frostMidpoint,
         slimeMidpoint,
         paperMidpoint,
@@ -347,6 +371,8 @@ test('native GSAP drives public writable handles and restores their rendered sta
         restored: [frost.mistOpacity, slime.gloss, paper.emberGlow],
         initial,
         rendered,
+        defaultRestored,
+        resources: { textures, pipelines },
       };
     } finally {
       frost.dispose();
@@ -364,6 +390,8 @@ test('native GSAP drives public writable handles and restores their rendered sta
   expect(result.frostKilled).toBeCloseTo(0.5, 6);
   expect(result.scopedValues).toEqual([0.45, 0.4, 0.35]);
   expect(result.restored).toEqual([0.8, 0.7, 0.6]);
+  expect(result.defaults).toEqual([1, 1, 1]);
+  expect(result.resources).toEqual({ textures: 0, pipelines: 0 });
   for (const [before, after] of result.initial.map(
     (value, index) => [value, result.rendered[index]] as const,
   )) {
@@ -371,4 +399,5 @@ test('native GSAP drives public writable handles and restores their rendered sta
     expect(after.alpha).toBeGreaterThan(0);
     expect(before.luminance).not.toBe(after.luminance);
   }
+  expect(result.defaultRestored).toEqual(result.initial);
 });

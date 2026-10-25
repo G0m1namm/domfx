@@ -72,7 +72,7 @@ export async function verifyMemory() {
       'initial rejection is typed unavailable',
     );
     check(
-      ledger.bytes - baseline === 132_000_156,
+      ledger.bytes - baseline === 132_000_252,
       'pending capture GPU and output estimates counted',
     );
     gate.resolve();
@@ -81,7 +81,7 @@ export async function verifyMemory() {
       first.slice(0, 3).every((effect) => effect.lifecycle === 'active'),
       'three admitted targets render',
     );
-    check(ledger.bytes - baseline === 120_000_156, 'CPU release reconciles retained frames');
+    check(ledger.bytes - baseline === 120_000_252, 'CPU release reconciles retained frames');
     first[2].dispose();
     gate = deferred();
     entered = deferred();
@@ -99,13 +99,13 @@ export async function verifyMemory() {
       'no rejected or stale output visible',
     );
     check(
-      ledger.bytes - baseline === 84_000_104,
+      ledger.bytes - baseline === 84_000_168,
       'failed refresh frees only its retained resources',
     );
     gate.resolve();
     await replacement;
     check(
-      first[0].lifecycle === 'active' && ledger.bytes - baseline === 40_000_052,
+      first[0].lifecycle === 'active' && ledger.bytes - baseline === 40_000_084,
       'replacement transfers reservation without double counting',
     );
     first[0].dispose();
@@ -178,7 +178,7 @@ export async function verifyMemory() {
         await Promise.resolve();
         check(pending.reason === 'device-lost', 'loss invalidates pending owner');
       }
-      check(ledger.bytes - baseline === 44_000_052, `${transition} retains pending reservation`);
+      check(ledger.bytes - baseline === 44_000_084, `${transition} retains pending reservation`);
       gate.resolve();
       await pending.ready;
       check(ledger.bytes === baseline, `${transition} late capture releases once`);

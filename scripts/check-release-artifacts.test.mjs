@@ -8,12 +8,15 @@ import { test } from 'node:test';
 
 import {
   assertCleanReleaseCheckout,
+  assertInteractivePublishTerminal,
   assertReleaseVisibility,
+  publishArtifacts,
   publishableTestedReleaseArtifacts,
   publishedArtifactMatches,
   releaseSourceIdentity,
   testedReleaseArtifacts,
   validateArtifact,
+  waitForPublicationApproval,
 } from './check-release-artifacts.mjs';
 
 const gitEnv = Object.fromEntries(
@@ -269,6 +272,172 @@ test('technical handoff defers private alpha policy to publication', (t) => {
     () => publishableTestedReleaseArtifacts(directory, 'approved', source),
     /approve public library metadata/,
   );
+});
+
+test('publisher rejects a noninteractive terminal before authentication or publication', () => {
+  assert.throws(
+    () => assertInteractivePublishTerminal({ stdin: {}, stdout: {} }),
+    /interactive terminal/,
+  );
+});
+
+test('publisher accepts an explicit simulated interactive approval without publishing', async () => {
+  let prompt = '';
+  const input = new (await import('node:stream')).PassThrough();
+  input.isTTY = true;
+  const output = { isTTY: true, write: (text) => (prompt += text) };
+  input.end('publish\n');
+
+  await waitForPublicationApproval({ stdin: input, stdout: output });
+
+  assert.match(prompt, /Type publish/);
+});
+
+function registryArtifact() {
+  return {
+    name: '@domfx/core',
+    version: '0.1.0-alpha.0',
+    integrity: 'sha512-tested',
+    tarball: '/tmp/core.tgz',
+  };
+}
+
+function matchingMetadata(artifact) {
+  return {
+    version: artifact.version,
+    dist: { integrity: artifact.integrity },
+    'dist-tags': { alpha: artifact.version },
+  };
+}
+
+test('publisher polls delayed registry visibility after one accepted publish', async (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'domfx-publication-state-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const artifact = registryArtifact();
+  let publishes = 0;
+  let lookups = 0;
+  let clock = 0;
+
+  await publishArtifacts([artifact], directory, {
+    lookup: () => {
+      lookups += 1;
+      return lookups === 3 ? matchingMetadata(artifact) : undefined;
+    },
+    now: () => clock,
+    publish: () => {
+      publishes += 1;
+    },
+    sleep: async (milliseconds) => {
+      clock += milliseconds;
+    },
+    write: () => {},
+  });
+
+  assert.equal(publishes, 1);
+  assert.equal(lookups, 3);
+  const checkpoint = JSON.parse(readFileSync(join(directory, 'publication-state.json'), 'utf8'));
+  assert.equal(checkpoint.artifacts['@domfx/core@0.1.0-alpha.0'].status, 'verified');
+});
+
+test('publisher resumes an unresolved accepted artifact without a duplicate publish', async (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'domfx-publication-state-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const artifact = registryArtifact();
+  writeFileSync(
+    join(directory, 'publication-state.json'),
+    JSON.stringify({
+      artifacts: {
+        '@domfx/core@0.1.0-alpha.0': {
+          integrity: artifact.integrity,
+          status: 'accepted',
+        },
+      },
+    }),
+  );
+  let publishes = 0;
+
+  await publishArtifacts([artifact], directory, {
+    lookup: () => matchingMetadata(artifact),
+    publish: () => {
+      publishes += 1;
+    },
+    write: () => {},
+  });
+
+  assert.equal(publishes, 0);
+});
+
+test('publisher resumes a partial release after an earlier artifact is already verified', async (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'domfx-publication-state-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const core = registryArtifact();
+  const browser = { ...registryArtifact(), name: '@domfx/browser', tarball: '/tmp/browser.tgz' };
+  let publishes = 0;
+  let clock = 0;
+
+  await assert.rejects(
+    () =>
+      publishArtifacts([core, browser], directory, {
+        lookup: (spec) => (spec.startsWith('@domfx/core') ? matchingMetadata(core) : undefined),
+        now: () => clock,
+        publish: (artifact) => {
+          publishes += 1;
+          assert.equal(artifact.name, '@domfx/browser');
+        },
+        sleep: async (milliseconds) => {
+          clock += milliseconds;
+        },
+        visibilityTimeoutMs: 1,
+        write: () => {},
+      }),
+    /visibility is still pending/,
+  );
+
+  assert.equal(publishes, 1);
+  const checkpoint = JSON.parse(readFileSync(join(directory, 'publication-state.json'), 'utf8'));
+  assert.equal(checkpoint.artifacts['@domfx/core@0.1.0-alpha.0'].status, 'verified');
+  assert.equal(checkpoint.artifacts['@domfx/browser@0.1.0-alpha.0'].status, 'accepted');
+});
+
+test('publisher leaves an accepted artifact checkpointed when registry visibility times out', async (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'domfx-publication-state-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const artifact = registryArtifact();
+  let clock = 0;
+
+  await assert.rejects(
+    () =>
+      publishArtifacts([artifact], directory, {
+        lookup: () => undefined,
+        now: () => clock,
+        publish: () => {},
+        sleep: async (milliseconds) => {
+          clock += milliseconds;
+        },
+        visibilityIntervalMs: 5,
+        visibilityTimeoutMs: 10,
+        write: () => {},
+      }),
+    /visibility is still pending/,
+  );
+
+  const checkpoint = JSON.parse(readFileSync(join(directory, 'publication-state.json'), 'utf8'));
+  assert.equal(checkpoint.artifacts['@domfx/core@0.1.0-alpha.0'].status, 'accepted');
+});
+
+test('publisher rejects immutable-byte and alpha-tag mismatches during resume', async (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'domfx-publication-state-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const artifact = registryArtifact();
+  for (const metadata of [
+    { ...matchingMetadata(artifact), dist: { integrity: 'sha512-other' } },
+    { ...matchingMetadata(artifact), 'dist-tags': { alpha: '0.1.0-alpha.1' } },
+  ]) {
+    await assert.rejects(
+      () => publishArtifacts([artifact], directory, { lookup: () => metadata, write: () => {} }),
+      /(?:bytes differ|alpha tag)/,
+    );
+  }
 });
 
 for (const failure of [

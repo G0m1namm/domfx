@@ -48,6 +48,20 @@ compiled JavaScript/declarations. It checks that every declared export is presen
 It does **not** prove shader execution, fresh-consumer installation, SSR safety or
 API readiness. Those remain separate release gates.
 
+## Pull-request release preflight
+
+Before expensive release qualification, compare the PR with its intended base using the same
+Changesets status policy as CI and inspect local packages without packing or publishing:
+
+```sh
+node scripts/release-pr-preflight.mjs --base origin/main
+```
+
+The base is required so detached checkouts cannot silently compare against the wrong branch.
+The preflight rejects a release plan that omits changed publishable library inputs, including
+source, README, license, changelog, package metadata or declared exports. It is read-only:
+registry metadata, package versions and distribution tags are not changed.
+
 ## Local artifact rehearsal
 
 The [consumer quickstart](QUICKSTART.md) documents the local installation path and
@@ -219,16 +233,22 @@ node scripts/check-release-artifacts.mjs --publish <tested-evidence-directory> <
 pnpm release:verify:registry <tested-evidence-directory> <approved-commit>
 ```
 
-The publisher verifies the clean source and evidence, then publishes the unchanged
-core, browser and GSAP tarballs in dependency order with public access, `alpha` and
-lifecycle scripts disabled. It never rebuilds or repacks. Existing versions are
-accepted only when their integrity and `alpha` tag match the tested artifact.
-Network/auth failures, mismatched bytes or tags stop execution. A partial release
-can resume with the same approved evidence within its seven-day validity window;
-inspect any mismatch instead of overwriting tags or skipping a package. Review actual
-distribution tags after publication; npm assigned both `alpha` and `latest` to the
-first alpha. Do not change tags without maintainer authorization. Published versions
-are immutable; corrections require a new version.
+The publisher first requires an interactive terminal and asks the maintainer to type
+`publish`; this confirmation does not replace the separate approval of the tested bytes.
+Only then does it make a bounded authentication check and verify the clean source and
+evidence. It publishes unchanged core, browser and GSAP tarballs in dependency order
+with public access, `alpha` and lifecycle scripts disabled; it never rebuilds or repacks.
+
+After an accepted publish request, the publisher records a nonsecret
+`publication-state.json` checkpoint beside the retained evidence, then polls bounded
+registry metadata calls for visibility. Existing versions are accepted only when their
+integrity and `alpha` tag match the tested artifact. A visibility timeout or an interrupted
+request is unresolved, not permission to publish again: retain the checkpoint, inspect the
+registry, and rerun the same command with the same approved evidence to resume safely.
+Network/auth failures, mismatched bytes or tags stop execution. Review actual distribution
+tags after publication; npm assigned both `alpha` and `latest` to the first alpha. Do not
+change tags without maintainer authorization. Published versions are immutable; corrections
+require a new version.
 
 The registry verifier must pass before installation/upgrade pages claim a public
 release. It proves consumers can resolve dependencies without local overrides and

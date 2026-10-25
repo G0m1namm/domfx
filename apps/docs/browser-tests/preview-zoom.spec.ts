@@ -27,6 +27,7 @@ for (const locale of ['en', 'es']) {
       await lab.locator(`[data-docs-lab-subject][value="${subject}"]`).check();
       const viewport = lab.locator('[data-docs-preview]');
       await viewport.scrollIntoViewIfNeeded();
+      await expect(viewport).toHaveCSS('overflow', 'hidden');
       await expect(lab).toHaveAttribute('data-status', 'active');
       await expect(lab.locator('canvas')).toHaveCount(1);
       const canvas = await lab.locator('canvas').elementHandle();
@@ -34,6 +35,7 @@ for (const locale of ['en', 'es']) {
       const original = await lab.locator(`[data-docs-lab-target="${subject}"]`).boundingBox();
       await viewport.hover({ position: { x: 20, y: 20 } });
       await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('200%');
+      await expect(viewport).toHaveCSS('overflow', 'hidden');
       await expect.poll(() => cameraScale(lab)).toBeCloseTo(2);
       await page.waitForTimeout(400);
       expect(await canvas?.evaluate((element) => element.isConnected)).toBe(true);
@@ -50,6 +52,7 @@ for (const locale of ['en', 'es']) {
         .not.toBe(frame);
       await lab.locator('[data-docs-zoom-in]').hover();
       await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('100%');
+      await expect(viewport).toHaveCSS('overflow', 'hidden');
       await viewport.focus();
       await viewport.press('+');
       await viewport.press('+');
@@ -66,6 +69,7 @@ for (const locale of ['en', 'es']) {
       await lab.locator('[data-docs-zoom-reset]').click();
       await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('100%');
       await expect.poll(() => cameraScale(lab)).toBeCloseTo(1);
+      await expect(viewport).toHaveCSS('overflow', 'hidden');
     }
     expect(errors).toEqual([]);
   });

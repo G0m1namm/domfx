@@ -328,7 +328,7 @@
   color: var(--muted);
   font-size: 0.875rem;
 }
-/* The zoomed inspection viewport clips the camera; the effect host stays unclipped. */
+/* The inspection viewport always clips the camera; the effect host stays unclipped. */
 .docs-lab-stage {
   position: relative;
   display: grid;
@@ -339,13 +339,13 @@
 }
 [data-docs-preview] {
   isolation: isolate;
+  overflow: hidden;
 }
 [data-docs-preview]:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: -3px;
 }
 [data-docs-preview][data-zoomed='true'] {
-  overflow: hidden;
   touch-action: none;
   cursor: move;
 }

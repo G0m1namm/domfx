@@ -247,7 +247,7 @@ Let artwork fit the available preview width while keeping room for its effect ou
 Match marketing inspection: 2× pointer-directed hover zoom, explicit 100–300% zoom
 and Fit reset, arrow-key and button panning, and touch dragging while zoomed.
 Magnify the target and decorative layer together inside an outer inspection viewport;
-only that viewport clips the camera while zoomed. Keep controls outside the camera. Suppress
+that viewport always clips the camera. Keep controls outside the camera. Suppress
 automatic hover zoom and transitions under reduced motion; reset on target changes.
 
 The GSAP guide includes a compact interactive sequence in English and Spanish,

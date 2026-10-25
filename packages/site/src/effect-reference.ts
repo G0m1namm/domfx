@@ -3,8 +3,7 @@ import type { Effect, EffectId } from './effects';
 // Reader-facing descriptions live here; renderer settings remain in the browser package.
 export const effectReference = {
   electricity: {
-    description:
-      'Branching blue lightning follows the visible shape. Creation-only contourSpread is a finite nonnegative fraction of the shorter untransformed border-box side, transparent margins included: 0.1 permits 10 CSS px outside a 100px shorter side. It bounds positive signed distance; strand thickness, noise and spark detail stay fixed. Zero is transparent; omission keeps legacy rendering.',
+    description: 'Branching blue lightning follows the visible shape.',
     intensity:
       'Changes electrical strength and brightness; it does not move the strands. With contourSpread, scales premultiplied output independently of spread and detail.',
   },
@@ -15,8 +14,7 @@ export const effectReference = {
       'Legacy mode extends frost inward and strengthens mist and particles. With coatingDepth or mistReach, intensity scales strength only; omitted extents are zero.',
   },
   fire: {
-    description:
-      'Warm flames and sparks rise from the visible shape. Creation-only emberDensity selects fixed seeded ember sites; the resolved value is read-only on the handle.',
+    description: 'Warm flames and sparks rise from the visible shape.',
     intensity:
       'With flameReach, scales visual strength without changing reach or fine detail. Omitted flameReach preserves legacy intensity and flameHeight behavior.',
   },
@@ -32,7 +30,7 @@ export const effectReference = {
   },
   kinetic: {
     description:
-      'A bright pulse travels around the shape with a violet wake and geometric fragments. Creation-only fragmentTravel is a finite nonnegative fraction of the shorter untransformed border-box side, transparent margins included: 0.1 permits 10 CSS px of outward fragment-center travel on a 100px shorter side. A fixed 3px sideways drift and 5px fragment footprint add 8px to exterior support. Zero is transparent; omission keeps legacy rendering.',
+      'A bright pulse travels around the shape with a violet wake and geometric fragments.',
     intensity:
       'With fragmentTravel, scales premultiplied strength while pulse/wake coverage, fragment travel and fine fragment size stay fixed. Omission retains legacy pulse-width and fragment behavior.',
   },

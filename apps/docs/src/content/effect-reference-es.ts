@@ -2,8 +2,7 @@ import type { EffectId } from '@domfx/site/effects';
 
 export const effectReferenceEs = {
   electricity: {
-    description:
-      'Filamentos eléctricos azules siguen la forma visible. contourSpread, definido al crear, es una fracción finita no negativa del lado menor del border-box sin transformar, incluidos los márgenes transparentes: 0.1 permite 10 px CSS exteriores con un lado menor de 100px. Limita la distancia con signo positiva; el grosor, ruido y detalle de las chispas se mantienen. Cero es transparente; omitirlo conserva el renderizado anterior.',
+    description: 'Filamentos eléctricos azules siguen la forma visible.',
     intensity:
       'Cambia la fuerza y el brillo eléctricos; no mueve los filamentos. Con contourSpread, escala la salida premultiplicada sin cambiar la extensión ni el detalle.',
   },
@@ -14,8 +13,7 @@ export const effectReferenceEs = {
       'El modo anterior extiende la escarcha hacia dentro y refuerza la niebla y las partículas. Con coatingDepth o mistReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero.',
   },
   fire: {
-    description:
-      'Llamas cálidas y chispas se elevan desde la forma visible. emberDensity, definido al crear, selecciona cuántas brasas aparecen sin cambiar el tamaño ni el recorrido de las que quedan; la instancia expone el valor resuelto como solo lectura.',
+    description: 'Llamas cálidas y chispas se elevan desde la forma visible.',
     intensity:
       'Con flameReach, cambia la fuerza visual sin cambiar el alcance ni el detalle fino. Omitir flameReach conserva la intensidad y flameHeight anteriores.',
   },
@@ -31,7 +29,7 @@ export const effectReferenceEs = {
   },
   kinetic: {
     description:
-      'Un pulso brillante recorre la forma con una estela violeta y fragmentos geométricos. fragmentTravel, definido al crear, es una fracción finita no negativa del lado menor del border-box sin transformar, incluidos los márgenes transparentes: 0.1 permite 10 px CSS de recorrido exterior del centro de los fragmentos con un lado menor de 100px. La deriva lateral fija de 3px y la huella de 5px añaden 8px al soporte exterior. Cero es transparente; omitirlo conserva el renderizado anterior.',
+      'Un pulso brillante recorre la forma con una estela violeta y fragmentos geométricos.',
     intensity:
       'Con fragmentTravel, escala la fuerza premultiplicada y mantiene la cobertura del pulso y la estela, el recorrido y el tamaño fino de los fragmentos. Omitirlo conserva el comportamiento anterior del pulso y los fragmentos.',
   },

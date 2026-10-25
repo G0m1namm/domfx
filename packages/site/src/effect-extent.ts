@@ -109,6 +109,7 @@ export type ExtentField = NonNullable<ReturnType<typeof effectExtentReference>>[
 export function effectCreationFields(effect: Effect) {
   const fields = (effectExtentReference(effect)?.fields ?? []).map((field) => ({
     ...field,
+    kind: 'range' as const,
     max: 30,
   }));
   if (effect.id !== 'slime') {
@@ -118,12 +119,44 @@ export function effectCreationFields(effect: Effect) {
     ...fields,
     {
       name: 'dripDensity' as const,
+      kind: 'preset' as const,
       basis: 'drip-density' as const,
       example: 0.56,
       max: 100,
       label: { en: 'Drip density', es: 'Densidad de gotas' },
+      options: [
+        { value: 0, label: { en: 'None', es: 'Sin gotas' } },
+        { value: 20, label: { en: 'Low', es: 'Baja' } },
+        { value: 56, label: { en: 'Medium', es: 'Media' } },
+        { value: 100, label: { en: 'High', es: 'Alta' } },
+      ],
     },
   ];
 }
 
 export type EffectCreationField = ReturnType<typeof effectCreationFields>[number];
+
+export const intensityField = {
+  name: 'intensity',
+  kind: 'range',
+  basis: 'strength',
+  max: 100,
+  example: 0.8,
+} as const;
+
+export type EffectSetting = EffectCreationField | typeof intensityField;
+
+export function effectSettingBasis(field: EffectSetting, locale: 'en' | 'es') {
+  switch (field.basis) {
+    case 'height':
+      return locale === 'es' ? 'de la altura del elemento' : 'of element height';
+    case 'shorter-side':
+      return locale === 'es' ? 'del lado más corto' : 'of the shorter side';
+    default:
+      return '';
+  }
+}
+
+export function effectSettingValueText(field: EffectSetting, value: string, locale: 'en' | 'es') {
+  return `${value}% ${effectSettingBasis(field, locale)}`.trim();
+}

@@ -1,4 +1,9 @@
-import { effectCreationFields, type EffectCreationField } from '@domfx/site/effect-extent';
+import {
+  effectCreationFields,
+  effectSettingValueText,
+  intensityField,
+  type EffectCreationField,
+} from '@domfx/site/effect-extent';
 import type { EffectSlot, EffectStatus } from '@domfx/site/effect-slot';
 import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import type { Effect } from '@domfx/site/effects';
@@ -516,7 +521,7 @@ function initializeMarketing() {
   function creationOptions() {
     const options: Partial<Record<EffectCreationField['name'], number>> = {};
     for (const field of effectCreationFields(selectedEffect)) {
-      const input = required<HTMLInputElement>(
+      const input = required<HTMLInputElement | HTMLSelectElement>(
         `[data-creation-option="${field.name}"]`,
         creationControls,
       );
@@ -744,6 +749,7 @@ function initializeMarketing() {
 
   function updatePreviewPlayback() {
     creationControls.disabled = reducedMotion.matches || !hasGpu;
+    intensity.disabled = reducedMotion.matches || !hasGpu;
     const button = required<HTMLButtonElement>('[data-pause]', dialog);
     button.disabled = reducedMotion.matches || !hasGpu;
     button.innerHTML = playbackLabel();
@@ -780,7 +786,7 @@ function initializeMarketing() {
     required('[data-copy-status]', dialog).textContent = '';
     previewReturnFocus = trigger;
     intensity.value = '70';
-    required('output', dialog).textContent = '70%';
+    updateIntensityValue();
     required('[data-pause]', dialog).innerHTML = playbackLabel();
     dialog.showModal();
     dialog.scrollTop = 0;
@@ -831,8 +837,22 @@ function initializeMarketing() {
     }
   });
 
+  function setFill(input: HTMLInputElement) {
+    input.style.setProperty('--fill', `${(Number(input.value) / Number(input.max)) * 100}%`);
+  }
+
+  function updateIntensityValue() {
+    required('[data-effect-setting-output="intensity"]', dialog).textContent =
+      `${intensity.value}%`;
+    intensity.setAttribute(
+      'aria-valuetext',
+      effectSettingValueText(intensityField, intensity.value, locale),
+    );
+    setFill(intensity);
+  }
+
   on(intensity, 'input', () => {
-    required('output', dialog).textContent = `${intensity.value}%`;
+    updateIntensityValue();
     if (dialogSlot.handle) {
       dialogSlot.handle.intensity = Number(intensity.value) / 100;
     }
@@ -840,11 +860,22 @@ function initializeMarketing() {
   });
 
   on(creationControls, 'input', (event) => {
-    if (!(event.target instanceof HTMLInputElement)) {
+    if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement)) {
       return;
     }
-    required('output', event.target.closest('label') ?? creationControls).textContent =
-      `${event.target.value}%`;
+    const input = event.target;
+    const field = effectCreationFields(selectedEffect).find(
+      (field) => field.name === input.dataset.creationOption,
+    );
+    if (!field) {
+      return;
+    }
+    if (input instanceof HTMLInputElement) {
+      required('output', input.closest('.effect-setting') ?? creationControls).textContent =
+        `${input.value}%`;
+      input.setAttribute('aria-valuetext', effectSettingValueText(field, input.value, locale));
+      setFill(input);
+    }
     required('[data-code]', dialog).textContent = attachmentCode();
     void attachDialogEffect();
   });

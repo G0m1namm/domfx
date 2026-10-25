@@ -18,6 +18,32 @@ controls, read-only state and methods. Record types, defaults, units, ranges and
 whether changing a value requires a replacement instance. Keep code identifiers
 literal; use the reader-facing terminology in GLOSSARY.md around them.
 
+## Website control presentation
+
+Marketing and docs share compact controls for all 21 effects. Use continuous
+percentage sliders for `intensity` and geometric fractions; identify whether a
+fraction is relative to element height or its shorter side. Playback time uses
+seconds and preview zoom uses percentages. Do not present a normalized artistic
+parameter as an exact count or measured percentage.
+
+Fire uses height-relative `flameReach`; Frost, Slime and Burned paper pair
+shorter-side coating/scorch depth with height-relative mist/drip/ash travel.
+Electricity's `contourSpread` and Kinetic bloom's `fragmentTravel` use the shorter
+side. The 13 flowing patterns pair height-relative `plumeReach` with shorter-side
+`bandDepth`; Contour echoes and Brush fringe instead use shorter-side `echoReach`
+and `fringeReach`. All retain continuous size controls and separate `intensity`.
+The GSAP lesson's read-only `time` and `intensity` outputs show the exact API
+values used in its source; its editable timeline position uses seconds.
+
+Slime's `dripDensity` uses four website presets: None (`0`), Low (`0.2`), Medium
+(`0.56`, the default) and High (`1`). These are presentation labels, not new API
+enum values. The package continues to accept numeric values throughout 0–1.
+Copied examples contain the numeric value.
+
+Keep property names, identifiers, types and API string literals unchanged in every
+locale, including control labels that name properties. Translate explanatory text
+and preset display labels only; never translate the values passed to an effect.
+
 ## Animation and GSAP
 
 Use ordinary GSAP property tweens on externally controlled effect instances for

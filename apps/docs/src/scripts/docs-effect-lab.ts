@@ -1,4 +1,9 @@
-import { effectCreationFields, type EffectCreationField } from '@domfx/site/effect-extent';
+import {
+  effectCreationFields,
+  effectSettingValueText,
+  intensityField,
+  type EffectCreationField,
+} from '@domfx/site/effect-extent';
 import type { EffectStatus } from '@domfx/site/effect-slot';
 import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import { findEffect, type Effect } from '@domfx/site/effects';
@@ -32,7 +37,8 @@ function initializeLab(
   hasGpu: boolean,
   reducedMotion: MediaQueryList,
 ) {
-  const messages = docsMessages(localeFromPath(location.pathname)).lab;
+  const locale = localeFromPath(location.pathname);
+  const messages = docsMessages(locale).lab;
   const host = required<HTMLElement>('[data-docs-lab-host]', lab);
   const targets = Array.from(
     lab.querySelectorAll<HTMLElement | SVGElement>('[data-docs-lab-target]'),
@@ -40,12 +46,19 @@ function initializeLab(
   const subjects = Array.from(lab.querySelectorAll<HTMLInputElement>('[data-docs-lab-subject]'));
   const controls = required<HTMLFieldSetElement>('[data-docs-lab-controls]', lab);
   const intensityInput = required<HTMLInputElement>('[data-docs-lab-intensity]', lab);
-  const intensityOutput = required<HTMLOutputElement>('[data-docs-lab-intensity-output]', lab);
+  const intensityOutput = required<HTMLOutputElement>(
+    '[data-effect-setting-output="intensity"]',
+    lab,
+  );
   const intensityCode = required<HTMLOutputElement>('[data-docs-lab-intensity-code]', lab);
   const extentInputs = effectCreationFields(effect).map((field) => ({
     name: field.name,
-    input: required<HTMLInputElement>(`[data-docs-lab-extent="${field.name}"]`, lab),
-    output: required<HTMLOutputElement>(`[data-docs-lab-extent-output="${field.name}"]`, lab),
+    field,
+    input: required<HTMLInputElement | HTMLSelectElement>(
+      `[data-docs-lab-extent="${field.name}"]`,
+      lab,
+    ),
+    output: lab.querySelector<HTMLOutputElement>(`[data-effect-setting-output="${field.name}"]`),
     code: required<HTMLOutputElement>(`[data-docs-lab-extent-code="${field.name}"]`, lab),
   }));
   const status = required<HTMLElement>('[data-docs-lab-status]', lab);
@@ -73,12 +86,19 @@ function initializeLab(
 
   function updateValues() {
     intensityOutput.value = `${intensityInput.value}%`;
+    intensityInput.setAttribute(
+      'aria-valuetext',
+      effectSettingValueText(intensityField, intensityInput.value, locale),
+    );
     intensityCode.value = String(intensity());
     setFill(intensityInput);
-    for (const { input, output, code } of extentInputs) {
-      output.value = `${input.value}%`;
+    for (const { field, input, output, code } of extentInputs) {
+      if (input instanceof HTMLInputElement && output) {
+        output.value = `${input.value}%`;
+        input.setAttribute('aria-valuetext', effectSettingValueText(field, input.value, locale));
+        setFill(input);
+      }
       code.value = String(Number(input.value) / 100);
-      setFill(input);
     }
   }
 

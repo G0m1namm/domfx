@@ -25,9 +25,23 @@ for (const locale of ['en', 'es'] as const) {
         await expect(lab.locator(`[data-docs-lab-extent="${field.name}"]`)).toHaveValue(
           String(Math.round(field.example * 100)),
         );
-        await expect(lab.locator(`[data-docs-lab-extent-output="${field.name}"]`)).toHaveText(
-          `${Math.round(field.example * 100)}%`,
-        );
+        const input = lab.locator(`[data-docs-lab-extent="${field.name}"]`);
+        await expect(input).toHaveAccessibleName(new RegExp(`^${field.name}`));
+        if (field.kind === 'preset') {
+          await expect(input.locator('option:checked')).toHaveText(
+            locale === 'es' ? 'Media' : 'Medium',
+          );
+          expect(
+            await input
+              .locator('option')
+              .evaluateAll((options) => options.map((option) => option.getAttribute('value'))),
+          ).toEqual(['0', '20', '56', '100']);
+        } else {
+          await expect(lab.locator(`[data-effect-setting-output="${field.name}"]`)).toHaveText(
+            `${Math.round(field.example * 100)}%`,
+          );
+          await expect(input).toHaveAttribute('aria-valuetext', /% .+/);
+        }
         await expect(lab.locator('[data-docs-lab-code]')).toContainText(
           `${field.name}: ${field.example}`,
         );
@@ -35,6 +49,10 @@ for (const locale of ['en', 'es'] as const) {
         await expect(page.locator('main')).toContainText(field.name);
       }
       await expect(lab.locator('[data-docs-lab-intensity]')).toBeDisabled();
+      await expect(lab.locator('[data-docs-lab-intensity]')).toHaveAccessibleName('intensity');
+      await expect(lab.locator('[data-docs-lab-code]')).toContainText(
+        "clock: 'auto', motion: 'respect'",
+      );
       await expect(lab.locator('canvas')).toHaveCount(0);
     }
     await context.close();
@@ -74,8 +92,15 @@ for (const locale of ['en', 'es'] as const) {
         if (!previous) {
           throw new Error(`Missing output: ${effect.id}`);
         }
-        await lab.locator(`[data-docs-lab-extent="${field.name}"]`).fill('17');
-        await expect(lab.locator(`[data-docs-lab-extent-code="${field.name}"]`)).toHaveText('0.17');
+        const input = lab.locator(`[data-docs-lab-extent="${field.name}"]`);
+        if (field.kind === 'preset') {
+          await input.selectOption('100');
+        } else {
+          await input.fill('17');
+        }
+        await expect(lab.locator(`[data-docs-lab-extent-code="${field.name}"]`)).toHaveText(
+          field.kind === 'preset' ? '1' : '0.17',
+        );
         await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
         await expect(lab).toHaveAttribute('data-status', 'active');
         await expect(lab.locator('canvas')).toHaveCount(1);
@@ -85,7 +110,9 @@ for (const locale of ['en', 'es'] as const) {
       expect(copied, effect.id).toContain(`const effect = ${effect.exportName}(target`);
       expect(copied, effect.id).toContain('intensity: 0.45');
       for (const field of fields) {
-        expect(copied, effect.id).toContain(`${field.name}: 0.17`);
+        expect(copied, effect.id).toContain(
+          `${field.name}: ${field.kind === 'preset' ? '1' : '0.17'}`,
+        );
       }
       for (const subject of ['text', 'svg', 'image']) {
         await lab.locator(`[data-docs-lab-subject][value="${subject}"]`).check();
@@ -96,6 +123,36 @@ for (const locale of ['en', 'es'] as const) {
     }
   });
 }
+
+test('EN and ES keep API names and values identical while translating preset labels', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
+  const page = await context.newPage();
+  const snapshots = [];
+  for (const prefix of ['/docs', '/docs/es']) {
+    await page.goto(`${prefix}/api/effects/slime/`);
+    const lab = page.locator('[data-docs-lab]');
+    snapshots.push({
+      code: await lab.locator('[data-docs-lab-code]').textContent(),
+      values: await lab.locator('input, select, option').evaluateAll((elements) =>
+        elements.map((element) => ({
+          name: element.getAttribute('data-docs-lab-extent'),
+          value: element.getAttribute('value'),
+        })),
+      ),
+    });
+  }
+  expect(snapshots[1]).toEqual(snapshots[0]);
+  await expect(page.locator('[data-docs-lab-extent="dripDensity"] option')).toHaveText([
+    'Sin gotas',
+    'Baja',
+    'Media',
+    'Alta',
+  ]);
+  await context.close();
+});
 
 test('logical font rectangles may exceed paint bounds inside the finite source guard', async ({
   page,

@@ -31,7 +31,7 @@ for (const locale of ['en', 'es'] as const) {
         );
         const fields = effectCreationFields(effect);
         const controls = dialog.locator('[data-creation-controls]');
-        await expect(controls.locator('input')).toHaveCount(fields.length);
+        await expect(controls.locator('input, select')).toHaveCount(fields.length);
         const first = await dialog.locator('canvas').elementHandle();
         if (!first) {
           throw new Error(`Missing output for ${effect.id}`);
@@ -40,13 +40,38 @@ for (const locale of ['en', 'es'] as const) {
         expect(await first.evaluate((canvas) => canvas.isConnected)).toBe(true);
         for (const field of fields) {
           const input = controls.locator(`[data-creation-option="${field.name}"]`);
-          await expect(input).toHaveAccessibleName(new RegExp(field.label[locale]));
+          await expect(input).toHaveAccessibleName(new RegExp(`^${field.name}`));
           await expect(input).toHaveValue(String(Math.round(field.example * 100)));
+          if (field.kind === 'preset') {
+            await expect(input.locator('option')).toHaveText(
+              locale === 'es'
+                ? ['Sin gotas', 'Baja', 'Media', 'Alta']
+                : ['None', 'Low', 'Medium', 'High'],
+            );
+          } else {
+            await expect(input).toHaveAttribute('aria-valuetext', /% .+/);
+            const aligned = await input.evaluate((element) => {
+              const row = element.closest('.effect-setting');
+              const label = row?.querySelector('.effect-setting-label')?.getBoundingClientRect();
+              const output = row?.querySelector('output')?.getBoundingClientRect();
+              const slider = element.getBoundingClientRect();
+              return Boolean(
+                label && output && label.right <= slider.left && slider.right <= output.left,
+              );
+            });
+            expect(aligned, `${locale} ${effect.id} ${field.name} uses compact aligned rows`).toBe(
+              true,
+            );
+          }
           const previous = await dialog.locator('canvas').elementHandle();
           if (!previous) {
             throw new Error(`Missing output for ${effect.id}`);
           }
-          await input.fill(field.name === 'dripDensity' ? '90' : '17');
+          if (field.kind === 'preset') {
+            await input.selectOption('100');
+          } else {
+            await input.fill('17');
+          }
           await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
           await expect(dialog.locator('.dialog-stage'), effect.id).toHaveAttribute(
             'data-status',
@@ -59,9 +84,7 @@ for (const locale of ['en', 'es'] as const) {
         expect(copied).toContain(effect.exportName);
         expect(copied).toContain('intensity: 0.45');
         for (const field of fields) {
-          expect(copied).toContain(
-            `${field.name}: ${field.name === 'dripDensity' ? '0.9' : '0.17'}`,
-          );
+          expect(copied).toContain(`${field.name}: ${field.name === 'dripDensity' ? '1' : '0.17'}`);
         }
         await page.keyboard.press('Escape');
         await expect(dialog).not.toBeVisible();
@@ -160,11 +183,11 @@ for (const kind of ['image', 'svg']) {
       await dialog.locator('[data-zoom-in]').click();
     }
     await expect(dialog.locator('[data-zoom-label]')).toHaveText('300%');
-    await dialog.locator('[data-creation-option="dripDensity"]').fill('90');
+    await dialog.locator('[data-creation-option="dripDensity"]').selectOption('100');
     await expect.poll(() => canvas.evaluate((element) => element.isConnected)).toBe(false);
     await expect(stage).toHaveAttribute('data-status', 'active');
     await expect(stage.locator('canvas')).toHaveCount(1);
-    await expect(dialog.locator('[data-code]')).toContainText('dripDensity: 0.9');
+    await expect(dialog.locator('[data-code]')).toContainText('dripDensity: 1');
     await dialog.locator('[data-close]').click();
     await expect(stage.locator('canvas')).toHaveCount(0);
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
@@ -195,9 +218,11 @@ test('Spanish Slime controls reflow and work with the keyboard at narrow and wid
       await expect(dialog.locator('canvas')).toHaveCount(0);
     }
     await density.focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(density).toHaveValue('57');
-    await expect(dialog.locator('[data-code]')).toContainText('dripDensity: 0.57');
+    // Native select type-ahead chooses Alta without relying on an OS popup.
+    await page.keyboard.press('a');
+    await page.keyboard.press('Tab');
+    await expect(density).toHaveValue('100');
+    await expect(dialog.locator('[data-code]')).toContainText('dripDensity: 1');
     if (width <= 360) {
       await page.waitForTimeout(400);
       await expect(dialog.locator('canvas')).toHaveCount(0);

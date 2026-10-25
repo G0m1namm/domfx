@@ -182,9 +182,9 @@ test('Spanish Fire lab retains playback, tuning and valid code', async ({ page }
   await expect(lab.locator('[data-docs-lab-status]')).toHaveText('En pausa');
   await lab.getByRole('button', { name: 'Reanudar efecto' }).click();
   await expect(lab).toHaveAttribute('data-paused', 'false');
-  await lab.getByRole('slider', { name: 'Intensidad de Fire' }).fill('45');
+  await lab.getByRole('slider', { name: 'intensity', exact: true }).fill('45');
   await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
-  await lab.getByRole('slider', { name: 'Alcance de las llamas de Fire' }).fill('25');
+  await lab.getByRole('slider', { name: /^flameReach/ }).fill('25');
   await expect(lab.locator('[data-docs-lab-extent-code="flameReach"]')).toHaveText('0.25');
   await lab.getByRole('radio', { name: 'SVG' }).check();
   await expect(lab.locator('[data-docs-lab-target="svg"]')).toBeVisible();

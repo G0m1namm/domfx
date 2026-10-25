@@ -1,7 +1,8 @@
 ---
 import piercedRing from '../assets/brand/pierced-ring.png';
 import { effects, type Effect } from '@domfx/site/effects';
-import { effectCreationFields } from '@domfx/site/effect-extent';
+import EffectSetting from '@domfx/site/components/effect-setting.astro';
+import { effectCreationFields, intensityField } from '@domfx/site/effect-extent';
 import { localeFromPath } from '@domfx/site/locale';
 
 import { docsMessages } from '../content/docs-messages';
@@ -47,7 +48,7 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
       <button type="button" class="docs-lab-toggle" data-docs-lab-toggle aria-pressed="false" aria-label={messages.start} title={messages.start} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-play"/></svg></button>
     </div>
   </div>
-  <fieldset class="docs-lab-controls" data-docs-lab-controls disabled>
+  <fieldset class="docs-lab-controls effect-settings" data-docs-lab-controls disabled>
     <legend class="visually-hidden">{effectLabel(messages.settings)}</legend>
     <div class="docs-lab-row">
       <span class="docs-lab-label" id={`${id}-subject`}>{messages.subject}</span>
@@ -55,17 +56,8 @@ const effectLabel = (label: string) => locale === 'es' ? `${label} de ${effect.n
         {subjects.map((option) => <label><input type="radio" name={`${id}-subject`} value={option.value} checked={option.value === subject} data-docs-lab-subject /><span>{messages[option.value]}</span></label>)}
       </div>
     </div>
-    <label class="docs-lab-row">
-      <span class="docs-lab-label">{messages.intensity}</span>
-      <input type="range" min="0" max="100" step="1" value={intensity} style={`--fill:${intensity}%`} data-docs-lab-intensity aria-label={effectLabel(messages.intensity)} />
-      <output data-docs-lab-intensity-output>{intensity}%</output>
-    </label>
-    {fields.map((field) => <label class="docs-lab-row">
-      <span class="docs-lab-label">{field.label[locale]}</span>
-      <input type="range" min="0" max={field.max} step="1" value={Math.round(field.example * 100)} style={`--fill:${field.example * 100 / field.max * 100}%`} data-docs-lab-extent={field.name} aria-label={effectLabel(field.label[locale])} aria-describedby={`${id}-${field.name}-note`} />
-      <output data-docs-lab-extent-output={field.name}>{Math.round(field.example * 100)}%</output>
-      <small id={`${id}-${field.name}-note`} class="docs-lab-note">{messages.extentBasis[field.basis]} {messages.extentNote}</small>
-    </label>)}
+    <EffectSetting field={intensityField} locale={locale} id={`${id}-intensity`} value={intensity} inputAttributes={{ 'data-docs-lab-intensity': true }}/>
+    {fields.map((field) => <EffectSetting field={field} locale={locale} id={`${id}-${field.name}`} inputAttributes={{ 'data-docs-lab-extent': field.name }}/>) }
   </fieldset>
   <div class="docs-lab-code">
     <div class="docs-lab-code-bar"><span>{messages.currentSettings}</span><button type="button" class="docs-lab-copy" data-docs-lab-copy><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg><span data-docs-lab-copy-label>{messages.copy}</span></button></div>

@@ -34,8 +34,7 @@ See [troubleshooting](/docs/troubleshooting).
 
 ## Relative effect sizing
 
-If your installed version exposes relative sizing options, choose the fields in
-your [effect's reference](/docs/api/effects). Omitting them preserves the previous
+Relative sizing is available in `0.1.0-alpha.2`. Choose the fields in your [effect's reference](/docs/api/effects). Omitting them preserves the previous
 appearance. For Fire, replace `flameHeight` with `flameReach`; never supply both.
 For paired options, an omitted partner is zero.
 

@@ -46,8 +46,7 @@ junto con un ejemplo mínimo reproducible. Consulta
 
 ## Tamaño relativo del efecto
 
-Si la versión instalada ofrece opciones de tamaño relativo, elige los campos de
-la [referencia de tu efecto](/docs/es/api/effects). Omitirlos conserva la apariencia
+El tamaño relativo está disponible en `0.1.0-alpha.2`. Elige los campos de la [referencia de tu efecto](/docs/es/api/effects). Omitirlos conserva la apariencia
 anterior. En Fire, sustituye `flameHeight` por `flameReach`; nunca uses ambos.
 En las opciones emparejadas, la que omitas vale cero.
 

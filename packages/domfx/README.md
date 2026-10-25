@@ -5,7 +5,7 @@ Experimental DOM capture and internal TypeGPU renderer for domfx.
 See the [consumer quickstart](https://github.com/G0m1namm/domfx/blob/main/QUICKSTART.md)
 for npm installation and a tested standalone/GSAP walkthrough.
 
-Install the experimental alpha with `pnpm add -E @domfx/browser@0.1.0-alpha.1`.
+Use the quickstart’s pinned versions to install the experimental alpha.
 The `/experimental` entry is reserved for regression fixtures, not a stable public API.
 See the [browser support record](https://github.com/G0m1namm/domfx/blob/main/engineering/browser-support.md)
 for measured environments and limits.

@@ -88,12 +88,12 @@ fn fbm(point: vec2f) -> f32 {
   let temperature = clamp(heat * pulse * (1 - max(burn, 0) / (hotWidth * 1.8)), 0, 1);
   var emberColor = mix(vec3f(.7, .035, .001), vec3f(1, .38, .006), smoothstep(.05, .55, temperature));
   emberColor = mix(emberColor, vec3f(1, .91, .48), smoothstep(.55, .9, temperature));
-  let emberAlpha = hotBand * smoothstep(.08, .55, heat) * pulse;
+  let emberAlpha = hotBand * smoothstep(.08, .55, heat) * pulse * controls.glow.x;
   result = vec4f(emberColor * emberAlpha, emberAlpha) + result * (1 - emberAlpha);
   let crease = exp(-pow((burn - .55 - fibers * .35) / (.2 + intensity * .3), 2));
-  let creaseAlpha = crease * smoothstep(.35, .8, heat) * pulse;
+  let creaseAlpha = crease * smoothstep(.35, .8, heat) * pulse * controls.glow.x;
   result = vec4f(vec3f(1, .96, .72) * creaseAlpha, creaseAlpha) + result * (1 - creaseAlpha);
-  let glow = exp(-pow(max(-burn, 0) / 1.4, 2)) * heat * .24
+  let glow = exp(-pow(max(-burn, 0) / 1.4, 2)) * heat * .24 * controls.glow.x
            * (1 - smoothstep(-.5, .8, burn));
   result += vec4f(vec3f(1, .2, .005) * glow, glow) * (1 - result.a);
 

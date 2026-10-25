@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { gsap } from 'gsap';
 
+import type { BurnedPaperEffectHandle, FrostEffectHandle, SlimeEffectHandle } from '@domfx/browser';
 import type { EffectHandle } from '@domfx/core';
 import { bindEffect, bindEffectAsync, bindFire, bindFireAsync } from '@domfx/gsap';
 
@@ -86,6 +87,58 @@ function host(t: test.TestContext) {
   t.after(() => timeline.kill());
   return { timeline, sibling };
 }
+
+function materialAttachments() {
+  const base = attachment().effect;
+  let mistOpacity = 1;
+  let gloss = 1;
+  let emberGlow = 1;
+  const frost: FrostEffectHandle = {
+    ...base,
+    get mistOpacity() {
+      return mistOpacity;
+    },
+    set mistOpacity(value) {
+      mistOpacity = value;
+    },
+  };
+  const slime: SlimeEffectHandle = {
+    ...base,
+    get gloss() {
+      return gloss;
+    },
+    set gloss(value) {
+      gloss = value;
+    },
+  };
+  const burnedPaper: BurnedPaperEffectHandle = {
+    ...base,
+    get emberGlow() {
+      return emberGlow;
+    },
+    set emberGlow(value) {
+      emberGlow = value;
+    },
+  };
+  return { frost, slime, burnedPaper };
+}
+
+test('native GSAP property tweens update each writable material control', (t) => {
+  const timeline = gsap.timeline({ paused: true });
+  t.after(() => timeline.kill());
+  const { frost, slime, burnedPaper } = materialAttachments();
+  timeline.to(frost, { mistOpacity: 0, duration: 1, ease: 'none' });
+  timeline.fromTo(slime, { gloss: 0 }, { gloss: 1, duration: 1, ease: 'none' });
+  timeline.to(burnedPaper, { emberGlow: 0, duration: 1, ease: 'none' });
+
+  timeline.seek(0.5, true);
+  assert.equal(frost.mistOpacity, 0.5);
+  timeline.seek(1.5, true);
+  assert.equal(slime.gloss, 0.5);
+  timeline.reverse();
+  timeline.seek(2.5, true);
+  assert.equal(burnedPaper.emberGlow, 0.5);
+});
 
 test('effect disposal detaches every binding and disposed effects reject new bindings', (t) => {
   const { effect, callbacks } = attachment();

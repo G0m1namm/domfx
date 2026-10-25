@@ -1,5 +1,30 @@
 # @domfx/browser
 
+## 0.1.0-alpha.2
+
+### Minor Changes
+
+- b9125a5: Add creation-only target-relative coatingDepth/mistReach to Frost,
+  coatingDepth/dripReach to Slime, and scorchDepth/ashReach to Burned paper.
+  Supplying either extent enables independent premultiplied strength and fixed
+  fine detail, with the omitted partner defaulting to zero. Omitting both preserves
+  legacy appearance. Resize resolves the same fractions again; complete finite
+  support and bounded paint are subject to existing capture and memory budgets.
+- d94b29b: Add one writable main color control to every decorative effect except Burned paper,
+  and strengthen Fire ember density.
+- d94b29b: Add typed Frost mist, Fire ember density and Burned paper ember glow controls. Writable material controls support native animation; Fire density remains an inspectable creation option.
+- b9125a5: Add creation-only target-relative plumeReach and bandDepth to Dither and the twelve shared-flow patterns, echoReach to Contour echoes, and fringeReach to Brush fringe. Relative mode keeps fixed artistic detail and target-local phase while intensity scales premultiplied output; omitted extent options preserve legacy appearance. Full support includes fixed mark footprints and is subject to existing capture/resource gates and the bounded-paint policy.
+- b9125a5: Add creation-only `contourSpread` to Electricity and `fragmentTravel` to Kinetic bloom as nonnegative shorter-border-box-side fractions. Relative modes separate visual strength from geometry and fine detail, reserve complete finite support, and resolve again after resize. Omission preserves legacy output; zero is transparent. Correct Electricity's intensity description: intensity does not move its strands.
+- b9125a5: Add creation-only Fire `flameReach`, a finite nonnegative fraction of the untransformed target border-box height. Relative mode keeps strength, reach and CSS-scale fine detail independent, resolves reach after resize, and reserves finite support under existing allocation gates. Zero reach/intensity is transparent. Legacy defaults and `flameHeight` behavior remain unchanged; combining both options is rejected. Relative mode requires contained paint without shadows, filters, outlines or generated pseudo-elements; insufficient paint margin reports `missing-exterior`.
+- b9125a5: Add Slime dripDensity to control drip locations independently of travel and strength. Higher values add a second set of locations for visibly denser drips. Omitted density preserves existing output.
+
+### Patch Changes
+
+- b9125a5: Keep opt-in relative captures at exact DPR and rasterize supported bounded source paint independently of effect padding, preserving PNG silhouettes and procedural phase as extent changes. Reject escaping direct and boxless text before bounded rasterization, while allowing logical font rectangles inside the finite source guard. Existing allocation gates and omitted-option output remain unchanged.
+- d94b29b: Recover a visible effect after its initial capture becomes stale during viewport entry.
+- Updated dependencies
+  - @domfx/core@0.1.0-alpha.2
+
 ## 0.1.0-alpha.1
 
 ### Patch Changes

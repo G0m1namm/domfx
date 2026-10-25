@@ -1,5 +1,13 @@
 # @domfx/gsap
 
+## 0.1.0-alpha.2
+
+### Patch Changes
+
+- Update packaged installation guidance to the verified alpha release. Core and GSAP runtime behavior is unchanged.
+- Updated dependencies
+  - @domfx/core@0.1.0-alpha.2
+
 ## 0.1.0-alpha.1
 
 ### Patch Changes

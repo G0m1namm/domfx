@@ -63,7 +63,7 @@ fn rootHeight(p: vec2f, bend: f32) -> f32 {
   for (var neighbor = -1; neighbor <= 1; neighbor++) {
     let id = column + f32(neighbor);
     let random = hash(vec2f(id, seed + 53));
-    if (random > intensity * .6) { continue; }
+    if (random > intensity * .6 * controls.material.y) { continue; }
     let age = fract(time * .65 + hash(vec2f(id + 17, seed)));
     let emitterX = (id + hash(vec2f(id, seed + 9))) * 12;
     let drift = sin(age * 5 + random * 6) * age * 2;

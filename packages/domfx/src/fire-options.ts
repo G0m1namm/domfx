@@ -14,4 +14,7 @@ export type FireOptions = AttachmentOptions &
         readonly flameReach: number;
         readonly flameHeight?: never;
       }
-  );
+  ) & {
+    /** Creation-only normalized ember-site density, from 0 to 1. Defaults to 1. */
+    readonly emberDensity?: number;
+  };

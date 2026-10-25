@@ -13,9 +13,17 @@ import {
 import { captureElementWithReservation } from './browser.js';
 import type { BurnedPaperOptions } from './burned-paper-options.js';
 import type { DitherOptions } from './dither-options.js';
+import type {
+  BurnedPaperEffectHandle,
+  FireEffectHandle,
+  FrostEffectHandle,
+  HalftoneEffectHandle,
+  SlimeEffectHandle,
+} from './effect-controls.js';
 import type { ElectricityOptions } from './electricity-options.js';
 import type { FireOptions } from './fire-options.js';
 import type { FrostOptions } from './frost-options.js';
+import type { HalftoneOptions } from './halftone-options.js';
 import type { KineticOptions } from './kinetic-options.js';
 import type {
   BrushFringeOptions,
@@ -26,7 +34,7 @@ import { acquireRenderer } from './renderer-service.js';
 import type { SlimeOptions } from './slime-options.js';
 
 /** Batch control writes and refresh observed changes to captured paint. */
-export function attachFire(target: Element, options: FireOptions): EffectHandle {
+export function attachFire(target: Element, options: FireOptions): FireEffectHandle {
   return attachFireWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -42,7 +50,7 @@ export function attachElectricity(target: Element, options: ElectricityOptions):
 }
 
 /** Attach an icy rim, white mist and fine frost particles to a captured silhouette. */
-export function attachFrost(target: Element, options: FrostOptions): EffectHandle {
+export function attachFrost(target: Element, options: FrostOptions): FrostEffectHandle {
   return attachFrostWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -58,7 +66,7 @@ export function attachKinetic(target: Element, options: KineticOptions): EffectH
 }
 
 /** Attach a solid slime rim and gravity-driven drips to a captured silhouette. */
-export function attachSlime(target: Element, options: SlimeOptions): EffectHandle {
+export function attachSlime(target: Element, options: SlimeOptions): SlimeEffectHandle {
   return attachSlimeWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -66,7 +74,10 @@ export function attachSlime(target: Element, options: SlimeOptions): EffectHandl
 }
 
 /** Attach a charred paper overlay without erasing or deforming the source. */
-export function attachBurnedPaper(target: Element, options: BurnedPaperOptions): EffectHandle {
+export function attachBurnedPaper(
+  target: Element,
+  options: BurnedPaperOptions,
+): BurnedPaperEffectHandle {
   return attachBurnedPaperWithAdapters(target, options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -82,7 +93,7 @@ export function attachDither(target: Element, options: DitherOptions): EffectHan
 }
 
 /** Attach the halftone pattern exploration to a captured silhouette. */
-export function attachHalftone(target: Element, options: PatternOptions): EffectHandle {
+export function attachHalftone(target: Element, options: HalftoneOptions): HalftoneEffectHandle {
   return attachPatternWithAdapters(target, 'halftone', options, {
     capture: captureElementWithReservation,
     createRenderer: () => acquireRenderer(target.ownerDocument),
@@ -201,6 +212,14 @@ export type {
 } from './pattern-options.js';
 export type { DitherOptions } from './dither-options.js';
 export type { BurnedPaperOptions } from './burned-paper-options.js';
+export type {
+  BurnedPaperEffectHandle,
+  FireEffectHandle,
+  FrostEffectHandle,
+  HalftoneEffectHandle,
+  SlimeEffectHandle,
+} from './effect-controls.js';
+export type { HalftoneOptions } from './halftone-options.js';
 export type { SlimeOptions } from './slime-options.js';
 export type { KineticOptions } from './kinetic-options.js';
 export type { FireOptions } from './fire-options.js';

@@ -155,10 +155,10 @@ ${valueNoise}
   let reflection = pow(max(dot(normal, normalize(vec3f(.55, .2, .81))), 0), 12) * .14;
   let pigment = mix(vec3f(.42, .85, .075), vec3f(.18, .58, .025), thickness);
   let color = clamp(pigment * (.65 + diffuse * .4)
-                    + vec3f(.86, 1, .68) * (specular * .85 + reflection), vec3f(0), vec3f(1));
+                    + vec3f(.86, 1, .68) * (specular * .85 + reflection) * controls.material.w, vec3f(0), vec3f(1));
   // Thin gel reveals the original content but never fades out at its border.
   // Reflections stay more opaque; output remains premultiplied RGBA.
-  let opacity = clamp(.62 + thickness * .24 + specular * .3, 0, 1);
+  let opacity = clamp(.62 + thickness * .24 + specular * .3 * controls.material.w, 0, 1);
   let alpha = coverage * opacity;
   return vec4f(color * alpha, alpha);
 }`;

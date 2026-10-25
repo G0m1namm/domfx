@@ -1,6 +1,8 @@
 import type { AttachmentOptions } from './attachment-options.js';
 
 export interface FrostOptions extends AttachmentOptions {
+  /** Finite values clamp to 0–1. Defaults to 1. */
+  readonly mistOpacity?: number;
   /** Creation-only fraction of the shorter untransformed border-box side.
    * Either extent enables relative mode; the omitted partner is zero.
    * Omit both for legacy appearance. Intensity scales premultiplied strength.

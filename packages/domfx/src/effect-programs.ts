@@ -71,6 +71,11 @@ export class EffectPrograms {
           visibility: GPUShaderStage.FRAGMENT,
           buffer: { type: 'uniform', minBindingSize: 32 },
         },
+        {
+          binding: 3,
+          visibility: GPUShaderStage.FRAGMENT,
+          buffer: { type: 'uniform', minBindingSize: 32 },
+        },
       ],
     });
   }
@@ -157,7 +162,12 @@ export class EffectPrograms {
     return programs;
   }
 
-  bind(distances: GPUTexture, parameters: GPUBuffer, geometry: GPUBuffer): GPUBindGroup {
+  bind(
+    distances: GPUTexture,
+    parameters: GPUBuffer,
+    geometry: GPUBuffer,
+    controls: GPUBuffer,
+  ): GPUBindGroup {
     return this.device.createBindGroup({
       label: 'domfx prepared effect',
       layout: this.bindings,
@@ -165,6 +175,7 @@ export class EffectPrograms {
         { binding: 0, resource: distances.createView() },
         { binding: 1, resource: { buffer: parameters } },
         { binding: 2, resource: { buffer: geometry } },
+        { binding: 3, resource: { buffer: controls } },
       ],
     });
   }

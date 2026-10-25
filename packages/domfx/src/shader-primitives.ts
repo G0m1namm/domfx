@@ -91,4 +91,9 @@ fn noise(p: vec2f) -> f32 {
 export const effectBindings = `
 @group(0) @binding(0) var distances: texture_2d<f32>;
 @group(0) @binding(1) var<uniform> params: vec4f;
+struct EffectControls {
+  material: vec4f,
+  glow: vec4f,
+}
+@group(0) @binding(3) var<uniform> controls: EffectControls;
 `;

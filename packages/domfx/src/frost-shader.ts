@@ -75,7 +75,7 @@ fn rootHeight(p: vec2f, bend: f32) -> f32 {
     vapor = strands * .64 * pow(1 - rise, .65)
           * (1 - smoothstep(.86, 1, rise));
   }
-  let mistAlpha = vapor * exterior * sqrt(intensity);
+  let mistAlpha = vapor * exterior * sqrt(intensity) * controls.material.x;
   let mistColor = mix(vec3f(.79, .86, .92), vec3f(.97, .985, 1), cloud);
   var result = vec4f(iceColor * iceAlpha + mistColor * mistAlpha * (1 - iceAlpha),
                      iceAlpha + mistAlpha * (1 - iceAlpha));

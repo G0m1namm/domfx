@@ -144,6 +144,67 @@ for (const [mode, options] of [
       canvases: 0,
     });
   });
+
+  test(`delayed intersection delivery cannot strand an initial ${mode} capture after fast re-entry`, async ({
+    page,
+  }) => {
+    await page.evaluate(async (options) => {
+      document.body.style.minHeight = '2000px';
+      const NativeObserver = window.IntersectionObserver;
+      let deferred = true;
+      let deliver = () => {};
+      let observed = () => {};
+      const observation = new Promise<void>((resolve) => {
+        observed = resolve;
+      });
+      // Native intersection sampling and callback delivery are separate tasks.
+      // Deliver a visible sample after scrolling out, then return before the
+      // browser can sample the offscreen position.
+      window.IntersectionObserver = class extends NativeObserver {
+        constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+          super((entries, observer) => {
+            if (deferred) {
+              deliver = () => callback(entries, observer);
+              observed();
+            } else {
+              callback(entries, observer);
+            }
+          }, options);
+        }
+      };
+      try {
+        const fixture = window.manual.createMotionFixture('respect', 'capture', undefined, options);
+        window.manual.motionFixture = fixture;
+        fixture.effect.pause();
+        await fixture.entered;
+        await observation;
+        scrollTo(0, 1000);
+        deferred = false;
+        deliver();
+        scrollTo(0, 0);
+        fixture.release();
+      } finally {
+        window.IntersectionObserver = NativeObserver;
+      }
+    }, options);
+    await expect
+      .poll(() => page.evaluate(() => window.manual.motionFixture!.effect.lifecycle))
+      .toBe('active');
+    await frames(page);
+    expect(await page.evaluate(() => window.manual.motionFixture!.snapshot())).toMatchObject({
+      captures: 2,
+      raster: 'fresh',
+      paused: true,
+      times: [7],
+    });
+    await page.evaluate(() => window.manual.motionFixture!.dispose());
+    expect(await page.evaluate(() => window.manual.motionFixture!.snapshot())).toMatchObject({
+      lifecycle: 'disposed',
+      canvases: 0,
+      managedBytes: 0,
+      reservedBytes: 0,
+    });
+  });
 }
 
 for (const stage of ['renderer', 'capture', 'prepare'] as const) {

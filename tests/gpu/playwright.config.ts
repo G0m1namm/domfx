@@ -24,7 +24,7 @@ export default defineConfig({
   retries: 0,
   forbidOnly: true,
   timeout: 180_000,
-  globalTimeout: gpuBackend === 'swiftshader' ? 3_600_000 : 600_000,
+  globalTimeout: gpuBackend === 'swiftshader' ? 3_600_000 : 900_000,
   expect: { timeout: 10_000 },
   use: {
     browserName: 'chromium',

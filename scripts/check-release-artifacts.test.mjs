@@ -1,22 +1,24 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
 import {
   assertCleanReleaseCheckout,
-  assertInteractivePublishTerminal,
+  authenticatePublisher,
   assertReleaseVisibility,
+  publishArtifact,
   publishArtifacts,
+  publishTestedRelease,
   publishableTestedReleaseArtifacts,
   publishedArtifactMatches,
+  registryMetadata,
   releaseSourceIdentity,
   testedReleaseArtifacts,
   validateArtifact,
-  waitForPublicationApproval,
 } from './check-release-artifacts.mjs';
 
 const gitEnv = Object.fromEntries(
@@ -274,23 +276,49 @@ test('technical handoff defers private alpha policy to publication', (t) => {
   );
 });
 
-test('publisher rejects a noninteractive terminal before authentication or publication', () => {
-  assert.throws(
-    () => assertInteractivePublishTerminal({ stdin: {}, stdout: {} }),
+test('publisher rejects a noninteractive terminal before authentication or publication', async () => {
+  let authenticated = false;
+
+  await assert.rejects(
+    () =>
+      publishTestedRelease('/unused', 'unused', {
+        io: { stdin: {}, stdout: {} },
+        authenticate: () => {
+          authenticated = true;
+        },
+      }),
     /interactive terminal/,
   );
+
+  assert.equal(authenticated, false);
 });
 
-test('publisher accepts an explicit simulated interactive approval without publishing', async () => {
-  let prompt = '';
-  const input = new (await import('node:stream')).PassThrough();
-  input.isTTY = true;
-  const output = { isTTY: true, write: (text) => (prompt += text) };
-  input.end('publish\n');
+test('npm commands bound transport without imposing a publication process timeout', () => {
+  const calls = [];
+  const execute = (...args) => {
+    calls.push(args);
+    return JSON.stringify({ version: '0.1.0-alpha.0' });
+  };
+  const artifact = registryArtifact();
 
-  await waitForPublicationApproval({ stdin: input, stdout: output });
+  registryMetadata(`${artifact.name}@${artifact.version}`, execute);
+  authenticatePublisher(execute);
+  publishArtifact(artifact, execute);
 
-  assert.match(prompt, /Type publish/);
+  const [lookup, authentication, publication] = calls;
+  for (const [, args] of calls) {
+    assert.deepEqual(args.slice(-4), [
+      '--fetch-timeout=30000',
+      '--fetch-retries=2',
+      '--fetch-retry-mintimeout=1000',
+      '--fetch-retry-maxtimeout=5000',
+    ]);
+  }
+  assert.equal(lookup[0], 'npm');
+  assert.equal(lookup[2].timeout, 30_000);
+  assert.equal(authentication[2].timeout, 30_000);
+  assert.equal(publication[2].timeout, undefined);
+  assert.equal(publication[2].stdio, 'inherit');
 });
 
 function registryArtifact() {
@@ -339,10 +367,51 @@ test('publisher polls delayed registry visibility after one accepted publish', a
   assert.equal(checkpoint.artifacts['@domfx/core@0.1.0-alpha.0'].status, 'verified');
 });
 
-test('publisher resumes an unresolved accepted artifact without a duplicate publish', async (t) => {
+test('publisher resumes initially invisible accepted and requested artifacts without a duplicate publish', async (t) => {
+  const artifact = registryArtifact();
+  for (const status of ['accepted', 'requested']) {
+    const directory = mkdtempSync(join(tmpdir(), 'domfx-publication-state-'));
+    t.after(() => rmSync(directory, { recursive: true, force: true }));
+    writeFileSync(
+      join(directory, 'publication-state.json'),
+      JSON.stringify({
+        artifacts: {
+          '@domfx/core@0.1.0-alpha.0': {
+            integrity: artifact.integrity,
+            status,
+          },
+        },
+      }),
+    );
+    let clock = 0;
+    let lookups = 0;
+    let publishes = 0;
+
+    await publishArtifacts([artifact], directory, {
+      lookup: () => {
+        lookups += 1;
+        return lookups === 3 ? matchingMetadata(artifact) : undefined;
+      },
+      now: () => clock,
+      publish: () => {
+        publishes += 1;
+      },
+      sleep: async (milliseconds) => {
+        clock += milliseconds;
+      },
+      write: () => {},
+    });
+
+    assert.equal(lookups, 3, `${status} checkpoint must remain invisible before visibility`);
+    assert.equal(publishes, 0, `${status} checkpoint must not publish again`);
+  }
+});
+
+test('publisher propagates registry lookup failures during visibility instead of treating them as pending', async (t) => {
   const directory = mkdtempSync(join(tmpdir(), 'domfx-publication-state-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const artifact = registryArtifact();
+  const failure = new Error('registry unavailable');
   writeFileSync(
     join(directory, 'publication-state.json'),
     JSON.stringify({
@@ -354,17 +423,30 @@ test('publisher resumes an unresolved accepted artifact without a duplicate publ
       },
     }),
   );
+  let lookups = 0;
   let publishes = 0;
 
-  await publishArtifacts([artifact], directory, {
-    lookup: () => matchingMetadata(artifact),
-    publish: () => {
-      publishes += 1;
-    },
-    write: () => {},
-  });
+  await assert.rejects(
+    () =>
+      publishArtifacts([artifact], directory, {
+        lookup: () => {
+          lookups += 1;
+          if (lookups === 1) {
+            return undefined;
+          }
+          throw failure;
+        },
+        publish: () => {
+          publishes += 1;
+        },
+        write: () => {},
+      }),
+    /registry unavailable/,
+  );
 
+  assert.equal(lookups, 2);
   assert.equal(publishes, 0);
+  assert.equal(existsSync(join(directory, 'publication-state.json')), true);
 });
 
 test('publisher resumes a partial release after an earlier artifact is already verified', async (t) => {

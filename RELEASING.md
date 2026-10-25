@@ -233,11 +233,13 @@ node scripts/check-release-artifacts.mjs --publish <tested-evidence-directory> <
 pnpm release:verify:registry <tested-evidence-directory> <approved-commit>
 ```
 
-The publisher first requires an interactive terminal and asks the maintainer to type
-`publish`; this confirmation does not replace the separate approval of the tested bytes.
-Only then does it make a bounded authentication check and verify the clean source and
-evidence. It publishes unchanged core, browser and GSAP tarballs in dependency order
-with public access, `alpha` and lifecycle scripts disabled; it never rebuilds or repacks.
+The publisher first requires an interactive terminal before it checks npm authentication,
+so npm can present its own human security-key challenge. The approved revision and exact
+artifact gates remain the authorization to publish. It publishes unchanged core, browser
+and GSAP tarballs in dependency order with public access, `alpha` and lifecycle scripts
+disabled; it never rebuilds or repacks. Its registry transport has bounded npm fetch
+timeouts and retries, while the publish process itself has no wall-clock timeout that could
+interrupt a security-key challenge.
 
 After an accepted publish request, the publisher records a nonsecret
 `publication-state.json` checkpoint beside the retained evidence, then polls bounded

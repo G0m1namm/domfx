@@ -11,6 +11,15 @@ export const releaseLibraries = {
   'packages/gsap': '@domfx/gsap',
 };
 
+const npmRegistry = 'https://registry.npmjs.org';
+const npmNetworkTimeout = 30_000;
+const npmTransportOptions = [
+  '--fetch-timeout=30000',
+  '--fetch-retries=2',
+  '--fetch-retry-mintimeout=1000',
+  '--fetch-retry-maxtimeout=5000',
+];
+
 function git(root, args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 }
@@ -186,14 +195,18 @@ export function publishableTestedReleaseArtifacts(directory, revision, source, n
   return artifacts;
 }
 
-export function registryMetadata(spec) {
+export function registryMetadata(spec, execute = execFileSync) {
   try {
     return JSON.parse(
-      execFileSync('npm', ['view', spec, '--json', '--registry=https://registry.npmjs.org'], {
-        encoding: 'utf8',
-        stdio: 'pipe',
-        timeout: 30_000,
-      }),
+      execute(
+        'npm',
+        ['view', spec, '--json', `--registry=${npmRegistry}`, ...npmTransportOptions],
+        {
+          encoding: 'utf8',
+          stdio: 'pipe',
+          timeout: npmNetworkTimeout,
+        },
+      ),
     );
   } catch (error) {
     // Only an explicit registry E404 means absent. Network/auth errors must stop.
@@ -220,23 +233,6 @@ export function assertInteractivePublishTerminal(io = process) {
     io.stdin?.isTTY === true && io.stdout?.isTTY === true,
     'manual publication requires an interactive terminal with input and output; attach a terminal before authentication',
   );
-}
-
-export async function waitForPublicationApproval(io = process) {
-  io.stdout.write('Manual approval required. Type publish to send the approved tarballs to npm: ');
-  const answer = await new Promise((resolveAnswer) => {
-    let text = '';
-    const onData = (chunk) => {
-      text += chunk;
-      if (text.includes('\n')) {
-        io.stdin.off('data', onData);
-        resolveAnswer(text);
-      }
-    };
-    io.stdin.on('data', onData);
-    io.stdin.resume();
-  });
-  assert.equal(answer.trim(), 'publish', 'publication cancelled; type publish only after approval');
 }
 
 function checkpointPath(directory) {
@@ -333,8 +329,8 @@ export async function publishArtifacts(artifacts, directory, options = {}) {
   }
 }
 
-function publishArtifact(artifact) {
-  execFileSync(
+export function publishArtifact(artifact, execute = execFileSync) {
+  execute(
     'npm',
     [
       'publish',
@@ -342,26 +338,31 @@ function publishArtifact(artifact) {
       '--access=public',
       '--tag=alpha',
       '--ignore-scripts',
-      '--registry=https://registry.npmjs.org',
+      `--registry=${npmRegistry}`,
+      ...npmTransportOptions,
     ],
-    { stdio: 'inherit', timeout: 120_000 },
+    { stdio: 'inherit' },
   );
 }
 
-async function publishTestedRelease(directory, revision) {
-  assertInteractivePublishTerminal();
-  await waitForPublicationApproval();
+export function authenticatePublisher(execute = execFileSync) {
   try {
-    execFileSync('npm', ['whoami', '--registry=https://registry.npmjs.org'], {
+    execute('npm', ['whoami', `--registry=${npmRegistry}`, ...npmTransportOptions], {
       encoding: 'utf8',
       stdio: 'pipe',
-      timeout: 30_000,
+      timeout: npmNetworkTimeout,
     });
   } catch (error) {
     throw new Error('npm authentication failed; run npm login in this terminal before publishing', {
       cause: error,
     });
   }
+}
+
+export async function publishTestedRelease(directory, revision, options = {}) {
+  assertInteractivePublishTerminal(options.io ?? process);
+  const authenticate = options.authenticate ?? authenticatePublisher;
+  await authenticate();
   assertCleanReleaseCheckout();
   const artifacts = publishableTestedReleaseArtifacts(directory, revision, releaseSourceIdentity());
   await publishArtifacts(artifacts, directory);

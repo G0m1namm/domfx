@@ -84,6 +84,10 @@ for (const locale of ['en', 'es'] as const) {
       if (colorField) {
         await expect(lab.locator('[data-docs-lab-color]')).toBeDisabled();
         await expect(lab.locator('[data-docs-lab-color]')).toHaveAccessibleName('color');
+        await expect(lab.locator('[data-color-output]')).toHaveText(
+          locale === 'es' ? 'Colores originales' : 'Original colors',
+        );
+        await expect(lab.locator('[data-color-reset]')).toBeDisabled();
       } else {
         await expect(lab.locator('[data-docs-lab-color]')).toHaveCount(0);
       }

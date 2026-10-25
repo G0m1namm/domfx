@@ -314,6 +314,8 @@ function initializeLab(
       () => {
         color = colorInput.value;
         colorOutput.value = color;
+        required<HTMLElement>('[data-color-setting]', lab).dataset.colorUnset = 'false';
+        required<HTMLButtonElement>('[data-color-reset]', lab).disabled = false;
         updateValues();
         if (slot.handle) {
           setEffectColor(effect, slot.handle, color);
@@ -325,7 +327,9 @@ function initializeLab(
       'click',
       () => {
         color = undefined;
-        colorOutput.value = locale === 'es' ? 'Paleta original' : 'Authored palette';
+        colorOutput.value = locale === 'es' ? 'Colores originales' : 'Original colors';
+        required<HTMLElement>('[data-color-setting]', lab).dataset.colorUnset = 'true';
+        required<HTMLButtonElement>('[data-color-reset]', lab).disabled = true;
         updateValues();
         if (slot.handle) {
           setEffectColor(effect, slot.handle, undefined);

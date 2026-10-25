@@ -6,7 +6,7 @@ description: "Consulta el estado del efecto, actualiza la captura y libera recur
 import DocsEffectMethods from "../../../../components/docs-effect-methods.astro";
 import DocsEffectState from "../../../../components/docs-effect-state.astro";
 
-<p>Cada función devuelve de inmediato una instancia de efecto (<code>EffectHandle</code>). Consérvala para controlar la animación, comprobar el resultado de la configuración y liberar recursos. <a href="/docs/es/api/shared#control-playback">Tiempo e intensidad</a> son sus controles modificables. Cada instancia tipada salvo Burned paper extiende <code>ColorEffectHandle</code>: su propiedad <code>color</code> devuelve <code>rgb(...)</code> normalizado o <code>undefined</code> para la paleta creada por el efecto. Frost también expone <code>mistOpacity</code>, Burned paper expone <code>emberGlow</code> y Fire expone su valor de creación resuelto <code>emberDensity</code>.</p>
+<p>Cada función devuelve de inmediato una instancia de efecto (<code>EffectHandle</code>). Consérvala para controlar la animación, comprobar el resultado de la configuración y liberar recursos. <a href="/docs/es/api/shared#control-playback">Tiempo e intensidad</a> son sus controles modificables. Cada instancia tipada salvo Burned paper extiende <code>ColorEffectHandle</code>: su propiedad <code>color</code> devuelve <code>rgb(...)</code> normalizado o <code>undefined</code> para los colores originales del efecto. Frost también expone <code>mistOpacity</code>, Burned paper expone <code>emberGlow</code> y Fire expone su valor de creación resuelto <code>emberDensity</code>.</p>
 
 <span id="read-state" />
 

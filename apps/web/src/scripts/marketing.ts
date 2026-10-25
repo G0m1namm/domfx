@@ -978,6 +978,8 @@ function initializeMarketing() {
     }
     selectedColor = event.target.value;
     required<HTMLOutputElement>('[data-color-output]', colorControls).value = selectedColor;
+    required<HTMLElement>('[data-color-setting]', colorControls).dataset.colorUnset = 'false';
+    required<HTMLButtonElement>('[data-color-reset]', colorControls).disabled = false;
     if (dialogSlot.handle) {
       setEffectColor(selectedEffect, dialogSlot.handle, selectedColor);
     }
@@ -990,7 +992,9 @@ function initializeMarketing() {
     }
     selectedColor = undefined;
     required<HTMLOutputElement>('[data-color-output]', colorControls).value =
-      locale === 'es' ? 'Paleta original' : 'Authored palette';
+      locale === 'es' ? 'Colores originales' : 'Original colors';
+    required<HTMLElement>('[data-color-setting]', colorControls).dataset.colorUnset = 'true';
+    required<HTMLButtonElement>('[data-color-reset]', colorControls).disabled = true;
     if (dialogSlot.handle) {
       setEffectColor(selectedEffect, dialogSlot.handle, undefined);
     }

@@ -115,6 +115,10 @@
   outline: 2px solid #e6dc6a;
   outline-offset: 2px;
 }
+.effect-color-setting[data-color-unset='true'] input[type='color'] {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
 .effect-color-reset {
   min-block-size: max(2.75rem, 44px);
   padding: 0.5em 0.75em;
@@ -128,6 +132,11 @@
 }
 .effect-color-reset:hover {
   border-color: #c2c5db;
+}
+.effect-color-reset:disabled {
+  border-color: #454754;
+  color: #aeb1c1;
+  cursor: default;
 }
 /* Longer API names and the slider need this much available component width. */
 @container (min-width: 21em) {

@@ -9,12 +9,12 @@ interface Props {
 }
 
 const { locale, id, inputAttributes = {} } = Astro.props;
-const resetLabel = locale === 'es' ? 'Usar paleta original' : 'Use authored palette';
-const authoredPalette = locale === 'es' ? 'Paleta original' : 'Authored palette';
+const resetLabel = locale === 'es' ? 'Usar colores originales' : 'Use original colors';
+const originalColors = locale === 'es' ? 'Colores originales' : 'Original colors';
 ---
-<div class="effect-setting effect-color-setting" data-color-setting>
+<div class="effect-setting effect-color-setting" data-color-setting data-color-unset="true">
   <label class="effect-setting-label" for={id}>color</label>
   <input id={id} type="color" value="#c2c5db" aria-describedby={`${id}-value`} {...inputAttributes}/>
-  <output id={`${id}-value`} data-color-output>{authoredPalette}</output>
-  <button type="button" class="effect-color-reset" data-color-reset>{resetLabel}</button>
+  <output id={`${id}-value`} data-color-output>{originalColors}</output>
+  <button type="button" class="effect-color-reset" data-color-reset disabled>{resetLabel}</button>
 </div>

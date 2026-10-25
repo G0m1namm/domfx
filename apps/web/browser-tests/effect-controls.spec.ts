@@ -155,9 +155,7 @@ test('Halftone forwards relative geometry', async ({ page }) => {
   expect(await hasVisiblePixels(stage.locator('canvas'))).toBe(true);
 });
 
-test('marketing color control updates live code and restores the authored palette', async ({
-  page,
-}) => {
+test('marketing color control updates live code and restores original colors', async ({ page }) => {
   await page.goto('/effects/');
   await page.locator('[data-card][data-id="frost"]').click();
   const dialog = page.locator('.effect-dialog');
@@ -166,12 +164,16 @@ test('marketing color control updates live code and restores the authored palett
 
   await expect(controls).toBeVisible();
   await expect(color).toHaveAccessibleName('color');
+  await expect(controls.locator('[data-color-output]')).toHaveText('Original colors');
+  await expect(controls.locator('[data-color-reset]')).toBeDisabled();
   await color.fill('#ff0000');
+  await expect(controls.locator('[data-color-reset]')).toBeEnabled();
   await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
   await dialog.locator('[data-target="svg"]').click();
   await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
   await controls.locator('[data-color-reset]').click();
   await expect(dialog.locator('[data-code]')).not.toContainText('color:');
+  await expect(controls.locator('[data-color-reset]')).toBeDisabled();
 
   await dialog.locator('[data-close]').click();
   await page.locator('[data-card][data-id="burned-paper"]').click();

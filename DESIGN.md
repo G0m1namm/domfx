@@ -120,7 +120,7 @@ short transitions along thin edges. Use subtle, static grain or stippling beside
 the main demonstration, away from copy and controls. Keep the contrast low enough
 that the live effect remains the focal point. The picker may expose one main decorative
 color for every effect except Burned paper; an unset picker preserves each effect's
-authored palette, including Fire's warm palette.
+original colors, including Fire's warm colors.
 
 Main headings, paragraphs, labels and code use solid text. The approved exception is
 `@domfx/gsap` in the post-example title description: use a static brand gradient

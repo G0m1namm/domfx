@@ -53,7 +53,7 @@ When installed declarations expose `ColorAttachmentOptions`, every effect except
 Burned paper accepts one optional main decorative `color`. Use `#RGB`, `#RRGGBB`,
 `rgb(...)` or `rgba(..., 1)`; the typed `ColorEffectHandle.color` getter returns
 normalized `rgb(...)`. Omit `color`, or assign `undefined`, to preserve or restore
-the effect-authored palette. Color writes render on the next frame without a recapture.
+the effect's original colors. Color writes render on the next frame without a recapture.
 
 Keep creation and writable semantics distinct. Frost `mistOpacity` and Burned paper
 `emberGlow` are writable normalized values (default `1`): assignments clamp to 0–1,

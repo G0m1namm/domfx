@@ -6,5 +6,10 @@
     "rootDir": ".",
     "outDir": ".test-dist"
   },
-  "include": ["src/capture-revision.ts", "src/placement-geometry.ts", "tests/**/*.ts"]
+  "include": [
+    "src/capture-revision.ts",
+    "src/placement-geometry.ts",
+    "src/color.ts",
+    "tests/**/*.ts"
+  ]
 }

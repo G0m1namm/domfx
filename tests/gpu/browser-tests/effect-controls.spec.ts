@@ -51,6 +51,16 @@ test('selected effect controls validate, retain state and change only their inte
     const frostRetained = frost.mistOpacity;
     frost.dispose();
 
+    const frostExtreme = window.controlEffects.frost(target, {
+      host,
+      time: 2,
+      mistOpacity: Number.MAX_VALUE,
+    });
+    await frostExtreme.ready;
+    frostExtreme.mistOpacity = -Number.MAX_VALUE;
+    const frostExtremeValue = frostExtreme.mistOpacity;
+    frostExtreme.dispose();
+
     const slime = window.controlEffects.slime(target, { host, time: 2, intensity: 0.8 });
     await slime.ready;
     const slimeDefault = slime.gloss;
@@ -59,6 +69,16 @@ test('selected effect controls validate, retain state and change only their inte
     await settle();
     const slimeAfter = image();
     slime.dispose();
+
+    const slimeExtreme = window.controlEffects.slime(target, {
+      host,
+      time: 2,
+      gloss: -Number.MAX_VALUE,
+    });
+    await slimeExtreme.ready;
+    slimeExtreme.gloss = Number.MAX_VALUE;
+    const slimeExtremeValue = slimeExtreme.gloss;
+    slimeExtreme.dispose();
 
     const paper = window.controlEffects['burned-paper'](target, {
       host,
@@ -72,6 +92,16 @@ test('selected effect controls validate, retain state and change only their inte
     await settle();
     const paperAfter = image();
     paper.dispose();
+
+    const paperExtreme = window.controlEffects['burned-paper'](target, {
+      host,
+      time: 2,
+      emberGlow: Number.MAX_VALUE,
+    });
+    await paperExtreme.ready;
+    paperExtreme.emberGlow = -Number.MAX_VALUE;
+    const paperExtremeValue = paperExtreme.emberGlow;
+    paperExtreme.dispose();
 
     const fireDefault = window.controlEffects.fire(target, { host, intensity: 0.8, seed: 314 });
     await fireDefault.ready;
@@ -127,8 +157,11 @@ test('selected effect controls validate, retain state and change only their inte
       frostChanged: frostBefore !== frostAfter,
       frostError,
       frostRetained,
+      frostExtremeValue,
       slimeChanged: slimeBefore !== slimeAfter,
+      slimeExtremeValue,
       paperChanged: paperBefore !== paperAfter,
+      paperExtremeValue,
       fireChanged: fireDefaultImages.some((value, index) => value !== fireNoneImages[index]),
       halftoneChanged: halftoneDefaultImage !== halftoneWideImage,
       defaults,
@@ -149,8 +182,11 @@ test('selected effect controls validate, retain state and change only their inte
     frostChanged: true,
     frostError: 'invalid-frost-parameter',
     frostRetained: 0,
+    frostExtremeValue: 0,
     slimeChanged: true,
+    slimeExtremeValue: 1,
     paperChanged: true,
+    paperExtremeValue: 0,
     fireChanged: true,
     halftoneChanged: true,
     defaults: { emberDensity: 1, dotSpacing: 5.5, gloss: 1, emberGlow: 1 },

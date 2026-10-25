@@ -73,18 +73,28 @@ test('selected effect controls validate, retain state and change only their inte
     const paperAfter = image();
     paper.dispose();
 
-    const fireDefault = window.controlEffects.fire(target, { host, time: 2, intensity: 0.8 });
+    const fireDefault = window.controlEffects.fire(target, { host, intensity: 0.8, seed: 314 });
     await fireDefault.ready;
-    const fireDefaultImage = image();
+    const fireDefaultImages: string[] = [];
+    for (const time of [0, 0.5, 1, 1.5, 2]) {
+      fireDefault.time = time;
+      await settle();
+      fireDefaultImages.push(image());
+    }
     fireDefault.dispose();
     const fireNone = window.controlEffects.fire(target, {
       host,
-      time: 2,
       intensity: 0.8,
+      seed: 314,
       emberDensity: 0,
     });
     await fireNone.ready;
-    const fireNoneImage = image();
+    const fireNoneImages: string[] = [];
+    for (const time of [0, 0.5, 1, 1.5, 2]) {
+      fireNone.time = time;
+      await settle();
+      fireNoneImages.push(image());
+    }
     fireNone.dispose();
 
     const halftoneDefault = window.controlEffects.halftone(target, {
@@ -119,7 +129,7 @@ test('selected effect controls validate, retain state and change only their inte
       frostRetained,
       slimeChanged: slimeBefore !== slimeAfter,
       paperChanged: paperBefore !== paperAfter,
-      fireChanged: fireDefaultImage !== fireNoneImage,
+      fireChanged: fireDefaultImages.some((value, index) => value !== fireNoneImages[index]),
       halftoneChanged: halftoneDefaultImage !== halftoneWideImage,
       defaults,
       canvases: host.querySelectorAll('canvas').length,

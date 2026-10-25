@@ -106,6 +106,36 @@ test('initial zero size waits without capture or frame allocation @smoke', async
   await page.evaluate(() => window.manual.motionFixture!.dispose());
 });
 
+test('target re-entry recovers an initial capture invalidated while offscreen', async ({
+  page,
+}) => {
+  await page.evaluate(async () => {
+    document.body.style.minHeight = '2000px';
+    const fixture = window.manual.createMotionFixture('respect', 'capture');
+    window.manual.motionFixture = fixture;
+    fixture.effect.pause();
+    await fixture.entered;
+    scrollTo(0, 1000);
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.manual.motionFixture!.effect.raster))
+    .toBe('stale');
+
+  await page.evaluate(() => {
+    scrollTo(0, 0);
+    window.manual.motionFixture!.release();
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.manual.motionFixture!.effect.lifecycle))
+    .toBe('active');
+  expect(await page.evaluate(() => window.manual.motionFixture!.snapshot())).toMatchObject({
+    captures: 2,
+    raster: 'fresh',
+  });
+
+  await page.evaluate(() => window.manual.motionFixture!.dispose());
+});
+
 for (const stage of ['renderer', 'capture', 'prepare'] as const) {
   for (const transition of ['zero', 'disconnect'] as const) {
     test(`${transition} during initial ${stage} rejects late output`, async ({ page }) => {

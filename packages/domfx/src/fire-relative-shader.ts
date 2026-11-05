@@ -1,6 +1,7 @@
 import { effectGeometryBindings, localDistanceField } from './effect-geometry.js';
 import {
   effectBindings,
+  fireColors,
   fullscreenVertex,
   gradientDirections,
   gradientNoise,
@@ -12,6 +13,7 @@ import {
  */
 export const relativeFireShader = `
 ${effectBindings}
+${fireColors}
 ${effectGeometryBindings}
 ${fullscreenVertex}
 ${scalarHash}
@@ -67,8 +69,7 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
   let alpha = clamp(rim + glow + body * exterior * .94, 0, .95)
               * smoothstep(-depth, -min(depth, .5), distance) * envelope;
   let heat = clamp(exp(-max(height, 0) / reach * 6.72) * .85 + max(density, 0) * .25, 0, 1);
-  let orange = mix(vec3f(1, .09, .005), vec3f(1, .55, .025), smoothstep(.1, .65, heat));
-  let color = mix(orange, vec3f(1, .96, .64), smoothstep(.65, 1, heat));
+  let color = fireFlameColor(heat);
   var ember = 0.0;
   if (controls.material.y > 0) {
     let column = floor(p.x / 12);
@@ -96,6 +97,6 @@ fn rootHeight(p: vec2f, bend: f32, reach: f32) -> f32 {
     }
   }
   let emberAlpha = min(ember * exterior * envelope, .9);
-  return applyEffectColor(vec4f(vec3f(1, .78, .28) * emberAlpha + color * alpha * (1 - emberAlpha),
+  return applyEffectColor(vec4f(fireEmberColor() * emberAlpha + color * alpha * (1 - emberAlpha),
                emberAlpha + alpha * (1 - emberAlpha)) * intensity);
 }`;

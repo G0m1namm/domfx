@@ -59,6 +59,12 @@ first color, then native `.to()` calls can read the current color. Stop color tw
 before resetting to `undefined`. Color writes retain the existing capture, geometry
 and GPU resources.
 
+`rootColor` and `tipColor` follow the same rules. An effect adopts the pair through
+`ColorRampOptions` and `ColorRampEffectHandle`, not `ColorAttachmentOptions`, and documents
+where its ramp starts and ends, its ramp position, how secondary elements are colored and
+its authored endpoints. The pair excludes `color`, each side is optional, and blending is
+in gamma-encoded sRGB, so complementary pairs pass through gray. Fire is the only adopter.
+
 The optional snapshot bindings preserve their existing starts and proxy targets
 under both generic and Fire-named exports. They add scoped disposal and cancellation
 of late results. They are not registered property plugins. Do not change these

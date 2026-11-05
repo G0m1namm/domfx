@@ -5,6 +5,12 @@ export interface EffectColor {
   readonly blue: number;
 }
 
+/** Resolved endpoints of a color ramp, sent to the shader once either one is selected. */
+export interface EffectColorRamp {
+  readonly tip: EffectColor;
+  readonly root: EffectColor;
+}
+
 const decimal = '[0-9]+(?:\\.[0-9]+)?';
 const rgb = new RegExp(
   `^rgb\\(\\s*(${decimal})\\s*,\\s*(${decimal})\\s*,\\s*(${decimal})\\s*\\)$`,
@@ -34,6 +40,20 @@ function resolved(red: number, green: number, blue: number): EffectColor {
     green: green / 255,
     blue: blue / 255,
   };
+}
+
+const fireAuthoredTip = resolved(255, 23, 1);
+const fireAuthoredRoot = resolved(255, 245, 163);
+
+/** Fire keeps its three-stop palette until one endpoint is selected. */
+export function fireColorRamp(
+  tip: EffectColor | undefined,
+  root: EffectColor | undefined,
+): EffectColorRamp | undefined {
+  if (tip === undefined && root === undefined) {
+    return undefined;
+  }
+  return { tip: tip ?? fireAuthoredTip, root: root ?? fireAuthoredRoot };
 }
 
 export function parseEffectColor(value: unknown): EffectColor | undefined {

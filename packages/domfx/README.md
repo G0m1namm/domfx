@@ -325,10 +325,10 @@ is used to fit a budget. Pixel rejection reports `capture-budget`, per-target re
 `target-budget`, and Document rejection `aggregate-budget`. Refresh budget failures
 reject the promise and leave the attachment unavailable with stale, hidden output.
 
-For a raster of P pixels, known managed GPU allocations are 36P + 84 bytes (source,
+For a raster of P pixels, known managed GPU allocations are 36P + 116 bytes (source,
 SDF/JFA, fire texture and uniforms). Admission additionally estimates 4P bytes for one
 RGBA output surface and reserves 4P CPU capture bytes until the capture frame is
-released: 44P + 84 pending, then 40P + 84 retained. Actual SnapDOM dimensions are
+released: 44P + 116 pending, then 40P + 116 retained. Actual SnapDOM dimensions are
 checked before rasterization; returned capture dimensions and prepared-frame bytes
 are reconciled before presentation. Reconciliation replaces an entry, so estimates
 and their actual resources are never added twice. The previous frame remains charged
@@ -631,7 +631,8 @@ Import any of these from `@domfx/browser`. All accept the shared options.
 Fire adds mutually exclusive creation-only `flameHeight` and `flameReach` options;
 the other effects add their own relative extents below. Time and intensity remain
 the shared writable controls. Every effect except Burned paper also accepts one
-optional main color; gradient and particle-count controls are not exported.
+optional main color; Fire can use `rootColor` and `tipColor` instead. Other gradient
+and particle-count controls are not exported.
 
 - `attachElectricity`
 - `attachFrost`
@@ -743,6 +744,22 @@ const colorTween = gsap.fromTo(effect, { color: '#f60' }, { color: '#69f', durat
 After setting a color, ordinary `.to()` tweens can read it as their starting value.
 Stop color tweens before assigning `undefined` to restore the original palette;
 `undefined` is not an interpolation endpoint. Dispose owned tweens with the effect.
+
+Fire also accepts `rootColor` and `tipColor` as creation options and writable handle
+properties, using the same format and getter contract as `color`. They run from the
+base of the flame to its ends, and exclude `color`: creating Fire with both, or writing
+one while the other is set, throws `invalid-fire-parameter` and keeps the prior value, so
+reset to `undefined` first. Either can be set alone; an unset side uses Tip `#ff1701` or
+Root `#fff5a3`, and its getter returns `undefined`. Neither set keeps the authored
+three-stop palette exactly. Either set renders `mix(tip, root, smoothstep(.1, 1, heat))`
+without the authored middle stop, and embers use the effective Tip color instead of
+`#ffc747`. `heat` includes flame density, so this is not an exact height.
+
+Blending is in gamma-encoded sRGB, like default CSS gradients and GSAP string tweens, so
+complementary pairs pass through gray at their midpoint: `#0066ff` and `#ff9900` average
+about `#808080`. Writes keep the capture, geometry and GPU resources. For GSAP, assign an
+explicit color first, then use `fromTo()`; from an unset side GSAP writes
+`rgba(0,0,0,0)`, which is rejected.
 
 The extent values above are examples, not defaults. Supplying either field selects relative
 mode and defaults its omitted partner to **zero**. Zero disables that component;

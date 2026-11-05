@@ -58,6 +58,18 @@ const colorTween = gsap.fromTo(
 
 <p>Para cambios posteriores, usa <code>{"gsap.to(fire, { color: '#ff6600', duration: 2 })"}</code>. Al limpiar, llama a <code>colorTween.kill()</code> antes de liberar el efecto. Para recuperar la paleta original, detén las animaciones de color y asigna <code>fire.color = undefined</code>.</p>
 
+<p><code>rootColor</code> y <code>tipColor</code> de Fire se animan igual, sin plugin: asigna primero un color explícito y después usa <code>fromTo()</code>. Ninguno se puede definir mientras <code>color</code> esté definido.</p>
+
+```ts
+fire.rootColor = '#fff5a3';
+fire.tipColor = '#ff1701';
+const flameTween = gsap.fromTo(
+  fire,
+  { rootColor: '#fff5a3', tipColor: '#ff1701' },
+  { rootColor: '#99ddff', tipColor: '#0066ff', duration: 2 },
+);
+```
+
 <span id="own-the-lifetime" />
 
 ## Gestiona el ciclo de vida

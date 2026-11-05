@@ -1,6 +1,7 @@
 import {
   rasterDistance,
   effectBindings,
+  fireColors,
   fullscreenVertex,
   gradientDirections,
   scalarHash,
@@ -9,6 +10,7 @@ import {
 
 export const fireShader = `
 ${effectBindings}
+${fireColors}
 ${fullscreenVertex}
 ${rasterDistance}
 ${scalarHash}
@@ -53,8 +55,7 @@ fn rootHeight(p: vec2f, bend: f32) -> f32 {
   let alpha = clamp((rim + glow + body * exterior * .94) * sqrt(intensity), 0, .95)
               * smoothstep(-3, -.5, distance);
   let heat = clamp(exp(-max(height, 0) * .24) * .85 + max(density, 0) * .25, 0, 1);
-  let orange = mix(vec3f(1, .09, .005), vec3f(1, .55, .025), smoothstep(.1, .65, heat));
-  let color = mix(orange, vec3f(1, .96, .64), smoothstep(.65, 1, heat));
+  let color = fireFlameColor(heat);
 
   // Each column emits occasional embers from an upward-facing silhouette edge.
   // Absolute-time lifetimes preserve seeking, reverse playback and seed determinism.
@@ -86,6 +87,6 @@ fn rootHeight(p: vec2f, bend: f32) -> f32 {
   }
   ember *= exterior * intensity;
   let emberAlpha = min(ember, .9);
-  return applyEffectColor(vec4f(vec3f(1, .78, .28) * emberAlpha + color * alpha * (1 - emberAlpha),
+  return applyEffectColor(vec4f(fireEmberColor() * emberAlpha + color * alpha * (1 - emberAlpha),
                emberAlpha + alpha * (1 - emberAlpha)));
 }`;

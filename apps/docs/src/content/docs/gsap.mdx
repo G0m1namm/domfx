@@ -48,6 +48,18 @@ const colorTween = gsap.fromTo(
 
 <p>For subsequent changes, use <code>{"gsap.to(fire, { color: '#ff6600', duration: 2 })"}</code>. During cleanup, call <code>colorTween.kill()</code> before disposing the effect. To restore the original palette, stop color tweens and assign <code>fire.color = undefined</code>.</p>
 
+<p>Fire's <code>rootColor</code> and <code>tipColor</code> animate the same way, with no plugin: assign an explicit color first, then use <code>fromTo()</code>. Neither can be set while <code>color</code> is set.</p>
+
+```ts
+fire.rootColor = '#fff5a3';
+fire.tipColor = '#ff1701';
+const flameTween = gsap.fromTo(
+  fire,
+  { rootColor: '#fff5a3', tipColor: '#ff1701' },
+  { rootColor: '#99ddff', tipColor: '#0066ff', duration: 2 },
+);
+```
+
 ## Own the lifetime
 
 <p>Register <code>cleanup()</code> in your framework’s unmount hook before calling <code>setup()</code>. It removes listeners, reverts and kills this example’s timeline, and disposes the effect. This works while fonts or <code>ready</code> are pending. The disposal listener also restores opacity if the target is removed. On remount, create fresh variables, an effect and a timeline.</p>

@@ -55,6 +55,15 @@ Burned paper accepts one optional main decorative `color`. Use `#RGB`, `#RRGGBB`
 normalized `rgb(...)`. Omit `color`, or assign `undefined`, to preserve or restore
 the effect's original colors. Color writes render on the next frame without a recapture.
 
+When installed declarations expose `ColorRampEffectHandle`, Fire also accepts `rootColor`
+(base of the flame) and `tipColor` (ends of the flame and embers), as creation options and
+writable properties in the same format. They exclude `color`: using both throws
+`invalid-fire-parameter` and keeps the prior value, so assign `undefined` first to switch.
+An unset side uses Tip `#ff1701` or Root `#fff5a3` and reads as `undefined`; neither set
+keeps today's output. Colors blend in sRGB, so complementary pairs pass through gray at
+their midpoint; suggest closer hues if that looks wrong. For GSAP, assign an explicit color,
+then use `fromTo()`. Other effects do not expose the pair.
+
 Keep creation and writable semantics distinct. Frost `mistOpacity` and Burned paper
 `emberGlow` are writable normalized values (default `1`): assignments clamp to 0–1,
 render on the next frame and do not recapture. `mistOpacity` changes only Frost's

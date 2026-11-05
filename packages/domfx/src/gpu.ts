@@ -3,7 +3,7 @@ import { d, std, tgpu, type TgpuRoot } from 'typegpu';
 
 import type { CaptureFrame } from '@domfx/core';
 
-import type { EffectColor } from './color.js';
+import type { EffectColor, EffectColorRamp } from './color.js';
 import { EffectError } from './effect-error.js';
 import type { EffectGeometry } from './effect-geometry.js';
 import { EffectPrograms, type RenderEffect } from './effect-programs.js';
@@ -65,6 +65,7 @@ export interface EffectControls {
   readonly emberDensity: number;
   readonly emberGlow: number;
   readonly color: EffectColor | undefined;
+  readonly colorRamp: EffectColorRamp | undefined;
 }
 
 const defaultControls: EffectControls = {
@@ -72,6 +73,7 @@ const defaultControls: EffectControls = {
   emberDensity: 1,
   emberGlow: 1,
   color: undefined,
+  colorRamp: undefined,
 };
 
 /** One experimental renderer service; caller owns it and shares it between targets.
@@ -176,7 +178,7 @@ export class GpuExperiment {
     if (!pixels.some((value, i) => i % 4 === 3 && value < 128)) {
       throw new EffectError('missing-exterior');
     }
-    if (this.managedBytes + width * height * 36 + 84 > 144_000_000) {
+    if (this.managedBytes + width * height * 36 + 116 > 144_000_000) {
       throw new EffectError('aggregate-budget');
     }
 
@@ -230,7 +232,7 @@ export class GpuExperiment {
       });
       controlsUniform = device.createBuffer({
         label: 'domfx effect controls',
-        size: 32,
+        size: 64,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
       const outputTexture = output;
@@ -247,8 +249,8 @@ export class GpuExperiment {
       const prepared: PreparedGpuFrame = {
         width,
         height,
-        // Textures + legacy vec4f (16), geometry (32), controls (32), patched JFA i32 (4).
-        managedBytes: width * height * 36 + 84,
+        // Textures + legacy vec4f (16), geometry (32), controls (64), patched JFA i32 (4).
+        managedBytes: width * height * 36 + 116,
         prepareMs: performance.now() - started,
         readSdf: async () => {
           const bytes = await this.readTexture(sdfTexture, width, height, 8);
@@ -283,9 +285,6 @@ export class GpuExperiment {
               controls.mistOpacity,
               controls.emberDensity,
               controls.emberGlow,
-              controls.color?.red ?? 0,
-              controls.color?.green ?? 0,
-              controls.color?.blue ?? 0,
             ].every(Number.isFinite) ||
             pixelsPerCss <= 0 ||
             flameHeight < 8 ||
@@ -298,10 +297,11 @@ export class GpuExperiment {
             controls.emberDensity > 1 ||
             controls.emberGlow < 0 ||
             controls.emberGlow > 1 ||
-            (controls.color !== undefined &&
-              ![controls.color.red, controls.color.green, controls.color.blue].every(
-                (value) => value >= 0 && value <= 1,
-              ))
+            [controls.color, controls.colorRamp?.tip, controls.colorRamp?.root].some(
+              (color) =>
+                color !== undefined &&
+                ![color.red, color.green, color.blue].every((value) => value >= 0 && value <= 1),
+            )
           ) {
             throw new Error('invalid-parameters');
           }
@@ -353,6 +353,14 @@ export class GpuExperiment {
               controls.color?.green ?? 0,
               controls.color?.blue ?? 0,
               controls.color === undefined ? 0 : 1,
+              controls.colorRamp?.tip.red ?? 0,
+              controls.colorRamp?.tip.green ?? 0,
+              controls.colorRamp?.tip.blue ?? 0,
+              controls.colorRamp === undefined ? 0 : 1,
+              controls.colorRamp?.root.red ?? 0,
+              controls.colorRamp?.root.green ?? 0,
+              controls.colorRamp?.root.blue ?? 0,
+              0,
             ]),
           );
           const encoder = device.createCommandEncoder();

@@ -66,6 +66,23 @@ const burnedControls: BurnedPaperEffectHandle = attachBurnedPaper(target, {
   emberGlow: 0.25,
 });
 burnedControls.emberGlow = -1;
+const fireRamp: FireEffectHandle = attachFire(target, {
+  host,
+  rootColor: '#fff5a3',
+  tipColor: 'rgb(255, 23, 1)',
+});
+fireRamp.rootColor = '#0066ff';
+fireRamp.tipColor = undefined;
+// @ts-expect-error The pair is exclusive with color.
+attachFire(target, { host, color: '#f60', rootColor: '#0066ff' });
+// @ts-expect-error The pair is exclusive with color.
+attachFire(target, { host, color: '#f60', tipColor: '#0066ff' });
+// @ts-expect-error Root color accepts only CSS color text or undefined.
+fireRamp.rootColor = 1;
+// @ts-expect-error Only effects that adopt the pair expose it.
+attachFrost(target, { host, rootColor: '#0066ff' });
+// @ts-expect-error Only effects that adopt the pair expose it.
+frostControls.tipColor = '#0066ff';
 // @ts-expect-error Ember density is creation-only.
 fireControls.emberDensity = 0.5;
 // @ts-expect-error Frost-only mist opacity is not a Fire option.
@@ -82,6 +99,7 @@ burnedControls.color = '#f60';
 attachFrost(target, { host, emberGlow: 0.5 });
 frostControls.dispose();
 fireControls.dispose();
+fireRamp.dispose();
 halftoneControls.dispose();
 slimeControls.dispose();
 burnedControls.dispose();

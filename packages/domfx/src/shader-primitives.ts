@@ -88,12 +88,28 @@ fn noise(p: vec2f) -> f32 {
 }
 `;
 
+/** Selected endpoints replace Fire's authored stops, in the gamma-encoded values they arrive in. */
+export const fireColors = `
+fn fireFlameColor(heat: f32) -> vec3f {
+  if (controls.rampTip.w != 0) {
+    return mix(controls.rampTip.rgb, controls.rampRoot.rgb, smoothstep(.1, 1, heat));
+  }
+  let orange = mix(vec3f(1, .09, .005), vec3f(1, .55, .025), smoothstep(.1, .65, heat));
+  return mix(orange, vec3f(1, .96, .64), smoothstep(.65, 1, heat));
+}
+fn fireEmberColor() -> vec3f {
+  return select(vec3f(1, .78, .28), controls.rampTip.rgb, controls.rampTip.w != 0);
+}
+`;
+
 export const effectBindings = `
 @group(0) @binding(0) var distances: texture_2d<f32>;
 @group(0) @binding(1) var<uniform> params: vec4f;
 struct EffectControls {
   material: vec4f,
   color: vec4f,
+  rampTip: vec4f,
+  rampRoot: vec4f,
 }
 @group(0) @binding(3) var<uniform> controls: EffectControls;
 

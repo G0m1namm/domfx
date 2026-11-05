@@ -250,6 +250,7 @@ export function createEffectSlot({
   let disposed = false;
   let pending: EffectHandle | undefined;
   let handle: EffectHandle | undefined;
+  let lastTime: number | undefined;
   let status: EffectStatus = { lifecycle: 'suspended' };
   let blockedReason = environment.blockedReason();
   let requested: { target: Element; effect: Effect; options: () => EffectOptions } | undefined;
@@ -268,6 +269,7 @@ export function createEffectSlot({
   function release() {
     revision += 1;
     const previous = pending ?? handle;
+    lastTime = handle?.time ?? lastTime;
     pending = undefined;
     handle = undefined;
     previous?.dispose();
@@ -363,6 +365,10 @@ export function createEffectSlot({
     },
     get status() {
       return status;
+    },
+    /** The time of the last released handle, so a recovered instance can continue from it. */
+    get lastTime() {
+      return lastTime;
     },
     dispose() {
       if (disposed) {

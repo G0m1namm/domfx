@@ -287,8 +287,10 @@ export function createControlBox({
     const handle = slot.handle;
     if (next.lifecycle === 'active' && handle) {
       applyLiveSettings();
-      if (resumeTime !== undefined && !isHeld()) {
-        handle.time = resumeTime;
+      // A released instance leaves its time behind, so a held or hidden preview keeps its frame.
+      const time = resumeTime ?? slot.lastTime;
+      if (time !== undefined && !isHeld()) {
+        handle.time = time;
       }
       resumeTime = undefined;
       if (paused && !isHeld()) {
@@ -346,9 +348,6 @@ export function createControlBox({
       (slot.handle || slot.status.lifecycle === 'initializing');
     if (current) {
       return;
-    }
-    if (settings.clock === 'auto' && resumeTime === undefined) {
-      resumeTime = slot.handle?.time;
     }
     void attach();
   }

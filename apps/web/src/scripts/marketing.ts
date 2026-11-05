@@ -1,27 +1,23 @@
 import {
-  effectCreationFields,
-  effectSettingApiValue,
-  effectSettingDisplayValue,
-  effectSettingValueText,
-  effectWritableFields,
-  effectColorField,
-  intensityField,
-  isEffectCreationName,
-  type EffectCreationName,
-  type EffectWritableField,
-  type EffectWritableName,
-} from '@domfx/site/effect-extent';
-import type { EffectSlot, EffectStatus } from '@domfx/site/effect-slot';
+  createControlBox,
+  type ControlBox,
+  type ControlBoxStatus,
+  type ControlBoxTargetKind,
+} from '@domfx/site/control-box';
+import { controlBoxMessages } from '@domfx/site/control-box-messages';
 import {
-  createEffectEnvironment,
-  createEffectSlot,
-  setEffectColor,
-  setEffectWritableControl,
-} from '@domfx/site/effect-slot';
+  marketingEffectSearch,
+  parseMarketingEffectSearch,
+  withoutMarketingEffectSearch,
+  type EffectSettings,
+} from '@domfx/site/effect-settings';
+import type { EffectSlot } from '@domfx/site/effect-slot';
+import { createEffectEnvironment, createEffectSlot } from '@domfx/site/effect-slot';
 import type { Effect } from '@domfx/site/effects';
-import { effects, findEffect, patternEffects } from '@domfx/site/effects';
+import { findEffect, patternEffects } from '@domfx/site/effects';
 import { localeFromPath, localePath } from '@domfx/site/locale';
 import { initializePage } from '@domfx/site/page-lifetime';
+import { initializePreviewZoom } from '@domfx/site/preview-zoom';
 import { glideSelection } from '@domfx/site/selection-glide';
 
 import { marketingMessages } from '../content/marketing-copy';
@@ -61,35 +57,19 @@ function initializeMarketing() {
     isBlocked: () => dialog.open,
     onOpen: () => clearCards(),
     onClose: () => observeCards(),
-    openEffect: (result) => openPreview(result),
+    openEffect: (result) => openCardPreview(result),
   });
-  const intensity = required<HTMLInputElement>('#effect-intensity');
-  const creationControls = required<HTMLFieldSetElement>('[data-creation-controls]', dialog);
-  const colorControls = required<HTMLFieldSetElement>('[data-color-controls]', dialog);
-  const writableControls = required<HTMLFieldSetElement>('[data-writable-controls]', dialog);
-  const dialogScene = required<HTMLElement>('.dialog-scene', dialog);
-  const previewVisibility = required<HTMLElement>('.preview-visibility', dialogScene);
-  const dialogStage = required<HTMLElement>('.dialog-stage', dialog);
-  const zoomOut = required<HTMLButtonElement>('[data-zoom-out]', dialog);
-  const zoomIn = required<HTMLButtonElement>('[data-zoom-in]', dialog);
-  const zoomLabel = required<HTMLElement>('[data-zoom-label]', dialog);
-  const panControls = required<HTMLElement>('.preview-pan-controls', dialog);
-  const canHover = matchMedia('(hover: hover) and (pointer: fine)');
-  let previewZoom = 1;
-  let hoverZoom = false;
-  let panX = 0;
-  let panY = 0;
-  let previewDrag: { id: number; x: number; y: number } | undefined;
+  const previewFrame = required<HTMLElement>('.dialog-frame', dialog);
+  const previewScene = required<HTMLElement>('.dialog-scene', dialog);
+  const previewHost = required<HTMLElement>('.dialog-stage', dialog);
+  const previewStatus = required<HTMLElement>('[data-preview-status]', dialog);
+  const zoomTools = required<HTMLElement>('[data-zoom-tools]', dialog);
   let filter =
     document.querySelector<HTMLElement>('[data-filter][aria-pressed="true"]')?.dataset.filter ??
     'All';
-  let selectedEffect: Effect = effects[0];
-  let targetKind: 'text' | 'svg' | 'image' = 'text';
-  let previewSubject: Element | undefined;
-  let paused = false;
-  let selectedColor: string | undefined;
-  let previewTime = 2.4;
-  let previewNeedsResume = false;
+  // One box per open dialog: each effect's markup differs, and closing releases its output.
+  let preview: { box: ControlBox; root: HTMLElement; lifetime: AbortController } | undefined;
+  let previewTarget: HTMLElement | undefined;
   let previewReturnFocus: HTMLElement | undefined;
   const cardSlots = new Map<HTMLElement | SVGElement, EffectSlot>();
 
@@ -112,11 +92,6 @@ function initializeMarketing() {
     reducedMotion,
     needsResume: () => motionNeedsResume,
   });
-  const previewEnvironment = createEffectEnvironment({
-    document,
-    reducedMotion,
-    needsResume: () => previewNeedsResume,
-  });
   const headerSlot = createEffectSlot({
     host: headerHost,
     environment: patternEnvironment,
@@ -128,42 +103,6 @@ function initializeMarketing() {
     environment: patternEnvironment,
     onChange: () => syncPatternEffects(),
   });
-  const dialogSlot = createEffectSlot({
-    host: dialogStage,
-    environment: previewEnvironment,
-    onChange: updatePreviewStatus,
-  });
-  let previewTarget: HTMLElement | undefined;
-  let previewVisible = false;
-  // Gate capture on the target's layout box, independent of camera zoom/pan.
-  // Creation controls can still scroll that box out of a narrow dialog.
-  function updatePreviewVisibilitySize() {
-    if (previewTarget) {
-      previewVisibility.style.width = `${previewTarget.offsetWidth}px`;
-      previewVisibility.style.height = `${previewTarget.offsetHeight}px`;
-    }
-  }
-  const previewSizeObserver = new ResizeObserver(updatePreviewVisibilitySize);
-  const previewObserver = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.target !== previewVisibility) {
-          continue;
-        }
-        const visible = entry.intersectionRatio >= 0.99;
-        if (visible === previewVisible) {
-          continue;
-        }
-        previewVisible = visible;
-        if (visible) {
-          void attachDialogEffect();
-        } else {
-          dialogSlot.clear();
-        }
-      }
-    },
-    { root: dialog, threshold: [0, 0.99] },
-  );
 
   function updatePatternPlayback() {
     const paused = patternsPaused || reducedMotion.matches;
@@ -257,13 +196,9 @@ function initializeMarketing() {
     if (lastReducedMotion) {
       patternsPaused = true;
       motionNeedsResume = true;
-      paused = true;
-      previewNeedsResume = true;
       patternEnvironment.update();
-      previewEnvironment.update();
     }
     updatePatternPlayback();
-    updatePreviewPlayback();
   }
 
   on(reducedMotion, 'change', syncMotionPreference);
@@ -508,12 +443,6 @@ function initializeMarketing() {
         signal: lifetime.signal,
       });
     }
-    glideSelection(required('.target-options', dialog), {
-      items: '[data-target]',
-      selected: '[aria-pressed="true"]',
-      variant: 'fill',
-      signal: lifetime.signal,
-    });
     observeCards();
     void showHeaderEffect();
     for (const control of document.querySelectorAll<HTMLElement>('[data-js-control]')) {
@@ -521,8 +450,8 @@ function initializeMarketing() {
     }
   }
 
-  async function copy(text: string, inPreview = false) {
-    const toast = required<HTMLElement>(inPreview ? '[data-copy-status]' : '.toast');
+  async function copy(text: string) {
+    const toast = required<HTMLElement>('.toast');
     try {
       await navigator.clipboard.writeText(text);
       if (disposed) {
@@ -533,349 +462,169 @@ function initializeMarketing() {
       if (disposed) {
         return;
       }
-      toast.textContent = inPreview ? m.clipboardUnavailable : `${m.copyManually} ${text}`;
+      toast.textContent = `${m.copyManually} ${text}`;
     }
     toast.hidden = false;
-    if (inPreview) {
-      return;
-    }
     window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => {
       toast.hidden = true;
     }, 4500);
   }
 
-  function attachmentCode() {
-    const effect = selectedEffect;
-    const settings = [
-      ...Object.entries(creationOptions()),
-      ...(selectedColor ? [['color', JSON.stringify(selectedColor)]] : []),
-    ]
-      .map(([name, value]) => `  ${name}: ${value},`)
-      .join('\n');
-    const writes = Object.entries(writableOptions())
-      .map(([name, value]) => `effect.${name} = ${value};`)
-      .join('\n');
-    return `import { ${effect.exportName} } from '@domfx/browser';\n\nconst effect = ${effect.exportName}(element, {\n  host, clock: 'ambient',\n  intensity: ${(Number(intensity.value) / 100).toFixed(2)},\n${settings}\n});${writes ? `\n\n${writes}` : ''}\n\n${m.disposeComment}`;
-  }
-
-  function creationOptions() {
-    const options: Partial<Record<EffectCreationName, number>> = {};
-    for (const field of effectCreationFields(selectedEffect)) {
-      const input = required<HTMLInputElement | HTMLSelectElement>(
-        `[data-creation-option="${field.name}"]`,
-        creationControls,
-      );
-      if (!isEffectCreationName(field.name)) {
-        throw new Error(`Unknown creation control: ${field.name}`);
+  function previewStatusMessage(status: ControlBoxStatus) {
+    if (status.lifecycle === 'active') {
+      if (status.paused) {
+        return m.statusPaused;
       }
-      options[field.name] = effectSettingApiValue(field, input.value);
+      return status.held ? m.statusHeld : m.statusActive;
     }
-    return options;
-  }
-
-  function writableOptions(): Partial<Record<EffectWritableName, number>> {
-    const options: Partial<Record<EffectWritableField['name'], number>> = {};
-    for (const field of effectWritableFields(selectedEffect)) {
-      const input = required<HTMLInputElement>(
-        `[data-writable-option="${field.name}"]`,
-        writableControls,
-      );
-      options[field.name] = effectSettingApiValue(field, input.value);
+    if (status.reason === 'no-webgpu') {
+      return m.statusNoGpu;
     }
-    return options;
-  }
-
-  // Scale the source and its attached canvas together; zoom never changes intensity.
-  function updatePreviewZoom() {
-    const scale = hoverZoom ? Math.max(2, previewZoom) : previewZoom;
-    const target = dialogStage.querySelector<HTMLElement>('[data-dialog-target]');
-    const limitX = Math.max(
-      0,
-      (((target?.offsetWidth ?? 0) + 96) * scale) / 2 - dialogScene.clientWidth / 2,
-    );
-    const limitY = Math.max(
-      0,
-      (((target?.offsetHeight ?? 0) + 96) * scale) / 2 - dialogScene.clientHeight / 2,
-    );
-    panX = Math.max(-limitX, Math.min(limitX, panX));
-    panY = Math.max(-limitY, Math.min(limitY, panY));
-    dialogStage.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-    dialogScene.dataset.zoomed = String(scale > 1);
-    const label = `${Math.round(scale * 100)}%`;
-    if (zoomLabel.textContent !== label) {
-      zoomLabel.textContent = label;
-    }
-    zoomOut.disabled = previewZoom <= 1;
-    zoomIn.disabled = previewZoom >= 3;
-    panControls.hidden = previewZoom <= 1;
-  }
-
-  function setPreviewZoom(value: number) {
-    previewZoom = Math.max(1, Math.min(3, value));
-    hoverZoom = false;
-    panX = 0;
-    panY = 0;
-    updatePreviewZoom();
-  }
-
-  on(zoomOut, 'click', () => setPreviewZoom(previewZoom - 0.5));
-  on(zoomIn, 'click', () => setPreviewZoom(previewZoom + 0.5));
-  on(required('[data-zoom-reset]', dialog), 'click', () => setPreviewZoom(1));
-  on(dialogScene, 'pointermove', (event) => {
-    if (previewDrag?.id === event.pointerId) {
-      panX += event.clientX - previewDrag.x;
-      panY += event.clientY - previewDrag.y;
-      previewDrag.x = event.clientX;
-      previewDrag.y = event.clientY;
-    } else if (event.pointerType === 'mouse' && canHover.matches && !reducedMotion.matches) {
-      hoverZoom = true;
-      const bounds = dialogScene.getBoundingClientRect();
-      const scale = Math.max(2, previewZoom);
-      panX = (bounds.width / 2 - (event.clientX - bounds.left)) * (scale - 1);
-      panY = (bounds.height / 2 - (event.clientY - bounds.top)) * (scale - 1);
-    } else {
-      return;
-    }
-    updatePreviewZoom();
-  });
-  on(dialogScene, 'pointerleave', () => {
-    if (previewDrag) {
-      return;
-    }
-    hoverZoom = false;
-    panX = 0;
-    panY = 0;
-    updatePreviewZoom();
-  });
-  on(dialogScene, 'pointerdown', (event) => {
-    if (event.pointerType === 'mouse' || previewZoom <= 1) {
-      return;
-    }
-    previewDrag = { id: event.pointerId, x: event.clientX, y: event.clientY };
-    dialogScene.setPointerCapture(event.pointerId);
-  });
-  on(dialogScene, 'pointerup', () => {
-    previewDrag = undefined;
-  });
-  on(dialogScene, 'pointercancel', () => {
-    previewDrag = undefined;
-  });
-
-  function panPreview(direction: string) {
-    hoverZoom = false;
-    switch (direction) {
-      case 'left':
-        panX += 32;
-        break;
-      case 'right':
-        panX -= 32;
-        break;
-      case 'up':
-        panY += 32;
-        break;
-      case 'down':
-        panY -= 32;
-        break;
-    }
-    updatePreviewZoom();
-  }
-
-  on(dialogScene, 'keydown', (event) => {
-    if (['+', '=', '-', '0'].includes(event.key)) {
-      event.preventDefault();
-      setPreviewZoom(event.key === '0' ? 1 : previewZoom + (event.key === '-' ? -0.5 : 0.5));
-    } else if (
-      previewZoom > 1 &&
-      ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)
-    ) {
-      event.preventDefault();
-      panPreview(event.key.slice(5).toLowerCase());
-    }
-  });
-  on(window, 'resize', () => {
-    if (dialog.open) {
-      setPreviewZoom(previewZoom);
-    }
-  });
-  on(reducedMotion, 'change', () => {
-    if (reducedMotion.matches) {
-      setPreviewZoom(previewZoom);
-    }
-  });
-
-  function updatePreviewStatus(status: EffectStatus) {
-    if (dialogSlot.handle) {
-      dialogSlot.handle.intensity = Number(intensity.value) / 100;
-      for (const field of effectWritableFields(selectedEffect)) {
-        const input = required<HTMLInputElement>(
-          `[data-writable-option="${field.name}"]`,
-          writableControls,
-        );
-        setEffectWritableControl(
-          selectedEffect,
-          dialogSlot.handle,
-          field,
-          effectSettingApiValue(field, input.value),
-        );
-      }
-    }
-    let message: string;
     if (status.reason === 'reduced-motion') {
-      message = m.statusReducedMotion;
-    } else if (status.reason === 'no-webgpu') {
-      message = m.statusNoGpu;
-    } else if (status.lifecycle === 'initializing') {
-      message = m.statusPreparing;
-    } else if (status.lifecycle === 'active') {
-      message = m.statusActive;
-    } else if (status.lifecycle === 'suspended') {
-      message = m.statusStatic;
-    } else if (status.reason && locale === 'en') {
-      message = `${m.statusStatic} · ${status.reason}`;
-    } else {
-      message = m.statusUnavailable;
+      return status.reducedMotion ? m.statusReducedMotion : m.statusRestart;
     }
-    required('[data-preview-status]', dialog).textContent = message;
+    if (status.lifecycle === 'initializing' || !status.reason) {
+      return m.statusPreparing;
+    }
+    if (status.lifecycle === 'suspended') {
+      return m.statusStatic;
+    }
+    return locale === 'en' ? `${m.statusStatic} · ${status.reason}` : m.statusUnavailable;
   }
 
-  function showDialogEffect() {
-    previewObserver.disconnect();
-    previewSizeObserver.disconnect();
-    previewVisible = false;
-    dialogSlot.clear();
+  /** The target kind that preserves the selected card's subject. */
+  function subjectKind(subject: Element | undefined) {
+    if (subject instanceof HTMLImageElement) {
+      return 'image';
+    }
+    return subject instanceof SVGElement ? 'svg' : 'text';
+  }
+
+  function createPreviewTarget(kind: ControlBoxTargetKind, subject: Element | undefined) {
     const target = document.createElement('span');
     target.className = 'dialog-target';
     target.dataset.dialogTarget = '';
-    target.dataset.kind = targetKind;
-    if (targetKind === 'text') {
-      target.textContent = previewSubject?.matches('span')
-        ? previewSubject.textContent
-        : m.previewWord;
-    } else {
-      const selector = targetKind === 'image' ? 'img' : 'svg';
-      const template = required<HTMLTemplateElement>(`[data-preview-${targetKind}]`, dialog);
-      const source = previewSubject?.matches(selector)
-        ? previewSubject
-        : required(selector, template.content);
-      const content = source.cloneNode(true);
-      if (content instanceof Element) {
-        content.removeAttribute('class');
-        content.removeAttribute('style');
-        content.removeAttribute('data-preview');
-      }
-      target.append(content);
+    target.dataset.kind = kind;
+    if (kind === 'text') {
+      target.textContent = subject?.matches('span') ? subject.textContent : m.previewWord;
+      return target;
     }
-    dialogStage.replaceChildren(target);
-    previewTarget = target;
-    updatePreviewVisibilitySize();
-    previewSizeObserver.observe(target);
-    previewObserver.observe(previewVisibility);
-    required('#dialog-title', dialog).textContent = selectedEffect.name;
-    required<HTMLAnchorElement>('[data-effect-reference]', dialog).href = localePath(
-      { kind: 'effect-reference', effect: selectedEffect.id },
-      locale,
-    );
-    let categoryLabel: string;
-    switch (selectedEffect.category) {
-      case 'Energy':
-        categoryLabel = m.energy;
-        break;
-      case 'Material':
-        categoryLabel = m.material;
-        break;
-      case 'Pattern':
-        categoryLabel = m.patternCategory;
-        break;
+    const selector = kind === 'image' ? 'img' : 'svg';
+    const template = required<HTMLTemplateElement>(`[data-preview-${kind}]`, dialog);
+    const source = subject?.matches(selector) ? subject : required(selector, template.content);
+    const content = source.cloneNode(true);
+    if (content instanceof Element) {
+      content.removeAttribute('class');
+      content.removeAttribute('style');
+      content.removeAttribute('data-preview');
     }
-    required('[data-dialog-category]', dialog).textContent = categoryLabel;
-    dialogScene.dataset.effect = selectedEffect.id;
-    dialogScene.dataset.category = selectedEffect.category;
-    required('[data-code]', dialog).textContent = attachmentCode();
-    required('[data-preview-status]', dialog).textContent = m.statusPreparing;
-    for (const button of dialog.querySelectorAll<HTMLElement>('[data-target]')) {
-      button.setAttribute('aria-pressed', String(button.dataset.target === targetKind));
-    }
-    updatePreviewPlayback();
+    target.append(content);
+    return target;
   }
 
-  function attachDialogEffect() {
-    if (disposed || !dialog.open || !previewVisible || !previewTarget) {
+  function showPreviewTarget(kind: ControlBoxTargetKind, subject: Element | undefined) {
+    const target = createPreviewTarget(kind, subject);
+    previewHost.replaceChildren(target);
+    previewTarget = target;
+    return target;
+  }
+
+  function releasePreview() {
+    if (!preview) {
       return;
     }
-    return dialogSlot.show(previewTarget, selectedEffect, () => {
-      setPreviewZoom(previewZoom);
-      return {
-        clock: 'manual',
-        seed: 314,
-        intensity: Number(intensity.value) / 100,
-        time: previewTime,
-        ...creationOptions(),
-        ...(selectedColor ? { color: selectedColor } : {}),
-        ...writableOptions(),
-      };
+    const { box, root, lifetime: zoomLifetime } = preview;
+    preview = undefined;
+    zoomLifetime.abort();
+    box.dispose();
+    root.remove();
+    previewHost.replaceChildren();
+    previewTarget = undefined;
+  }
+
+  // The output and controls stay through the dialog's exit, so nothing pops or hitches mid-fade.
+  async function releasePreviewAfterExit() {
+    const closing = preview;
+    await Promise.allSettled(dialog.getAnimations().map((animation) => animation.finished));
+    if (closing && closing === preview && !dialog.open) {
+      releasePreview();
+      observeCards();
+    }
+  }
+
+  // Only Copy link writes settings to the URL, and a link names an open dialog. Closing it drops
+  // that name, so a reload does not reopen what the viewer dismissed. Other params stay.
+  function forgetPreviewLink() {
+    const url = new URL(location.href);
+    const search = withoutMarketingEffectSearch(url.search);
+    if (search !== url.search) {
+      url.search = search;
+      history.replaceState(history.state, '', url);
+    }
+  }
+
+  function openPreview(effect: Effect, returnFocus: HTMLElement, settings?: EffectSettings) {
+    releasePreview();
+    clearCards();
+    previewReturnFocus = returnFocus;
+    const subject =
+      document.querySelector(`[data-card][data-id="${effect.id}"] [data-preview]`) ?? undefined;
+    const kind = subjectKind(subject);
+    const template = required<HTMLTemplateElement>(`[data-box-template="${effect.id}"]`, dialog);
+    const root = required<HTMLElement>('[data-control-box]', template.content).cloneNode(true);
+    if (!(root instanceof HTMLElement)) {
+      throw new Error(`Missing control box for ${effect.id}`);
+    }
+    required<HTMLInputElement>(`[data-box-radio="target"][value="${kind}"]`, root).checked = true;
+    required('#dialog-title', dialog).textContent = effect.name;
+    required<HTMLAnchorElement>('[data-effect-reference]', dialog).href = localePath(
+      { kind: 'effect-reference', effect: effect.id },
+      locale,
+    );
+    previewScene.dataset.effect = effect.id;
+    previewScene.dataset.category = effect.category;
+    showPreviewTarget(kind, subject);
+    previewFrame.append(root);
+    dialog.showModal();
+    dialog.scrollTop = 0;
+    const zoomLifetime = new AbortController();
+    const target = () => previewTarget ?? previewHost;
+    const zoom = initializePreviewZoom({
+      viewport: previewScene,
+      camera: previewHost,
+      tools: zoomTools,
+      target,
+      signal: zoomLifetime.signal,
+      reducedMotion,
     });
+    const box = createControlBox({
+      root,
+      effect,
+      locale,
+      messages: controlBoxMessages(locale),
+      surface: {
+        frame: dialog,
+        stage: previewScene,
+        host: previewHost,
+        zoomTools,
+        target,
+        selectTarget: (next) => showPreviewTarget(next, subject),
+      },
+      ...(settings ? { initial: { settings } } : {}),
+      status: { element: previewStatus, message: previewStatusMessage },
+      linkSearch: marketingEffectSearch,
+      onTargetChange: zoom.reset,
+    });
+    preview = { box, root, lifetime: zoomLifetime };
   }
 
-  function updatePreviewPlayback() {
-    creationControls.disabled = reducedMotion.matches || !hasGpu;
-    colorControls.disabled = reducedMotion.matches || !hasGpu;
-    writableControls.disabled = reducedMotion.matches || !hasGpu;
-    intensity.disabled = reducedMotion.matches || !hasGpu;
-    const button = required<HTMLButtonElement>('[data-pause]', dialog);
-    button.disabled = reducedMotion.matches || !hasGpu;
-    button.innerHTML = playbackLabel();
-  }
-
-  function playbackLabel() {
-    return `<svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-${paused ? 'play' : 'pause'}"/></svg><span>${paused ? m.resumeAnimation : m.pauseAnimation}</span>`;
-  }
-
-  function openPreview(trigger: HTMLElement) {
+  function openCardPreview(trigger: HTMLElement) {
     const effect = findEffect(trigger.dataset.id);
     if (!effect) {
       throw new Error(`Unknown effect: ${trigger.dataset.id}`);
     }
-    selectedEffect = effect;
-    const template = required<HTMLTemplateElement>(
-      `[data-creation-template="${effect.id}"]`,
-      dialog,
-    );
-    const writableTemplate = required<HTMLTemplateElement>(
-      `[data-writable-template="${effect.id}"]`,
-      dialog,
-    );
-    const colorTemplate = effectColorField(effect)
-      ? required<HTMLTemplateElement>(`[data-color-template="${effect.id}"]`, dialog)
-      : undefined;
-    creationControls.replaceChildren(template.content.cloneNode(true));
-    writableControls.replaceChildren(writableTemplate.content.cloneNode(true));
-    colorControls.replaceChildren(colorTemplate?.content.cloneNode(true) ?? '');
-    colorControls.hidden = !colorTemplate;
-    creationControls.hidden = false;
-    writableControls.hidden = effectWritableFields(effect).length === 0;
-    clearCards();
-    previewSubject =
-      document.querySelector(`[data-card][data-id="${effect.id}"] [data-preview]`) ?? undefined;
-    targetKind =
-      previewSubject instanceof HTMLImageElement
-        ? 'image'
-        : previewSubject instanceof SVGElement
-          ? 'svg'
-          : 'text';
-    paused = reducedMotion.matches;
-    previewNeedsResume = reducedMotion.matches;
-    previewTime = 2.4;
-    selectedColor = undefined;
-    required('[data-copy-status]', dialog).textContent = '';
-    previewReturnFocus = trigger;
-    intensity.value = '70';
-    updateIntensityValue();
-    required('[data-pause]', dialog).innerHTML = playbackLabel();
-    dialog.showModal();
-    dialog.scrollTop = 0;
-    setPreviewZoom(1);
-    void showDialogEffect();
+    openPreview(effect, trigger);
   }
 
   on(document, 'click', (event) => {
@@ -893,133 +642,12 @@ function initializeMarketing() {
       required<HTMLElement>('.effect-grid', main).dataset.filterReveal = 'true';
       applyFilters();
     } else if (element.hasAttribute('data-card')) {
-      openPreview(element);
+      openCardPreview(element);
     } else if (element.hasAttribute('data-close')) {
       dialog.close();
-    } else if (element.dataset.pan) {
-      panPreview(element.dataset.pan);
-    } else if (
-      element.dataset.target === 'text' ||
-      element.dataset.target === 'svg' ||
-      element.dataset.target === 'image'
-    ) {
-      targetKind = element.dataset.target;
-      void showDialogEffect();
-    } else if (element.hasAttribute('data-pause')) {
-      paused = !paused;
-      if (!paused) {
-        previewNeedsResume = false;
-        previewEnvironment.update();
-      }
-      updatePreviewPlayback();
-      if (!paused && !dialogSlot.handle && dialogSlot.status.lifecycle !== 'initializing') {
-        void showDialogEffect();
-      }
     } else if (element.dataset.copy) {
       void copy(element.dataset.copy);
-    } else if (element.hasAttribute('data-copy-code')) {
-      void copy(attachmentCode(), true);
     }
-  });
-
-  function setFill(input: HTMLInputElement) {
-    const min = Number(input.min);
-    const max = Number(input.max);
-    input.style.setProperty('--fill', `${((Number(input.value) - min) / (max - min)) * 100}%`);
-  }
-
-  function updateIntensityValue() {
-    required('[data-effect-setting-output="intensity"]', dialog).textContent =
-      effectSettingDisplayValue(intensityField, intensity.value);
-    intensity.setAttribute(
-      'aria-valuetext',
-      effectSettingValueText(intensityField, intensity.value, locale),
-    );
-    setFill(intensity);
-  }
-
-  on(intensity, 'input', () => {
-    updateIntensityValue();
-    if (dialogSlot.handle) {
-      dialogSlot.handle.intensity = Number(intensity.value) / 100;
-    }
-    required('[data-code]', dialog).textContent = attachmentCode();
-  });
-
-  on(creationControls, 'input', (event) => {
-    if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement)) {
-      return;
-    }
-    const input = event.target;
-    const field = effectCreationFields(selectedEffect).find(
-      (field) => field.name === input.dataset.creationOption,
-    );
-    if (!field) {
-      return;
-    }
-    if (input instanceof HTMLInputElement) {
-      required('output', input.closest('.effect-setting') ?? creationControls).textContent =
-        effectSettingDisplayValue(field, input.value);
-      input.setAttribute('aria-valuetext', effectSettingValueText(field, input.value, locale));
-      setFill(input);
-    }
-    required('[data-code]', dialog).textContent = attachmentCode();
-    void attachDialogEffect();
-  });
-
-  on(writableControls, 'input', (event) => {
-    if (!(event.target instanceof HTMLInputElement)) {
-      return;
-    }
-    const input = event.target;
-    const field = effectWritableFields(selectedEffect).find(
-      (field) => field.name === input.dataset.writableOption,
-    );
-    if (!field) {
-      return;
-    }
-    required('output', input.closest('.effect-setting') ?? writableControls).textContent =
-      effectSettingDisplayValue(field, input.value);
-    input.setAttribute('aria-valuetext', effectSettingValueText(field, input.value, locale));
-    setFill(input);
-    if (dialogSlot.handle) {
-      setEffectWritableControl(
-        selectedEffect,
-        dialogSlot.handle,
-        field,
-        effectSettingApiValue(field, input.value),
-      );
-    }
-    required('[data-code]', dialog).textContent = attachmentCode();
-  });
-
-  on(colorControls, 'input', (event) => {
-    if (!(event.target instanceof HTMLInputElement) || event.target.type !== 'color') {
-      return;
-    }
-    selectedColor = event.target.value;
-    required<HTMLOutputElement>('[data-color-output]', colorControls).value = selectedColor;
-    required<HTMLElement>('[data-color-setting]', colorControls).dataset.colorUnset = 'false';
-    required<HTMLButtonElement>('[data-color-reset]', colorControls).disabled = false;
-    if (dialogSlot.handle) {
-      setEffectColor(selectedEffect, dialogSlot.handle, selectedColor);
-    }
-    required('[data-code]', dialog).textContent = attachmentCode();
-  });
-
-  on(colorControls, 'click', (event) => {
-    if (!(event.target instanceof Element) || !event.target.closest('[data-color-reset]')) {
-      return;
-    }
-    selectedColor = undefined;
-    required<HTMLOutputElement>('[data-color-output]', colorControls).value =
-      locale === 'es' ? 'Colores originales' : 'Original colors';
-    required<HTMLElement>('[data-color-setting]', colorControls).dataset.colorUnset = 'true';
-    required<HTMLButtonElement>('[data-color-reset]', colorControls).disabled = true;
-    if (dialogSlot.handle) {
-      setEffectColor(selectedEffect, dialogSlot.handle, undefined);
-    }
-    required('[data-code]', dialog).textContent = attachmentCode();
   });
 
   let backdropPointer: number | undefined;
@@ -1049,23 +677,15 @@ function initializeMarketing() {
   });
   on(dialog, 'close', () => {
     backdropPointer = undefined;
-    previewObserver.disconnect();
-    previewSizeObserver.disconnect();
-    previewVisible = false;
-    previewTarget = undefined;
-    dialogSlot.clear();
-    previewDrag = undefined;
-    setPreviewZoom(1);
-    observeCards();
+    forgetPreviewLink();
+    void releasePreviewAfterExit();
     const returnTo = previewReturnFocus?.closest('dialog') ? searchTrigger : previewReturnFocus;
     returnTo?.focus({ preventScroll: true });
   });
-  let lastTime = 0;
   let lastPatternTime = 0;
   document.addEventListener(
     'visibilitychange',
     () => {
-      lastTime = 0;
       lastPatternTime = 0;
     },
     { signal: lifetime.signal },
@@ -1077,7 +697,6 @@ function initializeMarketing() {
     }
     const headerHandle = headerSlot.handle;
     const closingHandle = closingSlot.handle;
-    const dialogHandle = dialogSlot.handle;
     const patternsActive =
       headerHandle?.lifecycle === 'active' || closingHandle?.lifecycle === 'active';
     if (
@@ -1108,26 +727,18 @@ function initializeMarketing() {
     } else {
       lastPatternTime = 0;
     }
-    if (
-      dialogHandle?.lifecycle === 'active' &&
-      !paused &&
-      !document.hidden &&
-      !reducedMotion.matches
-    ) {
-      if (lastTime) {
-        previewTime += Math.min((now - lastTime) / 1000, 0.05);
-      }
-      dialogHandle.time = previewTime;
-      lastTime = now;
-    } else {
-      lastTime = 0;
-    }
     if (!disposed) {
       frame = requestAnimationFrame(tick);
     }
   }
   frame = requestAnimationFrame(tick);
   initializeContent();
+  // A settings link names its dialog; an unknown effect or bad value opens or changes nothing.
+  const link = parseMarketingEffectSearch(location.search);
+  if (link) {
+    const card = main.querySelector<HTMLElement>(`[data-card][data-id="${link.effect.id}"]`);
+    openPreview(link.effect, card ?? searchTrigger, link.settings);
+  }
   return () => {
     disposed = true;
     lifetime.abort();
@@ -1141,11 +752,9 @@ function initializeMarketing() {
     cancelAnimationFrame(frame);
     window.clearTimeout(toastTimer);
     closingObserver.disconnect();
-    previewObserver.disconnect();
-    previewSizeObserver.disconnect();
     closingSlot.dispose();
     clearCards();
-    dialogSlot.dispose();
+    releasePreview();
     headerSlot.dispose();
     dialog.close();
     searchDialog.close();

@@ -340,34 +340,95 @@ footer nav {
 }
 .dialog-top {
   display: flex;
-  justify-content: space-between;
+  flex: none;
+  flex-wrap: wrap;
   align-items: center;
-  padding: 15px 24px;
+  justify-content: space-between;
+  gap: 0 0.75rem;
+  padding: 0.25rem 0.5rem 0.25rem 1rem;
   border-bottom: 1px solid var(--line);
   font:
-    0.5625rem 'Lab Mono',
-    monospace;
+    0.8125rem General,
+    sans-serif;
   color: var(--muted);
 }
 .dialog-top button {
+  order: 1;
   background: none;
   border: 0;
   font-size: 1.25rem;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.dialog-layout {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
+/* Title with the docs link beside it; wraps below the title when they cannot share a line. */
+.dialog-heading {
+  display: flex;
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.75rem;
+  min-inline-size: 0;
+}
+.dialog-heading h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+.dialog-heading .plain-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: max(2.75rem, 44px);
+  font-size: 0.75rem;
+}
+/* Screen readers receive every status; only unavailable or suspended output shows it. */
+.dialog-status {
+  order: 2;
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding-block-end: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.effect-dialog:not([data-status-visible='true']) .dialog-status {
+  position: absolute;
+  overflow: hidden;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.dialog-status-dot {
+  flex: none;
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: var(--control-border);
+}
+/* Up to 38rem tall, 31rem on narrow layouts; it gives way on short screens so the page stays put. */
+.dialog-frame {
+  position: relative;
+  flex: 0 1 31rem;
+  min-block-size: min(20rem, 70dvh);
+}
+@media (min-width: 34em) {
+  .dialog-frame {
+    flex-basis: 38rem;
+  }
 }
 .dialog-scene {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 430px;
-  background: radial-gradient(ellipse at center, #6153b720, transparent 75%);
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
   overflow: hidden;
+  background: radial-gradient(ellipse at 50% 100%, #c2c5db0c, transparent 75%);
 }
 .dialog-target {
   font: 5.625rem/1.2 Cabinet;
@@ -379,63 +440,6 @@ footer nav {
   display: block;
   width: 170px;
   height: 170px;
-}
-.dialog-details {
-  padding: 32px;
-  border-left: 1px solid var(--line);
-}
-.dialog-details h2 {
-  font-size: 2rem;
-  margin: 8px 0;
-}
-.dialog-details > p {
-  font-size: 0.75rem;
-}
-.target-options {
-  display: flex;
-  gap: 8px;
-  margin: 24px 0;
-}
-.target-options button {
-  border: 1px solid var(--line);
-  background: transparent;
-  padding: 8px 18px;
-  border-radius: 5px;
-  font-size: 0.75rem;
-}
-.target-options button[aria-pressed='true'] {
-  background: var(--raised);
-}
-.effect-creation-controls,
-.effect-color-controls,
-.effect-writable-controls {
-  border: 0;
-  padding: 0;
-  margin: 0 0 1rem;
-  min-inline-size: 0;
-}
-.dialog-details .button {
-  width: 100%;
-  font-size: 0.75rem;
-  min-height: 40px;
-  padding: 9px 15px;
-}
-.dialog-details > code {
-  display: block;
-  font-size: 0.625rem;
-  overflow-wrap: anywhere;
-  background: var(--surface);
-  padding: 12px;
-  margin: 16px 0 10px;
-}
-.dialog-details .plain-link {
-  font-size: 0.6875rem;
-  display: inline-block;
-  margin-top: 20px;
-}
-.preview-status {
-  font-size: 0.625rem;
-  margin-top: 14px;
 }
 .toast {
   position: fixed;
@@ -562,25 +566,8 @@ footer nav {
     gap: 10px;
     font-size: 0.625rem;
   }
-  .dialog-layout {
-    display: block;
-  }
-  .dialog-scene {
-    min-height: 230px;
-  }
   .dialog-target {
     font-size: 4.375rem;
-  }
-  .dialog-details {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    padding: 24px;
-  }
-  .dialog-details h2 {
-    font-size: 1.75rem;
-  }
-  .effect-dialog {
-    max-height: calc(100dvh - 120px);
   }
   .toast {
     left: 20px;
@@ -743,43 +730,6 @@ footer nav a {
 .gallery-grid .card-art {
   height: 240px;
 }
-.target-options {
-  flex-wrap: wrap;
-  gap: 2px;
-  padding: 4px;
-  border: 1px solid #45475480;
-  border-radius: 7px;
-  background: #1d1f2740;
-}
-.target-options {
-  --selection-glide-radius: 0.25rem;
-}
-.target-options button {
-  flex: 1;
-  border-color: transparent;
-  border-radius: 4px;
-  min-inline-size: min-content;
-  min-height: 44px;
-  padding-inline: 12px;
-}
-.target-options button[aria-pressed='true'] {
-  border-color: var(--control-border);
-  background: #292a35;
-}
-.dialog-top button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.pause-button {
-  gap: 9px;
-}
-.dialog-details > code {
-  font-size: 0.6875rem;
-  line-height: 1.7;
-  border: 1px solid #45475480;
-  border-radius: 6px;
-}
 @media (max-width: 700px) {
   .gallery-hero {
     padding-top: 30px;
@@ -896,11 +846,6 @@ body {
 }
 footer {
   margin-top: 0;
-}
-.dialog-top {
-  font:
-    0.8125rem General,
-    sans-serif;
 }
 @media (max-width: 1000px) {
   .gallery-hero {
@@ -2185,34 +2130,18 @@ html[data-initial-audience='agents'] #humans-panel {
   width: min(1120px, calc(100vw - 48px));
   max-height: calc(100dvh - 64px);
 }
+.effect-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
 .effect-dialog .dialog-top {
   position: sticky;
   top: 0;
   z-index: 3;
   background: var(--bg);
 }
-.dialog-layout {
-  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1fr);
-}
-.dialog-viewer {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.dialog-scene {
-  flex: 1;
-  min-height: 480px;
-  isolation: isolate;
-}
 .dialog-scene:focus-visible {
   outline-offset: -5px;
-}
-.preview-visibility {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
 }
 .dialog-stage {
   position: absolute;
@@ -2221,7 +2150,6 @@ html[data-initial-audience='agents'] #humans-panel {
   align-items: center;
   justify-content: center;
   transform-origin: center;
-  transition: transform 160ms ease-out;
 }
 .dialog-target {
   font-size: 9.375rem;
@@ -2240,63 +2168,6 @@ html[data-initial-audience='agents'] #humans-panel {
   height: 260px;
   max-width: 100%;
   object-fit: contain;
-}
-.preview-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 16px;
-  border-top: 1px solid #45475480;
-  background: var(--bg);
-  position: relative;
-  z-index: 1;
-}
-.preview-toolbar p {
-  font-size: 0.6875rem;
-}
-.preview-zoom-controls {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-.preview-zoom-controls button {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  font-size: 0.75rem;
-}
-.preview-zoom-controls button:hover:not(:disabled) {
-  background: var(--raised);
-  border-color: #45475480;
-}
-.preview-zoom-controls button:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
-.preview-zoom-controls [data-zoom-label] {
-  min-width: 44px;
-  text-align: center;
-  font:
-    0.6875rem 'Lab Mono',
-    monospace;
-}
-.preview-zoom-controls [data-zoom-reset] {
-  margin-left: 6px;
-  border-left-color: #45475480;
-  border-radius: 0;
-}
-.preview-pan-controls {
-  flex-basis: 100%;
-  justify-content: flex-end;
 }
 .touch-zoom-hint {
   display: none;
@@ -2321,9 +2192,6 @@ html[data-initial-audience='agents'] #humans-panel {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dialog-stage {
-    transition: none;
-  }
   .hover-zoom-hint {
     display: none;
   }
@@ -2340,49 +2208,27 @@ html[data-initial-audience='agents'] #humans-panel {
     width: 230px;
     height: 230px;
   }
-  .preview-toolbar {
-    gap: 8px;
-    padding-inline: 10px;
-  }
 }
 @media (max-width: 700px) {
   .effect-dialog {
     width: calc(100vw - 24px);
     max-height: calc(100dvh - 32px);
   }
-  .dialog-layout {
-    display: block;
-  }
-  .dialog-scene {
-    min-height: clamp(220px, 45dvh, 320px);
-  }
+  /* Small enough to sit above most open panels in the 31rem narrow preview. */
   .dialog-target {
-    font-size: 6.25rem;
-    letter-spacing: -5px;
+    font-size: 5rem;
+    letter-spacing: -0.05em;
   }
   .dialog-target svg,
   .dialog-target img {
-    width: 200px;
-    height: 200px;
-  }
-  .preview-toolbar {
-    gap: 4px;
-    padding: 8px 10px;
-  }
-  .preview-toolbar p {
-    font-size: 0.625rem;
+    width: 9rem;
+    height: 9rem;
   }
   .hover-zoom-hint {
     display: none;
   }
   .touch-zoom-hint {
     display: inline;
-  }
-  .preview-zoom-controls [data-zoom-label] {
-    min-width: 38px;
-  }
-  .preview-zoom-controls [data-zoom-reset] {
-    margin-left: 2px;
   }
 }
 @media (max-width: 700px) {
@@ -2444,10 +2290,6 @@ html[data-initial-audience='agents'] #humans-panel {
 .filters button,
 .filters button[aria-pressed] {
   min-height: 44px;
-}
-.dialog-top button {
-  width: 44px;
-  height: 44px;
 }
 .site-nav nav a,
 .audience-tabs a {
@@ -2520,9 +2362,6 @@ body.marketing-page .gallery-grid[data-filtered='true'] .effect-card .brand-illu
     height: auto;
     max-height: calc(100% - 24px);
   }
-}
-.dialog-scene {
-  background: radial-gradient(ellipse at 50% 100%, #c2c5db0c, transparent 75%);
 }
 .dialog-scene[data-category='Energy'] {
   background: var(--floor-energy);

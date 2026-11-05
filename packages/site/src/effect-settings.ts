@@ -293,6 +293,17 @@ export function marketingEffectSearch(
   return searchString(params);
 }
 
+/** The query once a marketing dialog closes: its link is gone, and other params are kept. */
+export function withoutMarketingEffectSearch(search: string): string {
+  const params = new URLSearchParams(search);
+  if (!params.has('effect')) {
+    return search;
+  }
+  const remaining = withoutSettingParams(search);
+  remaining.delete('effect');
+  return searchString(remaining);
+}
+
 /** The dialog a marketing URL opens; a missing or unknown effect opens nothing. */
 export function parseMarketingEffectSearch(
   search: string,

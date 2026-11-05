@@ -48,12 +48,13 @@ const viewId = (tab: string) => `${id}-view-${tab}`;
       <!-- Before the actions, so Tab reaches the open panel straight after the tabs. -->
       <div class="control-box-panel" data-box-panel hidden>
         <div class="control-box-view" id={viewId('shape')} data-box-view="shape" role="group" aria-labelledby={tabId('shape')} hidden>
+          <!-- Outside the settings: the original content stays worth inspecting without output. -->
+          <div class="control-box-row">
+            <span class="control-box-name" id={`${id}-target`}>{m.target}</span>
+            <ControlBoxSegments name={`${id}-target-kind`} group="target" labelledBy={`${id}-target`} checked={target} options={(['text', 'svg', 'image'] as const).map((value) => ({ value, label: m.targets[value] }))} />
+          </div>
           <fieldset data-box-fieldset="settings" disabled>
             <legend class="control-box-sr">{m.settings}</legend>
-            <div class="control-box-row">
-              <span class="control-box-name" id={`${id}-target`}>{m.target}</span>
-              <ControlBoxSegments name={`${id}-target-kind`} group="target" labelledBy={`${id}-target`} checked={target} options={(['text', 'svg', 'image'] as const).map((value) => ({ value, label: m.targets[value] }))} />
-            </div>
             <EffectSetting field={intensityField} locale={locale} id={`${id}-intensity`} value={percent(defaults.intensity)} inputAttributes={{ 'data-box-setting': 'intensity' }} />
             {fields.map((field) => <EffectSetting field={field} locale={locale} id={`${id}-${field.name}`} inputAttributes={{ 'data-box-setting': field.name }} />)}
             <div class="control-box-row">

@@ -304,8 +304,7 @@ ending reduction requires explicit Resume on marketing pages.
 The maintainer approved this direction on 2026-11-04, after comparing Dock, Inspector and
 Live code on the real surfaces. Marketing dialogs, docs effect references and the
 Standalone guide's Fire preview share it; the GSAP lesson keeps its own controls.
-Docs effect references and the Standalone guide's Fire preview implement it; marketing dialogs
-are the remaining target.
+All three implement it.
 
 - **Surface:** one dock at the bottom of the preview, floating over it, with no border and
   the same gutter on both sides and the bottom: 12px, or 8px on narrow layouts.

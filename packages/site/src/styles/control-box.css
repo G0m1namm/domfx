@@ -355,12 +355,14 @@
 .control-box-segments {
   --selection-glide-radius: 0.375rem;
   display: flex;
+  /* Equal widths until a label stops fitting, as with very large text; then options wrap. */
+  flex-wrap: wrap;
   min-inline-size: 0;
 }
 .control-box-segments label {
   position: relative;
   flex: 1 1 0;
-  min-inline-size: 0;
+  min-inline-size: min-content;
   cursor: pointer;
 }
 .control-box-segments input {
@@ -417,7 +419,8 @@
 .control-box-segments input:disabled:not(:checked) + span {
   color: var(--control-border);
 }
-.control-box-segments > .selection-glider {
+/* Beats the shared fill glider wherever the two stylesheets land in a site's bundle. */
+.control-box-segments[data-selection-glide] > .selection-glider {
   border: 0;
   background: var(--silver);
   clip-path: inset(var(--control-box-visible-inset) 0 round 0.375rem);
@@ -598,7 +601,8 @@
   inset-block-start: 0;
   inset-inline: 0;
   display: flex;
-  flex-wrap: wrap;
+  /* When both groups cannot share a row, zoom keeps the first row and pan drops below it. */
+  flex-wrap: wrap-reverse;
   justify-content: flex-end;
   gap: 0 0.25rem;
   padding: 0.125rem 0.5rem;

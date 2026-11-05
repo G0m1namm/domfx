@@ -89,7 +89,8 @@ test('body, control and code text follow the browser default font preference', a
           if (route === '/effects/') {
             await page.setViewportSize({ width: 320, height: 900 });
             await page.locator('[data-card]').first().click();
-            for (const selector of ['.target-options button', '.preview-toolbar p']) {
+            await page.getByRole('button', { name: 'Shape', exact: true }).click();
+            for (const selector of ['.control-box-segments label', '.control-box-tab']) {
               const contained = await page.locator(selector).evaluateAll((elements) =>
                 elements.every((element) => {
                   const box = element.getBoundingClientRect();

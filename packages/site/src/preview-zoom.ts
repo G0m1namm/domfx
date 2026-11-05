@@ -75,6 +75,8 @@ export function initializePreviewZoom({
     const tokens = readMotionTokens(panControls);
     const timing = visible ? tokens.enter : tokens.exit;
     panControls.hidden = false;
+    // Folding arrows are on their way out, so Tab must not land on them.
+    panControls.inert = !visible;
     const width = panControls.scrollWidth;
     if (!timing.duration) {
       panControls.hidden = !visible;

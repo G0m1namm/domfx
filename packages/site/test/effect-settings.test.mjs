@@ -11,6 +11,7 @@ import {
   effectSnippet,
   encodeEffectSettings,
   marketingEffectSearch,
+  withoutMarketingEffectSearch,
   parseEffectSettings,
   parseMarketingEffectSearch,
   snapEffectSliderValue,
@@ -299,6 +300,16 @@ test('marketing link keeps audience and replaces stale settings', () => {
   assert.equal(reopened?.effect, frost);
   assert.deepEqual(reopened?.settings, settings);
   assert.equal(marketingEffectSearch('', frost, defaultEffectSettings(frost)), '?effect=frost');
+});
+
+test('closing a marketing dialog drops its link and keeps other params', () => {
+  assert.equal(
+    withoutMarketingEffectSearch('?audience=agents&effect=fire&flameReach=0.1&seed=9&utm=a'),
+    '?audience=agents&utm=a',
+  );
+  assert.equal(withoutMarketingEffectSearch('?effect=fire'), '');
+  assert.equal(withoutMarketingEffectSearch('?audience=agents&seed=9'), '?audience=agents&seed=9');
+  assert.equal(withoutMarketingEffectSearch(''), '');
 });
 
 test('page link omits effect, keeps other params and clears stale settings', () => {

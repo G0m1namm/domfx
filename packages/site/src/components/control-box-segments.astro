@@ -1,0 +1,14 @@
+---
+interface Props {
+  name: string;
+  group: string;
+  labelledBy: string;
+  options: readonly { readonly value: string; readonly label: string }[];
+  checked: string;
+}
+
+const { name, group, labelledBy, options, checked } = Astro.props;
+---
+<div class="control-box-segments" data-box-segments role="radiogroup" aria-labelledby={labelledBy}>
+  {options.map((option) => <label><input type="radio" name={name} value={option.value} checked={option.value === checked} data-box-radio={group} /><span>{option.label}</span></label>)}
+</div>

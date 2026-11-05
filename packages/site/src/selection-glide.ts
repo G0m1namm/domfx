@@ -23,11 +23,13 @@ export function glideSelection(group: HTMLElement, options: SelectionGlideOption
     const active = Array.from(group.querySelectorAll<HTMLElement>(selected)).find(
       (item) => item.offsetParent !== null,
     );
+    // Appearing has nowhere to glide from, so it lands in place.
+    const landing = glider.hasAttribute('hidden');
     glider.toggleAttribute('hidden', !active);
     if (!active) {
       return;
     }
-    if (!animate) {
+    if (!animate || landing) {
       glider.style.transition = 'none';
     }
     const top =
@@ -39,7 +41,7 @@ export function glideSelection(group: HTMLElement, options: SelectionGlideOption
     if (variant === 'fill') {
       glider.style.blockSize = `${active.offsetHeight}px`;
     }
-    if (!animate) {
+    if (!animate || landing) {
       // Commit the jump before the transition comes back.
       void glider.offsetWidth;
       glider.style.removeProperty('transition');
@@ -50,7 +52,7 @@ export function glideSelection(group: HTMLElement, options: SelectionGlideOption
   selection.observe(group, {
     subtree: true,
     attributes: true,
-    attributeFilter: ['aria-pressed', 'aria-selected'],
+    attributeFilter: ['aria-expanded', 'aria-pressed', 'aria-selected'],
   });
   group.addEventListener('change', () => place(true), { signal });
   const size = new ResizeObserver(() => place(false));

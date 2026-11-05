@@ -3,6 +3,7 @@ import type {
   BurnedPaperEffectHandle,
   ColorAttachmentOptions,
   ColorEffectHandle,
+  ColorRampEffectHandle,
   EffectHandle,
   EffectReason,
   FrostEffectHandle,
@@ -26,10 +27,13 @@ export function createEffectEnvironment({
   document,
   reducedMotion,
   needsResume = () => false,
+  ignoresReducedMotion = () => false,
 }: {
   document: Document;
   reducedMotion: MediaQueryList;
   needsResume?: () => boolean;
+  /** True while the requested output is `motion: 'static'`, which never animates. */
+  ignoresReducedMotion?: () => boolean;
 }) {
   const navigator = document.defaultView?.navigator;
   const hasGpu = Boolean(navigator && 'gpu' in navigator && navigator.gpu);
@@ -40,7 +44,7 @@ export function createEffectEnvironment({
       if (!hasGpu) {
         return 'no-webgpu';
       }
-      if (reducedMotion.matches || needsResume()) {
+      if (!ignoresReducedMotion() && (reducedMotion.matches || needsResume())) {
         return 'reduced-motion';
       }
       return document.hidden ? 'target-not-visible' : undefined;
@@ -65,7 +69,11 @@ export function createEffectEnvironment({
 
 type WithoutHost<T> = T extends unknown ? Omit<T, 'host'> : never;
 // Site-only controls; the loader forwards only the selected effect's owned fields.
-type CreationOptions = ColorAttachmentOptions & Partial<Record<EffectOptionName, number>>;
+type CreationOptions = ColorAttachmentOptions &
+  Partial<Record<EffectOptionName, number>> & {
+    readonly rootColor?: string;
+    readonly tipColor?: string;
+  };
 type EffectOptions = WithoutHost<CreationOptions>;
 type EffectFactory = (target: Element, options: CreationOptions) => EffectHandle;
 type EffectLoader = (effect: Effect) => Promise<EffectFactory>;
@@ -100,11 +108,16 @@ async function loadEffect(effect: Effect): Promise<EffectFactory> {
       echoReach,
       fringeReach,
       color,
+      rootColor,
+      tipColor,
       ...shared
     } = options;
     switch (effect.exportName) {
       case 'attachFire':
-        return api.attachFire(target, { ...shared, color, flameReach, emberDensity });
+        // The API rejects `color` next to the pair, so only one form is ever passed.
+        return rootColor === undefined && tipColor === undefined
+          ? api.attachFire(target, { ...shared, color, flameReach, emberDensity })
+          : api.attachFire(target, { ...shared, rootColor, tipColor, flameReach, emberDensity });
       case 'attachFrost':
         return api.attachFrost(target, { ...shared, color, coatingDepth, mistReach, mistOpacity });
       case 'attachSlime':
@@ -173,6 +186,38 @@ export function setEffectColor(effect: Effect, handle: EffectHandle, color: stri
     throw new Error(`${effect.name} handle is missing color`);
   }
   handle.color = color;
+}
+
+/**
+ * Writes one coherent set of colors in place. Fire throws if `color` and the pair overlap,
+ * even briefly, so each side is cleared before the other is written.
+ */
+export function setEffectColors(
+  effect: Effect,
+  handle: EffectHandle,
+  colors: {
+    readonly color?: string;
+    readonly rootColor?: string;
+    readonly tipColor?: string;
+  },
+) {
+  if (!isColorRampEffectHandle(handle)) {
+    setEffectColor(effect, handle, colors.color);
+    return;
+  }
+  if (colors.color !== undefined) {
+    handle.rootColor = undefined;
+    handle.tipColor = undefined;
+    handle.color = colors.color;
+    return;
+  }
+  handle.color = undefined;
+  handle.rootColor = colors.rootColor;
+  handle.tipColor = colors.tipColor;
+}
+
+function isColorRampEffectHandle(handle: EffectHandle): handle is ColorRampEffectHandle {
+  return 'rootColor' in handle;
 }
 
 function isColorEffectHandle(handle: EffectHandle): handle is ColorEffectHandle {

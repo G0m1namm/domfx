@@ -87,6 +87,7 @@ test('docs shares the marketing tokens', async ({ page }) => {
 
 test('the shared select picker springs open with its chevron', async ({ page }) => {
   await page.goto('/docs/api/effects/fire/');
+  await page.locator('[data-box-tab="shape"]').click();
   const select = page.locator('.select-control-input').first();
   const customizable = await select.evaluate(() => CSS.supports('appearance', 'base-select'));
   await select.click();

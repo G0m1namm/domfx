@@ -282,7 +282,7 @@ test('@smoke all catalog references retain their public options and usable sourc
       ).toContainText('intensity');
       const lab = page.locator('[data-docs-lab]');
       await expect(lab.locator('[data-docs-lab-target]:visible')).toHaveCount(1);
-      await expect(lab.getByRole('slider', { name: 'intensity', exact: true })).toBeDisabled();
+      await expect(lab.locator('[data-box-setting="intensity"]')).toBeDisabled();
       await expect(page.locator('canvas')).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
@@ -455,7 +455,7 @@ for (const { path, effect, text } of labPages) {
         name: path.startsWith('/docs/es/') ? 'Efectos no disponibles' : 'Effects unavailable',
       }),
     ).toBeDisabled();
-    await expect(lab.getByRole('slider', { name: 'intensity', exact: true })).toBeDisabled();
+    await expect(lab.locator('[data-box-setting="intensity"]')).toBeDisabled();
   });
 
   test(`${path} preview attaches, updates and disposes one real effect`, async ({ page }) => {
@@ -473,16 +473,18 @@ for (const { path, effect, text } of labPages) {
       await lab.locator('[data-docs-lab-host]').evaluate((host) => getComputedStyle(host).overflow),
     ).toBe('visible');
 
-    const intensity = lab.locator('[data-docs-lab-intensity]');
+    await lab.locator('[data-box-tab="shape"]').click();
+    const code = lab.locator('[data-box-code]');
+    const intensity = lab.locator('[data-box-setting="intensity"]');
     await intensity.fill('45');
-    await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+    await expect(code).toContainText('intensity: 0.45');
     await expect(lab.locator('[data-effect-setting-output="intensity"]')).toHaveText('45%');
 
     if (effect === 'Fire') {
-      const reach = lab.locator('[data-docs-lab-extent="flameReach"]');
+      const reach = lab.locator('[data-box-setting="flameReach"]');
       await reach.fill('25');
       await reach.press('Tab');
-      await expect(lab.locator('[data-docs-lab-extent-code="flameReach"]')).toHaveText('0.25');
+      await expect(code).toContainText('flameReach: 0.25');
       await expect(lab).toHaveAttribute('data-status', 'active');
       await expect(canvas).toHaveCount(1);
     }
@@ -496,7 +498,7 @@ for (const { path, effect, text } of labPages) {
       await expect(canvas).toHaveCount(1);
     }
 
-    const toggle = lab.locator('[data-docs-lab-toggle]');
+    const toggle = lab.locator('[data-box-pause]');
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     await expect(toggle).toHaveAccessibleName(spanish ? 'Reanudar efecto' : 'Resume effect');
@@ -524,9 +526,9 @@ test('the docs lab restarts after pagehide and persisted pageshow', async ({ pag
     window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
   });
   await expect(lab.locator('canvas')).toHaveCount(1);
-  const intensity = lab.locator('[data-docs-lab-intensity]');
-  await intensity.fill('45');
-  await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+  await lab.locator('[data-box-tab="shape"]').click();
+  await lab.locator('[data-box-setting="intensity"]').fill('45');
+  await expect(lab.locator('[data-box-code]')).toContainText('intensity: 0.45');
 });
 
 test('the docs lab replays writable controls changed before attachment is ready', async ({
@@ -537,11 +539,12 @@ test('the docs lab replays writable controls changed before attachment is ready'
     await page.goto('/docs/api/effects/frost/', { waitUntil: 'domcontentloaded' });
     const lab = page.locator('[data-docs-lab]');
     await lab.scrollIntoViewIfNeeded();
-    const opacity = lab.locator('[data-docs-lab-writable="mistOpacity"]');
+    const opacity = lab.locator('[data-box-setting="mistOpacity"]');
     await expect(lab).toHaveAttribute('data-status', 'initializing');
+    await lab.locator('[data-box-tab="shape"]').click();
     await expect(page.locator('html')).toHaveAttribute('data-test-renderer-device-gate', 'held');
     await opacity.fill('0');
-    await expect(lab.locator('[data-docs-lab-writable-code="mistOpacity"]')).toHaveText('0');
+    await expect(lab.locator('[data-box-code]')).toContainText('mistOpacity: 0,');
     await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
     await expect(lab).toHaveAttribute('data-status', 'active');
     await expect(lab.locator('canvas')).toHaveCount(1);
@@ -606,8 +609,9 @@ test('the docs lab works after an actual back/forward-cache restore', async ({ p
   const lab = page.locator('[data-docs-lab]');
   await lab.scrollIntoViewIfNeeded();
   await expect(lab).toHaveAttribute('data-status', 'active');
-  await lab.locator('[data-docs-lab-intensity]').fill('45');
-  await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+  await lab.locator('[data-box-tab="shape"]').click();
+  await lab.locator('[data-box-setting="intensity"]').fill('45');
+  await expect(lab.locator('[data-box-code]')).toContainText('intensity: 0.45');
   await expect(lab.locator('canvas')).toHaveCount(1);
 });
 

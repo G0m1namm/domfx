@@ -1,0 +1,120 @@
+---
+import { controlBoxMessages } from '../control-box-messages.ts';
+import {
+  effectColorField,
+  effectCreationFields,
+  effectWritableFields,
+  intensityField,
+} from '../effect-extent.ts';
+import { defaultEffectSettings, effectSnippet, effectTimeField } from '../effect-settings.ts';
+import type { Effect } from '../effects.ts';
+import type { Locale } from '../locale.ts';
+import ControlBoxColor from './control-box-color.astro';
+import ControlBoxSegments from './control-box-segments.astro';
+import EffectSetting from './effect-setting.astro';
+import '../styles/control-box.css';
+
+type TargetKind = 'text' | 'svg' | 'image';
+interface Props {
+  effect: Effect;
+  locale: Locale;
+  id: string;
+  target: TargetKind;
+}
+
+const { effect, locale, id, target } = Astro.props;
+const m = controlBoxMessages(locale);
+const defaults = defaultEffectSettings(effect);
+const isFire = effect.id === 'fire';
+const hasColor = Boolean(effectColorField(effect));
+const tabs = [
+  'shape',
+  ...(hasColor ? ['color'] : []),
+  'time',
+  'code',
+] as const as readonly ('shape' | 'color' | 'time' | 'code')[];
+const fields = [...effectCreationFields(effect), ...effectWritableFields(effect)];
+const percent = (value: number) => Math.round(value * 100);
+const tabId = (tab: string) => `${id}-tab-${tab}`;
+const viewId = (tab: string) => `${id}-view-${tab}`;
+---
+<div class="control-box" data-control-box data-effect={effect.id}>
+  <div class="control-box-anchor" data-box-anchor>
+    <p class="control-box-toast" role="status" data-box-toast></p>
+    <div class="control-box-dock" data-box-dock>
+      <div class="control-box-tabs" data-box-tabs>
+        {tabs.map((tab) => <button type="button" id={tabId(tab)} class="control-box-tab" data-box-tab={tab} aria-expanded="false" aria-controls={viewId(tab)} disabled>{m.tabs[tab]}</button>)}
+      </div>
+      <!-- Before the actions, so Tab reaches the open panel straight after the tabs. -->
+      <div class="control-box-panel" data-box-panel hidden>
+        <div class="control-box-view" id={viewId('shape')} data-box-view="shape" role="group" aria-labelledby={tabId('shape')} hidden>
+          <fieldset data-box-fieldset="settings" disabled>
+            <legend class="control-box-sr">{m.settings}</legend>
+            <div class="control-box-row">
+              <span class="control-box-name" id={`${id}-target`}>{m.target}</span>
+              <ControlBoxSegments name={`${id}-target-kind`} group="target" labelledBy={`${id}-target`} checked={target} options={(['text', 'svg', 'image'] as const).map((value) => ({ value, label: m.targets[value] }))} />
+            </div>
+            <EffectSetting field={intensityField} locale={locale} id={`${id}-intensity`} value={percent(defaults.intensity)} inputAttributes={{ 'data-box-setting': 'intensity' }} />
+            {fields.map((field) => <EffectSetting field={field} locale={locale} id={`${id}-${field.name}`} inputAttributes={{ 'data-box-setting': field.name }} />)}
+            <div class="control-box-row">
+              <label class="control-box-name" for={`${id}-seed`}>seed</label>
+              <div class="control-box-seed">
+                <span class="control-box-field"><input id={`${id}-seed`} type="number" step="1" value={defaults.seed} data-box-seed /></span>
+                <button type="button" class="control-box-button" data-box-shuffle>{m.shuffle}</button>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+        {hasColor && <div class="control-box-view" id={viewId('color')} data-box-view="color" role="group" aria-labelledby={tabId('color')} hidden>
+          <fieldset data-box-fieldset="settings" disabled>
+            <legend class="control-box-sr">{m.settings}</legend>
+            {isFire && <div class="control-box-row">
+              <span class="control-box-name" id={`${id}-color-mode`}>{m.colorMode}</span>
+              <ControlBoxSegments name={`${id}-color-mode-kind`} group="color-mode" labelledBy={`${id}-color-mode`} checked="authored" options={[{ value: 'authored', label: m.authored }, { value: 'single', label: m.single }, { value: 'root-and-tip', label: m.rootAndTip }]} />
+            </div>}
+            <ControlBoxColor name="color" id={`${id}-color`} fallback="#c2c5db" fallbackLabel={m.authored} unset={m.unset} unsetLabel={m.unsetLabel('color')} hidden={isFire} />
+            {isFire && <ControlBoxColor name="rootColor" id={`${id}-rootColor`} fallback="#fff5a3" fallbackLabel="#fff5a3" unset={m.unset} unsetLabel={m.unsetLabel('rootColor')} hidden />}
+            {isFire && <ControlBoxColor name="tipColor" id={`${id}-tipColor`} fallback="#ff1701" fallbackLabel="#ff1701" unset={m.unset} unsetLabel={m.unsetLabel('tipColor')} hidden />}
+          </fieldset>
+        </div>}
+        <div class="control-box-view" id={viewId('time')} data-box-view="time" role="group" aria-labelledby={tabId('time')} hidden>
+          <fieldset data-box-fieldset="settings" disabled>
+            <legend class="control-box-sr">{m.settings}</legend>
+            <div class="control-box-row">
+              <span class="control-box-name" id={`${id}-clock`}>clock</span>
+              <ControlBoxSegments name={`${id}-clock-kind`} group="clock" labelledBy={`${id}-clock`} checked="auto" options={[{ value: 'auto', label: m.automatic }, { value: 'manual', label: m.external }]} />
+            </div>
+            <div class="effect-setting" data-box-time-row hidden>
+              <label class="effect-setting-label" for={`${id}-time`}><span class="effect-setting-name">time</span></label>
+              <input id={`${id}-time`} type="range" min={effectTimeField.min} max={effectTimeField.max} step={effectTimeField.step} value={effectTimeField.min} style="--fill:0%" aria-label="time" data-box-time />
+              <output for={`${id}-time`} data-effect-setting-output="time">0.0 s</output>
+            </div>
+          </fieldset>
+          <fieldset data-box-fieldset="motion" disabled>
+            <legend class="control-box-sr">motion</legend>
+            <div class="control-box-row">
+              <span class="control-box-name" id={`${id}-motion`}>motion</span>
+              <ControlBoxSegments name={`${id}-motion-kind`} group="motion" labelledBy={`${id}-motion`} checked="respect" options={[{ value: 'respect', label: m.respect }, { value: 'static', label: m.static }]} />
+            </div>
+            <p class="control-box-note" data-box-static-note hidden>{m.staticNote}</p>
+          </fieldset>
+        </div>
+        <div class="control-box-view" id={viewId('code')} data-box-view="code" role="group" aria-labelledby={tabId('code')} hidden>
+          <pre class="control-box-code" tabindex="0" aria-label={m.code}><code data-box-code>{effectSnippet(effect, defaults, locale)}</code></pre>
+          <div class="control-box-code-actions">
+            <button type="button" class="control-box-button" data-box-link><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-link"/></svg><span>{m.copyLink}</span></button>
+            <button type="button" class="control-box-button control-box-primary" data-box-copy><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg><span>{m.copyCode}</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="control-box-actions">
+        <button type="button" class="control-box-action" data-box-pause data-tip aria-pressed="false" aria-label={m.start} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-play"/></svg></button>
+        <button type="button" class="control-box-action" data-box-reset data-tip aria-label={m.resetAll} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-arrow-counter-clockwise"/></svg></button>
+        <span class="control-box-wide-actions">
+          <button type="button" class="control-box-action" data-box-link data-tip aria-label={m.copyLink} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-link"/></svg></button>
+          <button type="button" class="control-box-action" data-box-copy data-tip aria-label={m.copyCode} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg></button>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

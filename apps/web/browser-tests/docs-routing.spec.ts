@@ -52,6 +52,15 @@ test('composed docs interactive lab and marketing navigation render with WebGPU'
   await expect(lab).toHaveAttribute('data-status', 'active');
   await lab.getByRole('button', { name: 'Pause effect', exact: true }).click();
   await expect(lab).toHaveAttribute('data-paused', 'true');
+  await lab.getByRole('button', { name: 'Shape', exact: true }).click();
+  // The panel springs upward; let it settle under the slower development server.
+  await expect
+    .poll(() =>
+      lab
+        .locator('[data-box-panel]')
+        .evaluate((panel) => panel.getAnimations({ subtree: true }).length),
+    )
+    .toBe(0);
   await lab.getByRole('radio', { name: 'SVG', exact: true }).check();
   await expect(lab.locator('svg[data-docs-lab-target]')).toBeVisible();
   await expect(lab.locator('canvas')).toHaveCount(1);

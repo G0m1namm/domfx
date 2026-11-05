@@ -1,0 +1,733 @@
+/* The control box from DESIGN.md: one borderless dock over the preview, 44px rows with 32px
+   visible controls. Timing comes from motion.css. Thresholds use the box's own font size. */
+.control-box {
+  --control-box-gutter: 0.5rem;
+  --control-box-label: 5.75rem;
+  --control-box-chip: 3rem;
+  --control-box-target: max(2.75rem, 44px);
+  /* Centers a 2rem visible control in a 44px target. */
+  --control-box-visible-inset: calc((var(--control-box-target) - 2rem) / 2);
+  position: absolute;
+  z-index: 4;
+  inset-block-end: 0;
+  inset-inline: 0;
+  container-type: inline-size;
+  min-inline-size: 0;
+  color: var(--text);
+  font-family: General, 'General Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  pointer-events: none;
+}
+.control-box *,
+.control-box *::before {
+  box-sizing: border-box;
+}
+.control-box :focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.control-box [hidden] {
+  display: none !important;
+}
+.control-box-sr,
+.zoom-chip-help {
+  position: absolute;
+  overflow: hidden;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: 0;
+  padding: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.control-box-anchor {
+  position: relative;
+  margin: 0 var(--control-box-gutter) var(--control-box-gutter);
+  pointer-events: auto;
+}
+
+/* Dock */
+.control-box-dock {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 0.25rem;
+  border-radius: 0.625rem;
+  background: var(--surface);
+  transition:
+    border-start-start-radius 200ms ease-out,
+    border-start-end-radius 200ms ease-out;
+}
+.control-box-anchor[data-open] .control-box-dock {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+}
+.control-box-tabs,
+.control-box-actions,
+.control-box-wide-actions {
+  display: flex;
+  min-inline-size: 0;
+}
+.control-box-tabs {
+  flex-wrap: wrap;
+}
+.control-box-actions {
+  flex: none;
+}
+.control-box-wide-actions {
+  display: none;
+}
+.control-box-tab {
+  min-inline-size: var(--control-box-target);
+  min-block-size: var(--control-box-target);
+  margin: 0;
+  padding-inline: 0.125rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.control-box-tab:hover:enabled,
+.control-box-tab[aria-expanded='true'] {
+  color: var(--text);
+}
+.control-box-tab:disabled {
+  color: var(--control-border);
+  cursor: default;
+}
+/* The thin silver line sits inside the tab's padding, clear of the 44px target's edge. */
+.control-box-tabs > .selection-glider {
+  margin-block-start: -0.3125rem;
+  clip-path: inset(0 0.375rem);
+}
+.control-box-action {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--control-box-target);
+  min-block-size: var(--control-box-target);
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.control-box-action:hover:enabled {
+  background: var(--raised);
+}
+.control-box-action:disabled {
+  color: var(--control-border);
+  cursor: default;
+}
+.control-box .ui-icon {
+  inline-size: 1.25em;
+  block-size: 1.25em;
+  fill: currentColor;
+}
+
+/* Transient copy feedback, above whatever is open. */
+.control-box-toast {
+  position: absolute;
+  z-index: 5;
+  inset-inline-end: 0;
+  inset-block-end: calc(100% + var(--control-box-panel-height, 0px) + 0.25rem);
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  background: var(--silver);
+  color: var(--bg);
+  font-size: 0.75rem;
+}
+.control-box-toast:empty {
+  display: none;
+}
+
+/* Panel: one surface joined to the dock. */
+.control-box-panel {
+  position: absolute;
+  z-index: 3;
+  inset-block-end: 100%;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  max-block-size: min(22rem, 60dvh, var(--control-box-panel-limit, 22rem));
+  overflow: auto;
+  border-radius: 0.625rem 0.625rem 0 0;
+  background: var(--surface);
+}
+.control-box-panel[data-animating] {
+  overflow: hidden;
+}
+.control-box-view {
+  padding: 0.25rem 0.75rem;
+}
+.control-box-view[data-leaving] {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  pointer-events: none;
+}
+.control-box-view fieldset {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.control-box-view[data-box-view='code'] {
+  padding: 0.75rem 0.75rem 0.25rem;
+}
+.control-box-panel[data-tab='color'] {
+  --control-box-label: 4.5rem;
+  inline-size: 100%;
+}
+.control-box-panel[data-tab='color'] .control-box-view {
+  padding-inline: 0.5rem;
+}
+
+/* Rows stack until the box has room for label, value, control, as with very large text. */
+.control-box-row,
+.control-box .effect-setting {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 0 0.5rem;
+  min-inline-size: 0;
+  min-block-size: var(--control-box-target);
+  padding: 0;
+  border: 0;
+}
+.control-box .effect-setting:has(input[type='range']) {
+  grid-template-columns: var(--control-box-chip) minmax(0, 1fr);
+}
+.control-box-name,
+.control-box .effect-setting-label {
+  grid-column: 1 / -1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: inherit;
+  line-height: 1.2;
+}
+.control-box .effect-setting-label small {
+  font-size: 0.6875rem;
+  line-height: 1.3;
+}
+.control-box .effect-setting output {
+  display: grid;
+  order: 1;
+  place-items: center;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.375rem;
+  background: var(--raised);
+  font-size: 0.75rem;
+}
+.control-box .effect-setting input[type='range'] {
+  order: 2;
+  display: block;
+  min-inline-size: 0;
+}
+.control-box .effect-setting input::-webkit-slider-runnable-track {
+  block-size: 0.125rem;
+}
+.control-box .effect-setting input::-webkit-slider-thumb {
+  margin-block-start: -0.375rem;
+}
+.control-box .effect-setting input::-moz-range-track,
+.control-box .effect-setting input::-moz-range-progress {
+  block-size: 0.125rem;
+}
+.control-box .effect-setting .select-control {
+  grid-column: 1 / -1;
+}
+/* Editable fields keep the input boundary at the 32px visible height; the target stays 44px. */
+.control-box-field,
+.control-box .select-control {
+  position: relative;
+  z-index: 0;
+  display: grid;
+  min-inline-size: 0;
+}
+.control-box-field::before,
+.control-box .select-control::before {
+  position: absolute;
+  z-index: -1;
+  inset-inline: 0;
+  inset-block: var(--control-box-visible-inset);
+  border: 1px solid var(--control-border);
+  border-radius: 0.375rem;
+  background: var(--bg);
+  content: '';
+}
+.control-box-field:focus-within::before,
+.control-box .select-control:focus-within::before {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.control-box-field input,
+.control-box .select-control-input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: var(--control-box-target);
+  margin: 0;
+  padding-block: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+.control-box .select-control-input:hover:not(:disabled) {
+  background: transparent;
+}
+.control-box .select-control-input:focus-visible {
+  outline: 0;
+}
+.control-box-field input {
+  padding-inline: 0.625rem;
+  font-family: 'Lab Mono', monospace;
+}
+.control-box-field input:disabled,
+.control-box-button:disabled {
+  color: var(--control-border);
+  cursor: default;
+}
+.control-box-seed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.5rem;
+  min-inline-size: 0;
+}
+.control-box-seed .control-box-field {
+  flex: 1 1 3.5rem;
+}
+.control-box-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-inline-size: var(--control-box-target);
+  min-block-size: var(--control-box-target);
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.control-box-button:hover:enabled {
+  background: var(--raised);
+}
+.control-box-primary {
+  flex: 1;
+  background: var(--silver);
+  color: var(--bg);
+  font-weight: 500;
+}
+.control-box-primary:hover:enabled {
+  background: var(--text);
+}
+.control-box-primary:focus-visible {
+  outline-offset: 2px;
+}
+.control-box-note {
+  margin: 0;
+  padding-block-end: 0.375rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+/* Selected option: a silver chip that glides. Items keep the chip until selection-glide runs. */
+.control-box-segments {
+  --selection-glide-radius: 0.375rem;
+  display: flex;
+  min-inline-size: 0;
+}
+.control-box-segments label {
+  position: relative;
+  flex: 1 1 0;
+  min-inline-size: 0;
+  cursor: pointer;
+}
+.control-box-segments input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+.control-box-segments input + span {
+  position: relative;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  min-block-size: var(--control-box-target);
+  padding: 0.25rem 0.1875rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: normal;
+  word-break: normal;
+  transition: color 150ms ease-out;
+}
+.control-box-segments input + span::before {
+  position: absolute;
+  z-index: -1;
+  inset-inline: 0;
+  inset-block: var(--control-box-visible-inset);
+  border-radius: 0.375rem;
+  content: '';
+}
+.control-box-segments input:hover:not(:checked, :disabled) + span {
+  color: var(--text);
+}
+.control-box-segments input:hover:not(:checked, :disabled) + span::before {
+  background: var(--raised);
+}
+.control-box-segments input:checked + span {
+  color: var(--bg);
+  font-weight: 500;
+}
+.control-box-segments:not(.selection-glide) input:checked + span::before {
+  background: var(--silver);
+}
+.control-box-segments input:focus-visible + span::before {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.control-box-segments input:disabled {
+  cursor: default;
+}
+.control-box-segments input:disabled:not(:checked) + span {
+  color: var(--control-border);
+}
+.control-box-segments > .selection-glider {
+  border: 0;
+  background: var(--silver);
+  clip-path: inset(var(--control-box-visible-inset) 0 round 0.375rem);
+}
+
+/* Color: the swatch beside its label, a text Unset action, then the value. */
+.control-box .control-box-color {
+  grid-template-columns: var(--control-box-target) auto minmax(0, 1fr);
+}
+.control-box-color input[type='color'] {
+  inline-size: var(--control-box-target);
+  block-size: var(--control-box-target);
+  padding: var(--control-box-visible-inset);
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.control-box-color input[type='color']:disabled {
+  cursor: default;
+}
+.control-box-color input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.control-box-color input[type='color']::-webkit-color-swatch {
+  border: 0;
+  border-radius: 0.375rem;
+}
+.control-box-color input[type='color']::-moz-color-swatch {
+  border: 0;
+  border-radius: 0.375rem;
+}
+.control-box-color[data-unset='true'] input[type='color']::-webkit-color-swatch {
+  border: 1px dashed var(--text);
+  opacity: 0.55;
+}
+.control-box-color[data-unset='true'] input[type='color']::-moz-color-swatch {
+  border: 1px dashed var(--text);
+  opacity: 0.55;
+}
+.control-box-unset {
+  min-inline-size: var(--control-box-target);
+  min-block-size: var(--control-box-target);
+  margin: 0;
+  padding-inline: 0.5rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.control-box-unset:enabled {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.control-box-unset:hover:enabled {
+  background: var(--raised);
+}
+.control-box-unset:disabled {
+  color: var(--control-border);
+  cursor: default;
+}
+.control-box-color output {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-family: 'Lab Mono', monospace;
+  font-size: 0.75rem;
+  text-align: end;
+}
+
+/* Code */
+.control-box .control-box-code {
+  margin: 0;
+  padding: 0.5rem;
+  overflow: auto;
+  border: 0;
+  border-radius: 0.375rem;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  line-height: 1.55;
+}
+.control-box .control-box-code code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+.control-box-code-actions .control-box-button {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+.control-box-code-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding-block: 0.25rem;
+}
+
+/* The box's layouts follow its allocated width, not the viewport. */
+@container (min-width: 20em) {
+  .control-box-row,
+  .control-box .effect-setting {
+    grid-template-columns: var(--control-box-label) minmax(0, 1fr);
+  }
+  .control-box .effect-setting:has(input[type='range']) {
+    grid-template-columns: var(--control-box-label) var(--control-box-chip) minmax(0, 1fr);
+  }
+  .control-box-name,
+  .control-box .effect-setting-label {
+    grid-column: auto;
+  }
+  .control-box .effect-setting .select-control {
+    grid-column: 2 / -1;
+  }
+  .control-box .control-box-color {
+    grid-template-columns: var(--control-box-label) var(--control-box-target) auto minmax(0, 1fr);
+  }
+  .control-box-note {
+    padding-inline-start: calc(var(--control-box-label) + 0.5rem);
+  }
+}
+@container (min-width: 24em) {
+  .control-box-anchor {
+    --control-box-label: 7rem;
+  }
+  .control-box-dock {
+    padding-inline: 0.25rem;
+  }
+  .control-box-tab {
+    padding-inline: 0.3125rem;
+    font-size: 0.875rem;
+  }
+  .control-box-panel[data-tab='color'] {
+    --control-box-label: 5.5rem;
+  }
+  .control-box-panel[data-tab='color'] .control-box-view {
+    padding-inline: 0.75rem;
+  }
+}
+@container (min-width: 34em) {
+  .control-box-anchor {
+    margin: 0 0.75rem 0.75rem;
+  }
+  .control-box-tab {
+    padding-inline: 0.375rem;
+  }
+  .control-box-wide-actions {
+    display: flex;
+  }
+  .control-box-code-actions {
+    display: none;
+  }
+  /* Only Color is narrower than the toolbar, so the dock keeps its far corner. */
+  .control-box-panel[data-tab='color'] {
+    inline-size: min(100%, 27rem);
+    border-end-end-radius: 0.625rem;
+  }
+  .control-box-anchor[data-open='color'] .control-box-dock {
+    border-start-end-radius: 0.625rem;
+  }
+}
+@container (min-width: 44em) {
+  .control-box-panel:not([data-tab='color']) {
+    --control-box-label: 10rem;
+    --control-box-chip: 3.5rem;
+  }
+}
+
+/* Zoom: one compact chip aligned to the dock's gutter. The percentage doubles as Fit. */
+/* Above the box: with very large text a panel can reach this corner, and zoom stays usable. */
+.zoom-chip {
+  position: absolute;
+  z-index: 5;
+  inset-block-start: 0;
+  inset-inline: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0 0.25rem;
+  padding: 0.125rem 0.5rem;
+  pointer-events: none;
+}
+.zoom-chip[hidden],
+.zoom-chip-group[hidden] {
+  display: none;
+}
+.zoom-chip-group {
+  --zoom-chip-target: max(2.75rem, 44px);
+  position: relative;
+  z-index: 0;
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-inline-size: 100%;
+  pointer-events: auto;
+}
+.zoom-chip-group[data-unfolding] {
+  overflow: hidden;
+}
+.zoom-chip-group::before {
+  position: absolute;
+  z-index: -1;
+  inset-inline: 0;
+  inset-block: calc((var(--zoom-chip-target) - 2rem) / 2);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  content: '';
+}
+.zoom-chip button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: var(--zoom-chip-target);
+  min-block-size: var(--zoom-chip-target);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.zoom-chip button:hover:enabled {
+  color: #fff;
+}
+.zoom-chip button:disabled {
+  color: var(--control-border);
+  cursor: default;
+}
+.zoom-chip button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.zoom-chip .ui-icon {
+  inline-size: 1.25em;
+  block-size: 1.25em;
+  fill: currentColor;
+}
+.zoom-chip-value output {
+  display: block;
+  font:
+    0.6875rem 'Lab Mono',
+    monospace;
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 30rem) {
+  .zoom-chip {
+    padding: 0.375rem 0.75rem;
+  }
+}
+
+/* The subject lifts with `translate` on the effect host, so its effect layer follows. */
+[data-lift] {
+  transition:
+    transform 160ms ease-out,
+    translate var(--motion-enter-duration) var(--motion-enter-easing);
+}
+[data-lift='settle'] {
+  transition:
+    transform 160ms ease-out,
+    translate var(--motion-exit-duration) var(--motion-exit-easing);
+}
+[data-zoom-motion='spring'],
+[data-lift][data-zoom-motion='spring'] {
+  transition:
+    transform var(--motion-enter-duration) var(--motion-enter-easing),
+    translate var(--motion-enter-duration) var(--motion-enter-easing);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-lift],
+  [data-lift='settle'],
+  [data-zoom-motion='spring'],
+  [data-lift][data-zoom-motion='spring'] {
+    transition: none;
+  }
+}
+
+/* Top layer: above panels and dialogs, and dismissed with Esc. */
+.control-box-tooltip {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: var(--text);
+  color: var(--bg);
+  font:
+    500 0.75rem/1.3 General,
+    'General Sans',
+    sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+@media (forced-colors: active) {
+  .control-box-segments input:checked + span {
+    background: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+  .control-box-dock,
+  .control-box-panel,
+  .zoom-chip-group::before {
+    border: 1px solid CanvasText;
+  }
+}

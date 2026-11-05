@@ -153,7 +153,7 @@ site-search dialog {
   .nav-cta,
   [role='tab'],
   .language-switcher summary,
-  .docs-lab-segments label
+  .control-box-segments label
 ):not(
   :disabled,
   .effect-card,
@@ -173,7 +173,7 @@ site-search dialog {
     .nav-cta,
     [role='tab'],
     .language-switcher summary,
-    .docs-lab-segments label
+    .control-box-segments label
   ):not(
     :disabled,
     .effect-card,

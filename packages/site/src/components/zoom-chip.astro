@@ -1,0 +1,33 @@
+---
+import '../styles/control-box.css';
+
+interface Props {
+  /** Describes the preview region: keyboard use and how to inspect. Not shown visually. */
+  helpId: string;
+  labels: {
+    zoom: string;
+    in: string;
+    out: string;
+    reset: string;
+    pan: string;
+    left: string;
+    right: string;
+    up: string;
+    down: string;
+  };
+}
+
+const { helpId, labels } = Astro.props;
+const directions = ['left', 'right', 'up', 'down'] as const;
+---
+<div class="zoom-chip" data-zoom-tools hidden>
+  <p id={helpId} class="zoom-chip-help"><slot /></p>
+  <div class="zoom-chip-group" role="group" aria-label={labels.zoom}>
+    <button type="button" data-zoom-out data-tip aria-label={labels.out} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-minus"/></svg></button>
+    <button type="button" class="zoom-chip-value" data-zoom-reset data-tip aria-label={labels.reset}><output data-zoom-label aria-live="polite" aria-atomic="true">100%</output></button>
+    <button type="button" data-zoom-in data-tip aria-label={labels.in}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-plus"/></svg></button>
+  </div>
+  <div class="zoom-chip-group" data-pan-controls role="group" aria-label={labels.pan} hidden>
+    {directions.map((direction) => <button type="button" data-pan={direction} data-tip aria-label={labels[direction]}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href={`#ph-arrow-${direction}`}/></svg></button>)}
+  </div>
+</div>

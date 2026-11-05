@@ -1,10 +1,15 @@
 ---
+import ZoomChip from '@domfx/site/components/zoom-chip.astro';
 import { localeFromPath } from '@domfx/site/locale';
 
 import { docsMessages } from '../content/docs-messages';
 
-interface Props { id: string }
-const { id } = Astro.props;
+interface Props {
+  id: string;
+  /** `chip` floats over the preview with the control box; `toolbar` is the GSAP lesson's row. */
+  tools?: 'chip' | 'toolbar';
+}
+const { id, tools = 'toolbar' } = Astro.props;
 const messages = docsMessages(localeFromPath(Astro.url.pathname)).preview;
 const directions = ['left', 'right', 'up', 'down'] as const;
 ---
@@ -12,15 +17,15 @@ const directions = ['left', 'right', 'up', 'down'] as const;
 <div class="docs-lab-stage" data-docs-preview tabindex="0" role="region" aria-label={messages.region} aria-describedby={`${id}-zoom-help`}>
   <slot />
 </div>
-<div class="docs-preview-toolbar" data-docs-preview-tools hidden>
+{tools === 'chip' ? <ZoomChip helpId={`${id}-zoom-help`} labels={messages}><span class="docs-preview-hover-hint">{messages.hover}</span><span class="docs-preview-touch-hint">{messages.inspect}</span> {messages.keys}</ZoomChip> : <div class="docs-preview-toolbar" data-zoom-tools hidden>
   <p id={`${id}-zoom-help`}><span class="docs-preview-hover-hint">{messages.hover}</span><span class="docs-preview-touch-hint">{messages.inspect}</span><span class="visually-hidden"> {messages.keys}</span></p>
   <div class="docs-preview-buttons" role="group" aria-label={messages.zoom}>
-    <button type="button" data-docs-zoom-out aria-label={messages.out} title={messages.out} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-minus"/></svg></button>
-    <output data-docs-zoom-label aria-live="polite" aria-atomic="true">100%</output>
-    <button type="button" data-docs-zoom-in aria-label={messages.in} title={messages.in}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-plus"/></svg></button>
-    <button type="button" data-docs-zoom-reset aria-label={messages.reset} title={messages.reset}>{messages.fit}</button>
+    <button type="button" data-zoom-out aria-label={messages.out} title={messages.out} disabled><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-minus"/></svg></button>
+    <output data-zoom-label aria-live="polite" aria-atomic="true">100%</output>
+    <button type="button" data-zoom-in aria-label={messages.in} title={messages.in}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-plus"/></svg></button>
+    <button type="button" data-zoom-reset aria-label={messages.reset} title={messages.reset}>{messages.fit}</button>
   </div>
-  <div class="docs-preview-buttons docs-preview-pan" data-docs-pan-controls role="group" aria-label={messages.pan} hidden>
-    {directions.map((direction) => <button type="button" data-docs-pan={direction} aria-label={messages[direction]} title={messages[direction]}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href={`#ph-arrow-${direction}`}/></svg></button>)}
+  <div class="docs-preview-buttons docs-preview-pan" data-pan-controls role="group" aria-label={messages.pan} hidden>
+    {directions.map((direction) => <button type="button" data-pan={direction} aria-label={messages[direction]} title={messages[direction]}><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href={`#ph-arrow-${direction}`}/></svg></button>)}
   </div>
-</div>
+</div>}

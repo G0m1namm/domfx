@@ -51,7 +51,15 @@ test('selected filters and preview subjects have a contrasting state boundary', 
   // Docs first: on the composed dev server, its lab script does not start after a
   // reduced-motion marketing visit. Baseline code does the same.
   await page.goto('/docs/api/effects/frost/');
-  expect(contrast(await colors('.docs-lab-segments .selection-glider'))).toBeGreaterThanOrEqual(3);
+  await page.getByRole('button', { name: 'Shape', exact: true }).click();
+  // The box's selected option is a borderless silver chip, so its boundary is its fill.
+  const chip = page.locator('[data-box-view="shape"] .selection-glider');
+  await expect(chip).toBeVisible();
+  const chipFill = await chip.evaluate((element) => getComputedStyle(element).backgroundColor);
+  const panelFill = await page
+    .locator('[data-box-panel]')
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(contrast([chipFill, panelFill])).toBeGreaterThanOrEqual(3);
   await page.goto('/effects/');
   await expect(selected).toBeVisible();
   // The gliding indicator draws the selected boundary for all three groups.

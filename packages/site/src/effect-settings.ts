@@ -52,6 +52,8 @@ export interface EffectAttachmentOptions extends Readonly<
 export const effectTimeField = { name: 'time', min: 0, max: 20, step: 0.1 } as const;
 
 const defaultSeed = 314;
+/** The previews' brightness, not the API default of 1. Copied code always states it. */
+const previewIntensity = 0.8;
 const disposeComments: Record<Locale, string> = {
   en: '// On unmount: effect.dispose();',
   es: '// Al desmontar: effect.dispose();',
@@ -70,7 +72,7 @@ function optionFields(effect: Effect) {
 
 export function defaultEffectSettings(effect: Effect): EffectSettings {
   return {
-    intensity: apiDefault(intensityField),
+    intensity: previewIntensity,
     seed: defaultSeed,
     clock: 'auto',
     time: effectTimeField.min,
@@ -312,7 +314,12 @@ export function switchFireColorMode(settings: EffectSettings, mode: FireColorMod
 
 /** Snap points in the field's slider units: min, default and max. Presets have none. */
 export function effectSliderStops(field: EffectSetting): readonly number[] {
-  return field.kind === 'range' ? [...new Set([field.min, field.defaultValue, field.max])] : [];
+  if (field.kind !== 'range') {
+    return [];
+  }
+  const defaultValue =
+    field === intensityField ? previewIntensity * field.scale : field.defaultValue;
+  return [...new Set([field.min, defaultValue, field.max])];
 }
 
 /**

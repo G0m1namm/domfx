@@ -105,7 +105,9 @@ for (const effect of effects) {
 }
 
 test('default options use existing metadata, including writable and preset fields', () => {
-  assert.equal(defaultEffectSettings(fire).intensity, intensityField.defaultValue / 100);
+  // The shared preview brightness, not the API default of 1; links omit it when unchanged.
+  assert.equal(defaultEffectSettings(fire).intensity, 0.8);
+  assert.equal(encodeEffectSettings(fire, defaultEffectSettings(fire)).has('intensity'), false);
   assert.deepEqual(defaultEffectSettings(fire).options, { flameReach: 0.2, emberDensity: 1 });
   assert.deepEqual(defaultEffectSettings(frost).options, {
     coatingDepth: 0.1,
@@ -127,7 +129,7 @@ test('default Fire code matches the agreed layout in both languages', () => {
     'const effect = attachFire(target, {',
     '  host,',
     "  clock: 'auto',",
-    '  intensity: 1,',
+    '  intensity: 0.8,',
     '  seed: 314,',
     '  flameReach: 0.2,',
     '  emberDensity: 1,',
@@ -231,7 +233,7 @@ for (const [label, search, expected = {}] of invalidCases) {
 test('a bad value does not disturb a good one beside it', () => {
   const settings = parse(fire, 'seed=7&intensity=9&flameReach=0.1&emberDensity=9');
   assert.equal(settings.seed, 7);
-  assert.equal(settings.intensity, 1);
+  assert.equal(settings.intensity, 0.8);
   assert.deepEqual(settings.options, { flameReach: 0.1, emberDensity: 1 });
 });
 
@@ -344,7 +346,7 @@ test('Fire mode switching clears the other mode and an unset pair changes nothin
 test('slider stops come from min, default and max without duplicates', () => {
   const [flameReach, emberDensity] = effectCreationFields(fire);
   assert.deepEqual(effectSliderStops(flameReach), [0, 20, 30]);
-  assert.deepEqual(effectSliderStops(intensityField), [0, 100]);
+  assert.deepEqual(effectSliderStops(intensityField), [0, 80, 100]);
   assert.deepEqual(effectSliderStops(emberDensity), []);
 });
 

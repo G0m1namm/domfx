@@ -3,10 +3,10 @@ import { gsap } from 'gsap';
 import type { EffectHandle } from '@domfx/browser';
 import { localeFromPath } from '@domfx/site/locale';
 import { initializePage } from '@domfx/site/page-lifetime';
+import { initializePreviewZoom } from '@domfx/site/preview-zoom';
 
 import { docsMessages } from '../content/docs-messages';
 import { addGsapSequence } from '../content/gsap-sequence';
-import { initializeDocsPreview } from './docs-preview-zoom';
 
 const DURATION = 4.5;
 interface Playback {
@@ -35,7 +35,14 @@ function initializeLab(lab: HTMLElement) {
   const originalOpacity = host.style.opacity;
   const lifetime = new AbortController();
   const { signal } = lifetime;
-  initializeDocsPreview(lab, signal, reducedMotion);
+  initializePreviewZoom({
+    viewport: required<HTMLElement>('[data-docs-preview]', lab),
+    camera: required<HTMLElement>('[data-docs-preview-camera]', lab),
+    tools: required<HTMLElement>('[data-zoom-tools]', lab),
+    target: () => required<HTMLElement>('[data-gsap-target]', lab),
+    signal,
+    reducedMotion,
+  });
   const playback: Playback = {
     position: 0,
     paused: true,

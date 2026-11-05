@@ -5,7 +5,7 @@ async function openPreview(page: Page, path: string) {
   await page.goto(path);
   const lab = page.locator('[data-docs-lab], [data-docs-gsap-lab]').first();
   await lab.locator('[data-docs-preview]').scrollIntoViewIfNeeded();
-  await expect(lab.locator('[data-docs-preview-tools]')).toBeVisible();
+  await expect(lab.locator('[data-zoom-tools]')).toBeVisible();
   return lab;
 }
 
@@ -23,18 +23,19 @@ for (const locale of ['en', 'es']) {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     const lab = await openPreview(page, `${prefix}/api/effects/fire/`);
+    await lab.locator('[data-box-tab="shape"]').click();
     for (const subject of ['text', 'svg', 'image']) {
-      await lab.locator(`[data-docs-lab-subject][value="${subject}"]`).check();
+      await lab.locator(`[data-box-radio="target"][value="${subject}"]`).check();
       const viewport = lab.locator('[data-docs-preview]');
       await viewport.scrollIntoViewIfNeeded();
       await expect(viewport).toHaveCSS('overflow', 'hidden');
       await expect(lab).toHaveAttribute('data-status', 'active');
       await expect(lab.locator('canvas')).toHaveCount(1);
       const canvas = await lab.locator('canvas').elementHandle();
-      const code = await lab.locator('[data-docs-lab-code]').textContent();
+      const code = await lab.locator('[data-box-code]').textContent();
       const original = await lab.locator(`[data-docs-lab-target="${subject}"]`).boundingBox();
       await viewport.hover({ position: { x: 20, y: 20 } });
-      await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('200%');
+      await expect(lab.locator('[data-zoom-label]')).toHaveText('200%');
       await expect(viewport).toHaveCSS('overflow', 'hidden');
       await expect.poll(() => cameraScale(lab)).toBeCloseTo(2);
       await page.waitForTimeout(400);
@@ -50,24 +51,24 @@ for (const locale of ['en', 'es']) {
           lab.locator('canvas').evaluate((element: HTMLCanvasElement) => element.toDataURL()),
         )
         .not.toBe(frame);
-      await lab.locator('[data-docs-zoom-in]').hover();
-      await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('100%');
+      await lab.locator('[data-zoom-in]').hover();
+      await expect(lab.locator('[data-zoom-label]')).toHaveText('100%');
       await expect(viewport).toHaveCSS('overflow', 'hidden');
       await viewport.focus();
       await viewport.press('+');
       await viewport.press('+');
       await viewport.press('+');
       await viewport.press('+');
-      await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('300%');
-      await expect(lab.locator('[data-docs-zoom-in]')).toBeDisabled();
+      await expect(lab.locator('[data-zoom-label]')).toHaveText('300%');
+      await expect(lab.locator('[data-zoom-in]')).toBeDisabled();
       await viewport.press('ArrowRight');
       await viewport.press('ArrowDown');
-      await expect(lab.locator('[data-docs-pan-controls]')).toBeVisible();
-      await lab.locator('[data-docs-pan="left"]').click();
-      await expect(lab.locator('[data-docs-lab-code]')).toHaveText(code ?? '');
+      await expect(lab.locator('[data-pan-controls]')).toBeVisible();
+      await lab.locator('[data-pan="left"]').click();
+      await expect(lab.locator('[data-box-code]')).toHaveText(code ?? '');
       expect(await canvas?.evaluate((element) => element.isConnected)).toBe(true);
-      await lab.locator('[data-docs-zoom-reset]').click();
-      await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('100%');
+      await lab.locator('[data-zoom-reset]').click();
+      await expect(lab.locator('[data-zoom-label]')).toHaveText('100%');
       await expect.poll(() => cameraScale(lab)).toBeCloseTo(1);
       await expect(viewport).toHaveCSS('overflow', 'hidden');
     }
@@ -79,12 +80,12 @@ for (const locale of ['en', 'es']) {
   }) => {
     const lab = await openPreview(page, `${prefix}/gsap/`);
     await expect(lab).toHaveAttribute('data-status', 'active');
-    await lab.locator('[data-docs-zoom-in]').click();
-    await lab.locator('[data-docs-zoom-in]').click();
+    await lab.locator('[data-zoom-in]').click();
+    await lab.locator('[data-zoom-in]').click();
     await lab.locator('[data-gsap-target]').click();
     await lab.locator('[data-gsap-target]').press('Enter');
     await expect(lab.locator('[data-gsap-clicks]')).toHaveText('2');
-    await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('200%');
+    await expect(lab.locator('[data-zoom-label]')).toHaveText('200%');
     await lab.locator('[data-gsap-position]').fill('1.5');
     await expect(lab.locator('[data-gsap-time-output]')).toHaveText('1.00');
     await expect(lab.locator('canvas')).toHaveCount(1);
@@ -92,13 +93,13 @@ for (const locale of ['en', 'es']) {
     await page.evaluate(() =>
       window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })),
     );
-    await expect(lab.locator('[data-docs-preview-tools]')).toBeHidden();
+    await expect(lab.locator('[data-zoom-tools]')).toBeHidden();
     await page.evaluate(() =>
       window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })),
     );
-    await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('100%');
-    await lab.locator('[data-docs-zoom-in]').click();
-    await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('150%');
+    await expect(lab.locator('[data-zoom-label]')).toHaveText('100%');
+    await lab.locator('[data-zoom-in]').click();
+    await expect(lab.locator('[data-zoom-label]')).toHaveText('150%');
     await expect(lab.locator('canvas')).toHaveCount(1);
   });
 }
@@ -110,13 +111,13 @@ test('reduced motion disables hover zoom but preserves manual inspection without
   await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
   const lab = await openPreview(page, '/docs/api/effects/fire/');
   await lab.locator('[data-docs-preview]').hover();
-  await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('100%');
-  await lab.locator('[data-docs-zoom-in]').click();
+  await expect(lab.locator('[data-zoom-label]')).toHaveText('100%');
+  await lab.locator('[data-zoom-in]').click();
   await expect.poll(() => cameraScale(lab)).toBe(1.5);
   await expect(lab.locator('[data-docs-preview-camera]')).toHaveCSS('transition-duration', '0s');
   await expect(lab.locator('canvas')).toHaveCount(0);
-  await lab.locator('[data-docs-zoom-reset]').click();
-  await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('100%');
+  await lab.locator('[data-zoom-reset]').click();
+  await expect(lab.locator('[data-zoom-label]')).toHaveText('100%');
 });
 
 test('narrow previews recover after target changes below the fold and reset zoom', async ({
@@ -129,27 +130,28 @@ test('narrow previews recover after target changes below the fold and reset zoom
   });
   await lab.locator('[data-docs-lab-host]').scrollIntoViewIfNeeded();
   await expect(lab).toHaveAttribute('data-status', 'active');
+  await lab.locator('[data-box-tab="shape"]').click();
   for (const subject of ['text', 'svg', 'image']) {
     const canvas = await lab.locator('canvas').elementHandle();
-    await lab.locator(`[data-docs-lab-subject][value="${subject}"]`).check();
+    await lab.locator(`[data-box-radio="target"][value="${subject}"]`).check();
     await lab.locator('[data-docs-lab-host]').scrollIntoViewIfNeeded();
     if (canvas) {
       await expect.poll(() => canvas.evaluate((element) => element.isConnected)).toBe(false);
     }
     await expect(lab).toHaveAttribute('data-status', 'active');
     await expect(lab.locator('canvas')).toHaveCount(1);
-    await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('100%');
-    await lab.locator('[data-docs-zoom-in]').click();
-    await expect(lab.locator('[data-docs-zoom-label]')).toHaveText('150%');
+    await expect(lab.locator('[data-zoom-label]')).toHaveText('100%');
+    await lab.locator('[data-zoom-in]').click();
+    await expect(lab.locator('[data-zoom-label]')).toHaveText('150%');
   }
   const canvas = await lab.locator('canvas').elementHandle();
-  const reach = lab.locator('[data-docs-lab-extent="flameReach"]');
+  const reach = lab.locator('[data-box-setting="flameReach"]');
   await reach.scrollIntoViewIfNeeded();
   await reach.fill('27');
   await lab.locator('[data-docs-lab-host]').scrollIntoViewIfNeeded();
   await expect.poll(() => canvas?.evaluate((element) => element.isConnected)).toBe(false);
   await expect(lab).toHaveAttribute('data-status', 'active');
-  await expect(lab.locator('[data-docs-lab-code]')).toContainText('flameReach: 0.27');
+  await expect(lab.locator('[data-box-code]')).toContainText('flameReach: 0.27');
 });
 
 test('touch zoom supports dragging and Spanish controls reflow at enlarged text sizes', async ({
@@ -167,7 +169,7 @@ test('touch zoom supports dragging and Spanish controls reflow at enlarged text 
     const lab = await openPreview(page, '/docs/es/api/effects/fire/');
     await expect(lab).toHaveAttribute('data-status', 'active');
     for (let step = 0; step < 4; step += 1) {
-      await lab.locator('[data-docs-zoom-in]').tap();
+      await lab.locator('[data-zoom-in]').tap();
     }
     const viewport = lab.locator('[data-docs-preview]');
     await viewport.scrollIntoViewIfNeeded();
@@ -197,7 +199,7 @@ test('touch zoom supports dragging and Spanish controls reflow at enlarged text 
         () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
       ),
     ).toBe(true);
-    for (const button of await lab.locator('[data-docs-preview-tools] button:visible').all()) {
+    for (const button of await lab.locator('[data-zoom-tools] button:visible').all()) {
       const box = await button.boundingBox();
       expect(box?.width).toBeGreaterThanOrEqual(44);
       expect(box?.height).toBeGreaterThanOrEqual(44);

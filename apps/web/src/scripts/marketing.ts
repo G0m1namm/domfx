@@ -22,6 +22,7 @@ import type { Effect } from '@domfx/site/effects';
 import { effects, findEffect, patternEffects } from '@domfx/site/effects';
 import { localeFromPath, localePath } from '@domfx/site/locale';
 import { initializePage } from '@domfx/site/page-lifetime';
+import { glideSelection } from '@domfx/site/selection-glide';
 
 import { marketingMessages } from '../content/marketing-copy';
 import { initializeSiteSearch } from './site-search';
@@ -493,7 +494,26 @@ function initializeMarketing() {
       selectAudience(
         new URL(location.href).searchParams.get('audience') === 'agents' ? 'agents' : 'humans',
       );
+      glideSelection(required('.audience-tabs', main), {
+        items: '[data-audience]',
+        selected: '[aria-selected="true"]',
+        variant: 'line',
+        signal: lifetime.signal,
+      });
+    } else {
+      glideSelection(required('.filters', main), {
+        items: '[data-filter]',
+        selected: '[aria-pressed="true"]',
+        variant: 'fill',
+        signal: lifetime.signal,
+      });
     }
+    glideSelection(required('.target-options', dialog), {
+      items: '[data-target]',
+      selected: '[aria-pressed="true"]',
+      variant: 'fill',
+      signal: lifetime.signal,
+    });
     observeCards();
     void showHeaderEffect();
     for (const control of document.querySelectorAll<HTMLElement>('[data-js-control]')) {
@@ -870,6 +890,7 @@ function initializeMarketing() {
       togglePatterns();
     } else if (element.dataset.filter) {
       filter = element.dataset.filter;
+      required<HTMLElement>('.effect-grid', main).dataset.filterReveal = 'true';
       applyFilters();
     } else if (element.hasAttribute('data-card')) {
       openPreview(element);

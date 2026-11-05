@@ -8,6 +8,7 @@
   "exports": {
     "./effects": "./src/effects.ts",
     "./effect-slot": "./src/effect-slot.ts",
+    "./selection-glide": "./src/selection-glide.ts",
     "./page-lifetime": "./src/page-lifetime.ts",
     "./effect-reference": "./src/effect-reference.ts",
     "./effect-extent": "./src/effect-extent.ts",

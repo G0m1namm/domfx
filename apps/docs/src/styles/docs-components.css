@@ -606,6 +606,9 @@
 .docs-lab-segments label {
   position: relative;
 }
+.docs-lab-segments {
+  --selection-glide-radius: 0.375rem;
+}
 .docs-lab-segments input {
   position: absolute;
   inset: 0;

@@ -104,10 +104,11 @@
 .language-switcher summary .ui-icon {
   inline-size: 1em;
   block-size: 1em;
-  transition: transform 0.15s;
+  transition: rotate var(--motion-exit-duration) var(--motion-exit-easing);
 }
 .language-switcher[open] summary .ui-icon {
-  transform: rotate(180deg);
+  rotate: 180deg;
+  transition: rotate var(--motion-enter-duration) var(--motion-enter-easing);
 }
 .site-nav .language-links {
   position: absolute;
@@ -121,6 +122,36 @@
   border-radius: 0.375rem;
   background: var(--surface, #1d1f27);
   box-shadow: 0 0.75rem 2rem #0006;
+}
+/* Without ::details-content or scripting the menu opens and closes instantly. */
+@media (scripting: enabled) {
+  @supports selector(::details-content) {
+    .language-switcher::details-content {
+      transition: content-visibility var(--motion-exit-duration) allow-discrete;
+    }
+    .site-nav .language-links {
+      opacity: 0;
+      translate: 0 -0.25rem;
+      pointer-events: none;
+      transition:
+        opacity var(--motion-exit-duration) var(--motion-exit-easing),
+        translate var(--motion-exit-duration) var(--motion-exit-easing);
+    }
+    .language-switcher[open] .language-links {
+      opacity: 1;
+      translate: none;
+      pointer-events: auto;
+      transition:
+        opacity var(--motion-swap-in-duration) ease-out,
+        translate var(--motion-enter-duration) var(--motion-enter-easing);
+    }
+    @starting-style {
+      .language-switcher[open] .language-links {
+        opacity: 0;
+        translate: 0 -0.25rem;
+      }
+    }
+  }
 }
 .site-nav .language-links a {
   justify-content: space-between;

@@ -751,6 +751,9 @@ footer nav a {
   border-radius: 7px;
   background: #1d1f2740;
 }
+.target-options {
+  --selection-glide-radius: 0.25rem;
+}
 .target-options button {
   flex: 1;
   border-color: transparent;
@@ -2083,6 +2086,37 @@ body.marketing-page {
 }
 .audience-tabs a:hover {
   color: var(--text);
+}
+/* Content swap: the old panel leaves the layout at once and fades over the new one. */
+.audience-panels {
+  position: relative;
+}
+.audience-tabs[role='tablist'] + .audience-panels > [role='tabpanel'] {
+  transition: opacity var(--motion-swap-in-duration) ease-out;
+}
+.audience-tabs[role='tablist'] + .audience-panels > [role='tabpanel'][hidden] {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--motion-swap-out-duration) ease-in,
+    display var(--motion-swap-out-duration) allow-discrete;
+}
+@starting-style {
+  .audience-tabs[role='tablist'] + .audience-panels > [role='tabpanel']:not([hidden]) {
+    opacity: 0;
+  }
+}
+/* Filtering reveals cards; first paint does not, because the attribute comes later. */
+.effect-grid[data-filter-reveal] .effect-card {
+  transition: opacity var(--motion-swap-in-duration) ease-out;
+}
+@starting-style {
+  .effect-grid[data-filter-reveal] .effect-card {
+    opacity: 0;
+  }
 }
 .hero-command {
   width: 100%;

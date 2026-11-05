@@ -4,6 +4,8 @@
 It is never published and is not part of the library API.
 
 - `effects`, `effect-reference` and `site-links` export shared content.
+- `effect-settings` exports the DOM-free settings state, preview options, copied code and
+  settings link rules that both sites share.
 - `components/*.astro` export SiteNav, its search trigger and the Phosphor sprite.
 - `styles/*.css` export DESIGN tokens, fonts, brand treatments and shared chrome styles.
 - `public-path` exports `sitePublicDir` for each Astro app's `publicDir` configuration.

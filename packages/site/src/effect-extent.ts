@@ -1,4 +1,4 @@
-import { patternExtentReference } from './effect-reference';
+import { patternExtentReference } from './effect-reference.ts';
 import type { Effect } from './effects';
 
 const extents = {

@@ -11,6 +11,7 @@
     "./page-lifetime": "./src/page-lifetime.ts",
     "./effect-reference": "./src/effect-reference.ts",
     "./effect-extent": "./src/effect-extent.ts",
+    "./effect-settings": "./src/effect-settings.ts",
     "./site-links": "./src/site-links.ts",
     "./components/*.astro": "./src/components/*.astro",
     "./styles/*.css": "./src/styles/*.css",

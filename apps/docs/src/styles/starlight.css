@@ -416,6 +416,31 @@ starlight-toc li:has(> a[href='#_top']) {
 #starlight__search .pagefind-ui__result-excerpt {
   min-inline-size: 0;
 }
+/* One height while searching: the query stays put, results scroll inside, and the
+   empty message stays at the top. */
+site-search .dialog-frame {
+  overflow: hidden;
+}
+site-search .search-container,
+#starlight__search,
+#starlight__search .pagefind-ui,
+#starlight__search .pagefind-ui__form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-block-size: 0;
+}
+#starlight__search .pagefind-ui__drawer {
+  flex: 1;
+  min-block-size: 0;
+  overflow-y: auto;
+}
+@media (min-width: 50rem) {
+  site-search dialog {
+    min-block-size: 0;
+    block-size: min(34rem, calc(100% - 8rem));
+  }
+}
 /* Put Cancel on its own row when font-relative space leaves no usable query field. */
 @media not all and (min-width: 18em) {
   site-search button[data-close-modal] {

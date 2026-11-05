@@ -21,6 +21,7 @@ import {
 import { findEffect, type Effect } from '@domfx/site/effects';
 import { localeFromPath } from '@domfx/site/locale';
 import { initializePage } from '@domfx/site/page-lifetime';
+import { glideSelection } from '@domfx/site/selection-glide';
 
 import { docsMessages } from '../content/docs-messages';
 import { initializeDocsPreview } from './docs-preview-zoom';
@@ -97,6 +98,12 @@ function initializeLab(
   const lifetime = new AbortController();
   const { signal } = lifetime;
   initializeDocsPreview(lab, signal, reducedMotion);
+  glideSelection(required<HTMLElement>('.docs-lab-segments', lab), {
+    items: 'label',
+    selected: 'label:has(input:checked)',
+    variant: 'fill',
+    signal,
+  });
   let visible = false;
   let paused = savedPlayback.get(lab)?.paused ?? false;
   let needsResume = reducedMotion.matches || (savedPlayback.get(lab)?.needsResume ?? false);

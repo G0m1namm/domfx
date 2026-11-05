@@ -66,6 +66,79 @@ const { class: className, ...attributes } = Astro.props;
       transition: none;
     }
   }
+  /* Phones, forced colors and browsers without customizable select keep the native picker. */
+  @media (hover: hover) and (pointer: fine) and (forced-colors: none) {
+    @supports (appearance: base-select) {
+      .select-control-input,
+      .select-control-input::picker(select) {
+        appearance: base-select;
+      }
+      .select-control-input {
+        display: flex;
+        align-items: center;
+      }
+      .select-control-input::picker-icon {
+        display: none;
+      }
+      .select-control-input::picker(select) {
+        margin-block: 0.25rem;
+        padding: 0.25rem;
+        border: 1px solid #454754;
+        border-radius: 0.375rem;
+        background: #1d1f27;
+        color: #e8eaf3;
+        opacity: 0;
+        translate: 0 -0.25rem;
+        transition:
+          opacity var(--motion-exit-duration) var(--motion-exit-easing),
+          translate var(--motion-exit-duration) var(--motion-exit-easing),
+          overlay var(--motion-exit-duration) allow-discrete,
+          display var(--motion-exit-duration) allow-discrete;
+      }
+      .select-control-input:open::picker(select) {
+        opacity: 1;
+        translate: none;
+        transition:
+          opacity var(--motion-swap-in-duration) ease-out,
+          translate var(--motion-enter-duration) var(--motion-enter-easing),
+          overlay var(--motion-exit-duration) allow-discrete,
+          display var(--motion-exit-duration) allow-discrete;
+      }
+      @starting-style {
+        .select-control-input:open::picker(select) {
+          opacity: 0;
+          translate: 0 -0.25rem;
+        }
+      }
+      .select-control-input :global(option) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-block-size: max(2.75rem, 44px);
+        padding-inline: 0.625rem;
+        border-radius: 0.25rem;
+        font-size: 0.8125rem;
+      }
+      .select-control-input :global(option:hover),
+      .select-control-input :global(option:focus-visible) {
+        background: #292a35;
+      }
+      .select-control-input :global(option:focus-visible) {
+        outline: 2px solid #e6dc6a;
+        outline-offset: -2px;
+      }
+      .select-control-input :global(option)::checkmark {
+        order: 1;
+      }
+      .select-control-icon {
+        transition: rotate var(--motion-exit-duration) var(--motion-exit-easing);
+      }
+      .select-control-input:open + .select-control-icon {
+        rotate: 180deg;
+        transition: rotate var(--motion-enter-duration) var(--motion-enter-easing);
+      }
+    }
+  }
   @media (forced-colors: active) {
     .select-control-input {
       padding-inline-end: 0.75rem;

@@ -27,7 +27,6 @@ test('selected filters and preview subjects have a contrasting state boundary', 
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/effects/');
   const selected = page.locator('.filters [aria-pressed="true"]');
   const contrast = (colors: string[]) => {
     const luminance = colors.map((color) => {
@@ -49,14 +48,16 @@ test('selected filters and preview subjects have a contrasting state boundary', 
       const style = getComputedStyle(element);
       return [style.borderColor, style.backgroundColor];
     });
-  await expect(selected).toBeVisible();
-  expect(contrast(await colors('.filters [aria-pressed="true"]'))).toBeGreaterThanOrEqual(3);
-  await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
-  expect(contrast(await colors('.target-options [aria-pressed="true"]'))).toBeGreaterThanOrEqual(3);
+  // Docs first: on the composed dev server, its lab script does not start after a
+  // reduced-motion marketing visit. Baseline code does the same.
   await page.goto('/docs/api/effects/frost/');
-  expect(contrast(await colors('.docs-lab-segments input:checked + span'))).toBeGreaterThanOrEqual(
-    3,
-  );
+  expect(contrast(await colors('.docs-lab-segments .selection-glider'))).toBeGreaterThanOrEqual(3);
+  await page.goto('/effects/');
+  await expect(selected).toBeVisible();
+  // The gliding indicator draws the selected boundary for all three groups.
+  expect(contrast(await colors('.filters .selection-glider'))).toBeGreaterThanOrEqual(3);
+  await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
+  expect(contrast(await colors('.target-options .selection-glider'))).toBeGreaterThanOrEqual(3);
 });
 
 for (const route of ['/', '/effects/']) {

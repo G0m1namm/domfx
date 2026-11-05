@@ -121,9 +121,9 @@ the main demonstration, away from copy and controls. Keep the contrast low enoug
 that the live effect remains the focal point. The picker may expose one main decorative
 color for every effect except Burned paper; an unset picker preserves each effect's
 original colors, including Fire's warm colors.
-Use a compact square swatch beside the color value and an icon-only reset with an
-accessible label. Keep both targets at least 44 CSS pixels; the swatch must not
-stretch across the settings panel. Marketing previews and docs share this control.
+Use a compact square swatch directly beside its label, then a text Unset action, then
+the color value. Keep both targets at least 44 CSS pixels; the swatch must not stretch
+across the panel. Marketing previews and docs share this control.
 
 Main headings, paragraphs, labels and code use solid text. The approved exception is
 `@domfx/gsap` in the post-example title description: use a static brand gradient
@@ -234,11 +234,8 @@ disclosures, opening only the current category. Pagination follows the same orde
 Each effect reference opens with one live preview directly below its description,
 followed by a facts strip (category, function, options type, package), section links,
 the reference tables and same-category links. The Standalone guide uses the same
-preview for Fire. The preview follows the toolbar control language: aligned rows
-with a label column, a Text/SVG/Image segmented subject switch, thin silver sliders
-with numeric readouts, Fire's flame height marked as a creation option, a text status
-indicator and a 44px Pause/Resume icon button with an accessible name. A live settings
-snippet mirrors the controls and offers Copy with a manual-selection fallback. Previews
+preview for Fire. Its controls use the [control box](#control-box), with a text status
+indicator in the preview. Copy keeps a manual-selection fallback. Previews
 attach only while visible, release on pagehide, respect reduced motion, keep the
 effect host unclipped and leave the original subject and disabled controls in place
 without JavaScript or WebGPU. They are demonstrations, not verification evidence.
@@ -292,8 +289,8 @@ next one. The last row stays clear of the floating button.
 The gallery's preview dialog preserves the selected card's subject and offers
 Text, SVG and Image targets, intensity and playback controls, attachment code and
 zoom inspection. The full interaction and accessibility contract is recorded in
-[Gallery/Setup](#marketing-gallery-exploration). The documentation preview follows
-the labeled-row control language described above. Do not restore the retired
+[Gallery/Setup](#marketing-gallery-exploration). Marketing dialogs and documentation previews share the
+[control box](#control-box). Do not restore the retired
 homepage toolbar or its None/Fire-only selector.
 
 Load GPU code only when rendering is permitted; wait for fonts and relevant
@@ -301,6 +298,37 @@ images. Visible attachments have independent lifetimes. Offscreen and hidden-pag
 output is released, failures leave original content usable and obsolete async work
 must not revive replaced layers. Reduced motion suppresses automatic output;
 ending reduction requires explicit Resume on marketing pages.
+
+### Control box
+
+The maintainer approved this direction on 2026-11-04, after comparing Dock, Inspector and
+Live code on the real surfaces. Marketing dialogs, docs effect references and the
+Standalone guide's Fire preview share it; the GSAP lesson keeps its own controls.
+This section and the interface motion rules are the approved target; the sites do not implement them yet.
+
+- **Surface:** one dock at the bottom of the preview, floating over it, with no border and
+  the same gutter on both sides and the bottom: 12px, or 8px on narrow layouts.
+- **Dock:** text tabs Shape, Color, Time and Code, with a thin silver line under the open
+  tab. Icon-only actions for Pause/Resume, Reset all, Copy link and Copy code sit on the
+  right. On narrow layouts, Copy link and Copy code move into the Code panel.
+- **Panels:** one opens at a time and joins the dock as one surface. Shape, Time and Code
+  match the toolbar's width; Color is 27rem wide. Code's top and side padding match.
+- **Rows:** a single column of label, value, control. Rows stay 44px targets with 32px
+  visible controls. Values are filled chips; only editable fields keep an outline; the
+  selected option is a silver chip. Sliders are thin and clean, without markers.
+- **Header:** the marketing dialog shows the effect title with the docs link beside it.
+  Show status there only when output is unavailable or suspended; screen readers still
+  receive every status.
+- **Zoom:** one compact chip in the preview's top corner, aligned to the dock's gutter. The
+  percentage doubles as Fit, named in its tooltip and accessible label. Pan arrows appear
+  only while zoomed. The hover hint is not shown visually.
+- **Preview:** the subject lifts into the space above the dock and panel. To fit this without
+  moving the page, the marketing preview is up to 38rem tall and docs 34rem, or 31rem on
+  narrow layouts. The Code panel may cover the subject on short screens.
+- **Tooltips:** render in the top layer, above panels and dialogs, and dismiss with Esc.
+- **Color:** Fire offers Authored, Single, and Root and tip modes. Complementary Root and Tip
+  colors pass through gray in sRGB; this is a documented limit.
+- **Labels:** use the reader-facing **Target element** term in shipped UI, not "Subject".
 
 ## Elevation & Depth
 
@@ -340,16 +368,17 @@ edge or prototype dock.
   uses fill or underline plus semantic state. Focus treatment must remain distinct.
 - **Selects:** use the shared native select component for settings: graphite fill,
   a padded Phosphor chevron, silver hover and yellow keyboard focus. Keep at least
-  44px targets and native keyboard/mobile picker behavior. Disabled controls remain
-  legible; forced-color mode restores the browser arrow.
-- **Effect settings:** the maintainer selected compact layout A on 2026-10-24 for
-  marketing dialogs and docs previews: aligned label, control and value columns,
-  with settings visible together. Share slider track, thumb, focus and target-area
-  styling across both surfaces. Stack rows on narrow screens. Choose each setting's
-  control and value format according to what it represents; the layout does not
-  require every setting to use a percentage slider.
-  Keep API property labels literal in EN/ES. Geometric percentages show their
-  element-relative basis; Slime density uses named levels backed by numeric values.
+  44px targets and native keyboard/mobile picker behavior. Where a fine pointer and
+  customizable select support exist, the picker follows the [motion rules](#motion);
+  phones, forced colors and other browsers keep the native picker. Disabled controls
+  remain legible; forced-color mode restores the browser arrow.
+- **Effect settings:** live in the [control box](#control-box), replacing compact layout
+  A's settings-visible-together rule. Choose each setting's control and value format
+  according to what it represents. Keep API property labels literal in EN/ES. Geometric
+  percentages show their element-relative basis; Slime density uses named levels backed
+  by numeric values.
+- **Search dialogs:** keep one height while searching, on marketing and docs. Results
+  scroll inside; the empty message stays at the top and the footer at the bottom.
 - **Preview and cards:** original text remains selectable and real controls retain
   pointer and keyboard behavior. A framed fictional UI can contain real cards; do
   not add extra decorative wrappers around them.
@@ -377,6 +406,30 @@ independent lifetimes, original content and accessible preview controls.
 Use ease-out for entry, ease-in for exit and ease-in-out for movement. Hover/focus
 transitions are roughly 120–180ms; disclosures 200–300ms. Preserve reduced-motion
 behavior and avoid scroll hijacking or animating target paint every frame.
+
+Interface surfaces follow the rules the maintainer approved on 2026-11-04. They take motion
+only from the reference, which is not a visual reference.
+
+| Rule            | Value                                                 | Applies to                                           |
+| --------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| Enter or resize | Spring: 450ms, about 2% overshoot                     | Panels, dialogs, pickers, selection indicators, zoom |
+| Exit            | 220ms, `cubic-bezier(0.32, 0.72, 0, 1)`, no overshoot | Anything closing                                     |
+| Content swap    | Old out in 130ms, new in over 220ms, overlapping      | Switching dock tabs and Humans/Agents                |
+| Press           | Scale to 95%                                          | Buttons and tabs                                     |
+| Reduced motion  | All of the above off; changes apply immediately       | Everything                                           |
+
+Each element applies these in its own way:
+
+- **Control box:** one surface changes height and width while content crossfades, and every
+  change can be interrupted. The tab line and selected-option chip glide. Move the subject
+  with `translate` on the effect host, so its effect layer moves with it without recapture.
+- **Zoom:** deliberate changes spring; hover tracking keeps its quick transition. The value
+  rolls, and pan arrows unfold from the chip.
+- **Dialogs and popovers:** the effect preview rises; search and the phone menu drop from the
+  top; the docs drawer slides from the side. Rest at `translate: none` so fixed-position
+  descendants are not trapped. Search height never animates, because it never changes.
+- **Tab groups:** one selection glides between options, and revealed content fades in.
+- **Selects:** the picker springs from its field and the chevron rotates.
 
 ## Lab site
 
@@ -507,6 +560,7 @@ implementation polish; explicit approved layout and brand choices take precedenc
 | 2026-09-29 | Annular scroll story approved                                | Cropped five-ring hero, proportional PNG → SVG → live text progression, unpinned information cards and a matching footer reprise.                                                                       |
 | 2026-09-30 | Post-example integration layout A approved                   | GSAP sequencing, initial settings, timeline controls and “Bring your own edge.” replace repeated example benefits; full-length gradient borders and highlighted `@domfx/gsap` identify the integration. |
 | 2026-09-30 | In-site user documentation approved                          | Grouped navigation and reading layout use ultrastorage and Fancy Components as references while retaining domfx typography, palette and verified contracts.                                             |
+| 2026-11-04 | Control box Dock and interface motion approved               | One compact dock replaces settings visible together; a shared spring gives dialogs, tabs, selects and zoom one motion language.                                                                         |
 
 The 2026-09-29 text-motion refinement follows user-provided recordings of Hungry Tiger, Telkom-OT and Iertqa: anchored artwork, independently moving copy, staggered reveals and a visible handoff to ordinary document scroll. Reference easing names are inferred, not recovered from their implementations.
 

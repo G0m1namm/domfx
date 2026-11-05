@@ -41,6 +41,26 @@ _Avoid_: Manual clock ownership in reader-facing prose.
 **Capture status**: Whether the captured appearance is up to date, being refreshed or out of date.
 _Avoid_: Raster health in reader-facing prose.
 
+**Default appearance**: The fixed-scale look an effect renders when its reach and depth options are omitted.
+_Avoid_: Legacy appearance.
+_Spanish_: Apariencia predeterminada.
+
+**Root color**: The color of an effect where its spatial ramp begins, such as the base of a flame.
+_Avoid_: Inside color, beginning color.
+_Spanish_: Color de la base.
+
+**Tip color**: The color of an effect where its spatial ramp ends, such as the ends of a flame.
+_Avoid_: Outer color, end color.
+_Spanish_: Color de las puntas.
+
+**Settings link**: A URL that reopens a preview with chosen effect settings.
+_Avoid_: Permalink, share URL.
+_Spanish_: Enlace de ajustes.
+
+**Control box**: The compact dock that adjusts an effect preview, copies its code and creates its settings link.
+_Avoid_: Toolbar, settings panel.
+_Spanish_: Caja de controles.
+
 ## Reader-facing EN/ES terms
 
 Use these terms in public guidance; keep API identifiers, package names and effect

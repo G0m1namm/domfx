@@ -67,9 +67,14 @@ ${scalarHash}
                  * (1 - smoothstep(.7, 1, age)));
   }
 
+  // The hot strand floats off the edge. Fill the space it leaves, reaching one raster px inside
+  // the silhouette, so a target that stays sharp under a scaling ancestor shows no dark seam.
+  let texel = min(geometry.map.x, geometry.map.y);
+  let seat = (1 - smoothstep(primaryPath, primaryPath + .5, distance))
+           * smoothstep(-texel - .75, -texel, distance);
   let exterior = smoothstep(-2.5, -.25, distance);
   let halo = glow + tertiary * .65;
-  let arc = secondary + tertiary * .35 + sparks * .5;
+  let arc = secondary + tertiary * .35 + sparks * .5 + seat * .6;
   let hot = primary + junction + sparks * .8;
   let energy = (halo * .6 + arc * .95 + hot * 1.35) * exterior;
   let alpha = min(.95, energy);

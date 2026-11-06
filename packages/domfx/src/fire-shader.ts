@@ -52,8 +52,15 @@ fn rootHeight(p: vec2f, bend: f32) -> f32 {
   let rim = exp(-abs(distance) * 1.6) * .28;
   let glow = exp(-abs(distance) * .45) * .07;
   let exterior = smoothstep(-.75, .75, distance);
-  let alpha = clamp((rim + glow + body * exterior * .94) * sqrt(intensity), 0, .95)
-              * smoothstep(-3, -.5, distance);
+  // The target stays sharp under a scaling ancestor while this raster is only stretched.
+  // Reach full strength one raster px inside the silhouette, so no see-through seam opens.
+  // Undersides hold no flame to meet, and a bright line there would only show the raster.
+  let texel = 1 / params.w;
+  let down = vec2f(0, params.w);
+  let rising = smoothstep(-1.5, -.5, field(pos.xy - down) - field(pos.xy + down));
+  let contact = mix(exterior, smoothstep(-texel - .75, -texel, distance), rising);
+  let alpha = clamp((rim + glow + body * contact * .94) * sqrt(intensity), 0, .95)
+              * smoothstep(-3, -clamp(texel, .5, 2), distance);
   let heat = clamp(exp(-max(height, 0) * .24) * .85 + max(density, 0) * .25, 0, 1);
   let color = fireFlameColor(heat);
 

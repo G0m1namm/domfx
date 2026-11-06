@@ -42,12 +42,26 @@ de versiones de paquetes, entorno, código de motivo y mensaje de diagnóstico
 junto con un ejemplo mínimo reproducible. Consulta
 [solución de problemas](/docs/es/troubleshooting).
 
+<span id="removed-options"></span>
+
+## Opciones eliminadas
+
+La próxima versión elimina dos opciones. Ambas lanzan un error al crear el efecto en
+JavaScript y no superan la comprobación de tipos en TypeScript.
+
+- **`clock: 'ambient'`:** usa `clock: 'auto'`, que tiene el mismo comportamiento
+  temporal. El valor antiguo lanza `invalid-clock-mode`.
+- **`flameHeight` de Fire:** omítelo para usar la apariencia predeterminada, que es
+  el antiguo valor predeterminado de `24`, o usa `flameReach` para dimensionar las
+  llamas en relación con el objetivo. Ya no es posible usar llamas con un tamaño
+  personalizado en píxeles. La opción antigua lanza `invalid-fire-parameter`.
+
 <span id="relative-effect-sizing"></span>
 
 ## Tamaño relativo del efecto
 
 El tamaño relativo está disponible en `0.1.0-alpha.2`. Elige los campos de la [referencia de tu efecto](/docs/es/api/effects). Omitirlos conserva la apariencia
-anterior. En Fire, sustituye `flameHeight` por `flameReach`; nunca uses ambos.
+predeterminada.
 En las opciones emparejadas, la que omitas vale cero.
 
 En el modo relativo, la intensidad cambia la fuerza visual sin cambiar el alcance
@@ -64,9 +78,7 @@ el efecto y no activa el tamaño relativo por sí sola. Consulta las
 
 ## Nombres de animación y enlaces
 
-Prefiere `clock: 'auto'` para la animación automática. El valor existente
-`clock: 'ambient'` sigue funcionando con el mismo comportamiento temporal; la propiedad de solo
-lectura `clock` informa del valor proporcionado. El valor predeterminado sigue
+Usa `clock: 'auto'` para la animación automática. El valor predeterminado sigue
 siendo `'manual'` para el control externo.
 
 `bindEffect` y `bindEffectAsync` son alias compatibles de los enlaces con nombres

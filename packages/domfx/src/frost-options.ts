@@ -5,7 +5,7 @@ export interface FrostOptions extends ColorAttachmentOptions {
   readonly mistOpacity?: number;
   /** Creation-only fraction of the shorter untransformed border-box side.
    * Either extent enables relative mode; the omitted partner is zero.
-   * Omit both for legacy appearance. Intensity scales premultiplied strength.
+   * Omit both for the Default appearance. Intensity scales premultiplied strength.
    */
   readonly coatingDepth?: number;
   /** Creation-only fraction of border-box height for mist and ice-grain travel.

@@ -169,7 +169,7 @@ export function attachWithAdapters(
     throw new Error(`invalid-${effect}-options`);
   }
   const clock = options.clock === undefined ? 'manual' : options.clock;
-  if (clock !== 'manual' && clock !== 'auto' && clock !== 'ambient') {
+  if (clock !== 'manual' && clock !== 'auto') {
     throw new Error('invalid-clock-mode');
   }
 
@@ -257,12 +257,13 @@ export function attachWithAdapters(
   }
   if (
     flameReach !== undefined &&
-    (typeof flameReach !== 'number' ||
-      !Number.isFinite(flameReach) ||
-      flameReach < 0 ||
-      (request.effect === 'fire' && request.options.flameHeight !== undefined))
+    (typeof flameReach !== 'number' || !Number.isFinite(flameReach) || flameReach < 0)
   ) {
     throw new Error('invalid-fire-parameter');
+  }
+  // JavaScript callers get an error instead of a silently different flame size.
+  if ('flameHeight' in options && options.flameHeight !== undefined) {
+    throw new Error(`invalid-${effect}-parameter`);
   }
   let energyExtent: number | undefined;
   if (request.effect === 'electricity') {
@@ -292,14 +293,7 @@ export function attachWithAdapters(
     energyExtent !== undefined ||
     materialExtent !== undefined ||
     patternGeometry !== undefined;
-  const flameHeight = finite(
-    request.effect === 'fire' ? (request.options.flameHeight ?? 24) : 24,
-    effect,
-  );
-  if (flameHeight < 8 || flameHeight > 64) {
-    throw new Error(`invalid-${effect}-parameter`);
-  }
-  const paddingCss = Math.max(32, Math.ceil(flameHeight * 1.25 + 2));
+  const paddingCss = 32;
   let time = finite(options.time === undefined ? 0 : options.time, effect);
   let intensity = Math.max(
     0,
@@ -727,7 +721,7 @@ export function attachWithAdapters(
       time += Math.max(0, timestamp - lastTimestamp) / 1000;
     }
     // Placement follows layout even when the caller owns or pauses time. Reuse
-    // the presented pixels unless controls or the ambient clock need new output.
+    // the presented pixels unless controls or the automatic clock need new output.
     queuePaint(dirty || running());
     lastTimestamp = running() ? timestamp : undefined;
     return (
@@ -900,7 +894,6 @@ export function attachWithAdapters(
         intensity,
         1 / frame.pixelToLocal.a,
         undefined,
-        flameHeight,
         effect,
         geometry,
         dripDensity,

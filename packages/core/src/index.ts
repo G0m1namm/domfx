@@ -68,8 +68,8 @@ export interface ManualEffectHandle {
   dispose(): void;
 }
 
-/** External time control, automatic animation, or its legacy automatic spelling. */
-export type ClockMode = 'manual' | 'auto' | 'ambient';
+/** External time control or automatic animation. */
+export type ClockMode = 'manual' | 'auto';
 
 export interface EffectHandle extends ManualEffectHandle {
   readonly clock: ClockMode;

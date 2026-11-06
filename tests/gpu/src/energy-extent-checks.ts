@@ -253,19 +253,19 @@ export async function verifyEnergyExtentGeometry(kind: 'electricity' | 'kinetic'
           try {
             const outputs: Uint8Array[] = [];
             for (const time of [1.5, 3, 1.5]) {
-              frame.render(time, 314, 1, dpr, undefined, 24, kind, geometry);
+              frame.render(time, 314, 1, dpr, undefined, kind, geometry);
               outputs.push(await frame.readFire());
             }
             let strengthError = 0;
             for (const strength of [0.25, 0.6, 0]) {
-              frame.render(1.5, 314, strength, dpr, undefined, 24, kind, geometry);
+              frame.render(1.5, 314, strength, dpr, undefined, kind, geometry);
               const pixels = await frame.readFire();
               strengthError = pixels.reduce(
                 (error, value, i) => Math.max(error, Math.abs(value - outputs[0][i] * strength)),
                 strengthError,
               );
             }
-            frame.render(1.5, 314, 1, dpr, undefined, 24, kind, {
+            frame.render(1.5, 314, 1, dpr, undefined, kind, {
               ...geometry,
               directionalReach: 0,
             });

@@ -184,7 +184,7 @@ async function measure() {
       };
       const firstUse = performance.now();
       for (const frame of retained) {
-        frame.render(2.4, 314, 0.7, devicePixelRatio, undefined, 24, effect);
+        frame.render(2.4, 314, 0.7, devicePixelRatio, undefined, effect);
       }
       const submitted = performance.now();
       await service.device.queue.onSubmittedWorkDone();

@@ -2,193 +2,193 @@ import { expect, test } from '@playwright/test';
 
 import type {} from '../src/manual.js';
 
-for (const clock of ['auto', 'ambient'] as const) {
-  test(`${clock} frames batch targets, keep external control, and pause/seek/resume`, async ({
-    page,
-  }) => {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => {
-      if (message.type() === 'error') {
-        errors.push(message.text());
-      }
-    });
-    await page.goto('/manual.html');
-    await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
-    const result = await page.evaluate(async (clock) => {
-      const { effect: manual, attach } = window.manual;
-      const host = document.querySelector<HTMLElement>('#manual-host');
-      const target = document.querySelector('#manual-target');
-      if (!host || !target) {
-        throw new Error('fixture');
-      }
-      const second = target.cloneNode(true);
-      host.append(second);
-      if (!(second instanceof Element)) {
-        throw new Error('fixture');
-      }
-      const ambient = attach(second, { host, clock, time: 4, seed: 71 });
-      ambient.pause(); // Pausing before readiness must prevent automatic time advancement.
-      await ambient.ready;
-      if (ambient.lifecycle !== 'active') {
-        throw new Error(ambient.reasonDetail ?? 'ambient unavailable');
-      }
-      // Cancel the native geometry frame before installing the controlled clock.
-      Object.defineProperty(document, 'hidden', { configurable: true, value: true });
-      document.dispatchEvent(new Event('visibilitychange'));
-      const layers = host.querySelectorAll('canvas');
-      const commits = new Map<HTMLCanvasElement | OffscreenCanvas, number>();
-      const getTexture = GPUCanvasContext.prototype.getCurrentTexture;
-      GPUCanvasContext.prototype.getCurrentTexture = function () {
-        commits.set(this.canvas, (commits.get(this.canvas) ?? 0) + 1);
-        return getTexture.call(this);
-      };
-      let captures = 0;
-      const decode = HTMLImageElement.prototype.decode;
-      HTMLImageElement.prototype.decode = function () {
-        captures += 1;
-        return decode.call(this);
-      };
-      const readPixels = CanvasRenderingContext2D.prototype.getImageData;
-      CanvasRenderingContext2D.prototype.getImageData = function (...args) {
-        captures += 1;
-        return Reflect.apply(readPixels, this, args);
-      };
-      let now = 1000;
-      let requests = 0;
-      const callbacks = new Map<number, FrameRequestCallback>();
-      window.requestAnimationFrame = (callback) => {
-        requests += 1;
-        callbacks.set(requests, callback);
-        return requests;
-      };
-      window.cancelAnimationFrame = (id) => {
-        callbacks.delete(id);
-      };
-      performance.now = () => now;
-      async function tick(milliseconds: number) {
-        now += milliseconds;
-        const batch = [...callbacks.values()];
-        callbacks.clear();
-        for (const callback of batch) {
-          callback(now);
-        }
-        // Placement finishes asynchronously before the frame can be observed.
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      }
-      Object.defineProperty(document, 'hidden', { configurable: true, value: false });
-      document.dispatchEvent(new Event('visibilitychange'));
-      const counts = () => [...layers].map((canvas) => commits.get(canvas) ?? 0);
-      manual.resume(); // Manual ownership cannot be converted to ambient by resume.
-      manual.time = 1;
-      manual.time = 2;
-      manual.intensity = 0.6;
-      ambient.time = 6;
-      ambient.intensity = 0.8;
-      const beforeFrame = { requests, counts: counts(), time: manual.time };
-      await tick(100);
-      const batch = { requests, counts: counts(), pending: callbacks.size };
-      const pausedImage = layers[1].toDataURL();
-      await tick(5000);
-      const pausedTime = ambient.time;
-      ambient.resume();
-      ambient.resume(); // Idempotent, and must not reset the clock origin.
-      await tick(250);
-      const advanced = {
-        time: ambient.time,
-        manualTime: manual.time,
-        changed: layers[1].toDataURL() !== pausedImage,
-        counts: counts(),
-      };
-      ambient.pause();
-      const pendingAfterPause = callbacks.size;
-      await tick(10_000);
-      const frozenTime = ambient.time;
-      ambient.time = 6;
-      await tick(16);
-      const sought = {
-        time: ambient.time,
-        paused: ambient.paused,
-        same: layers[1].toDataURL() === pausedImage,
-        pending: callbacks.size,
-      };
-      ambient.resume();
-      await tick(500);
-      const resumed = { time: ambient.time, seed: ambient.seed };
-      ambient.time = -2;
-      await tick(250);
-      const runningSeek = ambient.time;
-      // A pause must retain dirty writes, while keeping geometry tracking active.
-      ambient.intensity = 0;
-      ambient.pause();
-      await tick(16);
-      const pausedWrite = { pending: callbacks.size, counts: counts() };
-      ambient.resume();
-      for (let i = 0; i < 20; i += 1) {
-        await tick(16);
-      }
-      manual.time = 9;
-      ambient.dispose();
-      const pendingWithManual = callbacks.size;
-      await tick(16);
-      const afterAmbientDisposal = counts();
-      manual.time = 10;
-      manual.dispose();
-      const pendingAfterDisposal = callbacks.size;
-      ambient.resume();
-      ambient.time = 99;
-      manual.intensity = 0.1;
-      await tick(1000);
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      return {
-        modes: [manual.clock, ambient.clock],
-        manualPaused: manual.paused,
-        beforeFrame,
-        batch,
-        pausedTime,
-        advanced,
-        pendingAfterPause,
-        frozenTime,
-        sought,
-        resumed,
-        runningSeek,
-        pausedWrite,
-        pendingWithManual,
-        pendingAfterDisposal,
-        afterAmbientDisposal,
-        finalCounts: counts(),
-        finalPending: callbacks.size,
-        captures,
-        layers: host.querySelectorAll('canvas').length,
-      };
-    }, clock);
-    expect(result).toEqual({
-      modes: ['manual', clock],
-      manualPaused: true,
-      beforeFrame: { requests: 1, counts: [0, 0], time: 2 },
-      batch: { requests: 2, counts: [1, 1], pending: 1 },
-      pausedTime: 6,
-      advanced: { time: 6.25, manualTime: 2, changed: true, counts: [1, 2] },
-      pendingAfterPause: 1,
-      frozenTime: 6.25,
-      sought: { time: 6, paused: true, same: true, pending: 1 },
-      resumed: { time: 6.5, seed: 71 },
-      runningSeek: -1.75,
-      pausedWrite: { pending: 1, counts: [1, 6] },
-      pendingWithManual: 1,
-      pendingAfterDisposal: 0,
-      afterAmbientDisposal: [2, 26],
-      finalCounts: [2, 26],
-      finalPending: 0,
-      captures: 0,
-      layers: 0,
-    });
-    expect(errors).toEqual([]);
+const clock = 'auto' as const;
+
+test(`${clock} frames batch targets, keep external control, and pause/seek/resume`, async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      errors.push(message.text());
+    }
   });
-}
+  await page.goto('/manual.html');
+  await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
+  const result = await page.evaluate(async (clock) => {
+    const { effect: manual, attach } = window.manual;
+    const host = document.querySelector<HTMLElement>('#manual-host');
+    const target = document.querySelector('#manual-target');
+    if (!host || !target) {
+      throw new Error('fixture');
+    }
+    const second = target.cloneNode(true);
+    host.append(second);
+    if (!(second instanceof Element)) {
+      throw new Error('fixture');
+    }
+    const automatic = attach(second, { host, clock, time: 4, seed: 71 });
+    automatic.pause(); // Pausing before readiness must prevent automatic time advancement.
+    await automatic.ready;
+    if (automatic.lifecycle !== 'active') {
+      throw new Error(automatic.reasonDetail ?? 'automatic unavailable');
+    }
+    // Cancel the native geometry frame before installing the controlled clock.
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    const layers = host.querySelectorAll('canvas');
+    const commits = new Map<HTMLCanvasElement | OffscreenCanvas, number>();
+    const getTexture = GPUCanvasContext.prototype.getCurrentTexture;
+    GPUCanvasContext.prototype.getCurrentTexture = function () {
+      commits.set(this.canvas, (commits.get(this.canvas) ?? 0) + 1);
+      return getTexture.call(this);
+    };
+    let captures = 0;
+    const decode = HTMLImageElement.prototype.decode;
+    HTMLImageElement.prototype.decode = function () {
+      captures += 1;
+      return decode.call(this);
+    };
+    const readPixels = CanvasRenderingContext2D.prototype.getImageData;
+    CanvasRenderingContext2D.prototype.getImageData = function (...args) {
+      captures += 1;
+      return Reflect.apply(readPixels, this, args);
+    };
+    let now = 1000;
+    let requests = 0;
+    const callbacks = new Map<number, FrameRequestCallback>();
+    window.requestAnimationFrame = (callback) => {
+      requests += 1;
+      callbacks.set(requests, callback);
+      return requests;
+    };
+    window.cancelAnimationFrame = (id) => {
+      callbacks.delete(id);
+    };
+    performance.now = () => now;
+    async function tick(milliseconds: number) {
+      now += milliseconds;
+      const batch = [...callbacks.values()];
+      callbacks.clear();
+      for (const callback of batch) {
+        callback(now);
+      }
+      // Placement finishes asynchronously before the frame can be observed.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    }
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    document.dispatchEvent(new Event('visibilitychange'));
+    const counts = () => [...layers].map((canvas) => commits.get(canvas) ?? 0);
+    manual.resume(); // Manual ownership cannot be converted to automatic by resume.
+    manual.time = 1;
+    manual.time = 2;
+    manual.intensity = 0.6;
+    automatic.time = 6;
+    automatic.intensity = 0.8;
+    const beforeFrame = { requests, counts: counts(), time: manual.time };
+    await tick(100);
+    const batch = { requests, counts: counts(), pending: callbacks.size };
+    const pausedImage = layers[1].toDataURL();
+    await tick(5000);
+    const pausedTime = automatic.time;
+    automatic.resume();
+    automatic.resume(); // Idempotent, and must not reset the clock origin.
+    await tick(250);
+    const advanced = {
+      time: automatic.time,
+      manualTime: manual.time,
+      changed: layers[1].toDataURL() !== pausedImage,
+      counts: counts(),
+    };
+    automatic.pause();
+    const pendingAfterPause = callbacks.size;
+    await tick(10_000);
+    const frozenTime = automatic.time;
+    automatic.time = 6;
+    await tick(16);
+    const sought = {
+      time: automatic.time,
+      paused: automatic.paused,
+      same: layers[1].toDataURL() === pausedImage,
+      pending: callbacks.size,
+    };
+    automatic.resume();
+    await tick(500);
+    const resumed = { time: automatic.time, seed: automatic.seed };
+    automatic.time = -2;
+    await tick(250);
+    const runningSeek = automatic.time;
+    // A pause must retain dirty writes, while keeping geometry tracking active.
+    automatic.intensity = 0;
+    automatic.pause();
+    await tick(16);
+    const pausedWrite = { pending: callbacks.size, counts: counts() };
+    automatic.resume();
+    for (let i = 0; i < 20; i += 1) {
+      await tick(16);
+    }
+    manual.time = 9;
+    automatic.dispose();
+    const pendingWithManual = callbacks.size;
+    await tick(16);
+    const afterAmbientDisposal = counts();
+    manual.time = 10;
+    manual.dispose();
+    const pendingAfterDisposal = callbacks.size;
+    automatic.resume();
+    automatic.time = 99;
+    manual.intensity = 0.1;
+    await tick(1000);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    return {
+      modes: [manual.clock, automatic.clock],
+      manualPaused: manual.paused,
+      beforeFrame,
+      batch,
+      pausedTime,
+      advanced,
+      pendingAfterPause,
+      frozenTime,
+      sought,
+      resumed,
+      runningSeek,
+      pausedWrite,
+      pendingWithManual,
+      pendingAfterDisposal,
+      afterAmbientDisposal,
+      finalCounts: counts(),
+      finalPending: callbacks.size,
+      captures,
+      layers: host.querySelectorAll('canvas').length,
+    };
+  }, clock);
+  expect(result).toEqual({
+    modes: ['manual', clock],
+    manualPaused: true,
+    beforeFrame: { requests: 1, counts: [0, 0], time: 2 },
+    batch: { requests: 2, counts: [1, 1], pending: 1 },
+    pausedTime: 6,
+    advanced: { time: 6.25, manualTime: 2, changed: true, counts: [1, 2] },
+    pendingAfterPause: 1,
+    frozenTime: 6.25,
+    sought: { time: 6, paused: true, same: true, pending: 1 },
+    resumed: { time: 6.5, seed: 71 },
+    runningSeek: -1.75,
+    pausedWrite: { pending: 1, counts: [1, 6] },
+    pendingWithManual: 1,
+    pendingAfterDisposal: 0,
+    afterAmbientDisposal: [2, 26],
+    finalCounts: [2, 26],
+    finalPending: 0,
+    captures: 0,
+    layers: 0,
+  });
+  expect(errors).toEqual([]);
+});
 
 for (const ending of ['stale', 'renderer-failed'] as const) {
-  test(`ambient starts on readiness, suspends without catch-up, and stops on ${ending}`, async ({
+  test(`automatic starts on readiness, suspends without catch-up, and stops on ${ending}`, async ({
     page,
   }) => {
     await page.goto('/manual.html');
@@ -201,12 +201,12 @@ for (const ending of ['stale', 'renderer-failed'] as const) {
       if (!host || !target) {
         throw new Error('fixture');
       }
-      const ambient = attach(target, { host, clock: 'ambient', time: 1 });
-      await ambient.ready;
+      const automatic = attach(target, { host, clock: 'auto', time: 1 });
+      await automatic.ready;
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      const started = ambient.time > 1 && !ambient.paused;
-      ambient.pause();
+      const started = automatic.time > 1 && !automatic.paused;
+      automatic.pause();
       Object.defineProperty(document, 'hidden', { configurable: true, value: true });
       document.dispatchEvent(new Event('visibilitychange'));
       let now = 1000;
@@ -233,24 +233,24 @@ for (const ending of ['stale', 'renderer-failed'] as const) {
       Object.defineProperty(document, 'hidden', { configurable: true, value: false });
       document.dispatchEvent(new Event('visibilitychange'));
       await tick(0); // Restore visibility before establishing the resumed clock origin.
-      ambient.time = 3;
-      ambient.resume();
+      automatic.time = 3;
+      automatic.resume();
       await tick(250);
       Object.defineProperty(document, 'hidden', { configurable: true, value: true });
       document.dispatchEvent(new Event('visibilitychange'));
       const hidden = {
-        lifecycle: ambient.lifecycle,
+        lifecycle: automatic.lifecycle,
         pending: callbacks.size,
         display: host.querySelector('canvas')?.style.display,
-        paused: ambient.paused,
+        paused: automatic.paused,
       };
       await tick(10_000);
       Object.defineProperty(document, 'hidden', { configurable: true, value: false });
       document.dispatchEvent(new Event('visibilitychange'));
       await tick(16);
-      const restoredTime = ambient.time;
+      const restoredTime = automatic.time;
       await tick(250);
-      const advancingTime = ambient.time;
+      const advancingTime = automatic.time;
       if (failure === 'stale') {
         target.setAttribute('data-painted-change', 'true');
         await Promise.resolve();
@@ -261,16 +261,16 @@ for (const ending of ['stale', 'renderer-failed'] as const) {
         await tick(16);
       }
       const stopped = {
-        lifecycle: ambient.lifecycle,
-        raster: ambient.raster,
-        reason: ambient.reason,
+        lifecycle: automatic.lifecycle,
+        raster: automatic.raster,
+        reason: automatic.reason,
         pending: callbacks.size,
       };
-      ambient.time = 9;
-      ambient.pause();
-      ambient.resume();
+      automatic.time = 9;
+      automatic.pause();
+      automatic.resume();
       const pendingAfterWrites = callbacks.size;
-      ambient.dispose();
+      automatic.dispose();
       return { started, hidden, restoredTime, advancingTime, stopped, pendingAfterWrites };
     }, ending);
     expect(result).toEqual({
@@ -298,7 +298,7 @@ for (const mode of ['manual', 'paused', 'running'] as const) {
     const result = await page.evaluate(async (mode) => {
       window.manual.effect.dispose();
       const fixture = await window.manual.createPlacementFixture(
-        mode === 'manual' ? 'manual' : 'ambient',
+        mode === 'manual' ? 'manual' : 'auto',
       );
       const effect = fixture.effect;
       const target = document.querySelector<HTMLElement>('#placement-target')!;

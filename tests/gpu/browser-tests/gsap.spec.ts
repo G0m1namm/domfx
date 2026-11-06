@@ -261,7 +261,7 @@ test('host seek/reverse reproduces GPU output through one scheduled commit witho
   });
 });
 
-test('binding snapshots starts, rejects ambient/invalid inputs, and cleans up only its child', async ({
+test('binding snapshots starts, rejects automatic/invalid inputs, and cleans up only its child', async ({
   page,
 }) => {
   await openConsumer(page);
@@ -309,16 +309,16 @@ test('binding snapshots starts, rejects ambient/invalid inputs, and cleans up on
       throw new Error('fixture');
     }
     host.append(target);
-    const ambient = attach(target, { host, clock: 'ambient' });
-    ambient.pause();
-    let ambientError = '';
+    const automatic = attach(target, { host, clock: 'auto' });
+    automatic.pause();
+    let automaticError = '';
     try {
-      bind(ambient, timeline, { time: 4, intensity: 1, duration: 4 });
+      bind(automatic, timeline, { time: 4, intensity: 1, duration: 4 });
     } catch (error) {
-      ambientError = String(error);
+      automaticError = String(error);
     }
-    ambient.dispose();
-    await ambient.ready;
+    automatic.dispose();
+    await automatic.ready;
     let invalidRejected = 0;
     for (const options of [
       { time: NaN, intensity: 1, duration: 1 },
@@ -354,7 +354,7 @@ test('binding snapshots starts, rejects ambient/invalid inputs, and cleans up on
       endpoint,
       disposed,
       afterRevert,
-      ambientError,
+      automaticError,
       invalidRejected,
       afterRejection,
       zeroDuration,
@@ -367,7 +367,7 @@ test('binding snapshots starts, rejects ambient/invalid inputs, and cleans up on
     endpoint: { time: 5.5, intensity: 0 },
     disposed: { time: 5.5, intensity: 0, sibling: 7, children: 1, lifecycle: 'active' },
     afterRevert: { children: 1, sibling: 8 },
-    ambientError: 'Error: GSAP binding requires a manual attachment',
+    automaticError: 'Error: GSAP binding requires a manual attachment',
     invalidRejected: 5,
     afterRejection: 1,
     zeroDuration: { time: -2, intensity: 1 },

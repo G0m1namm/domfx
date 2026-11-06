@@ -42,7 +42,7 @@ async function patternStrength() {
           inwardDepth: 12,
         };
         const sample = async (intensity: number, zeroExtent = false, time = 1.5) => {
-          prepared.render(time, 314, intensity, 1, undefined, 24, effect, {
+          prepared.render(time, 314, intensity, 1, undefined, effect, {
             ...geometry,
             ...(zeroExtent ? { directionalReach: 0, inwardDepth: 0 } : {}),
           });
@@ -96,11 +96,11 @@ async function patternSupportChecks(dpr: number) {
       const results = [];
       for (const effect of patterns) {
         const geometry = { directionalReach: 80, inwardDepth: 12 };
-        normal.render(1.5, 314, 1, dpr, undefined, 24, effect, {
+        normal.render(1.5, 314, 1, dpr, undefined, effect, {
           ...geometry,
           pixelToLocal: frame.pixelToLocal,
         });
-        expanded.render(1.5, 314, 1, dpr, undefined, 24, effect, {
+        expanded.render(1.5, 314, 1, dpr, undefined, effect, {
           ...geometry,
           pixelToLocal: larger.pixelToLocal,
         });

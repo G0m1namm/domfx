@@ -198,7 +198,7 @@ export async function verifyFireReachGeometry(dpr: number) {
           const capture = await captureElement(target, { dpr, paddingCss: padding + extra });
           const frame = await gpu.prepare(capture);
           try {
-            frame.render(1.5, 314, 1, dpr, undefined, 24, 'fire', {
+            frame.render(1.5, 314, 1, dpr, undefined, 'fire', {
               pixelToLocal: capture.pixelToLocal,
               directionalReach: reach,
               inwardDepth: 3,

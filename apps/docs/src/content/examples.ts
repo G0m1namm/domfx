@@ -49,7 +49,7 @@ const setup = async () => {
 
   fire = attachFire(target, {
     host, clock: 'auto', motion: 'respect',
-    intensity: 0.8, flameHeight: 32, seed: 314,
+    intensity: 0.8, seed: 314,
   });
   await fire.ready;
   if (!disposed && fire.lifecycle !== 'active') {
@@ -86,7 +86,7 @@ const setup = async () => {
 
   fire = attachFire(target, {
     host, clock: 'manual', motion: 'respect',
-    time: 0, intensity: 0.8, flameHeight: 32, seed: 314,
+    time: 0, intensity: 0.8, seed: 314,
   });
   unsubscribe = fire.onDispose(() => timeline.revert());
   // ${isEs ? 'El objetivo y el efecto comparten la opacidad del contenedor.' : 'The target and effect share the container opacity.'}

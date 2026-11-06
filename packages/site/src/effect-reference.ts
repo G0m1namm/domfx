@@ -11,12 +11,12 @@ export const effectReference = {
     description:
       'A white-blue ice coating with pale smoke and small frost particles. Writable mistOpacity changes smoke opacity without changing the coating or grains.',
     intensity:
-      'Legacy mode extends frost inward and strengthens mist and particles. With coatingDepth or mistReach, intensity scales strength only; omitted extents are zero.',
+      'In the Default appearance, extends frost inward and strengthens mist and particles. With coatingDepth or mistReach, intensity scales strength only; omitted extents are zero.',
   },
   fire: {
     description: 'Warm flames and sparks rise from the visible shape.',
     intensity:
-      'With flameReach, scales visual strength without changing reach or fine detail. Omitted flameReach preserves legacy intensity and flameHeight behavior.',
+      'With flameReach, scales visual strength without changing reach or fine detail. Omitted flameReach keeps the Default appearance, where intensity also changes flame reach.',
   },
   dither: {
     description: 'Ordered dots coat the edge and form rising wisps.',
@@ -26,19 +26,19 @@ export const effectReference = {
   slime: {
     description: 'A green coating with drips that stretch and fall.',
     intensity:
-      'Legacy mode changes coating and drip geometry. With coatingDepth or dripReach, intensity scales strength only; omitted extents are zero.',
+      'In the Default appearance, changes coating and drip geometry. With coatingDepth or dripReach, intensity scales strength only; omitted extents are zero.',
   },
   kinetic: {
     description:
       'A bright pulse travels around the shape with a violet wake and geometric fragments.',
     intensity:
-      'With fragmentTravel, scales premultiplied strength while pulse/wake coverage, fragment travel and fine fragment size stay fixed. Omission retains legacy pulse-width and fragment behavior.',
+      'With fragmentTravel, scales premultiplied strength while pulse/wake coverage, fragment travel and fine fragment size stay fixed. Omission keeps the Default appearance of pulse width and fragments.',
   },
   'burned-paper': {
     description:
       'An uneven charred rim with brown scorching and sparse glowing seams. Writable emberGlow changes the glow without removing char or scorching.',
     intensity:
-      'Legacy mode spreads scorching inward and strengthens ash. With scorchDepth or ashReach, intensity scales strength only; omitted extents are zero. The original content remains intact.',
+      'In the Default appearance, spreads scorching inward and strengthens ash. With scorchDepth or ashReach, intensity scales strength only; omitted extents are zero. The original content remains intact.',
   },
   halftone: {
     description: 'Halftone dots follow the edge.',

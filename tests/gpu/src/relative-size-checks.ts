@@ -133,7 +133,7 @@ export async function verifyRelativeSizes(kind: 'text' | 'svg' | 'image') {
             const p90s = [];
             let detailSamples = 0;
             for (const [index, time] of times.entries()) {
-              prepared.render(time, 314, 1, 1, undefined, 24, effect, {
+              prepared.render(time, 314, 1, 1, undefined, effect, {
                 directionalReach: reach,
                 inwardDepth: depth,
                 pixelToLocal: capture.pixelToLocal,
@@ -191,7 +191,7 @@ export async function verifyRelativeSizes(kind: 'text' | 'svg' | 'image') {
               // change. Interior grain/highlight pixels should retain their
               // actual values/phase, rather than comparing a changing cloud.
               const detailDepth = Math.min(8, availableDepth * 0.8);
-              prepared.render(1.5, 314, 1, 1, undefined, 24, effect, {
+              prepared.render(1.5, 314, 1, 1, undefined, effect, {
                 directionalReach: reach,
                 inwardDepth: detailDepth,
                 pixelToLocal: capture.pixelToLocal,

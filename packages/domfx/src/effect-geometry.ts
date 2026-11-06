@@ -58,7 +58,7 @@ export function assertEffectPaintMargin(frame: CaptureFrame, reach: number): voi
 /** Binding 2: two vec4f, offsets 0/16, alignment 16, size/binding size 32.
  * map=(a,d,e,f); extent=(directionalReach,inwardDepth,Slime drip density,0).
  * Lengths are CSS px; density is a dimensionless fraction at byte offset 24.
- * Kept separate from legacy binding 1 (time, seed, intensity, artistic scale).
+ * Kept separate from binding 1 (time, seed, intensity, pixels per CSS px).
  */
 export const effectGeometryBindings = `
 struct EffectGeometry {

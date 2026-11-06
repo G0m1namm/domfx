@@ -70,7 +70,7 @@ async function prepare() {
   if (effects) {
     for (const target of elements) {
       const start = performance.now();
-      const handle = attachFire(target, { host, clock: 'ambient', seed: 7, time: 0, intensity: 1 });
+      const handle = attachFire(target, { host, clock: 'auto', seed: 7, time: 0, intensity: 1 });
       handles.push(handle);
       await handle.ready;
       initializationMs.push(performance.now() - start);

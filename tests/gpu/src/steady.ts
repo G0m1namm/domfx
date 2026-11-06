@@ -161,7 +161,6 @@ async function measure() {
                 endOfPassWriteIndex: offset + i * 2 + 1,
               }
             : undefined,
-          24,
           effect,
         );
         frame.present(contexts[i]!.getCurrentTexture());

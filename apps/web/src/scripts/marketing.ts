@@ -242,7 +242,7 @@ function initializeMarketing() {
     });
     cardSlots.set(target, slot);
     return slot.show(target, effect, () => ({
-      clock: 'ambient',
+      clock: 'auto',
       intensity: 0.7,
       time: 2.4,
       seed: 314,

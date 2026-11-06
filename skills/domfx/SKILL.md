@@ -32,22 +32,22 @@ Read that effect's public options instead of deriving an export name from its la
 
 When installed declarations expose relative options, choose the effect-owned fields:
 
-| Effect                          | Creation options and reference dimension                                    |
-| ------------------------------- | --------------------------------------------------------------------------- |
-| Fire                            | `flameReach`: physical height; mutually exclusive with legacy `flameHeight` |
-| Frost                           | `coatingDepth`: shorter side; `mistReach`: height                           |
-| Slime                           | `coatingDepth`: shorter side; `dripReach`: height                           |
-| Burned paper                    | `scorchDepth`: shorter side; `ashReach`: height                             |
-| Electricity                     | `contourSpread`: shorter side                                               |
-| Kinetic bloom                   | `fragmentTravel`: shorter side                                              |
-| Dither and shared-flow patterns | `plumeReach`: height; `bandDepth`: shorter side                             |
-| Contour echoes                  | `echoReach`: shorter side                                                   |
-| Brush fringe                    | `fringeReach`: shorter side                                                 |
+| Effect                          | Creation options and reference dimension          |
+| ------------------------------- | ------------------------------------------------- |
+| Fire                            | `flameReach`: physical height                     |
+| Frost                           | `coatingDepth`: shorter side; `mistReach`: height |
+| Slime                           | `coatingDepth`: shorter side; `dripReach`: height |
+| Burned paper                    | `scorchDepth`: shorter side; `ashReach`: height   |
+| Electricity                     | `contourSpread`: shorter side                     |
+| Kinetic bloom                   | `fragmentTravel`: shorter side                    |
+| Dither and shared-flow patterns | `plumeReach`: height; `bandDepth`: shorter side   |
+| Contour echoes                  | `echoReach`: shorter side                         |
+| Brush fringe                    | `fringeReach`: shorter side                       |
 
 Slime also accepts creation-only `dripDensity` (0–1, default 0.56): a normalized
 density, independent of size, travel and timing. Zero disables drips; higher values
 add more locations, including extra emission locations above the default. It works
-in legacy and relative modes and does not opt into relative geometry by itself.
+in the Default appearance and relative modes and does not opt into relative geometry by itself.
 
 When installed declarations expose `ColorAttachmentOptions`, every effect except
 Burned paper accepts one optional main decorative `color`. Use `#RGB`, `#RRGGBB`,
@@ -74,7 +74,7 @@ as read-only.
 
 Relative extents are finite nonnegative numeric fractions of the untransformed target border
 box, excluding capture padding; transparent image margins count. `0.1` means 10%,
-not 10 pixels. Resolve again after resize. All omitted retains legacy behavior;
+not 10 pixels. Resolve again after resize. All omitted keeps the Default appearance;
 with paired options, supplying either enables relative mode and the missing partner
 is zero. All-zero extents produce transparent output.
 
@@ -88,7 +88,7 @@ Relative capture requires contained descendant boxes and paint inside the border
 box plus 2 CSS pixels, without shadows, filters, outlines or generated pseudo-elements.
 Existing pixel/memory/device limits still apply; oversized support is unavailable,
 never silently clipped or downsampled. Use the matching per-effect reference for
-exact support limits. If the installed release lacks these fields, use its legacy
+exact support limits. If the installed release lacks these fields, use its earlier
 options and explain the version requirement instead of claiming npm support.
 
 ## Attach and own the lifetime

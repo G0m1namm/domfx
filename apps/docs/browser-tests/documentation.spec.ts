@@ -276,7 +276,7 @@ test('@smoke all catalog references retain their public options and usable sourc
       ).toContainText(`): ${effectHandleType(effect.exportName)}`);
       await expect(
         page.getByRole('table', { name: 'Shared creation options', exact: true }),
-      ).toContainText("'manual' | 'auto' | 'ambient'");
+      ).toContainText("'manual' | 'auto'");
       await expect(
         page.getByRole('table', { name: 'Writable effect controls', exact: true }),
       ).toContainText('intensity');

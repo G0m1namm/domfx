@@ -57,7 +57,7 @@ pipelines; formats, allocation accounting and alpha threshold remain unchanged.
 Jump flooding remains approximate; the verified fixtures do not prove an error bound
 for arbitrary paint. No dependency version upgrade is involved.
 
-Prepared frames account for 36 bytes per pixel of textures, a 16-byte legacy parameter uniform, a 32-byte local geometry uniform,
+Prepared frames account for 36 bytes per pixel of textures, a 16-byte parameter uniform, a 32-byte local geometry uniform,
 and the observed 4-byte JFA offset buffer (`i32`, TypeGPU 0.12.4). Destroying a frame
 releases all of these allocations; zero offset bytes remain per destroyed frame,
 so the bound does not grow with refresh count. Destroying the service releases its
@@ -202,8 +202,7 @@ For caller-owned timelines, use native GSAP property tweens. The optional
 The browser package itself does not depend on GSAP.
 
 All 21 root effect functions share `AttachmentOptions` and return `EffectHandle`.
-Fire is the worked example below; switch the function and omit `flameHeight` to
-use another effect. The root export provides an experimental, one-target API:
+Fire is the worked example below; switch the function to use another effect. The root export provides an experimental, one-target API:
 
 ```ts
 import { attachFire } from '@domfx/browser';
@@ -234,25 +233,22 @@ prepared raster without capture. Writes after disposal update readable controls 
 cannot render or recreate resources.
 
 Fire uses soft, curling warm flames with a pale hot base and sparse rising embers.
-No texture assets or extra setup are required. `flameHeight` sets the flame size in
-target-local CSS pixels, from `8` to `64` (default `24`). Set it at attachment time;
-the library reserves capture padding for both flames and embers automatically.
-The default keeps 32 CSS pixels of padding. Larger sizes increase capture dimensions
-and count toward the existing capture and aggregate memory budgets.
+No texture assets or extra setup are required. The library reserves capture padding
+for both flames and embers automatically. Omitting `flameReach` keeps the Default
+appearance, with 32 CSS pixels of padding.
 
 ```ts
-const effect = attachFire(title, { host, clock: 'auto', flameHeight: 48 });
+const effect = attachFire(title, { host, clock: 'auto' });
 ```
 
 Without `flameReach`, intensity controls flame reach and opacity together. With
 `flameReach`, intensity changes strength while reach stays fixed. Use manual time or a GSAP binding
 to change playback speed; seed varies the pattern. Identical time, seed, intensity and
-flame height reproduce the same frame, including embers. The palette remains warm.
+flame reach reproduce the same frame, including embers. The palette remains warm.
 
 `clock` defaults to `'manual'`; the handle exposes its immutable mode. Manual time
 never advances automatically, including after `resume()`. Choose `'auto'` to advance
-time in seconds with the document's animation frames after initialization. The older
-spelling `'ambient'` remains supported; `effect.clock` preserves the spelling supplied:
+time in seconds with the document's animation frames after initialization:
 
 ```ts
 const effect = attachFire(target, { host, clock: 'auto', seed: 314 });
@@ -588,9 +584,8 @@ height, including transparent margins: `0.1` resolves to 10 CSS px at 100 px hei
 and 40 CSS px at 400 px height. It bounds positive signed distance and upward travel,
 not a guaranteed visible tip. Fine detail stays in target-local CSS pixels. In this
 mode intensity scales premultiplied output; it changes strength independently of
-geometry/detail. Zero reach or intensity is transparent. Omission preserves the
-legacy defaults, artistic `flameHeight` scale (8–64, default 24), and intensity behavior.
-Combining both options throws synchronously before ownership is acquired.
+geometry/detail. Zero reach or intensity is transparent. Omission keeps the
+Default appearance, where intensity also changes flame reach.
 
 Reach is creation-only, with no writable setter. It resolves from each captured local
 border box after resize. DPR/fractional raster mapping apply once; supported positive
@@ -628,7 +623,7 @@ explicit refresh and synthetic listener/disposal checks are separate evidence.
 ## Available effect functions
 
 Import any of these from `@domfx/browser`. All accept the shared options.
-Fire adds mutually exclusive creation-only `flameHeight` and `flameReach` options;
+Fire adds a creation-only `flameReach` option;
 the other effects add their own relative extents below. Time and intensity remain
 the shared writable controls. Every effect except Burned paper also accepts one
 optional main color; Fire can use `rootColor` and `tipColor` instead. Other gradient
@@ -675,8 +670,8 @@ fragment-center travel by the resolved travel; its fixed sideways drift (at most
 support. Pulse/wake widths, lifetimes, emission grid and fine fragment size remain
 fixed. These are permitted envelopes, not promises that every frame fills them.
 Both modes multiply final premultiplied output by intensity. Zero extent or zero
-intensity is transparent; omitting the option retains byte-exact legacy rendering.
-Electricity's legacy intensity already changes brightness without moving strands.
+intensity is transparent; omitting the option keeps the byte-exact Default appearance.
+In the Default appearance, Electricity's intensity already changes brightness without moving strands.
 
 Both relative modes use the bounded source-paint policy described for relative
 Fire: contained descendant boxes, no shadows/filters/outlines/generated pseudos,
@@ -709,8 +704,8 @@ const paper = attachBurnedPaper(target, { host, scorchDepth: 0.15, ashReach: 0.1
 Slime also accepts creation-only `dripDensity`, a finite normalized value from 0 to 1
 (default `0.56`). Higher values add more drip locations; zero disables drips. Values
 above the default add extra emission locations. It is not an exact drop count or
-emission rate. Drop size, travel and timing stay unchanged. It works with legacy
-and relative extents, and does not enable relative mode by itself.
+emission rate. Drop size, travel and timing stay unchanged. It works with the
+Default appearance and relative extents, and does not enable relative mode by itself.
 
 ### Selected artistic controls
 
@@ -811,7 +806,7 @@ uses `BrushFringeOptions.fringeReach` for its shorter-side sampling envelope;
 fixed bristles can extend up to 5.1 CSS pixels beyond it. These two effects reject
 the shared-flow options.
 
-Omitting every extent option retains legacy appearance and intensity behavior.
+Omitting every extent option keeps the Default appearance, including its intensity behavior.
 Supplying a shared-flow option enters relative mode with an omitted partner equal
 to zero; each zero disables that density component. All-zero extents are
 transparent. In relative mode, intensity scales final premultiplied output;

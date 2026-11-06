@@ -49,7 +49,7 @@ para ver el nombre de cada importación.
 
 La [guía de uso independiente](/docs/es/standalone#attach-fire) usa Fire en su
 ejemplo interactivo. Sus controles de intensidad y reproducción se aplican a todos
-los efectos. `flameHeight` es exclusivo de Fire; omítelo al usar otra función.
+los efectos.
 
 <span id="keep-the-original-usable"></span>
 

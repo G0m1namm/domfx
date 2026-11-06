@@ -315,7 +315,7 @@ export async function qualifyRelativeCapture(kind: string, dpr: number) {
       for (const effect of effects) {
         const geometry = { directionalReach: 40, inwardDepth: effect === 'fire' ? 3 : 10 };
         for (const { frame, prepared } of [normal, larger]) {
-          prepared.render(1.5, 314, 1, dpr, undefined, 24, effect, {
+          prepared.render(1.5, 314, 1, dpr, undefined, effect, {
             ...geometry,
             pixelToLocal: frame.pixelToLocal,
           });

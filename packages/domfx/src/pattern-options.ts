@@ -17,7 +17,7 @@ export type PatternEffect =
   | 'brush-fringe';
 
 /** Creation-only target-relative extents for the shared rising-flow patterns.
- * Omit both to retain legacy appearance. In relative mode, an omitted member is zero.
+ * Omit both for the Default appearance. In relative mode, an omitted member is zero.
  */
 export interface PatternOptions extends ColorAttachmentOptions {
   /** Finite nonnegative fraction of untransformed target border-box height. */

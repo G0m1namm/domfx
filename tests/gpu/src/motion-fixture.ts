@@ -52,7 +52,7 @@ export function createMotionFixture(
   }
   const effect = attachFireWithAdapters(
     target,
-    { host, motion, clock: 'ambient', time: 7, seed: 314, ...options },
+    { host, motion, clock: 'auto', time: 7, seed: 314, ...options },
     {
       capture: async () => {
         stats.captures += 1;

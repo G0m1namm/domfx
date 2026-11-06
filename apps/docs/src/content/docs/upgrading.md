@@ -32,10 +32,22 @@ Keep the previous lockfile for rollback. If an update fails, report the package
 versions, environment, reason code and diagnostic message with a small reproduction.
 See [troubleshooting](/docs/troubleshooting).
 
+## Removed options
+
+The next release removes two options. Both now throw at creation in JavaScript and
+fail type checking in TypeScript.
+
+- **`clock: 'ambient'`:** use `clock: 'auto'`, which has identical timing. The old
+  value throws `invalid-clock-mode`.
+- **Fire's `flameHeight`:** omit it for the Default appearance, which is the old
+  default of `24`, or use `flameReach` to size flames relative to the target. Custom
+  pixel-sized flames are no longer possible. The old option throws
+  `invalid-fire-parameter`.
+
 ## Relative effect sizing
 
-Relative sizing is available in `0.1.0-alpha.2`. Choose the fields in your [effect's reference](/docs/api/effects). Omitting them preserves the previous
-appearance. For Fire, replace `flameHeight` with `flameReach`; never supply both.
+Relative sizing is available in `0.1.0-alpha.2`. Choose the fields in your [effect's reference](/docs/api/effects). Omitting them keeps the
+Default appearance.
 For paired options, an omitted partner is zero.
 
 In relative mode, intensity changes strength without changing the configured
@@ -48,9 +60,8 @@ enable relative sizing by itself. See the [Slime options](/docs/api/effects/slim
 
 ## Animation and binding names
 
-Prefer `clock: 'auto'` for automatic animation. Existing `clock: 'ambient'`
-continues to work with identical timing; the read-only `clock` reports the spelling
-supplied. The default remains `'manual'` for external control.
+Use `clock: 'auto'` for automatic animation. The default remains `'manual'` for
+external control.
 
 `bindEffect` and `bindEffectAsync` are compatible aliases of the Fire-named
 bindings, including their types. Existing calls need no migration. Both names

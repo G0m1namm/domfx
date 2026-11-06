@@ -27,7 +27,7 @@ async function renderEffects(targetId: string, dpr: number) {
           [1.1, 1],
           [2.4, 0.7],
         ]) {
-          prepared.render(time, 314, intensity, dpr, undefined, 24, effect);
+          prepared.render(time, 314, intensity, dpr, undefined, effect);
           samples.push({
             effect,
             time,

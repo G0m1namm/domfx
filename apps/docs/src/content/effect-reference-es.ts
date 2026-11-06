@@ -10,12 +10,12 @@ export const effectReferenceEs = {
     description:
       'Una capa de hielo blanco azulado con humo tenue y pequeñas partículas de escarcha. mistOpacity, modificable, cambia la opacidad de la niebla sin alterar la capa ni los granos.',
     intensity:
-      'El modo anterior extiende la escarcha hacia dentro y refuerza la niebla y las partículas. Con coatingDepth o mistReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero.',
+      'En la apariencia predeterminada, extiende la escarcha hacia dentro y refuerza la niebla y las partículas. Con coatingDepth o mistReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero.',
   },
   fire: {
     description: 'Llamas cálidas y chispas se elevan desde la forma visible.',
     intensity:
-      'Con flameReach, cambia la fuerza visual sin cambiar el alcance ni el detalle fino. Omitir flameReach conserva la intensidad y flameHeight anteriores.',
+      'Con flameReach, cambia la fuerza visual sin cambiar el alcance ni el detalle fino. Omitir flameReach conserva la apariencia predeterminada, donde la intensidad también cambia el alcance de la llama.',
   },
   dither: {
     description: 'Puntos ordenados cubren el borde y forman estelas ascendentes.',
@@ -25,19 +25,19 @@ export const effectReferenceEs = {
   slime: {
     description: 'Una capa verde con gotas que se estiran y caen.',
     intensity:
-      'El modo anterior cambia la geometría de la capa y las gotas. Con coatingDepth o dripReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero.',
+      'En la apariencia predeterminada, cambia la geometría de la capa y las gotas. Con coatingDepth o dripReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero.',
   },
   kinetic: {
     description:
       'Un pulso brillante recorre la forma con una estela violeta y fragmentos geométricos.',
     intensity:
-      'Con fragmentTravel, escala la fuerza premultiplicada y mantiene la cobertura del pulso y la estela, el recorrido y el tamaño fino de los fragmentos. Omitirlo conserva el comportamiento anterior del pulso y los fragmentos.',
+      'Con fragmentTravel, escala la fuerza premultiplicada y mantiene la cobertura del pulso y la estela, el recorrido y el tamaño fino de los fragmentos. Omitirlo conserva la apariencia predeterminada del pulso y los fragmentos.',
   },
   'burned-paper': {
     description:
       'Un borde carbonizado irregular con zonas quemadas marrones y algunas grietas luminosas. emberGlow, modificable, cambia el brillo sin eliminar el carbón ni la quemadura.',
     intensity:
-      'El modo anterior extiende la quemadura hacia dentro y refuerza la ceniza. Con scorchDepth o ashReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero. El contenido original permanece intacto.',
+      'En la apariencia predeterminada, extiende la quemadura hacia dentro y refuerza la ceniza. Con scorchDepth o ashReach, la intensidad solo cambia la fuerza visual; el alcance omitido vale cero. El contenido original permanece intacto.',
   },
   halftone: {
     description: 'Puntos de semitono siguen el borde visible.',

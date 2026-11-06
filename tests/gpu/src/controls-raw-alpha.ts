@@ -90,7 +90,6 @@ export async function qualifyRawAlphaControls(mode: ControlMode, dpr: number) {
           1,
           dpr,
           undefined,
-          24,
           selection.effect,
           mode === 'relative' ? geometry : undefined,
           0.56,
@@ -182,7 +181,7 @@ export async function qualifyRawEffectColors(dpr: number) {
   try {
     prepared = await gpu.prepare(frame);
     for (const effect of colorEffects) {
-      prepared.render(1.5, 314, 1, dpr, undefined, 24, effect, undefined, 0.56, {
+      prepared.render(1.5, 314, 1, dpr, undefined, effect, undefined, 0.56, {
         mistOpacity: 1,
         emberDensity: 1,
         emberGlow: 1,
@@ -191,7 +190,7 @@ export async function qualifyRawEffectColors(dpr: number) {
       });
       const authored = await prepared.readFire();
       for (const color of selectedColors) {
-        prepared.render(1.5, 314, 1, dpr, undefined, 24, effect, undefined, 0.56, {
+        prepared.render(1.5, 314, 1, dpr, undefined, effect, undefined, 0.56, {
           mistOpacity: 1,
           emberDensity: 1,
           emberGlow: 1,
@@ -315,7 +314,6 @@ export async function qualifyRawFireRamp(mode: ControlMode, dpr: number) {
         1,
         dpr,
         undefined,
-        24,
         'fire',
         mode === 'relative' ? geometry : undefined,
         0.56,

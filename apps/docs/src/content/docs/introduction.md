@@ -39,8 +39,7 @@ effect instance (`EffectHandle`) with time, intensity, refresh and disposal cont
 [available attachments](/docs/api#available-effects) for each import name.
 
 The [Standalone guide](/docs/standalone#attach-fire) uses Fire for its interactive
-example. Its intensity and playback controls apply to every effect. `flameHeight`
-is specific to Fire; omit it when using another attachment function.
+example. Its intensity and playback controls apply to every effect.
 
 ## Keep the original usable
 

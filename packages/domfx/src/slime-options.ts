@@ -8,7 +8,7 @@ export interface SlimeOptions extends ColorAttachmentOptions {
   readonly dripDensity?: number;
   /** Creation-only fraction of the shorter untransformed border-box side.
    * Either extent enables relative mode; the omitted partner is zero.
-   * Omit both for legacy sizing. Relative intensity scales premultiplied strength.
+   * Omit both for the Default appearance. Relative intensity scales premultiplied strength.
    */
   readonly coatingDepth?: number;
   /** Creation-only fraction of border-box height for attached and released drip

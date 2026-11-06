@@ -33,7 +33,7 @@ fn phaseAt(p: vec2f) -> f32 {
   let supportDistance = distance * max(geometry.map.x, geometry.map.y) / min(geometry.map.x, geometry.map.y);
   let support = reach + 8;
   if (distance <= -3 || supportDistance >= support) { return vec4f(0); }
-  // Fix the legacy full-strength pulse/wake profile; strength only scales output.
+  // Fix the Default appearance's full-strength pulse/wake profile; strength only scales output.
   let intensity = 1.0;
   let aa = clamp(.65 * min(geometry.map.x, geometry.map.y), .15, .8);
   let lower = geometry.map.zw + geometry.map.xy * .5;

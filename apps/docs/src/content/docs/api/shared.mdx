@@ -24,7 +24,7 @@ import DocsSharedOptions from "../../../components/docs-shared-options.astro";
 
 ## Control animation
 
-<p>Use <code>clock: 'auto'</code> for automatic animation. domfx advances effect time while it can render, skipping time spent paused, hidden or offscreen. <code>'ambient'</code> is the older spelling of the same behavior and remains supported. The instance's read-only <code>clock</code> preserves the spelling you supplied.</p>
+<p>Use <code>clock: 'auto'</code> for automatic animation. domfx advances effect time while it can render, skipping time spent paused, hidden or offscreen.</p>
 
 <p>Use <code>clock: 'manual'</code> for external control through your code or GSAP. domfx never advances time in this mode, including after <code>resume()</code>. It still observes the target and schedules rendering for the next frame.</p>
 

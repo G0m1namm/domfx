@@ -5,7 +5,7 @@ await document.fonts.ready;
 const fire = attachFire(target, {
   host, clock: 'manual', motion: 'respect',
   time: 0, intensity: 0.8,
-  flameHeight: 32, seed: 314,
+  seed: 314,
 });
 const timeline = gsap.timeline({ paused: true });
 // Fade the host so the target and its effect share opacity.
@@ -34,7 +34,7 @@ export const standaloneCode = `import { attachFire } from '@domfx/browser';
 await document.fonts.ready;
 const fire = attachFire(target, {
   host, clock: 'auto', motion: 'respect',
-  intensity: 0.8, flameHeight: 32, seed: 314,
+  intensity: 0.8, seed: 314,
 });
 window.addEventListener('pagehide',
   () => fire.dispose(), { once: true });

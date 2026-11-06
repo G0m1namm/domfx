@@ -81,7 +81,7 @@ test('a host becoming static reports the host and a positioning correction', asy
 for (const dpr of [1, 2]) {
   test.describe(`fractional placement at DPR ${dpr}`, () => {
     test.use({ deviceScaleFactor: dpr });
-    for (const clock of ['manual', 'ambient'] as const) {
+    for (const clock of ['manual', 'auto'] as const) {
       test(`${clock} bordered nested scrolling preserves placement and clips output`, async ({
         page,
         browser,

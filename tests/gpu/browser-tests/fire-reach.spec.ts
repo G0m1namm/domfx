@@ -214,7 +214,7 @@ test('relative Fire validates options before claiming ownership', async ({ page 
       { flameReach: Infinity },
       { flameReach: null },
       { flameReach: '0.1' },
-      { flameReach: 0.1, flameHeight: 24 },
+      { flameHeight: 24 },
     ]) {
       try {
         const effect = Reflect.apply(window.manual.attach, undefined, [

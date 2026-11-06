@@ -48,7 +48,6 @@ export interface PreparedGpuFrame {
     intensity: number,
     pixelsPerCss: number,
     timestampWrites?: GPURenderPassTimestampWrites,
-    flameHeight?: number,
     effect?: RenderEffect,
     geometry?: EffectGeometry,
     dripDensity?: number,
@@ -249,7 +248,7 @@ export class GpuExperiment {
       const prepared: PreparedGpuFrame = {
         width,
         height,
-        // Textures + legacy vec4f (16), geometry (32), controls (64), patched JFA i32 (4).
+        // Textures + parameter vec4f (16), geometry (32), controls (64), patched JFA i32 (4).
         managedBytes: width * height * 36 + 116,
         prepareMs: performance.now() - started,
         readSdf: async () => {
@@ -265,7 +264,6 @@ export class GpuExperiment {
           intensity,
           pixelsPerCss,
           timestampWrites,
-          flameHeight = 24,
           effect = 'fire',
           geometry,
           dripDensity = 0.56,
@@ -280,15 +278,12 @@ export class GpuExperiment {
               seed,
               intensity,
               pixelsPerCss,
-              flameHeight,
               dripDensity,
               controls.mistOpacity,
               controls.emberDensity,
               controls.emberGlow,
             ].every(Number.isFinite) ||
             pixelsPerCss <= 0 ||
-            flameHeight < 8 ||
-            flameHeight > 64 ||
             dripDensity < 0 ||
             dripDensity > 1 ||
             controls.mistOpacity < 0 ||
@@ -333,13 +328,7 @@ export class GpuExperiment {
           device.queue.writeBuffer(
             parameters,
             0,
-            // Scale flame coordinates without adding uniforms or changing SDF raster units.
-            new Float32Array([
-              time,
-              seed,
-              Math.max(0, Math.min(1, intensity)),
-              (pixelsPerCss * flameHeight) / 24,
-            ]),
+            new Float32Array([time, seed, Math.max(0, Math.min(1, intensity)), pixelsPerCss]),
           );
           device.queue.writeBuffer(
             effectControls,

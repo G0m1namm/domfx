@@ -242,8 +242,8 @@ for (const shape of ['rectangle', 'ring', 'islands', 'thin'] as const) {
             let boundaryAlpha = 0;
             let longDripAlpha = 0;
             for (const time of [0.7, 1.5, 2.7, 3.9, 4.5]) {
-              normal.frame.render(time, 314, 1, 1, undefined, 24, family, normal.geometry);
-              larger.frame.render(time, 314, 1, 1, undefined, 24, family, larger.geometry);
+              normal.frame.render(time, 314, 1, 1, undefined, family, normal.geometry);
+              larger.frame.render(time, 314, 1, 1, undefined, family, larger.geometry);
               const a = await normal.frame.readFire();
               const b = await larger.frame.readFire();
               for (let y = 0; y < normal.frame.height; y++) {

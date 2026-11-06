@@ -2,14 +2,14 @@
   "api/effect-handle.mdx": "9f41e756d7c71aa10478e389f7cf795394bb42b58b68ff2d0634443691ced577",
   "api/effects.mdx": "34a78634d7202acb683839d32a86a2ac6be434cd0217f8827c542ac0108deed0",
   "api/gsap.mdx": "5db0995d64aceb1c1fb38c108b8ef11d5c7a30e002d4b1f04d15028f65e22fe3",
-  "api/shared.mdx": "be791da7187be8ce36028c0c47a671b877c2cc153e3d2ce129ac242b4c0bacd2",
-  "api.mdx": "6a73c2dfcc4952722a94f6982e362fdf571e7ffa7882d1d0bb074e91aa236ad3",
-  "gsap.mdx": "24adeae107b731123c39cf9d43d410c0c994d254b57306f7c58ff0dee7cbca82",
+  "api/shared.mdx": "0572d218dd3b318fd9e556a0434c2a3b8fee03b9370a38d10487ecb967b8576c",
+  "api.mdx": "12d0eb5f2f4aa0fbb1d1237324864b5f1a984d8ee641eade9fa4c1d9189c8db6",
+  "gsap.mdx": "9aee309f3a76bc6427515124a6cf450f58105061bb51d8b494665fe592dc4879",
   "installation.md": "4789a68112483cf22c54b434aae0c26264cbd6740862f34a3ff0f42603e7fa11",
-  "introduction.md": "28df22c1a56c871e050fde6ac4e869d3ab53a6b3a3a1c748d41cef6edbe03e27",
-  "standalone.mdx": "8984c5cb33f9981e470478f7c10280d7df590db8614f955d47e859f78906998b",
+  "introduction.md": "d8874434f7a462599b917bce06c09144def341bf86d28a4f7c647eecefb94404",
+  "standalone.mdx": "ca9ddd7adfb2a1d979a4f68345192911588fc9d67c843824590cdc81f235109b",
   "support.md": "b8a94432a37545965194512ec004f9b85d279467adbe2594451054a93a6506c8",
   "troubleshooting.md": "16c86f12db0e7c3f95c5b1f63ce7afb5915f3ad8a41d975cbb9f8b8d01af8ddd",
-  "upgrading.md": "5d82ad2ff8dc3d63a3a20b9867f474eea3c9935f1dd017f6cad5aa4be4f814cf",
-  "effect-reference.ts": "d0e51115f1bfa5299a8b2410be4bb713edcdb82d8dc94635ee4d513b28495ba6"
+  "upgrading.md": "0a1224d3ad79128f58aaedea9b14fd1c89e4495a178ca95f545d891ddc9e439a",
+  "effect-reference.ts": "e2e7ace757c73ed01093c6510acaa57d1a968a537fdf34a84a1ae6cdbf2c01f8"
 }

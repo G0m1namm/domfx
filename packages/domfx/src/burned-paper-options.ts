@@ -5,7 +5,7 @@ export interface BurnedPaperOptions extends AttachmentOptions {
   readonly emberGlow?: number;
   /** Creation-only fraction of the shorter untransformed border-box side.
    * Scorching retains local thin-shape caps. Either extent enables relative mode;
-   * the omitted partner is zero. Omit both for legacy appearance.
+   * the omitted partner is zero. Omit both for the Default appearance.
    */
   readonly scorchDepth?: number;
   /** Creation-only fraction of border-box height for ash travel. Finite and

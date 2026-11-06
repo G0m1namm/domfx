@@ -89,7 +89,7 @@ time and linearly interpolates them to the required `time` and `intensity` over
 finite destination intensity clamps to `[0, 1]` before interpolation. Duration
 must be finite and nonnegative; zero applies the destination at the insertion point.
 `position` accepts GSAP's number/label/relative position syntax and defaults to
-appending to the timeline. Ambient attachments, including paused ambient attachments,
+appending to the timeline. Automatic attachments, including paused automatic attachments,
 throw before any animation is created. Invalid numerical options also throw synchronously.
 
 The binding creates a paused child tween, adds it to the timeline, and unpauses the child.

@@ -176,7 +176,9 @@ test('scaled host placement uses target-local pixels', async ({ page }) => {
   expect(placement.height).toBeCloseTo(51.2, 1);
 });
 
-test('flame height reserves padding through refresh and capture admission', async ({ page }) => {
+test('Default appearance reserves padding through refresh and capture admission', async ({
+  page,
+}) => {
   await page.goto('/manual.html');
   await expect(page.locator('#state')).toContainText('"lifecycle":"active"');
   const result = await page.evaluate(async () => {
@@ -186,66 +188,51 @@ test('flame height reserves padding through refresh and capture admission', asyn
     if (!host || !target) {
       throw new Error('fixture');
     }
-    const samples = [];
-    for (const flameHeight of [8, 24, 48, 64]) {
-      const effect = window.manual.attach(target, {
-        host,
-        flameHeight,
-        seed: 314,
-        time: 1.5,
-      });
-      await effect.ready;
-      if (effect.lifecycle !== 'active') {
-        throw new Error(effect.reason ?? 'attachment-failed');
-      }
-      const canvas = host.querySelector('canvas');
-      if (!canvas) {
-        throw new Error('missing-output');
-      }
-      const original = canvas.toDataURL();
-      const targetBox = target.getBoundingClientRect();
-      const outputBox = canvas.getBoundingClientRect();
-      const image = new Image();
-      image.src = original;
-      await image.decode();
-      const readback = document.createElement('canvas');
-      readback.width = image.width;
-      readback.height = image.height;
-      const context = readback.getContext('2d');
-      if (!context) {
-        throw new Error('missing-readback');
-      }
-      context.drawImage(image, 0, 0);
-      const pixels = context.getImageData(0, 0, image.width, image.height).data;
-      let boundaryAlpha = 0;
-      let firstPaintRow = image.height;
-      for (let y = 0; y < image.height; y++) {
-        for (let x = 0; x < image.width; x++) {
-          if (pixels[(y * image.width + x) * 4 + 3] >= 32) {
-            firstPaintRow = Math.min(firstPaintRow, y);
-          }
-          if (x === 0 || y === 0 || x === image.width - 1 || y === image.height - 1) {
-            boundaryAlpha = Math.max(boundaryAlpha, pixels[(y * image.width + x) * 4 + 3]);
-          }
+    const effect = window.manual.attach(target, { host, seed: 314, time: 1.5 });
+    await effect.ready;
+    if (effect.lifecycle !== 'active') {
+      throw new Error(effect.reason ?? 'attachment-failed');
+    }
+    const canvas = host.querySelector('canvas');
+    if (!canvas) {
+      throw new Error('missing-output');
+    }
+    const original = canvas.toDataURL();
+    const targetBox = target.getBoundingClientRect();
+    const outputBox = canvas.getBoundingClientRect();
+    const image = new Image();
+    image.src = original;
+    await image.decode();
+    const readback = document.createElement('canvas');
+    readback.width = image.width;
+    readback.height = image.height;
+    const context = readback.getContext('2d');
+    if (!context) {
+      throw new Error('missing-readback');
+    }
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, image.width, image.height).data;
+    let boundaryAlpha = 0;
+    for (let y = 0; y < image.height; y++) {
+      for (let x = 0; x < image.width; x++) {
+        if (x === 0 || y === 0 || x === image.width - 1 || y === image.height - 1) {
+          boundaryAlpha = Math.max(boundaryAlpha, pixels[(y * image.width + x) * 4 + 3]);
         }
       }
-      await effect.refresh();
-      samples.push({
-        flameHeight,
-        margin: targetBox.top - outputBox.top,
-        reach: targetBox.top - outputBox.top - firstPaintRow / devicePixelRatio,
-        centered:
-          Math.abs(targetBox.left - outputBox.left - (outputBox.right - targetBox.right)) < 1,
-        rasterScale: image.width / outputBox.width,
-        boundaryAlpha,
-        refreshPreservesFrame: host.querySelector('canvas')?.toDataURL() === original,
-      });
-      effect.dispose();
     }
-    // A larger flame's padding must count toward the existing one-million-pixel gate.
-    target.style.width = '350px';
-    target.style.height = '400px';
-    const oversized = window.manual.attach(target, { host, flameHeight: 64 });
+    await effect.refresh();
+    const sample = {
+      margin: targetBox.top - outputBox.top,
+      centered: Math.abs(targetBox.left - outputBox.left - (outputBox.right - targetBox.right)) < 1,
+      rasterScale: image.width / outputBox.width,
+      boundaryAlpha,
+      refreshPreservesFrame: host.querySelector('canvas')?.toDataURL() === original,
+    };
+    effect.dispose();
+    // Padding must count toward the existing one-million-pixel gate.
+    target.style.width = '500px';
+    target.style.height = '500px';
+    const oversized = window.manual.attach(target, { host });
     await oversized.ready;
     const reason = oversized.reason;
     oversized.dispose();
@@ -256,24 +243,19 @@ test('flame height reserves padding through refresh and capture admission', asyn
     const recovered = next.lifecycle === 'active';
     next.dispose();
     return {
-      samples,
+      sample,
       reason,
       recovered,
       remainingCanvases: host.querySelectorAll('canvas').length,
     };
   });
-  for (const sample of result.samples) {
-    expect(sample.margin).toBeGreaterThanOrEqual(sample.flameHeight);
-    expect(sample).toMatchObject({
-      centered: true,
-      rasterScale: 2,
-      boundaryAlpha: 0,
-      refreshPreservesFrame: true,
-    });
-  }
-  expect(result.samples[1].margin).toBe(32);
-  expect(result.samples[3].margin).toBeGreaterThan(result.samples[2].margin);
-  expect(result.samples[3].reach).toBeGreaterThan(result.samples[1].reach * 1.5);
+  expect(result.sample).toMatchObject({
+    margin: 32,
+    centered: true,
+    rasterScale: 2,
+    boundaryAlpha: 0,
+    refreshPreservesFrame: true,
+  });
   expect(result).toMatchObject({ reason: 'capture-budget', recovered: true, remainingCanvases: 0 });
 });
 
@@ -606,18 +588,16 @@ test('programmer errors never register a target', async ({ page }) => {
       [svgTarget, { host: svg }, 'invalid-effect-host'],
       [target, { host, clock: 'invalid' }, 'invalid-clock-mode'],
       [target, { host, clock: null }, 'invalid-clock-mode'],
+      [target, { host, clock: 'ambient' }, 'invalid-clock-mode'],
       [target, { host, motion: 'animate' }, 'invalid-motion-policy'],
       [target, { host, motion: null }, 'invalid-motion-policy'],
     ];
-    for (const parameter of ['seed', 'time', 'intensity', 'flameHeight']) {
+    for (const parameter of ['seed', 'time', 'intensity']) {
       for (const value of [NaN, Infinity, -Infinity, Number.MAX_VALUE, null, '1']) {
-        if (parameter === 'flameHeight' && value === null) {
-          continue;
-        }
         cases.push([target, { host, [parameter]: value }, 'invalid-fire-parameter']);
       }
     }
-    for (const flameHeight of [0, 7, 65]) {
+    for (const flameHeight of [24, 48, null]) {
       cases.push([target, { host, flameHeight }, 'invalid-fire-parameter']);
     }
     const results: boolean[] = [];
@@ -633,11 +613,6 @@ test('programmer errors never register a target', async ({ page }) => {
       valid.dispose();
       await valid.ready;
     }
-    // Preserve the accepted runtime nullish default without widening the public type.
-    const defaulted = Reflect.apply(attach, undefined, [target, { host, flameHeight: null }]);
-    await defaulted.ready;
-    results.push(defaulted.lifecycle === 'active');
-    defaulted.dispose();
     // A disconnected host and its descendant also reject before registration.
     host.remove();
     try {
@@ -674,6 +649,6 @@ test('programmer errors never register a target', async ({ page }) => {
     }
     return results;
   });
-  expect(results.length).toBe(49);
+  expect(results.length).toBe(44);
   expect(results.every(Boolean)).toBe(true);
 });

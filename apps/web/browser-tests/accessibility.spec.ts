@@ -7,7 +7,10 @@ test('zoomed previews offer single-pointer pan controls without dragging', async
   await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
   const pan = page.getByRole('group', { name: 'Pan preview', exact: true });
   await expect(pan).toBeHidden();
-  await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
+  // The narrow subject fits at 150%; pan has room to move once it outgrows the preview.
+  for (let step = 0; step < 4; step += 1) {
+    await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
+  }
   const stage = page.locator('.dialog-stage');
   const original = await stage.getAttribute('style');
   const left = pan.getByRole('button', { name: 'Pan left', exact: true });
@@ -27,7 +30,6 @@ test('selected filters and preview subjects have a contrasting state boundary', 
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/effects/');
   const selected = page.locator('.filters [aria-pressed="true"]');
   const contrast = (colors: string[]) => {
     const luminance = colors.map((color) => {
@@ -49,14 +51,33 @@ test('selected filters and preview subjects have a contrasting state boundary', 
       const style = getComputedStyle(element);
       return [style.borderColor, style.backgroundColor];
     });
-  await expect(selected).toBeVisible();
-  expect(contrast(await colors('.filters [aria-pressed="true"]'))).toBeGreaterThanOrEqual(3);
-  await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
-  expect(contrast(await colors('.target-options [aria-pressed="true"]'))).toBeGreaterThanOrEqual(3);
+  // Docs first: on the composed dev server, its lab script does not start after a
+  // reduced-motion marketing visit. Baseline code does the same.
   await page.goto('/docs/api/effects/frost/');
-  expect(contrast(await colors('.docs-lab-segments input:checked + span'))).toBeGreaterThanOrEqual(
-    3,
+  await page.getByRole('button', { name: 'Shape', exact: true }).click();
+  // The box's selected option is a borderless silver chip, so its boundary is its fill.
+  const chip = page.locator('[data-box-view="shape"] .selection-glider');
+  await expect(chip).toBeVisible();
+  const chipFill = await chip.evaluate((element) => getComputedStyle(element).backgroundColor);
+  const panelFill = await page
+    .locator('[data-box-panel]')
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(contrast([chipFill, panelFill])).toBeGreaterThanOrEqual(3);
+  await page.goto('/effects/');
+  await expect(selected).toBeVisible();
+  // The gliding indicator draws the selected boundary for all three groups.
+  expect(contrast(await colors('.filters .selection-glider'))).toBeGreaterThanOrEqual(3);
+  await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
+  await page.getByRole('button', { name: 'Shape', exact: true }).click();
+  const previewChip = page.locator('.effect-dialog [data-box-view="shape"] .selection-glider');
+  await expect(previewChip).toBeVisible();
+  const previewChipFill = await previewChip.evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
   );
+  const previewPanelFill = await page
+    .locator('.effect-dialog [data-box-panel]')
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(contrast([previewChipFill, previewPanelFill])).toBeGreaterThanOrEqual(3);
 });
 
 for (const route of ['/', '/effects/']) {
@@ -68,7 +89,8 @@ for (const route of ['/', '/effects/']) {
     const trigger = page.getByRole('button', { name: 'Try Frost', exact: true });
     await trigger.press('Enter');
     const dialog = page.getByRole('dialog', { name: 'Frost', exact: true });
-    await dialog.getByRole('button', { name: 'Image', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Shape', exact: true }).click();
+    await dialog.getByRole('radio', { name: 'Image', exact: true }).check();
     await expect(dialog).toBeVisible();
     const scene = await dialog.locator('.dialog-scene').boundingBox();
     expect(scene).not.toBeNull();

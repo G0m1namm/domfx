@@ -45,10 +45,10 @@ test('Spanish preview retains keyboard, fallback, localized reference and execut
     'href',
     '/docs/es/api/effects/frost/',
   );
-  await expect(page.locator('[data-code]')).toContainText(
+  await expect(page.locator('[data-box-code]')).toContainText(
     "import { attachFrost } from '@domfx/browser'",
   );
-  const spanishCode = await page.locator('[data-code]').textContent();
+  const spanishCode = await page.locator('[data-box-code]').textContent();
   await dialog.getByRole('button', { name: 'Ampliar' }).click();
   await expect(page.locator('[data-zoom-label]')).toHaveText('150%');
   await page.locator('.dialog-scene').press('0');
@@ -58,7 +58,7 @@ test('Spanish preview retains keyboard, fallback, localized reference and execut
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
   await page.goto('/effects/');
   await page.getByRole('button', { name: 'Try Frost' }).click();
-  const englishCode = await page.locator('[data-code]').textContent();
+  const englishCode = await page.locator('[data-box-code]').textContent();
   const withoutComments = (code: string) => code.replace(/\/\/[^\n]*/g, '').trim();
   expect(withoutComments(spanishCode ?? '')).toBe(withoutComments(englishCode ?? ''));
 });

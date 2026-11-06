@@ -74,7 +74,7 @@ export class EffectPrograms {
         {
           binding: 3,
           visibility: GPUShaderStage.FRAGMENT,
-          buffer: { type: 'uniform', minBindingSize: 32 },
+          buffer: { type: 'uniform', minBindingSize: 64 },
         },
       ],
     });

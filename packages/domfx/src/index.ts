@@ -214,10 +214,11 @@ export type { BurnedPaperOptions } from './burned-paper-options.js';
 export type {
   BurnedPaperEffectHandle,
   ColorEffectHandle,
+  ColorRampEffectHandle,
   FireEffectHandle,
   FrostEffectHandle,
 } from './effect-controls.js';
-export type { ColorAttachmentOptions } from './color-options.js';
+export type { ColorAttachmentOptions, ColorRampOptions } from './color-options.js';
 export type { SlimeOptions } from './slime-options.js';
 export type { KineticOptions } from './kinetic-options.js';
 export type { FireOptions } from './fire-options.js';

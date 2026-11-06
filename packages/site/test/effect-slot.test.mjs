@@ -334,6 +334,26 @@ test('a gate that changes before its event arrives still prevents attachment', a
   slot.dispose();
 });
 
+test('static output is not blocked by reduced motion or a pending Resume', () => {
+  const document = new EventTarget();
+  document.defaultView = { navigator: { gpu: {} } };
+  document.hidden = false;
+  const reducedMotion = new EventTarget();
+  reducedMotion.matches = true;
+  let staticOutput = false;
+  const gate = createEffectEnvironment({
+    document,
+    reducedMotion,
+    needsResume: () => true,
+    ignoresReducedMotion: () => staticOutput,
+  });
+  assert.equal(gate.blockedReason(), 'reduced-motion');
+  staticOutput = true;
+  assert.equal(gate.blockedReason(), undefined);
+  document.hidden = true;
+  assert.equal(gate.blockedReason(), 'target-not-visible');
+});
+
 test('the browser environment combines visibility, motion and caller-owned Resume', () => {
   const document = new EventTarget();
   document.defaultView = { navigator: { gpu: {} } };

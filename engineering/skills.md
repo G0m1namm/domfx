@@ -52,9 +52,10 @@ which is not domfx's rendering stack. Neither is installed.
 ## Agent integration
 
 The source of truth is `.agents/skills`, using standard `SKILL.md` files. Codex can
-discover these project skills; `AGENTS.md` routes work to the relevant ones. A client
-that discovers only its own skill directory needs its normal import/link setup to
-read these same files. Do not maintain a second independently edited copy.
+discover these project skills; `AGENTS.md` routes work to the relevant ones. Claude
+Code reads the same files through the `.claude/skills` symlink, and `CLAUDE.md` imports
+`AGENTS.md`. Any other client that discovers only its own skill directory needs its
+normal import/link setup. Do not maintain a second independently edited copy.
 
 These skills guide decisions. The harness enforces executable checks, including the
 [development/production browser suite](browser-verification.md). Broader device and

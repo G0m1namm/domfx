@@ -6,11 +6,19 @@
   "license": "MIT",
   "type": "module",
   "exports": {
+    "./code-theme": "./src/code-theme.ts",
     "./effects": "./src/effects.ts",
     "./effect-slot": "./src/effect-slot.ts",
+    "./selection-glide": "./src/selection-glide.ts",
     "./page-lifetime": "./src/page-lifetime.ts",
     "./effect-reference": "./src/effect-reference.ts",
     "./effect-extent": "./src/effect-extent.ts",
+    "./effect-settings": "./src/effect-settings.ts",
+    "./control-box": "./src/control-box.ts",
+    "./control-box-messages": "./src/control-box-messages.ts",
+    "./preview-zoom": "./src/preview-zoom.ts",
+    "./top-layer-tooltips": "./src/top-layer-tooltips.ts",
+    "./motion-tokens": "./src/motion-tokens.ts",
     "./site-links": "./src/site-links.ts",
     "./components/*.astro": "./src/components/*.astro",
     "./styles/*.css": "./src/styles/*.css",
@@ -25,6 +33,7 @@
     "test": "node --experimental-strip-types --test test/*.test.mjs"
   },
   "dependencies": {
-    "@domfx/browser": "workspace:*"
+    "@domfx/browser": "workspace:*",
+    "@shikijs/themes": "4.4.3"
   }
 }

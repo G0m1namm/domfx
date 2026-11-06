@@ -15,6 +15,10 @@ export const { gsapCode } = examplesForLocale('es');
 
 <DocsGsapLab />
 
+<p>El reproductor da a cada letra su propio efecto con <code>{"attachFire(letter, { host, clock: 'manual', intensity: 0, flameReach: 0.7 })"}</code> y después pasa las letras y los efectos a una sola línea de tiempo, de modo que <code>stagger</code> se aplica a ambos. Mueve, escala y atenúa el contenedor o la posición de las letras con libertad: el efecto las sigue sin una captura nueva. La rotación y la inclinación desactivan el efecto con <code>unsupported-placement</code>, y los cambios de opacidad solo en el objetivo no son compatibles, así que atenúa el contenedor.</p>
+
+<p>El resto de esta guía empieza con algo más pequeño: un objetivo y un efecto.</p>
+
 <span id="provide-your-elements" />
 
 ## Proporciona tus elementos
@@ -57,6 +61,18 @@ const colorTween = gsap.fromTo(
 ```
 
 <p>Para cambios posteriores, usa <code>{"gsap.to(fire, { color: '#ff6600', duration: 2 })"}</code>. Al limpiar, llama a <code>colorTween.kill()</code> antes de liberar el efecto. Para recuperar la paleta original, detén las animaciones de color y asigna <code>fire.color = undefined</code>.</p>
+
+<p><code>rootColor</code> y <code>tipColor</code> de Fire se animan igual, sin plugin: asigna primero un color explícito y después usa <code>fromTo()</code>. Ninguno se puede definir mientras <code>color</code> esté definido.</p>
+
+```ts
+fire.rootColor = '#fff5a3';
+fire.tipColor = '#ff1701';
+const flameTween = gsap.fromTo(
+  fire,
+  { rootColor: '#fff5a3', tipColor: '#ff1701' },
+  { rootColor: '#99ddff', tipColor: '#0066ff', duration: 2 },
+);
+```
 
 <span id="own-the-lifetime" />
 

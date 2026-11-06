@@ -202,7 +202,7 @@ test('public handles expose only their owned controls at runtime', async ({ page
   const result = await page.evaluate(async () => {
     const host = document.querySelector<HTMLElement>('#host')!;
     const target = document.querySelector<HTMLElement>('#target')!;
-    const controls = ['color', 'mistOpacity', 'emberDensity', 'emberGlow'];
+    const controls = ['color', 'mistOpacity', 'emberDensity', 'emberGlow', 'rootColor', 'tipColor'];
     const settle = () =>
       new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
@@ -271,37 +271,37 @@ test('public handles expose only their owned controls at runtime', async ({ page
     {
       name: 'frost',
       controls: ['color', 'mistOpacity'],
-      absent: ['emberDensity', 'emberGlow'],
+      absent: ['emberDensity', 'emberGlow', 'rootColor', 'tipColor'],
       write: { accepted: true, value: 0 },
     },
     {
       name: 'fire',
-      controls: ['color', 'emberDensity'],
+      controls: ['color', 'emberDensity', 'rootColor', 'tipColor'],
       absent: ['mistOpacity', 'emberGlow'],
       write: { accepted: false, value: 1 },
     },
     {
       name: 'halftone',
       controls: ['color'],
-      absent: ['mistOpacity', 'emberDensity', 'emberGlow'],
+      absent: ['mistOpacity', 'emberDensity', 'emberGlow', 'rootColor', 'tipColor'],
       write: { accepted: true, value: 'rgb(0, 255, 0)' },
     },
     {
       name: 'slime',
       controls: ['color'],
-      absent: ['mistOpacity', 'emberDensity', 'emberGlow'],
+      absent: ['mistOpacity', 'emberDensity', 'emberGlow', 'rootColor', 'tipColor'],
       write: { accepted: true, value: 'rgb(0, 255, 0)' },
     },
     {
       name: 'burned-paper',
       controls: ['emberGlow'],
-      absent: ['color', 'mistOpacity', 'emberDensity'],
+      absent: ['color', 'mistOpacity', 'emberDensity', 'rootColor', 'tipColor'],
       write: { accepted: true, value: 0 },
     },
     {
       name: 'electricity',
       controls: ['color'],
-      absent: ['mistOpacity', 'emberDensity', 'emberGlow'],
+      absent: ['mistOpacity', 'emberDensity', 'emberGlow', 'rootColor', 'tipColor'],
       write: null,
     },
   ]);

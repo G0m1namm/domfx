@@ -25,7 +25,11 @@ import {
 } from '@domfx/browser';
 import { memoryFor, startEffectDiagnostics } from '@domfx/browser/experimental';
 
-import { qualifyRawAlphaControls, qualifyRawEffectColors } from './controls-raw-alpha.js';
+import {
+  qualifyRawAlphaControls,
+  qualifyRawEffectColors,
+  qualifyRawFireRamp,
+} from './controls-raw-alpha.js';
 
 declare global {
   interface Window {
@@ -56,6 +60,7 @@ declare global {
       memory: typeof memoryFor;
       qualifyRawAlphaControls: typeof qualifyRawAlphaControls;
       qualifyRawEffectColors: typeof qualifyRawEffectColors;
+      qualifyRawFireRamp: typeof qualifyRawFireRamp;
     };
   }
 }
@@ -87,4 +92,5 @@ window.controlEffects = {
   memory: memoryFor,
   qualifyRawAlphaControls,
   qualifyRawEffectColors,
+  qualifyRawFireRamp,
 };

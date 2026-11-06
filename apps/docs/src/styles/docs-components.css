@@ -182,136 +182,200 @@
   border-radius: 0.625rem;
 }
 .docs-gsap-lab .docs-lab-heading,
-.docs-gsap-panel,
 .sl-markdown-content .docs-gsap-source-note {
   padding: 1.25rem 1.5rem;
 }
+/* The target sits in the space above the dock and its open panel, so nothing lifts or moves. */
 .docs-gsap-lab .docs-lab-stage {
-  min-block-size: 15rem;
-  padding: 2rem 1rem 1rem;
-  border-radius: 0;
+  align-content: center;
+  padding-block-end: 15rem;
 }
 .docs-gsap-lab .docs-lab-host {
   min-inline-size: 0;
   max-inline-size: 100%;
   padding: 2rem 0.5rem;
 }
-.docs-gsap-lab button {
-  min-inline-size: max(2.75rem, 44px);
-  min-block-size: max(2.75rem, 44px);
-  max-inline-size: 100%;
-  padding: 0.5em 1em;
-  border: 1px solid var(--control-border);
-  border-radius: 0.375rem;
-  background: var(--raised);
-  color: var(--text);
-  font: inherit;
-  overflow-wrap: anywhere;
-  cursor: pointer;
-}
-.docs-gsap-lab .docs-gsap-target {
-  background: var(--silver);
-  color: #191920;
-  font-size: 1.25rem;
+.docs-gsap-word {
+  display: flex;
+  margin: 0;
+  /* Each letter keeps padding around its glyph for capture; margins restore the word's spacing. */
+  padding-inline: 0.1525em;
+  color: #f4f5fb;
+  font-family: 'Cabinet Grotesk', ui-sans-serif, sans-serif;
+  font-size: clamp(3rem, calc(1rem + 10vw - 16px), 7rem);
   font-weight: 500;
+  line-height: 0.85;
+  user-select: text;
 }
-.docs-gsap-lab button:disabled {
-  color: var(--muted);
-  cursor: default;
+.docs-gsap-letter {
+  display: block;
+  margin-inline: -0.1525em;
+  padding: 0.125em;
 }
-.docs-gsap-lab button:enabled:hover {
-  border-color: var(--silver);
-}
-.docs-gsap-lab button:focus-visible,
-.docs-gsap-lab input:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 3px;
-}
-.docs-gsap-lab .docs-gsap-target:focus-visible {
-  outline-color: #191920;
-  box-shadow: 0 0 0 5px var(--silver);
-}
-.docs-gsap-panel {
-  display: grid;
-  min-inline-size: 0;
-  gap: 1rem;
-  border-top: 1px solid var(--border);
-}
-.sl-markdown-content .docs-gsap-panel p,
-.sl-markdown-content .docs-gsap-clicks,
 .sl-markdown-content .docs-gsap-source-note {
   margin: 0;
   font-size: 0.875rem;
 }
-.docs-gsap-status,
 .docs-gsap-source-note {
   color: var(--muted);
 }
-.docs-gsap-actions {
-  display: flex;
+/* The dock holds transport, not tabs of settings: GSAP owns `time` and `intensity` here. */
+.docs-gsap-dock {
   flex-wrap: wrap;
-  gap: 0.5rem;
 }
-.docs-gsap-actions button {
-  flex: 1 1 auto;
+.control-box .effect-setting.docs-gsap-position:has(input[type='range']) {
+  flex: 1 1 100%;
+  order: 3;
+  grid-template-columns: var(--control-box-chip) minmax(0, 1fr);
+  padding-inline: 0.5rem;
 }
-.docs-gsap-lab .docs-gsap-position {
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.25rem 1rem;
-  min-block-size: max(3.5rem, 44px);
-  padding-block: 0.375rem;
+.docs-gsap-position output,
+.docs-gsap-values output {
+  font-family: 'Lab Mono', monospace;
+  font-variant-numeric: tabular-nums;
 }
-.docs-gsap-position .docs-lab-label {
-  grid-column: 1 / -1;
+.docs-gsap-dock .control-box-tab[aria-expanded='true'] {
+  background: linear-gradient(var(--silver), var(--silver)) center bottom 0.3125rem /
+    calc(100% - 0.75rem) 1px no-repeat;
 }
-.docs-gsap-position input[type='range'] {
-  min-inline-size: 0;
-  min-block-size: max(2.75rem, 44px);
+.docs-gsap-reverse .ui-icon {
+  transform: scaleX(-1);
 }
-.docs-gsap-position output {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-}
-.docs-gsap-tracks,
-.docs-gsap-tracks > div {
+.docs-gsap-details {
   display: grid;
   gap: 0.5rem;
-  font-size: 0.875rem;
+  padding-block: 0.625rem;
 }
-.docs-gsap-track {
-  display: block;
-  block-size: 0.375rem;
-  border-radius: 0.1875rem;
-  background: var(--raised);
+.docs-gsap-acts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 4.5rem), 1fr));
+  gap: 0.25rem;
 }
-.docs-gsap-track-fade {
-  background: linear-gradient(to right, var(--silver) 11.111%, var(--raised) 11.111%);
+.docs-gsap-acts button {
+  min-block-size: var(--control-box-target);
+  margin: 0;
+  padding: 0 0.25rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
 }
-.docs-gsap-track-effect {
-  background: linear-gradient(to right, var(--raised) 11.111%, var(--silver) 11.111%);
+.docs-gsap-acts button:hover:enabled {
+  color: var(--text);
+}
+.docs-gsap-acts button:disabled {
+  color: var(--control-border);
+  cursor: default;
+}
+.docs-gsap-acts button[aria-current='true'] {
+  background: var(--silver);
+  color: var(--bg);
+  font-weight: 500;
 }
 .docs-gsap-values {
+  display: grid;
+  /* Chips stack before a label or value would have to break mid-word, as with very large text. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.5rem), 1fr));
+  gap: 0.25rem;
+  margin: 0;
+}
+.docs-gsap-values > div {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 1.5rem;
-  margin: 0;
-  padding: 0;
-  font-size: 0.875rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.5rem;
+  min-inline-size: 0;
+  min-block-size: 2rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  background: var(--raised);
 }
 .docs-gsap-values dt {
   color: var(--muted);
+  font-size: 0.75rem;
 }
 .docs-gsap-values dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
   margin: 0;
+  font-size: 0.75rem;
 }
-.docs-gsap-values output,
-.docs-gsap-position output {
-  font-family: 'JetBrains Mono', monospace;
-  font-variant-numeric: tabular-nums;
+.docs-gsap-values > .docs-gsap-meters {
+  grid-column: 1 / -1;
+}
+.docs-gsap-swatch {
+  display: block;
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  border-radius: 50%;
+}
+/* A meter per letter makes the stagger readable while it runs. */
+.docs-gsap-meter {
+  position: relative;
+  display: flex;
+  gap: 0.25rem;
+  padding-block-end: 0.1875rem;
+  white-space: nowrap;
+}
+.docs-gsap-meter > span {
+  color: var(--muted);
+}
+.docs-gsap-meter::after {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0;
+  block-size: 1px;
+  background: var(--silver);
+  content: '';
+  transform: scaleX(var(--level));
+  transform-origin: left;
+}
+.docs-gsap-code .line {
+  display: inline-block;
+  min-inline-size: 100%;
+}
+.docs-gsap-code .line[data-act-on='true'] {
+  background: var(--raised);
+}
+@container (min-width: 34em) {
+  .control-box .effect-setting.docs-gsap-position:has(input[type='range']) {
+    flex: 1 1 0;
+    order: 0;
+  }
+}
+@media (min-width: 34em) {
+  .docs-gsap-lab .docs-lab-stage {
+    padding-block-end: 12rem;
+  }
+}
+.docs-gsap-code {
+  position: relative;
+}
+/* Pinned over the code as it scrolls beneath; pointer events reach the code and its scrollbar. */
+.docs-gsap-code .docs-lab-code-bar {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 1px;
+  inset-inline: 1px;
+  padding: 0.75rem 1.5rem 1.5rem;
+  background: linear-gradient(#101117 55%, transparent);
+  pointer-events: none;
 }
 .docs-gsap-lab .docs-code-scroll {
   margin: 0;
   margin-block-end: 0.5rem;
+  max-block-size: 24rem;
+  overflow: auto;
+  border-radius: 0;
+}
+.sl-markdown-content .docs-gsap-code pre {
+  padding-block-start: 3rem;
+  border-block-start: 0;
+  border-radius: 0;
 }
 .docs-lab-heading {
   display: grid;
@@ -329,12 +393,17 @@
   font-size: 0.875rem;
 }
 /* The inspection viewport always clips the camera; the effect host stays unclipped. */
+.docs-lab-frame {
+  position: relative;
+}
 .docs-lab-stage {
   position: relative;
   display: grid;
-  min-block-size: 22rem;
+  box-sizing: border-box;
+  /* Fixed, so the subject, flames and the tallest panel fit without moving the page. */
+  min-block-size: 31rem;
   place-items: center;
-  border-radius: 9px 9px 0 0;
+  border-radius: 9px;
   background: radial-gradient(ellipse at 50% 115%, var(--lab-tint), transparent 70%), #111218;
 }
 [data-docs-preview] {
@@ -351,71 +420,13 @@
 }
 [data-docs-preview-camera] {
   transform-origin: center;
+}
+/* The effect labs take their camera transitions from the control box, with the subject lift. */
+.docs-gsap-lab [data-docs-preview-camera] {
   transition: transform 160ms ease-out;
 }
-.docs-preview-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  min-inline-size: 0;
-  padding: 0.5rem 1rem;
-  border-top: 1px solid var(--border);
-  background: var(--raised);
-}
-.docs-preview-toolbar[hidden],
-.docs-preview-pan[hidden] {
-  display: none;
-}
-.sl-markdown-content .docs-preview-toolbar p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-.docs-preview-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem;
-  min-inline-size: 0;
-}
-.docs-preview-toolbar button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-inline-size: max(2.75rem, 44px);
-  min-block-size: max(2.75rem, 44px);
-  padding: 0.5rem;
-  border: 1px solid var(--control-border);
-  border-radius: 0.375rem;
-  background: var(--raised);
-  color: var(--text);
-  font: inherit;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-.docs-preview-toolbar button:disabled {
-  color: var(--muted);
-  cursor: default;
-}
-.docs-preview-toolbar button:enabled:hover {
-  border-color: var(--silver);
-}
-.docs-preview-toolbar button:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-.docs-preview-toolbar output {
-  inline-size: 3.5rem;
-  color: var(--muted);
-  font-family: var(--sl-font-mono);
-  font-size: 0.75rem;
-  text-align: center;
-}
-.docs-preview-pan {
-  flex-basis: 100%;
-  justify-content: end;
+.docs-gsap-lab [data-docs-preview-camera][data-zoom-motion='spring'] {
+  transition: transform var(--motion-enter-duration) var(--motion-enter-easing);
 }
 .docs-preview-hover-hint {
   display: none;
@@ -432,7 +443,8 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-docs-preview-camera] {
+  .docs-gsap-lab [data-docs-preview-camera],
+  .docs-gsap-lab [data-docs-preview-camera][data-zoom-motion='spring'] {
     transition: none;
   }
 }
@@ -445,8 +457,13 @@
 .docs-lab[data-effect='frost'] .docs-lab-stage {
   background: var(--floor-frost), #111218;
 }
-.docs-lab-heading + .docs-lab-stage {
-  border-radius: 0;
+.docs-lab-heading + .docs-lab-frame .docs-lab-stage {
+  border-radius: 0 0 9px 9px;
+}
+@media (min-width: 34em) {
+  .docs-lab-frame .docs-lab-stage {
+    min-block-size: 34rem;
+  }
 }
 .docs-lab-host {
   box-sizing: border-box;
@@ -486,23 +503,15 @@
   aspect-ratio: 4 / 3;
   object-fit: contain;
 }
-.docs-lab-overlay {
+.docs-lab-status {
   position: absolute;
-  inset: auto 12px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  pointer-events: none;
-}
-.docs-lab-overlay > * {
-  pointer-events: auto;
-}
-.sl-markdown-content .docs-lab-status {
+  z-index: 2;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  max-width: min(100%, 44ch);
+  max-inline-size: calc(100% - 11rem);
   margin: 0;
   padding: 6px 10px;
   border: 1px solid var(--border);
@@ -511,6 +520,25 @@
   color: var(--muted);
   font-size: 0.8125rem;
   line-height: 1.4;
+}
+/* Below the zoom chip while the two cannot share the top edge. */
+@media (max-width: 34em) {
+  .docs-lab-status {
+    inset-block-start: 3.5rem;
+    inset-inline-end: 0.5rem;
+    inset-inline-start: 0.5rem;
+    max-inline-size: none;
+  }
+}
+/* Screen readers receive every status; only unavailable or suspended output shows it. */
+.docs-lab:not([data-status-visible='true']) .docs-lab-status {
+  overflow: hidden;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  border: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .docs-lab-dot {
   flex: none;
@@ -522,9 +550,6 @@
 .docs-lab[data-status='active'] .docs-lab-dot {
   background: #9ed9ad;
 }
-.docs-lab[data-status='active'][data-paused='false'] .docs-lab-status {
-  color: #e8eaf3;
-}
 .docs-lab[data-paused='true'] .docs-lab-dot {
   background: #f2ca82;
 }
@@ -533,115 +558,13 @@
 .docs-lab[data-status='unavailable']:not([data-reason='reduced-motion']) .docs-lab-dot {
   background: #ffa4a4;
 }
-.docs-lab-toggle {
-  display: grid;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  border: 1px solid var(--control-border);
-  border-radius: 8px;
-  background: #14151bd9;
-  transition:
-    background-color 150ms ease-out,
-    border-color 150ms ease-out;
-}
-.docs-lab-toggle:hover:not(:disabled) {
-  border-color: #e8eaf3;
-  background: var(--raised);
-}
-.docs-lab-toggle[aria-pressed='true'] {
-  border-color: var(--silver);
-}
-.docs-lab-controls {
-  container-type: inline-size;
-  min-width: 0;
+.docs-lab-static-code {
   margin: 0;
-  padding: 4px 24px;
-  border: 0;
+  padding: 16px 24px 20px;
+  overflow-x: auto;
   border-top: 1px solid var(--border);
-}
-.docs-lab-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 16px;
-  align-items: center;
-  min-height: 56px;
-  padding-block: 6px;
-}
-.docs-lab-row + .docs-lab-row {
-  border-top: 1px solid #2c2e38;
-}
-.docs-lab-label {
-  grid-column: 1 / -1;
-  color: var(--muted);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-.docs-lab-row output {
-  padding: 3px 0;
-  border-radius: 6px;
-  background: var(--raised);
-  color: #e8eaf3;
+  color: #d7daee;
   font-size: 0.8125rem;
-  text-align: center;
-}
-.docs-lab-note {
-  grid-column: 1 / -1;
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-.docs-lab-segments {
-  display: inline-flex;
-  flex-wrap: wrap;
-  grid-column: 1 / -1;
-  justify-self: start;
-  max-inline-size: 100%;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #111218;
-}
-.docs-lab-segments label {
-  position: relative;
-}
-.docs-lab-segments input {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.docs-lab-segments span {
-  display: flex;
-  align-items: center;
-  min-height: max(2.75rem, 44px);
-  padding: 0 16px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  color: var(--muted);
-  font-size: 0.875rem;
-  white-space: nowrap;
-  transition:
-    background-color 150ms ease-out,
-    color 150ms ease-out;
-}
-.docs-lab-segments label:hover span {
-  color: #e8eaf3;
-}
-.docs-lab-segments input:checked + span {
-  border-color: var(--control-border);
-  background: var(--raised);
-  color: #f4f5fb;
-  box-shadow: inset 0 1px 0 #ffffff14;
-}
-.docs-lab-segments input:focus-visible + span {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-.docs-lab-segments input:disabled {
-  cursor: default;
 }
 .docs-lab-code {
   border-top: 1px solid var(--border);
@@ -655,29 +578,6 @@
   color: var(--muted);
   font-size: 0.8125rem;
 }
-.docs-lab-copy {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
-  color: #e8eaf3;
-  font-size: 0.8125rem;
-  transition:
-    background-color 150ms ease-out,
-    border-color 150ms ease-out;
-}
-.docs-lab-copy:hover {
-  border-color: var(--control-border);
-  background: var(--raised);
-}
-.docs-lab-copy .ui-icon {
-  width: 16px;
-  height: 16px;
-}
 .sl-markdown-content .docs-lab-code pre {
   overflow-x: auto;
   margin: 0;
@@ -687,9 +587,6 @@
   border-radius: 0 0 9px 9px;
   color: #d7daee;
   font-size: 0.8125rem;
-}
-.docs-lab-code output {
-  color: #9ed9ad;
 }
 
 /* Effect facts and link cards */
@@ -786,24 +683,17 @@
 }
 
 @media (max-width: 600px) {
-  .docs-lab-stage {
-    min-block-size: 18rem;
-  }
   .docs-lab-host {
     padding: 3.5rem 2rem 4rem;
   }
-  .docs-lab-overlay {
-    inset: auto 8px 8px;
-  }
-  .docs-lab-heading,
-  .docs-lab-controls {
+  .docs-lab-heading {
     padding-inline: 16px;
-  }
-  .docs-lab-segments span {
-    padding-inline: 10px;
   }
   .docs-lab-code-bar {
     padding-left: 16px;
+  }
+  .docs-gsap-code .docs-lab-code-bar {
+    padding-inline: 16px;
   }
   .sl-markdown-content .docs-lab-code pre {
     padding-inline: 16px;
@@ -816,19 +706,6 @@
   }
   .docs-effect-facts > div:nth-child(n + 3) {
     border-top: 1px solid var(--border);
-  }
-}
-/* Keep labels above controls until this column has room for the full row. */
-@container (min-width: 24rem) {
-  .docs-lab-row {
-    grid-template-columns: 7.5rem minmax(0, 1fr) 4rem;
-  }
-  .docs-lab-label {
-    grid-column: auto;
-  }
-  .docs-lab-segments,
-  .docs-lab-note {
-    grid-column: 2 / -1;
   }
 }
 @media (prefers-reduced-motion: reduce) {

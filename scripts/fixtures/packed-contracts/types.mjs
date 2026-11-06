@@ -18,6 +18,8 @@ const browserExports = [
   'BurnedPaperEffectHandle',
   'ColorAttachmentOptions',
   'ColorEffectHandle',
+  'ColorRampEffectHandle',
+  'ColorRampOptions',
   'CaptureError',
   'CaptureErrorCode',
   'BurnedPaperOptions',

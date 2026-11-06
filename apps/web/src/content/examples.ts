@@ -40,14 +40,4 @@ window.addEventListener('pagehide',
   () => fire.dispose(), { once: true });
 // Also dispose on component unmount.
 await fire.ready;`;
-export const codeTheme = {
-  name: 'domfx',
-  type: 'dark' as const,
-  colors: { 'editor.background': '#101117', 'editor.foreground': '#F4F5FB' },
-  tokenColors: [
-    { scope: ['comment'], settings: { foreground: '#AEB1C1' } },
-    { scope: ['keyword', 'storage', 'entity.name.function'], settings: { foreground: '#D7DAEE' } },
-    { scope: ['string'], settings: { foreground: '#E6DC6A' } },
-    { scope: ['constant.numeric'], settings: { foreground: '#9ED9AD' } },
-  ],
-};
+export { codeTheme } from '@domfx/site/code-theme';

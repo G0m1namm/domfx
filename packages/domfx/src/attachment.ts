@@ -3,7 +3,7 @@ import type { EffectHandle, EffectReason } from '@domfx/core';
 import { type captureElementWithReservation, measureCapture } from './browser.js';
 import type { BurnedPaperOptions } from './burned-paper-options.js';
 import { createCaptureRevisions } from './capture-revision.js';
-import { parseEffectColor, type EffectColor } from './color.js';
+import { fireColorRamp, parseEffectColor, type EffectColor } from './color.js';
 import { diagnosticsFor } from './diagnostics.js';
 import type { DitherOptions } from './dither-options.js';
 import type {
@@ -217,6 +217,15 @@ export function attachWithAdapters(
   let color: EffectColor | undefined;
   if (request.effect !== 'burned-paper') {
     color = colorControl(request.options.color, effect);
+  }
+  let rootColor: EffectColor | undefined;
+  let tipColor: EffectColor | undefined;
+  if (request.effect === 'fire') {
+    rootColor = colorControl(request.options.rootColor, effect);
+    tipColor = colorControl(request.options.tipColor, effect);
+    if (color !== undefined && (rootColor !== undefined || tipColor !== undefined)) {
+      throw new Error('invalid-fire-parameter');
+    }
   }
   const flameReach = request.effect === 'fire' ? request.options.flameReach : undefined;
   const dripDensity =
@@ -895,7 +904,13 @@ export function attachWithAdapters(
         effect,
         geometry,
         dripDensity,
-        { mistOpacity, emberDensity, emberGlow, color } satisfies EffectControls,
+        {
+          mistOpacity,
+          emberDensity,
+          emberGlow,
+          color,
+          colorRamp: fireColorRamp(tipColor, rootColor),
+        } satisfies EffectControls,
       );
       prepared.present(output.getCurrentTexture());
       dirty = false;
@@ -1220,6 +1235,36 @@ export function attachWithAdapters(
       enumerable: true,
       get: () => emberDensity,
     });
+    const rampEndpoint = (
+      read: () => EffectColor | undefined,
+      write: (next: EffectColor | undefined) => void,
+    ) => ({
+      configurable: true,
+      enumerable: true,
+      get: () => read()?.css,
+      set: (value: unknown) => {
+        const next = colorControl(value, effect);
+        if (next !== undefined && color !== undefined) {
+          throw new Error('invalid-fire-parameter');
+        }
+        write(next);
+        invalidate();
+      },
+    });
+    Object.defineProperties(handle, {
+      rootColor: rampEndpoint(
+        () => rootColor,
+        (next) => {
+          rootColor = next;
+        },
+      ),
+      tipColor: rampEndpoint(
+        () => tipColor,
+        (next) => {
+          tipColor = next;
+        },
+      ),
+    });
   } else if (effect === 'burned-paper') {
     Object.defineProperty(handle, 'emberGlow', {
       configurable: true,
@@ -1238,7 +1283,11 @@ export function attachWithAdapters(
       enumerable: true,
       get: () => color?.css,
       set: (value: unknown) => {
-        color = colorControl(value, effect);
+        const next = colorControl(value, effect);
+        if (next !== undefined && (rootColor !== undefined || tipColor !== undefined)) {
+          throw new Error(`invalid-${effect}-parameter`);
+        }
+        color = next;
         invalidate();
       },
     });

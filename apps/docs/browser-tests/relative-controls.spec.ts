@@ -47,13 +47,15 @@ for (const locale of ['en', 'es'] as const) {
       }
       await page.goto(`${prefix}/api/effects/${effect.id}/`);
       const lab = page.locator('[data-docs-lab]');
-      await expect(lab.locator('[data-docs-lab-extent]')).toHaveCount(fields.length);
+      // Panels need JavaScript, so names come from each control's own markup here. The box's
+      // browser tests check the computed accessible names with panels open.
+      await expect(lab.locator('[data-box-setting]')).toHaveCount(
+        1 + fields.length + effectWritableFields(effect).length,
+      );
       for (const field of fields) {
-        await expect(lab.locator(`[data-docs-lab-extent="${field.name}"]`)).toHaveValue(
-          String(field.defaultValue),
-        );
-        const input = lab.locator(`[data-docs-lab-extent="${field.name}"]`);
-        await expect(input).toHaveAccessibleName(new RegExp(`^${field.name}`));
+        const input = lab.locator(`[data-box-setting="${field.name}"]`);
+        await expect(input).toHaveValue(String(field.defaultValue));
+        await expect(input).toHaveAttribute('aria-label', field.name);
         if (field.kind === 'preset') {
           await expect(input.locator('option:checked')).toHaveText(presetLabel(field.name, locale));
           expect(
@@ -70,28 +72,35 @@ for (const locale of ['en', 'es'] as const) {
             field.unit === 'css-px' ? /px .+/ : /% .+/,
           );
         }
-        await expect(lab.locator('[data-docs-lab-code]')).toContainText(
+        await expect(lab.locator('[data-box-code]')).toContainText(
           `${field.name}: ${effectSettingApiValue(field, String(field.defaultValue))}`,
         );
         await expect(page.locator('#effect-options + p').first()).toBeVisible();
         await expect(page.locator('main')).toContainText(field.name);
       }
-      await expect(lab.locator('[data-docs-lab-intensity]')).toBeDisabled();
-      await expect(lab.locator('[data-docs-lab-intensity]')).toHaveAccessibleName('intensity');
-      await expect(lab.locator('[data-docs-lab-code]')).toContainText(
-        "clock: 'auto', motion: 'respect'",
+      await expect(lab.locator('[data-box-setting="intensity"]')).toBeDisabled();
+      await expect(lab.locator('[data-box-setting="intensity"]')).toHaveAttribute(
+        'aria-label',
+        'intensity',
+      );
+      await expect(lab.locator('[data-box-tab]').first()).toBeDisabled();
+      await expect(lab.locator('[data-box-code]')).toContainText("clock: 'auto'");
+      await expect(lab.locator('[data-box-code]')).toContainText('intensity: 0.8');
+      await expect(lab.locator('.docs-lab-static-code')).toContainText(
+        `${effect.exportName}(target`,
       );
       if (colorField) {
-        await expect(lab.locator('[data-docs-lab-color]')).toBeDisabled();
-        await expect(lab.locator('[data-docs-lab-color]')).toHaveAccessibleName('color');
-        await expect(lab.locator('[data-color-output]')).toHaveText(
-          locale === 'es' ? 'Colores originales' : 'Original colors',
+        const color = lab.locator('[data-box-color-input="color"]');
+        await expect(color).toBeDisabled();
+        await expect(lab.locator('label[for$="-color"]')).toHaveText('color');
+        await expect(lab.locator('[data-box-color-value="color"]')).toHaveText(
+          locale === 'es' ? 'Original' : 'Authored',
         );
-        await expect(lab.locator('[data-color-reset]')).toBeDisabled();
+        await expect(lab.locator('[data-box-unset="color"]')).toBeDisabled();
       } else {
-        await expect(lab.locator('[data-docs-lab-color]')).toHaveCount(0);
+        await expect(lab.locator('[data-box-color-input]')).toHaveCount(0);
       }
-      await expect(lab.locator('[data-docs-lab-code]')).not.toContainText('color:');
+      await expect(lab.locator('[data-box-code]')).not.toContainText('color:');
       await expect(lab.locator('canvas')).toHaveCount(0);
     }
     await context.close();
@@ -119,8 +128,10 @@ for (const locale of ['en', 'es'] as const) {
       if (!firstCanvas) {
         throw new Error(`Missing output: ${effect.id}`);
       }
-      await lab.locator('[data-docs-lab-intensity]').fill('45');
-      await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+      const code = lab.locator('[data-box-code]');
+      await lab.locator('[data-box-tab="shape"]').click();
+      await lab.locator('[data-box-setting="intensity"]').fill('45');
+      await expect(code).toContainText('intensity: 0.45');
       expect(await firstCanvas.evaluate((canvas) => canvas.isConnected), effect.id).toBe(true);
       const fields = effectCreationFields(effect);
       const colorField = effectColorField(effect);
@@ -132,14 +143,18 @@ for (const locale of ['en', 'es'] as const) {
         if (!previous) {
           throw new Error(`Missing output: ${effect.id}`);
         }
-        const input = lab.locator(`[data-docs-lab-extent="${field.name}"]`);
+        const input = lab.locator(`[data-box-setting="${field.name}"]`);
         if (field.kind === 'preset') {
+          // The default is already 100 on Fire; a real change is what replaces the instance.
+          await input.selectOption('0');
+          await expect(code).toContainText(`${field.name}: 0,`);
+          await expect(lab.locator('canvas')).toHaveCount(1);
           await input.selectOption('100');
         } else {
           await input.fill(changedControlValue(field));
         }
-        await expect(lab.locator(`[data-docs-lab-extent-code="${field.name}"]`)).toHaveText(
-          effectSettingApiValue(field, changedControlValue(field)).toString(),
+        await expect(code).toContainText(
+          `${field.name}: ${effectSettingApiValue(field, changedControlValue(field))},`,
         );
         await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
         await expect(lab).toHaveAttribute('data-status', 'active');
@@ -150,28 +165,30 @@ for (const locale of ['en', 'es'] as const) {
         if (!previous) {
           throw new Error(`Missing writable output: ${effect.id}`);
         }
-        await lab.locator(`[data-docs-lab-writable="${field.name}"]`).fill('40');
+        await lab.locator(`[data-box-setting="${field.name}"]`).fill('40');
         expect(await previous.evaluate((canvas) => canvas.isConnected)).toBe(true);
-        await expect(lab.locator('[data-docs-lab-code]')).toContainText(
-          `effect.${field.name} = 0.4`,
-        );
+        await expect(code).toContainText(`${field.name}: 0.4,`);
       }
       if (colorField) {
-        const color = lab.locator('[data-docs-lab-color]');
+        await lab.locator('[data-box-tab="color"]').click();
+        if (effect.id === 'fire') {
+          await lab.locator('[data-box-radio="color-mode"][value="single"]').check();
+        }
+        const color = lab.locator('[data-box-color-input="color"]');
         const colorCanvas = await lab.locator('canvas').elementHandle();
         if (!colorCanvas) {
           throw new Error(`Missing color output: ${effect.id}`);
         }
         await color.fill('#ff0000');
         expect(await colorCanvas.evaluate((canvas) => canvas.isConnected)).toBe(true);
-        await expect(lab.locator('[data-docs-lab-code]')).toContainText('color: "#ff0000",');
+        await expect(code).toContainText("color: '#ff0000',");
       }
-      await lab.locator('[data-docs-lab-copy]').click();
+      await lab.locator('.control-box-actions [data-box-copy]').click();
       const copied = await page.locator('html').getAttribute('data-copied-settings');
       expect(copied, effect.id).toContain(`const effect = ${effect.exportName}(target`);
       expect(copied, effect.id).toContain('intensity: 0.45');
       if (colorField) {
-        expect(copied, effect.id).toContain('color: "#ff0000",');
+        expect(copied, effect.id).toContain("color: '#ff0000',");
       } else {
         expect(copied, effect.id).not.toContain('color:');
       }
@@ -180,19 +197,23 @@ for (const locale of ['en', 'es'] as const) {
           `${field.name}: ${effectSettingApiValue(field, changedControlValue(field))}`,
         );
       }
+      if (colorField) {
+        await lab.locator('[data-box-tab="shape"]').click();
+      }
       for (const subject of ['text', 'svg', 'image']) {
-        await lab.locator(`[data-docs-lab-subject][value="${subject}"]`).check();
+        await lab.locator(`[data-box-radio="target"][value="${subject}"]`).check();
         await expect(lab.locator(`[data-docs-lab-target="${subject}"]`)).toBeVisible();
         await expect(lab).toHaveAttribute('data-status', 'active');
         await expect(lab.locator('canvas')).toHaveCount(1);
         if (colorField) {
-          await expect(lab.locator('[data-docs-lab-color]')).toHaveValue('#ff0000');
-          await expect(lab.locator('[data-docs-lab-code]')).toContainText('color: "#ff0000",');
+          await expect(lab.locator('[data-box-color-input="color"]')).toHaveValue('#ff0000');
+          await expect(code).toContainText("color: '#ff0000',");
         }
       }
       if (colorField) {
-        await lab.locator('[data-color-reset]').click();
-        await expect(lab.locator('[data-docs-lab-code]')).not.toContainText('color:');
+        await lab.locator('[data-box-tab="color"]').click();
+        await lab.locator('[data-box-unset="color"]').click();
+        await expect(code).not.toContainText('color:');
       }
     }
   });
@@ -209,17 +230,18 @@ test('EN and ES keep API names and values identical while translating preset lab
     await page.goto(`${prefix}/api/effects/slime/`);
     const lab = page.locator('[data-docs-lab]');
     snapshots.push({
-      code: await lab.locator('[data-docs-lab-code]').textContent(),
+      // The dispose comment on the last line is the one translated line.
+      code: (await lab.locator('[data-box-code]').textContent())?.split('\n').slice(0, -1),
       values: await lab.locator('input, select, option').evaluateAll((elements) =>
         elements.map((element) => ({
-          name: element.getAttribute('data-docs-lab-extent'),
+          name: element.getAttribute('data-box-setting'),
           value: element.getAttribute('value'),
         })),
       ),
     });
   }
   expect(snapshots[1]).toEqual(snapshots[0]);
-  await expect(page.locator('[data-docs-lab-extent="dripDensity"] option')).toHaveText([
+  await expect(page.locator('[data-box-setting="dripDensity"] option')).toHaveText([
     'Sin gotas',
     'Baja',
     'Media',
@@ -236,7 +258,8 @@ test('logical font rectangles may exceed paint bounds inside the finite source g
   await page.addStyleTag({ content: '.docs-lab-text { font-size: 92px; }' });
   const lab = page.locator('[data-docs-lab]');
   await lab.scrollIntoViewIfNeeded();
-  await lab.locator('[data-docs-lab-subject][value="text"]').check();
+  await lab.locator('[data-box-tab="shape"]').click();
+  await lab.locator('[data-box-radio="target"][value="text"]').check();
   const geometry = await lab.locator('[data-docs-lab-target="text"]').evaluate((target) => {
     const box = target.getBoundingClientRect();
     const range = document.createRange();

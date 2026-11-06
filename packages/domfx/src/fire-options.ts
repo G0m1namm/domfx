@@ -1,6 +1,8 @@
-import type { ColorAttachmentOptions } from './color-options.js';
+import type { AttachmentOptions } from './attachment-options.js';
+import type { ColorRampOptions } from './color-options.js';
 
-export type FireOptions = ColorAttachmentOptions &
+export type FireOptions = AttachmentOptions &
+  ColorRampOptions &
   (
     | {
         /** Legacy artistic scale in local CSS pixels, 8–64. Defaults to 24. */

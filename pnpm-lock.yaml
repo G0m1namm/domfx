@@ -138,6 +138,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vite:
+        specifier: ^7.3.7
+        version: 7.3.7(@types/node@24.13.3)(jiti@2.6.1)(lightningcss@1.33.0)(yaml@2.9.1)
 
   packages/core:
     devDependencies:
@@ -200,6 +203,9 @@ importers:
       '@domfx/browser':
         specifier: workspace:*
         version: link:../domfx
+      '@shikijs/themes':
+        specifier: 4.4.3
+        version: 4.4.3
 
   tests/gpu:
     dependencies:

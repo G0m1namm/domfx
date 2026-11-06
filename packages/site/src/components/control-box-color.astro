@@ -1,0 +1,20 @@
+---
+interface Props {
+  name: 'color' | 'rootColor' | 'tipColor';
+  id: string;
+  /** What the swatch shows while unset: the authored endpoint, or the site's silver. */
+  fallback: string;
+  fallbackLabel: string;
+  unset: string;
+  unsetLabel: string;
+  hidden?: boolean;
+}
+
+const { name, id, fallback, fallbackLabel, unset, unsetLabel, hidden = false } = Astro.props;
+---
+<div class="control-box-row control-box-color" data-box-color={name} data-unset="true" hidden={hidden}>
+  <label class="control-box-name" for={id}>{name}</label>
+  <input id={id} type="color" value={fallback} aria-describedby={`${id}-value`} data-box-color-input={name} data-fallback={fallback} />
+  <button type="button" class="control-box-unset" data-box-unset={name} aria-label={unsetLabel} disabled>{unset}</button>
+  <output id={`${id}-value`} for={id} data-box-color-value={name} data-fallback-label={fallbackLabel}>{fallbackLabel}</output>
+</div>

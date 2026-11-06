@@ -21,8 +21,8 @@ test('paused fire renders on the website', async ({ page, browser }, testInfo) =
   const layer = page.locator('.dialog-stage canvas');
   await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
   await expect(layer).toHaveCount(1);
-  await page.getByRole('button', { name: 'Pause animation' }).click();
-  await expect(page.getByRole('button', { name: 'Resume animation' })).toBeVisible();
+  await page.getByRole('button', { name: 'Pause effect' }).click();
+  await expect(page.getByRole('button', { name: 'Resume effect' })).toBeVisible();
   await expect(page.locator('.dialog-stage')).toHaveScreenshot('fire-preview.png', {
     animations: 'disabled',
     maxDiffPixelRatio: 0.005,

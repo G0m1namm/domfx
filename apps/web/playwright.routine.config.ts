@@ -10,6 +10,7 @@ export default defineConfig({
     '**/locale.spec.ts',
     '**/docs-links.spec.ts',
     '**/docs-routing.spec.ts',
+    '**/effect-settings-api.spec.ts',
   ],
   // Keep the full smoke suite, plus only the bounded regression cases tagged here.
   grep: /smoke\.spec\.ts|@routine/,

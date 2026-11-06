@@ -13,6 +13,10 @@ import { codeTheme, gsapCode } from "../examples";
 
 <DocsGsapLab />
 
+<p>The player gives each letter its own effect with <code>{"attachFire(letter, { host, clock: 'manual', intensity: 0, flameReach: 0.7 })"}</code>, then passes the letters and effects to one timeline, so <code>stagger</code> applies to both. Move, scale and fade the host or the letters' position freely: the effect follows without a new capture. Rotation and skew turn the effect off with <code>unsupported-placement</code>, and target-only opacity changes are unsupported, so fade the host.</p>
+
+<p>The rest of this guide starts smaller, with one target and one effect.</p>
+
 ## Provide your elements
 
 <p>Use the <code>index.html</code> from <a href="/docs/installation#provide-the-target-and-host">installation</a>, including the click counter. Replace all of <code>main.ts</code> with the module below. In a component, run it after the elements mount.</p>
@@ -47,6 +51,18 @@ const colorTween = gsap.fromTo(
 ```
 
 <p>For subsequent changes, use <code>{"gsap.to(fire, { color: '#ff6600', duration: 2 })"}</code>. During cleanup, call <code>colorTween.kill()</code> before disposing the effect. To restore the original palette, stop color tweens and assign <code>fire.color = undefined</code>.</p>
+
+<p>Fire's <code>rootColor</code> and <code>tipColor</code> animate the same way, with no plugin: assign an explicit color first, then use <code>fromTo()</code>. Neither can be set while <code>color</code> is set.</p>
+
+```ts
+fire.rootColor = '#fff5a3';
+fire.tipColor = '#ff1701';
+const flameTween = gsap.fromTo(
+  fire,
+  { rootColor: '#fff5a3', tipColor: '#ff1701' },
+  { rootColor: '#99ddff', tipColor: '#0066ff', duration: 2 },
+);
+```
 
 ## Own the lifetime
 

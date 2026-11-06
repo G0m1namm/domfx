@@ -1,6 +1,7 @@
 import {
   rasterDistance,
   effectBindings,
+  fireColors,
   fullscreenVertex,
   gradientDirections,
   scalarHash,
@@ -9,6 +10,7 @@ import {
 
 export const fireShader = `
 ${effectBindings}
+${fireColors}
 ${fullscreenVertex}
 ${rasterDistance}
 ${scalarHash}
@@ -50,11 +52,17 @@ fn rootHeight(p: vec2f, bend: f32) -> f32 {
   let rim = exp(-abs(distance) * 1.6) * .28;
   let glow = exp(-abs(distance) * .45) * .07;
   let exterior = smoothstep(-.75, .75, distance);
-  let alpha = clamp((rim + glow + body * exterior * .94) * sqrt(intensity), 0, .95)
-              * smoothstep(-3, -.5, distance);
+  // The target stays sharp under a scaling ancestor while this raster is only stretched.
+  // Reach full strength one raster px inside the silhouette, so no see-through seam opens.
+  // Undersides hold no flame to meet, and a bright line there would only show the raster.
+  let texel = 1 / params.w;
+  let down = vec2f(0, params.w);
+  let rising = smoothstep(-1.5, -.5, field(pos.xy - down) - field(pos.xy + down));
+  let contact = mix(exterior, smoothstep(-texel - .75, -texel, distance), rising);
+  let alpha = clamp((rim + glow + body * contact * .94) * sqrt(intensity), 0, .95)
+              * smoothstep(-3, -clamp(texel, .5, 2), distance);
   let heat = clamp(exp(-max(height, 0) * .24) * .85 + max(density, 0) * .25, 0, 1);
-  let orange = mix(vec3f(1, .09, .005), vec3f(1, .55, .025), smoothstep(.1, .65, heat));
-  let color = mix(orange, vec3f(1, .96, .64), smoothstep(.65, 1, heat));
+  let color = fireFlameColor(heat);
 
   // Each column emits occasional embers from an upward-facing silhouette edge.
   // Absolute-time lifetimes preserve seeking, reverse playback and seed determinism.
@@ -86,6 +94,6 @@ fn rootHeight(p: vec2f, bend: f32) -> f32 {
   }
   ember *= exterior * intensity;
   let emberAlpha = min(ember, .9);
-  return applyEffectColor(vec4f(vec3f(1, .78, .28) * emberAlpha + color * alpha * (1 - emberAlpha),
+  return applyEffectColor(vec4f(fireEmberColor() * emberAlpha + color * alpha * (1 - emberAlpha),
                emberAlpha + alpha * (1 - emberAlpha)));
 }`;

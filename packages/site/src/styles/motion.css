@@ -1,0 +1,228 @@
+/* The one source of interface motion, from DESIGN.md's Motion table. Both sites load it
+   through tokens.css. New surfaces use these tokens instead of their own timing; script
+   animations read them with getComputedStyle. Reduced motion zeroes them, so anything
+   built on them becomes immediate. */
+:root {
+  --motion-enter-duration: 450ms;
+  --motion-enter-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-exit-duration: 220ms;
+  --motion-exit-easing: cubic-bezier(0.32, 0.72, 0, 1);
+  --motion-swap-out-duration: 130ms;
+  --motion-swap-in-duration: 220ms;
+  --motion-press-duration: 150ms;
+  --motion-press-scale: 0.95;
+}
+/* Spring: response 0.32s, damping 0.78, sampled over 450ms. Peaks about 2% over. */
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --motion-enter-easing: linear(
+      0,
+      0.0372,
+      0.1271,
+      0.2442,
+      0.3704,
+      0.4935,
+      0.6063,
+      0.7047,
+      0.7872,
+      0.8541,
+      0.9063,
+      0.9458,
+      0.9745,
+      0.9944,
+      1.0073,
+      1.015,
+      1.0188,
+      1.0199,
+      1.0192,
+      1.0175,
+      1.0152,
+      1.0127,
+      1.0102,
+      1.0079,
+      1.006,
+      1.0043,
+      1.003,
+      1.0019,
+      1.0011,
+      1.0005,
+      1
+    );
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-enter-duration: 0ms;
+    --motion-exit-duration: 0ms;
+    --motion-swap-out-duration: 0ms;
+    --motion-swap-in-duration: 0ms;
+    --motion-press-duration: 0ms;
+    --motion-press-scale: 1;
+  }
+}
+
+/* Dialogs and popovers: spring in, shorter eased exit. Effect previews rise, search and the
+   phone menu drop from the top, and the docs drawer slides from the side. */
+dialog.effect-dialog {
+  --motion-surface-from: 0 1rem;
+}
+dialog.site-search-dialog,
+site-search dialog {
+  --motion-surface-from: 0 -0.5rem;
+}
+#site-menu[popover] {
+  --motion-surface-from: 0 -0.75rem;
+}
+#starlight__sidebar[popover] {
+  --motion-surface-from: -1.5rem 0;
+}
+:is(
+  dialog.effect-dialog,
+  dialog.site-search-dialog,
+  site-search dialog,
+  #site-menu[popover],
+  #starlight__sidebar[popover]
+) {
+  opacity: 0;
+  translate: var(--motion-surface-from);
+  pointer-events: none;
+  transition:
+    opacity var(--motion-exit-duration) var(--motion-exit-easing),
+    translate var(--motion-exit-duration) var(--motion-exit-easing),
+    overlay var(--motion-exit-duration) allow-discrete,
+    display var(--motion-exit-duration) allow-discrete;
+}
+:is(
+  dialog.effect-dialog,
+  dialog.site-search-dialog,
+  site-search dialog,
+  #site-menu[popover],
+  #starlight__sidebar[popover]
+):is([open], :popover-open) {
+  opacity: 1;
+  /* none, not 0: a resting translate would trap fixed-position descendants. */
+  translate: none;
+  pointer-events: auto;
+  transition:
+    opacity var(--motion-swap-in-duration) ease-out,
+    translate var(--motion-enter-duration) var(--motion-enter-easing),
+    overlay var(--motion-exit-duration) allow-discrete,
+    display var(--motion-exit-duration) allow-discrete;
+}
+@starting-style {
+  :is(
+    dialog.effect-dialog,
+    dialog.site-search-dialog,
+    site-search dialog,
+    #site-menu[popover],
+    #starlight__sidebar[popover]
+  ):is([open], :popover-open) {
+    opacity: 0;
+    translate: var(--motion-surface-from);
+  }
+}
+:is(dialog.effect-dialog, dialog.site-search-dialog, site-search dialog)::backdrop {
+  opacity: 0;
+  transition:
+    opacity var(--motion-exit-duration) ease-out,
+    overlay var(--motion-exit-duration) allow-discrete,
+    display var(--motion-exit-duration) allow-discrete;
+}
+:is(dialog.effect-dialog, dialog.site-search-dialog, site-search dialog)[open]::backdrop {
+  opacity: 1;
+}
+@starting-style {
+  :is(dialog.effect-dialog, dialog.site-search-dialog, site-search dialog)[open]::backdrop {
+    opacity: 0;
+  }
+}
+/* Matches Starlight's 50rem threshold, where the drawer becomes the always-visible sidebar. */
+@media (min-width: 50rem) {
+  #starlight__sidebar[popover] {
+    opacity: 1;
+    translate: none;
+    pointer-events: auto;
+    transition: none;
+  }
+}
+
+/* Press: buttons and tabs. Effect targets and whole cards keep their geometry. */
+:is(
+  button,
+  .button,
+  .nav-cta,
+  [role='tab'],
+  .language-switcher summary,
+  .control-box-segments label
+):not(
+  :disabled,
+  .effect-card,
+  .site-search-results button,
+  [data-effect-host] *,
+  [data-live-host] *
+) {
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out,
+    scale var(--motion-press-duration) ease-out;
+}
+:is(
+    button,
+    .button,
+    .nav-cta,
+    [role='tab'],
+    .language-switcher summary,
+    .control-box-segments label
+  ):not(
+    :disabled,
+    .effect-card,
+    .site-search-results button,
+    [data-effect-host] *,
+    [data-live-host] *
+  ):active {
+  scale: var(--motion-press-scale);
+}
+
+/* Tab groups: one selection that glides. Items keep their own selected style until
+   selection-glide.ts takes over, and again in forced colors, where fills are dropped. */
+.selection-glide {
+  position: relative;
+  isolation: isolate;
+}
+.selection-glider {
+  position: absolute;
+  z-index: -1;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  pointer-events: none;
+  transition:
+    translate var(--motion-enter-duration) var(--motion-enter-easing),
+    inline-size var(--motion-enter-duration) var(--motion-enter-easing),
+    block-size var(--motion-enter-duration) var(--motion-enter-easing);
+}
+[data-selection-glide='fill'] > .selection-glider {
+  border: 1px solid var(--control-border);
+  border-radius: var(--selection-glide-radius, 0.3125rem);
+  background: var(--raised);
+}
+[data-selection-glide='line'] > .selection-glider {
+  block-size: 2px;
+  background: var(--silver);
+}
+@media (forced-colors: none) {
+  .selection-glide[data-selection-glide='fill']
+    :is(button[aria-pressed='true'], input:checked + span) {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+  .selection-glide[data-selection-glide='line'] [aria-selected='true'] {
+    border-bottom-color: transparent;
+  }
+}
+@media (forced-colors: active) {
+  .selection-glider {
+    display: none;
+  }
+}

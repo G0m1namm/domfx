@@ -57,7 +57,11 @@ test('body, control and code text follow the browser default font preference', a
             await page.evaluate(() => getComputedStyle(document.documentElement).fontSize),
           ).toBe(`${preference}px`);
           const selectors = route.startsWith('/docs/')
-            ? ['.sl-markdown-content p', '.docs-lab-copy', '.sl-markdown-content pre code']
+            ? [
+                '.sl-markdown-content p',
+                '.control-box-segments input + span',
+                '.sl-markdown-content pre code',
+              ]
             : ['.closing-cta p', '.closing-actions button', '.closing-actions code'];
           const sizes = [];
           for (const selector of selectors) {
@@ -85,7 +89,8 @@ test('body, control and code text follow the browser default font preference', a
           if (route === '/effects/') {
             await page.setViewportSize({ width: 320, height: 900 });
             await page.locator('[data-card]').first().click();
-            for (const selector of ['.target-options button', '.preview-toolbar p']) {
+            await page.getByRole('button', { name: 'Shape', exact: true }).click();
+            for (const selector of ['.control-box-segments label', '.control-box-tab']) {
               const contained = await page.locator(selector).evaluateAll((elements) =>
                 elements.every((element) => {
                   const box = element.getBoundingClientRect();
@@ -226,40 +231,51 @@ for (const width of [320, 360, 768, 1440]) {
     await page.evaluate(() => document.fonts.ready);
     const lab = page.locator('[data-docs-lab]');
     await lab.scrollIntoViewIfNeeded();
-    const layout = await lab.evaluate((element) => {
-      const box = element.getBoundingClientRect();
-      const segments = Array.from(
-        element.querySelectorAll('.docs-lab-segments label span'),
-        (label) => label.getBoundingClientRect().toJSON(),
-      );
-      const controls = Array.from(
-        element.querySelectorAll('.docs-lab-segments, .docs-lab-row input, .docs-lab-row output'),
-        (control) => control.getBoundingClientRect().toJSON(),
-      );
-      const statusElement = element.querySelector('.docs-lab-status');
-      const toggleElement = element.querySelector('.docs-lab-toggle');
-      if (!statusElement || !toggleElement) {
-        throw new Error('missing-lab-overlay-controls');
-      }
-      const status = statusElement.getBoundingClientRect();
-      const toggle = toggleElement.getBoundingClientRect();
-      return {
-        box: box.toJSON(),
-        segments,
-        controls,
-        statusCenter: status.top + status.height / 2,
-        toggleCenter: toggle.top + toggle.height / 2,
-      };
-    });
-    expect(
-      Math.max(...layout.segments.map((box) => box.top)) -
-        Math.min(...layout.segments.map((box) => box.top)),
-    ).toBeLessThanOrEqual(1);
-    expect(Math.abs(layout.statusCenter - layout.toggleCenter)).toBeLessThanOrEqual(1);
-    for (const control of layout.controls) {
-      expect(control.left).toBeGreaterThanOrEqual(layout.box.left);
-      expect(control.right).toBeLessThanOrEqual(layout.box.right);
+    const box = await lab.boundingBox();
+    if (!box) {
+      throw new Error('missing-lab');
     }
+    // Every panel stays inside the preview, with its target rows on one line.
+    for (const tab of ['shape', 'color', 'time', 'code']) {
+      await lab.locator(`[data-box-tab="${tab}"]`).click();
+      await expect(lab.locator(`[data-box-view="${tab}"]`)).toBeVisible();
+      await expect
+        .poll(() =>
+          lab
+            .locator('[data-box-panel]')
+            .evaluate((panel) => panel.getAnimations({ subtree: true }).length),
+        )
+        .toBe(0);
+      const layout = await lab.evaluate((element, name) => {
+        const view = element.querySelector(`[data-box-view="${name}"]`);
+        if (!view) {
+          throw new Error('missing-view');
+        }
+        return {
+          segments: Array.from(
+            view.querySelectorAll('.control-box-row:first-child .control-box-segments label'),
+            (label) => label.getBoundingClientRect().toJSON(),
+          ),
+          controls: Array.from(
+            view.querySelectorAll(
+              'input:not([type="radio"]), select, output, button, label, .control-box-code',
+            ),
+            (control) => control.getBoundingClientRect().toJSON(),
+          ).filter((rect) => rect.width > 0),
+        };
+      }, tab);
+      if (layout.segments.length) {
+        expect(
+          Math.max(...layout.segments.map((rect) => rect.top)) -
+            Math.min(...layout.segments.map((rect) => rect.top)),
+        ).toBeLessThanOrEqual(1);
+      }
+      for (const control of layout.controls) {
+        expect(control.left).toBeGreaterThanOrEqual(box.x);
+        expect(control.right).toBeLessThanOrEqual(box.x + box.width);
+      }
+    }
+    await lab.locator('[data-box-tab="code"]').click();
     const facts = await page.locator('.docs-effect-facts > div').evaluateAll((elements) =>
       elements.map((element) => {
         const term = element.querySelector('dt');

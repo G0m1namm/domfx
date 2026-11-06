@@ -10,10 +10,11 @@ import {
 import { effects } from '@domfx/site/effects';
 
 function changedControlValue(field: ReturnType<typeof effectCreationFields>[number]) {
+  // An unchanged value replaces nothing, so never use the default.
   if (field.kind === 'preset') {
-    return '100';
+    return field.defaultValue === 100 ? '0' : '100';
   }
-  return '17';
+  return field.defaultValue === 17 ? '18' : '17';
 }
 
 function presetLabels(name: string, locale: 'en' | 'es') {
@@ -23,6 +24,16 @@ function presetLabels(name: string, locale: 'en' | 'es') {
       : ['None', 'Low', 'Medium', 'High'];
   }
   return locale === 'es' ? ['Sin brasas', 'Media', 'Completa'] : ['None', 'Half', 'Full'];
+}
+
+async function openTab(dialog: Locator, tab: 'shape' | 'color' | 'time' | 'code') {
+  const button = dialog.locator(`[data-box-tab="${tab}"]`);
+  if ((await button.getAttribute('aria-expanded')) !== 'true') {
+    await button.click();
+  }
+  const view = dialog.locator(`[data-box-view="${tab}"]`);
+  await expect(view).toBeVisible();
+  return view;
 }
 
 async function hasVisiblePixels(canvas: Locator) {
@@ -142,16 +153,16 @@ test('Halftone forwards relative geometry', async ({ page }) => {
   await page.locator('[data-card][data-id="halftone"]').click();
   const dialog = page.locator('.effect-dialog');
   const stage = dialog.locator('.dialog-stage');
-  const controls = dialog.locator('[data-creation-controls]');
+  const controls = await openTab(dialog, 'shape');
 
   await expect(stage).toHaveAttribute('data-status', 'active');
-  await controls.locator('[data-creation-option="plumeReach"]').fill('0');
-  await controls.locator('[data-creation-option="bandDepth"]').fill('0');
+  await controls.locator('[data-box-setting="plumeReach"]').fill('0');
+  await controls.locator('[data-box-setting="bandDepth"]').fill('0');
   await expect(stage).toHaveAttribute('data-status', 'active');
   expect(await hasVisiblePixels(stage.locator('canvas'))).toBe(false);
 
-  await controls.locator('[data-creation-option="plumeReach"]').fill('17');
-  await controls.locator('[data-creation-option="bandDepth"]').fill('17');
+  await controls.locator('[data-box-setting="plumeReach"]').fill('17');
+  await controls.locator('[data-box-setting="bandDepth"]').fill('17');
   await expect(stage).toHaveAttribute('data-status', 'active');
   expect(await hasVisiblePixels(stage.locator('canvas'))).toBe(true);
 });
@@ -160,37 +171,43 @@ test('marketing color control updates live code and restores original colors', a
   await page.goto('/effects/');
   await page.locator('[data-card][data-id="frost"]').click();
   const dialog = page.locator('.effect-dialog');
-  const controls = dialog.locator('[data-color-controls]');
-  const color = controls.locator('input[type="color"]');
+  const controls = await openTab(dialog, 'color');
+  const row = controls.locator('[data-box-color="color"]');
+  const color = row.locator('input[type="color"]');
+  const unset = row.getByRole('button', { name: 'Unset color' });
+  const code = dialog.locator('[data-box-code]');
 
-  await expect(controls).toBeVisible();
   expect(
-    await controls.evaluate((element) => {
+    await controls.locator('fieldset').evaluate((element) => {
       const styles = getComputedStyle(element);
       return [styles.borderTopWidth, styles.paddingLeft, styles.paddingRight];
     }),
   ).toEqual(['0px', '0px', '0px']);
   await expect(color).toHaveAccessibleName('color');
-  await expect(controls.locator('[data-color-output]')).toHaveText('Original colors');
-  await expect(controls.locator('[data-color-reset]')).toBeDisabled();
+  await expect(row.locator('output')).toHaveText('Authored');
+  await expect(unset).toBeDisabled();
   await color.fill('#ff0000');
-  await expect(controls.locator('[data-color-reset]')).toBeEnabled();
-  await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
-  await dialog.locator('[data-target="svg"]').click();
-  await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
-  await controls.locator('[data-color-reset]').click();
-  await expect(dialog.locator('[data-code]')).not.toContainText('color:');
-  await expect(controls.locator('[data-color-reset]')).toBeDisabled();
+  await expect(unset).toBeEnabled();
+  await expect(code).toContainText("color: '#ff0000',");
+  await openTab(dialog, 'shape');
+  await dialog.getByRole('radio', { name: 'SVG', exact: true }).check();
+  await expect(code).toContainText("color: '#ff0000',");
+  await openTab(dialog, 'color');
+  await unset.click();
+  await expect(code).not.toContainText('color:');
+  await expect(unset).toBeDisabled();
 
   await dialog.locator('[data-close]').click();
   await page.locator('[data-card][data-id="burned-paper"]').click();
-  await expect(dialog.locator('[data-color-controls]')).toBeHidden();
+  await expect(dialog.locator('[data-box-tab="color"]')).toHaveCount(0);
 });
 
 test('marketing writable controls use the compact fieldset reset', async ({ page }) => {
   await page.goto('/effects/');
   await page.locator('[data-card][data-id="frost"]').click();
-  const controls = page.locator('[data-writable-controls]');
+  const controls = (await openTab(page.locator('.effect-dialog'), 'shape')).locator(
+    '[data-box-fieldset="settings"]',
+  );
   await expect(controls).toBeVisible();
   expect(
     await controls.evaluate((element) => {
@@ -217,11 +234,12 @@ test('marketing preview replays writable controls changed before attachment is r
     await page.locator('[data-card][data-id="frost"]').click();
     const dialog = page.locator('.effect-dialog');
     const stage = dialog.locator('.dialog-stage');
-    const opacity = dialog.locator('[data-writable-option="mistOpacity"]');
+    const opacity = dialog.locator('[data-box-setting="mistOpacity"]');
     await expect(stage).toHaveAttribute('data-status', 'initializing');
+    await openTab(dialog, 'shape');
     await expect(page.locator('html')).toHaveAttribute('data-test-renderer-device-gate', 'held');
     await opacity.fill('0');
-    await expect(dialog.locator('[data-code]')).toContainText('effect.mistOpacity = 0');
+    await expect(dialog.locator('[data-box-code]')).toContainText('mistOpacity: 0,');
     await page.evaluate(() => document.dispatchEvent(new Event('domfx-test-release-device')));
     await expect(stage).toHaveAttribute('data-status', 'active');
     await expect
@@ -264,16 +282,21 @@ for (const locale of ['en', 'es'] as const) {
           'active',
         );
         const fields = effectCreationFields(effect);
-        const controls = dialog.locator('[data-creation-controls]');
-        await expect(controls.locator('input, select')).toHaveCount(fields.length);
+        const controls = await openTab(dialog, 'shape');
+        const code = dialog.locator('[data-box-code]');
+        const writable = effectWritableFields(effect);
+        // Intensity accompanies the effect's own settings.
+        await expect(controls.locator('[data-box-setting]')).toHaveCount(
+          fields.length + writable.length + 1,
+        );
         const first = await dialog.locator('canvas').elementHandle();
         if (!first) {
           throw new Error(`Missing output for ${effect.id}`);
         }
-        await dialog.locator('#effect-intensity').fill('45');
+        await dialog.locator('[data-box-setting="intensity"]').fill('45');
         expect(await first.evaluate((canvas) => canvas.isConnected)).toBe(true);
         for (const field of fields) {
-          const input = controls.locator(`[data-creation-option="${field.name}"]`);
+          const input = controls.locator(`[data-box-setting="${field.name}"]`);
           await expect(input).toHaveAccessibleName(new RegExp(`^${field.name}`));
           await expect(input).toHaveValue(String(field.defaultValue));
           if (field.kind === 'preset') {
@@ -289,7 +312,7 @@ for (const locale of ['en', 'es'] as const) {
               const output = row?.querySelector('output')?.getBoundingClientRect();
               const slider = element.getBoundingClientRect();
               return Boolean(
-                label && output && label.right <= slider.left && slider.right <= output.left,
+                label && output && label.right <= output.left && output.right <= slider.left,
               );
             });
             expect(aligned, `${locale} ${effect.id} ${field.name} uses compact aligned rows`).toBe(
@@ -301,7 +324,7 @@ for (const locale of ['en', 'es'] as const) {
             throw new Error(`Missing output for ${effect.id}`);
           }
           if (field.kind === 'preset') {
-            await input.selectOption('100');
+            await input.selectOption(changedControlValue(field));
           } else {
             await input.fill(changedControlValue(field));
           }
@@ -312,33 +335,37 @@ for (const locale of ['en', 'es'] as const) {
           );
           await expect(dialog.locator('canvas')).toHaveCount(1);
         }
-        for (const field of effectWritableFields(effect)) {
+        for (const field of writable) {
           const previous = await dialog.locator('canvas').elementHandle();
           if (!previous) {
             throw new Error(`Missing writable canvas for ${effect.id}`);
           }
-          const input = dialog.locator(`[data-writable-option="${field.name}"]`);
+          const input = dialog.locator(`[data-box-setting="${field.name}"]`);
           await input.fill('40');
           expect(await previous.evaluate((canvas) => canvas.isConnected)).toBe(true);
-          await expect(dialog.locator('[data-code]')).toContainText(`effect.${field.name} = 0.4`);
+          await expect(code).toContainText(`${field.name}: 0.4,`);
         }
         if (effectColorField(effect)) {
           const colorCanvas = await dialog.locator('canvas').elementHandle();
           if (!colorCanvas) {
             throw new Error(`Missing color canvas for ${effect.id}`);
           }
-          await dialog.locator('input[type="color"]').fill('#ff0000');
+          const colors = await openTab(dialog, 'color');
+          if (effect.id === 'fire') {
+            await colors.locator('[data-box-radio="color-mode"][value="single"]').check();
+          }
+          await colors.locator('[data-box-color="color"] input[type="color"]').fill('#ff0000');
           expect(await colorCanvas.evaluate((canvas) => canvas.isConnected)).toBe(true);
-          await expect(dialog.locator('[data-code]')).toContainText('color: "#ff0000",');
+          await expect(code).toContainText("color: '#ff0000',");
         } else {
-          await expect(dialog.locator('[data-color-controls]')).toBeHidden();
+          await expect(dialog.locator('[data-box-tab="color"]')).toHaveCount(0);
         }
-        await dialog.locator('[data-copy-code]').click();
+        await dialog.locator('[data-box-copy]:visible').click();
         const copied = await page.locator('html').getAttribute('data-copied-settings');
         expect(copied).toContain(effect.exportName);
         expect(copied).toContain('intensity: 0.45');
         if (effectColorField(effect)) {
-          expect(copied).toContain('color: "#ff0000",');
+          expect(copied).toContain("color: '#ff0000',");
         } else {
           expect(copied).not.toContain('color:');
         }
@@ -346,10 +373,10 @@ for (const locale of ['en', 'es'] as const) {
           const value = changedControlValue(field);
           expect(copied).toContain(`${field.name}: ${effectSettingApiValue(field, value)}`);
         }
-        for (const field of effectWritableFields(effect)) {
-          expect(copied).toContain(`effect.${field.name} = 0.4`);
+        for (const field of writable) {
+          expect(copied).toContain(`${field.name}: 0.4,`);
         }
-        await page.keyboard.press('Escape');
+        await dialog.locator('[data-close]').click();
         await expect(dialog).not.toBeVisible();
         await expect(dialog.locator('canvas')).toHaveCount(0);
       }
@@ -379,7 +406,9 @@ for (const kind of ['image', 'svg']) {
     const dialog = page.locator('.effect-dialog');
     const scene = dialog.locator('.dialog-scene');
     const stage = dialog.locator('.dialog-stage');
-    await dialog.locator(`[data-target="${kind}"]`).click();
+    await openTab(dialog, 'shape');
+    await dialog.locator(`[data-box-radio="target"][value="${kind}"]`).check();
+    await dialog.locator('[data-box-tab="shape"]').click();
     await expect(stage).toHaveAttribute('data-status', 'active');
     const canvas = await stage.locator('canvas').elementHandle();
     if (!canvas) {
@@ -402,7 +431,8 @@ for (const kind of ['image', 'svg']) {
     };
 
     await scene.hover({ position: { x: 20, y: 20 } });
-    await expect(dialog.locator('[data-zoom-label]')).toHaveText('200%');
+    await expect(scene).toHaveAttribute('data-zoomed', 'true');
+    await expect(dialog.locator('[data-zoom-label]')).toHaveText('100%');
     await retained();
     await page.mouse.move(0, 0);
     await retained();
@@ -446,11 +476,12 @@ for (const kind of ['image', 'svg']) {
       await dialog.locator('[data-zoom-in]').click();
     }
     await expect(dialog.locator('[data-zoom-label]')).toHaveText('300%');
-    await dialog.locator('[data-creation-option="dripDensity"]').selectOption('100');
+    await openTab(dialog, 'shape');
+    await dialog.locator('[data-box-setting="dripDensity"]').selectOption('100');
     await expect.poll(() => canvas.evaluate((element) => element.isConnected)).toBe(false);
     await expect(stage).toHaveAttribute('data-status', 'active');
     await expect(stage.locator('canvas')).toHaveCount(1);
-    await expect(dialog.locator('[data-code]')).toContainText('dripDensity: 1');
+    await expect(dialog.locator('[data-box-code]')).toContainText('dripDensity: 1');
     await dialog.locator('[data-close]').click();
     await expect(stage.locator('canvas')).toHaveCount(0);
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
@@ -474,34 +505,27 @@ test('Spanish Slime controls reflow and work with the keyboard at narrow and wid
     if (!previous) {
       throw new Error('Missing Slime output');
     }
-    const density = dialog.locator('[data-creation-option="dripDensity"]');
-    await density.scrollIntoViewIfNeeded();
-    if (width <= 360) {
-      await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
-      await expect(dialog.locator('canvas')).toHaveCount(0);
-    }
+    await openTab(dialog, 'shape');
+    const density = dialog.locator('[data-box-setting="dripDensity"]');
     await density.focus();
     // Native select type-ahead chooses Alta without relying on an OS popup.
     await page.keyboard.press('a');
     await page.keyboard.press('Tab');
     await expect(density).toHaveValue('100');
-    await expect(dialog.locator('[data-code]')).toContainText('dripDensity: 1');
-    if (width <= 360) {
-      await page.waitForTimeout(400);
-      await expect(dialog.locator('canvas')).toHaveCount(0);
-    }
+    await expect(dialog.locator('[data-box-code]')).toContainText('dripDensity: 1');
+    await expect.poll(() => previous.evaluate((canvas) => canvas.isConnected)).toBe(false);
+    await expect(dialog.locator('.dialog-stage')).toHaveAttribute('data-status', 'active');
+    await expect(dialog.locator('canvas')).toHaveCount(1);
     const layout = await dialog.evaluate((element) => ({
       fits: element.scrollWidth <= element.clientWidth + 1,
       pageFits: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
-      targets: Array.from(element.querySelectorAll<HTMLInputElement>('[data-creation-option]')).map(
-        (input) => input.getBoundingClientRect().height,
-      ),
+      targets: Array.from(
+        element.querySelectorAll<HTMLInputElement>('select[data-box-setting]'),
+      ).map((input) => input.getBoundingClientRect().height),
     }));
     expect(layout).toMatchObject({ fits: true, pageFits: true });
     expect(layout.targets.every((height) => height >= 44)).toBe(true);
-    await dialog.locator('[data-dialog-target]').scrollIntoViewIfNeeded();
-    await expect(dialog.locator('.dialog-stage')).toHaveAttribute('data-status', 'active');
-    await page.keyboard.press('Escape');
+    await expect(dialog.locator('[data-dialog-target]')).toBeInViewport();
   }
 });
 
@@ -509,8 +533,8 @@ test('creation controls stay disabled without WebGPU', async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
   await page.goto('/effects/');
   await page.locator('[data-card][data-id="slime"]').click();
-  const controls = page.locator('[data-creation-controls]');
-  await expect(controls.locator('[data-creation-option="dripDensity"]')).toBeDisabled();
+  const controls = await openTab(page.locator('.effect-dialog'), 'shape');
+  await expect(controls.locator('[data-box-setting="dripDensity"]')).toBeDisabled();
   await expect(page.locator('.dialog-stage canvas')).toHaveCount(0);
-  await expect(page.locator('[data-code]')).toContainText('dripDensity: 0.56');
+  await expect(page.locator('[data-box-code]')).toContainText('dripDensity: 0.56');
 });

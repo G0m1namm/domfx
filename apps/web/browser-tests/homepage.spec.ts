@@ -21,6 +21,7 @@ test('a card opens its own artwork and offers text, SVG and image previews', asy
           : await subject.textContent();
     await card.click();
     const target = page.locator('[data-dialog-target]');
+    await page.getByRole('button', { name: 'Shape', exact: true }).click();
     if (kind === 'image') {
       await expect(target.locator('img')).toHaveAttribute('src', expected ?? '');
     } else if (kind === 'svg') {
@@ -29,9 +30,9 @@ test('a card opens its own artwork and offers text, SVG and image previews', asy
       await expect(target).toHaveText(expected ?? '');
     }
     for (const label of ['Text', 'SVG', 'Image']) {
-      const button = page.getByRole('button', { name: label, exact: true });
-      await button.click();
-      await expect(button).toHaveAttribute('aria-pressed', 'true');
+      const button = page.getByRole('radio', { name: label, exact: true });
+      await button.check();
+      await expect(button).toBeChecked();
       if (label !== 'Text') {
         await expect(target.locator(label === 'SVG' ? 'svg' : 'img')).toBeVisible();
       }
@@ -54,10 +55,10 @@ test('every catalog entry opens the matching preview and generates its named pub
   for (const effect of effects) {
     await page.getByRole('button', { name: `Try ${effect.name}`, exact: true }).click();
     await expect(page.locator('#dialog-title')).toHaveText(effect.name);
-    await expect(page.locator('[data-code]')).toContainText(
+    await expect(page.locator('[data-box-code]')).toContainText(
       `import { ${effect.exportName} } from '@domfx/browser'`,
     );
-    await expect(page.locator('[data-code]')).not.toContainText('undefined');
+    await expect(page.locator('[data-box-code]')).not.toContainText('undefined');
     await expect(page.getByRole('link', { name: 'Read the effect reference' })).toHaveAttribute(
       'href',
       `/docs/api/effects/${effect.id}/`,
@@ -171,19 +172,16 @@ for (const viewport of [
     expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
       true,
     );
+    await dialog.getByRole('button', { name: 'Shape', exact: true }).click();
     for (const name of ['Text', 'SVG', 'Image']) {
-      const button = dialog.getByRole('button', { name, exact: true });
-      await button.click();
-      await expect(button).toHaveAttribute('aria-pressed', 'true');
-      await dialog.locator('[data-dialog-target]').scrollIntoViewIfNeeded();
+      const button = dialog.getByRole('radio', { name, exact: true });
+      await button.check();
+      await expect(button).toBeChecked();
       await expect(dialog.locator('[data-dialog-target]')).toBeInViewport();
     }
     const zoom = page.getByRole('button', { name: 'Zoom in', exact: true });
     await zoom.click();
     await expect(page.locator('[data-zoom-label]')).toHaveText('150%');
-    await page
-      .getByRole('link', { name: 'Read the effect reference', exact: true })
-      .scrollIntoViewIfNeeded();
     await expect(
       page.getByRole('link', { name: 'Read the effect reference', exact: true }),
     ).toBeInViewport();
@@ -242,10 +240,12 @@ test('copy reports success only after a write and supplies a manual fallback', a
   await page.getByRole('button', { name: 'Copy package install command' }).click();
   await expect(page.locator('.toast')).toContainText(`Copy it manually: ${browserInstallCommand}`);
   await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
-  await page.getByRole('button', { name: 'Copy attachment code' }).click();
-  const feedback = page.getByRole('dialog').locator('[data-copy-status]');
+  await page.getByRole('button', { name: 'Copy code', exact: true }).click();
+  const feedback = page.getByRole('dialog').locator('[data-box-toast]');
   await expect(feedback).toBeVisible();
-  await expect(feedback).toContainText('Select and copy the attachment code above');
+  await expect(feedback).toHaveText('Press ⌘/Ctrl+C');
+  await expect(page.getByRole('dialog').locator('[data-box-code]')).toBeVisible();
+  expect(await page.evaluate(() => getSelection()?.toString())).toContain('attachFrost');
 });
 
 for (const stars of [49, 50]) {

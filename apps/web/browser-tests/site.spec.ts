@@ -32,7 +32,7 @@ test('visibility recovery replaces invalidated captures and preserves preview pa
     await expect(page.locator('.header-effect-host')).toHaveAttribute('data-status', 'active');
     await page.getByRole('button', { name: 'Try Frost', exact: true }).click();
     await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
-    await page.getByRole('button', { name: 'Pause animation' }).click();
+    await page.getByRole('button', { name: 'Pause effect' }).click();
     let pausedFrame = await page.locator('.dialog-stage').screenshot();
     // Let the compositor settle before comparing the retained paused frame.
     await expect
@@ -46,9 +46,9 @@ test('visibility recovery replaces invalidated captures and preserves preview pa
     await setHidden(true);
     await expect(page.locator('canvas')).toHaveCount(0);
     await setHidden(false);
-    await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
+    await expect(page.locator('[data-preview-status]')).toContainText('Preview paused');
     await expect(page.locator('.dialog-stage canvas')).toHaveCount(1);
-    await expect(page.getByRole('button', { name: 'Resume animation' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Resume effect' })).toBeVisible();
     await expect
       .poll(async () => pausedFrame.equals(await page.locator('.dialog-stage').screenshot()))
       .toBe(true);
@@ -182,9 +182,9 @@ test('reduced motion removes output and requires explicit resume after recovery'
   await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.locator('.dialog-stage canvas')).toHaveCount(0);
-  await expect(page.locator('[data-pause]')).toBeDisabled();
+  await expect(page.locator('[data-box-pause]')).toBeDisabled();
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(page.getByRole('button', { name: 'Resume animation' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Start effect' })).toBeEnabled();
   for (const hidden of [true, false]) {
     await page.evaluate((value) => {
       Object.defineProperty(document, 'hidden', { configurable: true, value });
@@ -196,7 +196,7 @@ test('reduced motion removes output and requires explicit resume after recovery'
     }, hidden);
   }
   await expect(page.locator('.dialog-stage canvas')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Resume animation' }).click();
+  await page.getByRole('button', { name: 'Start effect' }).click();
   await expect(page.locator('.dialog-stage canvas')).toHaveCount(1);
 });
 
@@ -252,8 +252,9 @@ for (const dpr of [1, 2]) {
       await page.goto('/effects/');
       await page.getByRole('button', { name: 'Try Dither', exact: true }).click();
       await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
+      await page.getByRole('button', { name: 'Shape', exact: true }).click();
       for (const name of ['SVG', 'Image', 'Text']) {
-        await page.getByRole('button', { name, exact: true }).click();
+        await page.getByRole('radio', { name, exact: true }).check();
         await expect(page.locator('[data-preview-status]')).toContainText('Live preview');
         await expect(page.locator('.dialog-stage canvas')).toHaveCount(1);
       }

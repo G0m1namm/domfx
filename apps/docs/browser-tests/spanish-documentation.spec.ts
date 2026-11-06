@@ -67,12 +67,10 @@ test('@smoke Spanish docs direct load keeps navigation, anchors and native contr
     '/docs/api/effects/fire/?source=guide#usage',
   );
 
-  const code = await page.locator('[data-docs-lab-code]').textContent();
-  await page.getByRole('button', { name: 'Copiar' }).focus();
+  const code = await page.locator('[data-box-code]').textContent();
+  await page.getByRole('button', { name: 'Copiar código' }).focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('[data-docs-lab-copy-label]')).toContainText(
-    /Copiado|Pulsa ⌘\/Ctrl\+C/,
-  );
+  await expect(page.locator('[data-box-toast]')).toContainText(/Código copiado|Pulsa ⌘\/Ctrl\+C/);
   expect(code).toContain('attachFire(target');
   expect(code).toContain('flameReach: 0.2');
 });
@@ -86,7 +84,9 @@ test('@smoke Spanish docs reflow at 320 pixels and larger text', async ({ page }
   await expect(page.getByRole('button', { name: 'Documentación', exact: true })).toBeVisible();
   await expect(page.locator('.docs-mobile-title')).toBeHidden();
   await expect(page.getByRole('heading', { name: 'Uso independiente', level: 1 })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Copiar' })).toBeVisible();
+  // Copying moves into the Code panel on narrow layouts.
+  await page.getByRole('button', { name: 'Código', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Copiar código', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   for (const width of [360, 768, 1440]) {
     await page.setViewportSize({ width, height: 700 });
@@ -182,14 +182,16 @@ test('Spanish Fire lab retains playback, tuning and valid code', async ({ page }
   await expect(lab.locator('[data-docs-lab-status]')).toHaveText('En pausa');
   await lab.getByRole('button', { name: 'Reanudar efecto' }).click();
   await expect(lab).toHaveAttribute('data-paused', 'false');
+  await lab.getByRole('button', { name: 'Forma', exact: true }).click();
+  const code = lab.locator('[data-box-code]');
   await lab.getByRole('slider', { name: 'intensity', exact: true }).fill('45');
-  await expect(lab.locator('[data-docs-lab-intensity-code]')).toHaveText('0.45');
+  await expect(code).toContainText('intensity: 0.45');
   await lab.getByRole('slider', { name: /^flameReach/ }).fill('25');
-  await expect(lab.locator('[data-docs-lab-extent-code="flameReach"]')).toHaveText('0.25');
+  await expect(code).toContainText('flameReach: 0.25');
   await lab.getByRole('radio', { name: 'SVG' }).check();
   await expect(lab.locator('[data-docs-lab-target="svg"]')).toBeVisible();
   await expect(lab).toHaveAttribute('data-status', 'active');
-  expect(await lab.locator('[data-docs-lab-code]').textContent()).toContain('flameReach: 0.25');
+  expect(await code.textContent()).toContain('flameReach: 0.25');
 });
 
 test('Spanish lab explains reduced motion and requires an explicit restart', async ({ page }) => {

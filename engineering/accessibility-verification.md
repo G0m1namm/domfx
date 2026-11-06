@@ -177,7 +177,7 @@ Run `pnpm --filter @domfx/gpu-tests exec vite --host 127.0.0.1` and open
 single composite target contains a button with both an `onclick` handler and an
 event listener, a described button, a native link, a labeled input and selectable
 text. Before/after buttons bracket its natural tab order. The effect uses the
-public `attachFire` and `bindFire` exports, real capture and WebGPU.
+public `attachFire` and `bindEffect` exports, real capture and WebGPU.
 
 1. Start at **Before target**. Tab through Activate original → Original link →
    Original input → After target, then reverse with Shift+Tab. Check visible focus.

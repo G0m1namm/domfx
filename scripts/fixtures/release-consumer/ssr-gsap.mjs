@@ -17,10 +17,5 @@ for (const name of [
   };
 }
 const adapter = await import('@domfx/gsap');
-assert.deepEqual(Object.keys(adapter).sort(), [
-  'bindEffect',
-  'bindEffectAsync',
-  'bindFire',
-  'bindFireAsync',
-]);
+assert.deepEqual(Object.keys(adapter).sort(), ['bindEffect', 'bindEffectAsync']);
 console.log('Packed GSAP adapter SSR import: PASS');

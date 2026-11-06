@@ -5,7 +5,8 @@ import { gsap } from 'gsap';
 
 import type { BurnedPaperEffectHandle, ColorEffectHandle, FrostEffectHandle } from '@domfx/browser';
 import type { EffectHandle } from '@domfx/core';
-import { bindEffect, bindEffectAsync, bindFire, bindFireAsync } from '@domfx/gsap';
+import * as adapter from '@domfx/gsap';
+import { bindEffect, bindEffectAsync } from '@domfx/gsap';
 
 const options = { time: 4, intensity: 0.5, duration: 4, position: 0 };
 
@@ -150,8 +151,8 @@ test('native GSAP property tweens update each writable material control', (t) =>
 test('effect disposal detaches every binding and disposed effects reject new bindings', (t) => {
   const { effect, callbacks } = attachment();
   const { timeline, sibling } = host(t);
-  const first = bindFire(effect, timeline, options);
-  const second = bindFire(effect, timeline, { ...options, position: 4 });
+  const first = bindEffect(effect, timeline, options);
+  const second = bindEffect(effect, timeline, { ...options, position: 4 });
   timeline.seek(2);
   effect.dispose();
   timeline.seek(8);
@@ -161,7 +162,7 @@ test('effect disposal detaches every binding and disposed effects reject new bin
   assert.equal(callbacks.size, 0);
   first.dispose();
   second.dispose();
-  assert.throws(() => bindFire(effect, timeline, options), /live attachment/);
+  assert.throws(() => bindEffect(effect, timeline, options), /live attachment/);
 });
 
 for (const disposeEffect of [false, true]) {
@@ -169,7 +170,7 @@ for (const disposeEffect of [false, true]) {
     const fixture = attachment();
     const { timeline, sibling } = host(t);
     const context = gsap.context(() => {
-      bindFire(fixture.effect, timeline, { ...options, disposeEffect });
+      bindEffect(fixture.effect, timeline, { ...options, disposeEffect });
     });
     timeline.seek(2);
     context.revert();
@@ -186,7 +187,7 @@ test('explicit binding disposal unregisters and survives later context revert', 
   const fixture = attachment();
   const { timeline } = host(t);
   const context = gsap.context(() => {});
-  const binding = context.add(() => bindFire(fixture.effect, timeline, options));
+  const binding = context.add(() => bindEffect(fixture.effect, timeline, options));
   timeline.seek(2);
   binding.dispose();
   binding.dispose();
@@ -203,7 +204,7 @@ for (const teardown of ['revert', 'dispose'] as const) {
     const pending = pendingAttachment();
     const context = gsap.context(() => {});
     const binding = context.add(() =>
-      bindFireAsync(pending.promise, timeline, { ...options, disposeEffect: true }),
+      bindEffectAsync(pending.promise, timeline, { ...options, disposeEffect: true }),
     );
     if (teardown === 'revert') {
       context.revert();
@@ -232,7 +233,7 @@ test('async success remains owned by the original context', async (t) => {
   const { timeline, sibling } = host(t);
   const context = gsap.context(() => {});
   const binding = context.add(() =>
-    bindFireAsync(Promise.resolve(fixture.effect), timeline, { ...options, disposeEffect: true }),
+    bindEffectAsync(Promise.resolve(fixture.effect), timeline, { ...options, disposeEffect: true }),
   );
   await binding.ready;
   timeline.seek(2);
@@ -252,14 +253,14 @@ test('rejected attachment and invalid binding setup retain siblings and release 
   const pending = pendingAttachment();
   const context = gsap.context(() => {});
   const failed = context.add(() =>
-    bindFireAsync(pending.promise, timeline, { ...options, disposeEffect: true }),
+    bindEffectAsync(pending.promise, timeline, { ...options, disposeEffect: true }),
   );
   context.revert();
   pending.reject(new Error('attachment-failed'));
   await assert.rejects(failed.ready, /attachment-failed/);
   failed.dispose();
   const fixture = attachment();
-  const invalid = bindFireAsync(Promise.resolve(fixture.effect), timeline, {
+  const invalid = bindEffectAsync(Promise.resolve(fixture.effect), timeline, {
     ...options,
     duration: -1,
     disposeEffect: true,
@@ -273,7 +274,6 @@ test('rejected attachment and invalid binding setup retain siblings and release 
   assert.equal(sibling.value, 8);
 });
 
-test('generic binding names preserve the compatible snapshot and cancellation functions', () => {
-  assert.equal(bindEffect, bindFire);
-  assert.equal(bindEffectAsync, bindFireAsync);
+test('the adapter exports only the Effect names', () => {
+  assert.deepEqual(Object.keys(adapter).sort(), ['bindEffect', 'bindEffectAsync']);
 });

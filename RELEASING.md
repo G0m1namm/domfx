@@ -88,7 +88,7 @@ plugin, and compile their actual fixture under strict NodeNext and Bundler resol
 with declaration checking enabled. The existing core/browser SSR and export checks
 run from the standalone install; the optional adapter also imports without browser globals.
 
-Production checks use public `attachFire`/`bindFire` APIs with real capture and GPU
+Production checks use public `attachFire`/`bindEffect` APIs with real capture and GPU
 rendering: nonempty pixels, forward/backward seek, zero/restored intensity, changed
 silhouette refresh, controlled unsupported-composition failure and explicit retry,
 retained controls/binding, repeated disposal, original-target interaction and reattachment.

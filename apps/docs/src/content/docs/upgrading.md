@@ -63,10 +63,11 @@ enable relative sizing by itself. See the [Slime options](/docs/api/effects/slim
 Use `clock: 'auto'` for automatic animation. The default remains `'manual'` for
 external control.
 
-`bindEffect` and `bindEffectAsync` are compatible aliases of the Fire-named
-bindings, including their types. Existing calls need no migration. Both names
-keep fixed starting values, linear interpolation and private animation targets.
-See [snapshot bindings](/docs/api/gsap#snapshot-bindings).
+The next release removes the Fire-named bindings. Rename `bindFire` to `bindEffect`,
+`bindFireAsync` to `bindEffectAsync`, `FireBindingOptions` to `EffectBindingOptions`,
+`FireBinding` to `EffectBinding` and `AsyncFireBinding` to `AsyncEffectBinding`.
+Behavior does not change: bindings keep fixed starting values, linear interpolation
+and private animation targets. See [snapshot bindings](/docs/api/gsap#snapshot-bindings).
 
 For chained GSAP sequences, use native `.to(effect, ...)` calls so each segment
 starts from the preceding values. Switching from bindings changes this behavior

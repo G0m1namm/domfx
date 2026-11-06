@@ -82,7 +82,7 @@ const flameTween = gsap.fromTo(
 
 ## Optional lifecycle helpers
 
-<p><code>@domfx/gsap</code> provides <code>bindEffect</code> and <code>bindEffectAsync</code> for snapshot bindings with explicit cleanup responsibility. The asynchronous helper safely disposes results arriving after cancellation. The compatible <code>bindFire</code> names remain available for all effects.</p>
+<p><code>@domfx/gsap</code> provides <code>bindEffect</code> and <code>bindEffectAsync</code> for snapshot bindings with explicit cleanup responsibility. The asynchronous helper safely disposes results arriving after cancellation.</p>
 
 <p>These helpers capture starting controls when created and animate private proxy targets. They differ from native chained <code>.to()</code> calls, target-based kill and overwrite. Use the <a href="/docs/api/gsap#snapshot-bindings">binding reference</a> when you need that contract; prefer native tweens for ordinary sequencing.</p>
 

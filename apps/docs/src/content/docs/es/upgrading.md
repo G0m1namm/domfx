@@ -81,10 +81,12 @@ el efecto y no activa el tamaño relativo por sí sola. Consulta las
 Usa `clock: 'auto'` para la animación automática. El valor predeterminado sigue
 siendo `'manual'` para el control externo.
 
-`bindEffect` y `bindEffectAsync` son alias compatibles de los enlaces con nombres
-Fire, incluidos sus tipos. Las llamadas existentes no requieren migración. Ambos
-nombres conservan los valores iniciales fijos, la interpolación lineal y los
-objetivos privados de animación. Consulta los
+La próxima versión elimina los enlaces con nombres Fire. Cambia `bindFire` por
+`bindEffect`, `bindFireAsync` por `bindEffectAsync`, `FireBindingOptions` por
+`EffectBindingOptions`, `FireBinding` por `EffectBinding` y `AsyncFireBinding` por
+`AsyncEffectBinding`. El comportamiento no cambia: los enlaces conservan los valores
+iniciales fijos, la interpolación lineal y los objetivos privados de animación.
+Consulta los
 [enlaces con valores iniciales fijos](/docs/es/api/gsap#snapshot-bindings).
 
 Para encadenar animaciones GSAP, usa llamadas nativas a `.to(effect, ...)` para

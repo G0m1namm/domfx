@@ -9,7 +9,7 @@ import { build, transformWithEsbuild } from 'vite';
 
 import type { EffectHandle } from '@domfx/browser';
 import * as browserEffects from '@domfx/browser';
-import type { FireBinding } from '@domfx/gsap';
+import type { EffectBinding } from '@domfx/gsap';
 import { effects } from '@domfx/site/effects';
 
 const effectHandleTypes = {
@@ -126,7 +126,7 @@ declare global {
     disclosure: {
       fire: EffectHandle;
       timeline?: ReturnType<typeof gsap.timeline>;
-      binding?: FireBinding;
+      binding?: EffectBinding;
       cleanup?: () => void;
     };
     disclosureReady: Promise<void>;

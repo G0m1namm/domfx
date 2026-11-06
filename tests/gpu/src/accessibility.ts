@@ -2,7 +2,7 @@ import { gsap } from 'gsap';
 
 import { attachFire } from '@domfx/browser';
 import type { EffectHandle } from '@domfx/core';
-import { bindFire } from '@domfx/gsap';
+import { bindEffect } from '@domfx/gsap';
 
 const host = document.querySelector<HTMLElement>('#host');
 const target = document.querySelector<HTMLElement>('#target');
@@ -48,7 +48,7 @@ const attach = async () => {
   const currentTimeline = gsap.timeline({ paused: true });
   timeline = currentTimeline;
   context = gsap.context(() => {
-    bindFire(current, currentTimeline, { time: 3.5, intensity: 0.5, duration: 2 });
+    bindEffect(current, currentTimeline, { time: 3.5, intensity: 0.5, duration: 2 });
   });
   await current.ready;
   report();
@@ -60,7 +60,7 @@ function revert(owned = false) {
     const current = effect;
     const currentTimeline = timeline;
     const ownedContext = gsap.context(() => {
-      bindFire(current, currentTimeline, {
+      bindEffect(current, currentTimeline, {
         time: 3.5,
         intensity: 0.5,
         duration: 2,

@@ -2,7 +2,7 @@ import { gsap } from 'gsap';
 
 import type { EffectHandle } from '@domfx/core';
 
-export interface FireBindingOptions {
+export interface EffectBindingOptions {
   /** Absolute destination time in seconds. */
   readonly time: number;
   /** Destination intensity, clamped to [0, 1] before interpolation. */
@@ -15,22 +15,17 @@ export interface FireBindingOptions {
   readonly disposeEffect?: boolean;
 }
 
-/** All effects share the same snapshot-binding options. */
-export type EffectBindingOptions = FireBindingOptions;
-
-export interface FireBinding {
+export interface EffectBinding {
   /** Remove the owned child and dispose an explicitly owned attachment. Idempotent. */
   dispose(): void;
 }
 
-export type EffectBinding = FireBinding;
-
 /** Bind a manual attachment's current controls to a caller-owned GSAP timeline. */
-export function bindFire(
+export function bindEffect(
   effect: EffectHandle,
   timeline: gsap.core.Timeline,
-  options: FireBindingOptions,
-): FireBinding {
+  options: EffectBindingOptions,
+): EffectBinding {
   if (effect.clock !== 'manual') {
     throw new Error('GSAP binding requires a manual attachment');
   }
@@ -113,25 +108,23 @@ export function bindFire(
   return { dispose };
 }
 
-export interface AsyncFireBinding extends FireBinding {
+export interface AsyncEffectBinding extends EffectBinding {
   /** Settles after binding or late-result cleanup; rejects if attachment or binding setup fails. */
   readonly ready: Promise<void>;
 }
 
-export type AsyncEffectBinding = AsyncFireBinding;
-
 /** Own a pending attachment; register context cleanup before its promise settles. */
-export function bindFireAsync(
+export function bindEffectAsync(
   attachment: Promise<EffectHandle>,
   timeline: gsap.core.Timeline,
-  options: FireBindingOptions & { readonly disposeEffect: true },
-): AsyncFireBinding {
+  options: EffectBindingOptions & { readonly disposeEffect: true },
+): AsyncEffectBinding {
   if (options.disposeEffect !== true) {
     throw new Error('Async GSAP binding requires explicit attachment ownership');
   }
   let disposed = false;
   let effect: EffectHandle | undefined;
-  let binding: FireBinding | undefined;
+  let binding: EffectBinding | undefined;
 
   function dispose() {
     if (disposed) {
@@ -150,7 +143,7 @@ export function bindFireAsync(
       return;
     }
     try {
-      binding = bindFire(result, timeline, { ...options, disposeEffect: false });
+      binding = bindEffect(result, timeline, { ...options, disposeEffect: false });
     } catch (error) {
       dispose();
       throw error;
@@ -159,9 +152,3 @@ export function bindFireAsync(
 
   return { ready, dispose };
 }
-
-/** Generic name for the compatible, creation-time snapshot binding. */
-export const bindEffect = bindFire;
-
-/** Generic name for the owned, cancellable asynchronous snapshot binding. */
-export const bindEffectAsync = bindFireAsync;

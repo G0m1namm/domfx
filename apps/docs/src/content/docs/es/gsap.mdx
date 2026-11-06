@@ -98,7 +98,7 @@ const flameTween = gsap.fromTo(
 
 ## Funciones opcionales de ciclo de vida
 
-<p><code>@domfx/gsap</code> proporciona <code>bindEffect</code> y <code>bindEffectAsync</code> para enlaces que conservan los valores iniciales de los controles, con responsabilidad explícita de limpieza. La función asíncrona libera con seguridad los resultados que llegan después de cancelar. Los nombres compatibles <code>bindFire</code> siguen disponibles para todos los efectos.</p>
+<p><code>@domfx/gsap</code> proporciona <code>bindEffect</code> y <code>bindEffectAsync</code> para enlaces que conservan los valores iniciales de los controles, con responsabilidad explícita de limpieza. La función asíncrona libera con seguridad los resultados que llegan después de cancelar.</p>
 
 <p>Estas funciones capturan los controles iniciales al crearse y animan objetivos proxy privados. Difieren de las llamadas nativas encadenadas a <code>.to()</code>, de la eliminación de animaciones por objetivo con <code>gsap.killTweensOf()</code> y de la sobrescritura. Consulta la <a href="/docs/es/api/gsap#snapshot-bindings">referencia de enlaces con valores iniciales fijos</a> si necesitas ese contrato; para secuencias normales, prefiere animaciones nativas.</p>
 

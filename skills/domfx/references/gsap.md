@@ -33,8 +33,7 @@ continuations. A tween or timeline being killed does not itself dispose an effec
 
 Read the [binding reference](https://domfx.dev/docs/api/gsap/#snapshot-bindings)
 only when fixed starting values or scoped binding cleanup are wanted. Inspect the
-installed `@domfx/gsap` declarations before importing `bindEffect`/`bindEffectAsync`
-or their compatible Fire-named aliases.
+installed `@domfx/gsap` declarations before importing `bindEffect`/`bindEffectAsync`.
 
 - `bindEffect(effect, timeline, options)` snapshots both controls when created.
   Bindings created together do not inherit earlier segments' destinations. Native

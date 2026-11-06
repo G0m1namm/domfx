@@ -1,7 +1,7 @@
 import { gsap } from 'gsap';
 
 import { attachFire } from '@domfx/browser';
-import { bindFire, bindFireAsync } from '@domfx/gsap';
+import { bindEffect, bindEffectAsync } from '@domfx/gsap';
 
 const host = document.querySelector<HTMLElement>('#host');
 const target = document.querySelector<HTMLButtonElement>('#target');
@@ -11,7 +11,7 @@ if (!host || !target || !state) {
 }
 const effect = attachFire(target, { host, time: 1.5, intensity: 0.85, seed: 314 });
 const timeline = gsap.timeline({ paused: true, onUpdate: report });
-const binding = bindFire(effect, timeline, { time: 5.5, intensity: 0.25, duration: 4 });
+const binding = bindEffect(effect, timeline, { time: 5.5, intensity: 0.25, duration: 4 });
 
 function report() {
   const summary = document.querySelector<HTMLElement>('#effect-summary');
@@ -42,8 +42,8 @@ const consumer = {
   effect,
   timeline,
   binding,
-  bind: bindFire,
-  bindAsync: bindFireAsync,
+  bind: bindEffect,
+  bindAsync: bindEffectAsync,
   attach: attachFire,
   gsap,
 };

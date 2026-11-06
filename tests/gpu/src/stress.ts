@@ -187,7 +187,7 @@ async function runSeed(seed: number) {
   const samples: object[] = [];
   const probe = installStressProbe();
   // Load GSAP after instrumenting frames so its cached request function is observed.
-  const [{ gsap }, { bindFire }] = await Promise.all([import('gsap'), import('@domfx/gsap')]);
+  const [{ gsap }, { bindEffect }] = await Promise.all([import('gsap'), import('@domfx/gsap')]);
   const baselineBytes = memoryFor(document).bytes;
   const errors: string[] = [];
   const onRejection = (event: PromiseRejectionEvent) => errors.push(String(event.reason));
@@ -232,7 +232,12 @@ async function runSeed(seed: number) {
       const contexts = fixtures.map(({ effect }, index) =>
         gsap.context(() => {
           op(cycle, `bind:${index}`);
-          bindFire(effect, timeline, { time: 5, intensity: 0.6, duration: 1, disposeEffect: true });
+          bindEffect(effect, timeline, {
+            time: 5,
+            intensity: 0.6,
+            duration: 1,
+            disposeEffect: true,
+          });
         }),
       );
       const gates: ReturnType<ReturnType<typeof raceTarget>['block']>[] = [];

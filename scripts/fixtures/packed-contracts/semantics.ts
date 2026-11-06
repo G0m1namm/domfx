@@ -31,8 +31,6 @@ import {
 import {
   bindEffect,
   bindEffectAsync,
-  bindFire,
-  bindFireAsync,
   type EffectBindingOptions,
   type EffectBinding,
   type AsyncEffectBinding,
@@ -185,21 +183,13 @@ const unsubscribe = effect.onDispose(() => automaticFire.dispose());
 unsubscribe();
 
 const timeline = gsap.timeline({ paused: true });
-const options = { time: 5.5, intensity: 0.25, duration: 4 };
-const borrowed = bindFire(effect, timeline, options);
-const owned = bindFire(effect, timeline, { ...options, disposeEffect: true, position: 0 });
-const pending = bindFireAsync(Promise.resolve(effect), timeline, {
+const options: EffectBindingOptions = { time: 5.5, intensity: 0.25, duration: 4 };
+const borrowed: EffectBinding = bindEffect(effect, timeline, options);
+const owned = bindEffect(effect, timeline, { ...options, disposeEffect: true, position: 0 });
+const pending: AsyncEffectBinding = bindEffectAsync(Promise.resolve(effect), timeline, {
   ...options,
   disposeEffect: true,
 });
-const genericOptions: EffectBindingOptions = options;
-const generic: EffectBinding = bindEffect(effect, timeline, genericOptions);
-const genericPending: AsyncEffectBinding = bindEffectAsync(Promise.resolve(effect), timeline, {
-  ...options,
-  disposeEffect: true,
-});
-generic.dispose();
-genericPending.dispose();
 timeline.to(effect, { time: 4, intensity: 0.4, duration: 4, ease: 'none' });
 timeline.to(fireControls, { color: '#06f', duration: 4, ease: 'none' });
 const refreshed = effect.refresh();
@@ -223,9 +213,9 @@ attachFire(target, { host, clock: 'ambient' });
 // @ts-expect-error An SVG element cannot serve as the required HTML effect host.
 attachFire(target, { host: svgHost });
 // @ts-expect-error Async binding requires explicit attachment ownership.
-bindFireAsync(Promise.resolve(effect), timeline, options);
+bindEffectAsync(Promise.resolve(effect), timeline, options);
 // @ts-expect-error Async binding cannot borrow a pending attachment.
-bindFireAsync(Promise.resolve(effect), timeline, { ...options, disposeEffect: false });
+bindEffectAsync(Promise.resolve(effect), timeline, { ...options, disposeEffect: false });
 
 borrowed.dispose();
 owned.dispose();

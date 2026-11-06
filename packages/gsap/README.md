@@ -48,10 +48,7 @@ future promise continuations. Keep the original content usable if setup is unava
 
 ## Optional snapshot bindings
 
-`bindEffect`, `bindEffectAsync`, `EffectBindingOptions`, `EffectBinding` and
-`AsyncEffectBinding` are generic aliases of the existing Fire-named exports.
-Both names accept every effect and retain identical snapshot and cleanup behavior.
-The examples below retain the compatible names for existing consumers.
+`bindEffect` and `bindEffectAsync` accept every effect.
 
 These helpers animate private proxy targets. `gsap.killTweensOf(effect)` and native
 cross-binding overwrite do not identify those proxy children. Several bindings
@@ -63,12 +60,12 @@ Use a binding only when its fixed starts or scoped cleanup behavior are wanted.
 import { gsap } from 'gsap';
 
 import { attachFire } from '@domfx/browser';
-import { bindFire } from '@domfx/gsap';
+import { bindEffect } from '@domfx/gsap';
 
 const effect = attachFire(target, { host, clock: 'manual', time: 1.5, intensity: 0.85 });
 await effect.ready;
 const timeline = gsap.timeline({ paused: true });
-const binding = bindFire(effect, timeline, {
+const binding = bindEffect(effect, timeline, {
   time: 5.5,
   intensity: 0.25,
   duration: 4,
@@ -83,7 +80,7 @@ timeline.kill(); // The caller owns the timeline and any other animations in it.
 effect.dispose(); // The caller also owns the attachment.
 ```
 
-`bindFire(effect, timeline, options)` snapshots both starting controls at binding
+`bindEffect(effect, timeline, options)` snapshots both starting controls at binding
 time and linearly interpolates them to the required `time` and `intensity` over
 `duration` seconds. Destination time must be finite and float32-representable;
 finite destination intensity clamps to `[0, 1]` before interpolation. Duration
@@ -113,14 +110,14 @@ participate in its normal revert behavior; siblings created outside the context 
 owned by the caller. Context cleanup also unregisters the attachment disposal listener.
 
 For an asynchronous operation that returns an attachment, register cleanup synchronously
-with `bindFireAsync()`. This helper requires explicit `disposeEffect: true` ownership so
+with `bindEffectAsync()`. This helper requires explicit `disposeEffect: true` ownership so
 it can dispose a result arriving after teardown:
 
 ```ts
-import { bindFireAsync } from '@domfx/gsap';
+import { bindEffectAsync } from '@domfx/gsap';
 
 const context = gsap.context(() => {
-  const pending = bindFireAsync(loadAttachment(), timeline, {
+  const pending = bindEffectAsync(loadAttachment(), timeline, {
     time: 5.5,
     intensity: 0.25,
     duration: 4,

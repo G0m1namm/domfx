@@ -51,8 +51,8 @@ test('selected filters and preview subjects have a contrasting state boundary', 
       const style = getComputedStyle(element);
       return [style.borderColor, style.backgroundColor];
     });
-  // Docs first: on the composed dev server, its lab script does not start after a
-  // reduced-motion marketing visit. Baseline code does the same.
+  // Docs first: on the composed dev server, its lab script may not start after a
+  // marketing visit (issue 231).
   await page.goto('/docs/api/effects/frost/');
   await page.getByRole('button', { name: 'Shape', exact: true }).click();
   // The box's selected option is a borderless silver chip, so its boundary is its fill.
@@ -79,6 +79,19 @@ test('selected filters and preview subjects have a contrasting state boundary', 
     .evaluate((element) => getComputedStyle(element).backgroundColor);
   expect(contrast([previewChipFill, previewPanelFill])).toBeGreaterThanOrEqual(3);
 });
+
+for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+  test(`docs lab starts after a marketing visit with ${reducedMotion} motion`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name === 'development', 'Composed dev server bug: issue 231');
+    await page.emulateMedia({ reducedMotion });
+    await page.goto('/effects/');
+    await expect(page.locator('.filters [aria-pressed="true"]')).toBeVisible();
+    await page.goto('/docs/api/effects/frost/');
+    await expect(page.locator('[data-docs-lab-status]')).not.toHaveText(/needs JavaScript/);
+  });
+}
 
 for (const route of ['/', '/effects/']) {
   test(`${route} preview closes only for a pointer gesture that starts and ends outside`, async ({

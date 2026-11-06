@@ -431,7 +431,8 @@ for (const kind of ['image', 'svg']) {
     };
 
     await scene.hover({ position: { x: 20, y: 20 } });
-    await expect(dialog.locator('[data-zoom-label]')).toHaveText('200%');
+    await expect(scene).toHaveAttribute('data-zoomed', 'true');
+    await expect(dialog.locator('[data-zoom-label]')).toHaveText('100%');
     await retained();
     await page.mouse.move(0, 0);
     await retained();

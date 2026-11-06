@@ -203,6 +203,9 @@ importers:
       '@domfx/browser':
         specifier: workspace:*
         version: link:../domfx
+      '@shikijs/themes':
+        specifier: 4.4.3
+        version: 4.4.3
 
   tests/gpu:
     dependencies:

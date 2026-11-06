@@ -4,6 +4,8 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.5;
 const HOVER_ZOOM = 2;
+// Long enough that a pointer crossing the preview on its way to a control does nothing.
+const HOVER_REST_MS = 200;
 const PAN_STEP_PX = 32;
 const CAPTURE_MARGIN_PX = 24;
 
@@ -39,6 +41,8 @@ export function initializePreviewZoom({
   let panY = 0;
   let drag: { id: number; x: number; y: number } | undefined;
   let springTimer = 0;
+  let restTimer = 0;
+  let panShown = false;
   let panMotion: Animation | undefined;
 
   // Deliberate changes spring; hover tracking keeps the camera's quick transition.
@@ -65,11 +69,13 @@ export function initializePreviewZoom({
     }
   }
 
-  // The arrows unfold from the chip; `hidden` stays the source of truth once settled.
+  // The arrows slide out from behind the zoom group without resizing the chip.
+  // `hidden` stays the source of truth once settled.
   function showPan(visible: boolean) {
-    if (visible === !panControls.hidden && !panMotion) {
+    if (visible === panShown) {
       return;
     }
+    panShown = visible;
     panMotion?.cancel();
     panMotion = undefined;
     const tokens = readMotionTokens(panControls);
@@ -77,28 +83,30 @@ export function initializePreviewZoom({
     panControls.hidden = false;
     // Folding arrows are on their way out, so Tab must not land on them.
     panControls.inert = !visible;
-    const width = panControls.scrollWidth;
     if (!timing.duration) {
       panControls.hidden = !visible;
       return;
     }
-    panControls.dataset.unfolding = 'true';
-    const edges = visible ? ['0px', `${width}px`] : [`${width}px`, '0px'];
+    const edges = visible ? ['0.5rem 0', '0 0'] : ['0 0', '0.5rem 0'];
     const motion = panControls.animate(
-      { inlineSize: edges, opacity: visible ? [0, 1] : [1, 0] },
+      { translate: edges, opacity: visible ? [0, 1] : [1, 0] },
       { ...timing, fill: 'both' },
     );
     panMotion = motion;
     motion.onfinish = () => {
       panControls.hidden = !visible;
-      delete panControls.dataset.unfolding;
       motion.cancel();
       panMotion = undefined;
     };
   }
 
+  // Hover magnifies only at Fit; a chosen zoom is never overridden.
+  function shownScale() {
+    return hovering && zoom === MIN_ZOOM ? HOVER_ZOOM : zoom;
+  }
+
   function render() {
-    const scale = hovering ? Math.max(HOVER_ZOOM, zoom) : zoom;
+    const scale = shownScale();
     const shown = target();
     const canvas = camera.querySelector('canvas');
     const width = Math.max(shown.clientWidth, canvas?.clientWidth ?? 0) + CAPTURE_MARGIN_PX;
@@ -109,7 +117,8 @@ export function initializePreviewZoom({
     panY = Math.max(-limitY, Math.min(limitY, panY));
     camera.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     viewport.dataset.zoomed = String(scale > MIN_ZOOM);
-    const zoomLabel = `${Math.round(scale * 100)}%`;
+    // The value and limits describe the chosen zoom, not a passing hover.
+    const zoomLabel = `${Math.round(zoom * 100)}%`;
     if (label.textContent !== zoomLabel) {
       rollLabel(zoomLabel);
     }
@@ -119,10 +128,14 @@ export function initializePreviewZoom({
   }
 
   function setZoom(value: number) {
-    zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
+    const before = shownScale();
+    window.clearTimeout(restTimer);
     hovering = false;
-    panX = 0;
-    panY = 0;
+    zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
+    // Keep the inspected spot centered through the change; Fit always recenters.
+    const ratio = zoom === MIN_ZOOM ? 0 : zoom / before;
+    panX *= ratio;
+    panY *= ratio;
     render();
   }
 
@@ -131,8 +144,32 @@ export function initializePreviewZoom({
     setZoom(value);
   }
 
+  function aimAt(clientX: number, clientY: number) {
+    const bounds = viewport.getBoundingClientRect();
+    const scale = shownScale();
+    panX = (bounds.width / 2 - (clientX - bounds.left)) * (scale - 1);
+    panY = (bounds.height / 2 - (clientY - bounds.top)) * (scale - 1);
+    render();
+  }
+
+  // Leaving keeps a chosen zoom exactly where it was, so reaching a control moves nothing.
+  function endHover() {
+    window.clearTimeout(restTimer);
+    if (!hovering) {
+      return;
+    }
+    hovering = false;
+    spring();
+    if (zoom === MIN_ZOOM) {
+      panX = 0;
+      panY = 0;
+    }
+    render();
+  }
+
   function pan(direction: string) {
     spring();
+    window.clearTimeout(restTimer);
     hovering = false;
     switch (direction) {
       case 'left':
@@ -169,19 +206,21 @@ export function initializePreviewZoom({
         panY += event.clientY - drag.y;
         drag.x = event.clientX;
         drag.y = event.clientY;
+        render();
       } else if (event.pointerType === 'mouse' && canHover.matches && !reducedMotion.matches) {
         if (event.target instanceof Element && event.target.closest('button, a')) {
-          return;
+          endHover();
+        } else if (hovering) {
+          aimAt(event.clientX, event.clientY);
+        } else {
+          const { clientX, clientY } = event;
+          window.clearTimeout(restTimer);
+          restTimer = window.setTimeout(() => {
+            hovering = true;
+            aimAt(clientX, clientY);
+          }, HOVER_REST_MS);
         }
-        hovering = true;
-        const bounds = viewport.getBoundingClientRect();
-        const scale = Math.max(HOVER_ZOOM, zoom);
-        panX = (bounds.width / 2 - (event.clientX - bounds.left)) * (scale - 1);
-        panY = (bounds.height / 2 - (event.clientY - bounds.top)) * (scale - 1);
-      } else {
-        return;
       }
-      render();
     },
     { signal },
   );
@@ -189,7 +228,7 @@ export function initializePreviewZoom({
     'pointerleave',
     () => {
       if (!drag) {
-        changeZoom(zoom);
+        endHover();
       }
     },
     { signal },
@@ -248,9 +287,9 @@ export function initializePreviewZoom({
       }
       observer.disconnect();
       window.clearTimeout(springTimer);
+      window.clearTimeout(restTimer);
       panMotion?.cancel();
       panControls.hidden = true;
-      delete panControls.dataset.unfolding;
       delete camera.dataset.zoomMotion;
       camera.style.removeProperty('transform');
       delete viewport.dataset.zoomed;

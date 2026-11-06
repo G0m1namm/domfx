@@ -243,16 +243,18 @@ Use larger default text, SVG and image targets so their edges are easy to inspec
 Let artwork fit the available preview width while keeping room for its effect output.
 Match marketing inspection: 2× pointer-directed hover zoom, explicit 100–300% zoom
 and Fit reset, arrow-key and button panning, and touch dragging while zoomed.
+Hover magnifies only at Fit, and only once the pointer rests, so crossing the preview
+to reach a control changes nothing. At a chosen zoom, hover only pans. The value and
+its limits always describe the chosen zoom.
 Magnify the target and decorative layer together inside an outer inspection viewport;
 that viewport always clips the camera. Keep controls outside the camera. Suppress
 automatic hover zoom and transitions under reduced motion; reset on target changes.
 
-The GSAP guide includes a compact interactive sequence in English and Spanish,
-using the same graphite preview and control styling. Keep the original clickable
-target beside Play/Pause, Restart, Reverse and a labeled seconds slider. Show
-timeline position, effect time and intensity separately, with two stages: the
-container appears over 0.5 seconds, then effect time and intensity change together
-over four seconds. Start paused; seeking pauses playback. Keep the executed
+The GSAP guide includes a compact interactive sequence in English and Spanish, using
+the same graphite preview and control styling. The word "domfx" is real text with one
+effect per letter, on one timeline in four named acts: Arrive, Ignite, Surge and Burn
+out. It plays once when it first enters view, except under reduced motion; seeking
+pauses playback. Keep the executed
 sequence and displayed source aligned, with readable code and explanations when
 JavaScript or GPU output is unavailable. Respect reduced motion and release owned
 animations and effects when the lesson leaves view or the page closes.
@@ -303,8 +305,14 @@ ending reduction requires explicit Resume on marketing pages.
 
 The maintainer approved this direction on 2026-11-04, after comparing Dock, Inspector and
 Live code on the real surfaces. Marketing dialogs, docs effect references and the
-Standalone guide's Fire preview share it; the GSAP lesson keeps its own controls.
-All three implement it.
+Standalone guide's Fire preview share it. All three implement it.
+
+The GSAP lesson uses the same dock surface, zoom chip and tooltips, approved on 2026-11-05.
+Its timeline owns `time` and `intensity`, so it has no settings tabs, Reset all or Copy
+actions. Its dock holds a Details toggle, the timeline slider with its value, and icon-only
+Play/Pause, Restart and Reverse. Details starts open and holds clickable acts, plus read-only
+`time`, `rootColor` and per-letter `intensity` chips. It never moves the word. Source code
+stays below the preview, and the running act's lines are highlighted.
 
 - **Surface:** one dock at the bottom of the preview, floating over it, with no border and
   the same gutter on both sides and the bottom: 12px, or 8px on narrow layouts.
@@ -321,7 +329,8 @@ All three implement it.
   receive every status.
 - **Zoom:** one compact chip in the preview's top corner, aligned to the dock's gutter. The
   percentage doubles as Fit, named in its tooltip and accessible label. Pan arrows appear
-  only while zoomed. The hover hint is not shown visually.
+  only while zoomed. A button at its limit is clearly dimmed with a not-allowed cursor. The
+  hover hint is not shown visually.
 - **Preview:** the subject lifts into the space above the dock and panel. To fit this without
   moving the page, the marketing preview is up to 38rem tall and docs 34rem, or 31rem on
   narrow layouts. The Code panel may cover the subject on short screens.
@@ -385,7 +394,8 @@ edge or prototype dock.
 - **Status:** preparing, active, paused and unavailable outcomes use plain language.
   Do not announce every frame. Unavailable output leaves a complete static page.
 - **Code:** readable source, keyboard-scrollable where needed, real supported API
-  calls and explicit cleanup. Source and setup links remain visible.
+  calls and explicit cleanup. Source and setup links remain visible. Every snippet uses
+  the one shared syntax theme: Night Owl's colors on the code background, without italics.
 
 ## Do's and Don'ts
 
@@ -424,7 +434,7 @@ Each element applies these in its own way:
   change can be interrupted. The tab line and selected-option chip glide. Move the subject
   with `translate` on the effect host, so its effect layer moves with it without recapture.
 - **Zoom:** deliberate changes spring; hover tracking keeps its quick transition. The value
-  rolls, and pan arrows unfold from the chip.
+  rolls, and pan arrows slide out from behind the chip without resizing it.
 - **Dialogs and popovers:** the effect preview rises; search and the phone menu drop from the
   top; the docs drawer slides from the side. Rest at `translate: none` so fixed-position
   descendants are not trapped. Search height never animates, because it never changes.

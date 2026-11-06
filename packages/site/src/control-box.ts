@@ -1,3 +1,4 @@
+import { renderCodeTokens } from './code-tokens.ts';
 import type { ControlBoxMessages } from './control-box-messages.ts';
 import {
   effectColorField,
@@ -457,7 +458,7 @@ export function createControlBox({
     staticNote.hidden = settings.motion !== 'static';
     const snippet = effectSnippet(effect, settings, locale);
     if (code.textContent !== snippet) {
-      code.textContent = snippet;
+      renderCodeTokens(code, snippet);
     }
     updateReset();
     updateAvailability();

@@ -20,9 +20,7 @@ const messages = {
     },
     gsapLab: {
       title: 'Try the sequence',
-      introduction: 'Move through the sequence. Watch GSAP change effect time and intensity.',
-      target: 'Click me',
-      clicks: 'Clicks',
+      introduction: 'One timeline moves the text and drives five effects, letter by letter.',
       controls: 'Sequence controls',
       play: 'Play',
       pause: 'Pause',
@@ -32,21 +30,21 @@ const messages = {
       position: 'Timeline position (s)',
       seconds: 'seconds',
       help: 'Seeking pauses playback.',
-      fade: 'Container fade',
-      effect: 'Effect animation',
-      source: 'Shared sequence',
+      acts: { arrive: 'Arrive', ignite: 'Ignite', surge: 'Surge', burnOut: 'Burn out' },
+      details: 'Details',
+      source: 'The sequence',
       sourceNote:
-        'This is the sequence the player executes. The complete example below adds application setup and cleanup; the player adds its own controls and lifecycle.',
+        'This is the sequence the player executes, including its stagger and labels. The complete example below starts smaller, with one target and one effect.',
       needsGpu:
-        'Playback needs JavaScript and WebGPU. The sequence and original button remain readable.',
-      noGpu: 'WebGPU is unavailable. Playback is disabled; the original button remains usable.',
+        'Playback needs JavaScript and WebGPU. The sequence and original text remain readable.',
+      noGpu: 'WebGPU is unavailable. Playback is disabled; the original text remains readable.',
       reducedMotion:
-        'Reduced motion is enabled. Playback is disabled; the original button remains usable.',
+        'Reduced motion is enabled. Playback is disabled; the original text remains readable.',
       resumeRequired:
         'Motion preference changed. Choose Play to start; playback will not resume automatically.',
       preparing: 'Preparing the sequence…',
       waiting: 'Playback is suspended while the preview is out of view.',
-      unavailable: 'Effect unavailable. Playback is disabled; the original button remains usable.',
+      unavailable: 'Effect unavailable. Playback is disabled; the original text remains readable.',
       paused: 'Paused',
       playing: 'Playing',
       reversing: 'Playing backward',
@@ -106,10 +104,7 @@ const messages = {
     },
     gsapLab: {
       title: 'Prueba la secuencia',
-      introduction:
-        'Recorre la secuencia y observa cómo GSAP cambia el tiempo y la intensidad del efecto.',
-      target: 'Haz clic',
-      clicks: 'Clics',
+      introduction: 'Una línea de tiempo mueve el texto y controla cinco efectos, letra por letra.',
       controls: 'Controles de la secuencia',
       play: 'Reproducir',
       pause: 'Pausar',
@@ -119,24 +114,24 @@ const messages = {
       position: 'Posición en la línea de tiempo (s)',
       seconds: 'segundos',
       help: 'Cambiar la posición pausa la reproducción.',
-      fade: 'Aparición del contenedor',
-      effect: 'Animación del efecto',
-      source: 'Secuencia compartida',
+      acts: { arrive: 'Aparecer', ignite: 'Encender', surge: 'Avivar', burnOut: 'Apagar' },
+      details: 'Detalles',
+      source: 'La secuencia',
       sourceNote:
-        'Esta es la secuencia que ejecuta el reproductor. El ejemplo completo de abajo añade la preparación y limpieza de la aplicación; el reproductor añade sus propios controles y ciclo de vida.',
+        'Esta es la secuencia que ejecuta el reproductor, con su escalonado y sus etiquetas. El ejemplo completo de abajo empieza con algo más pequeño: un objetivo y un efecto.',
       needsGpu:
-        'La reproducción necesita JavaScript y WebGPU. La secuencia y el botón original siguen visibles.',
+        'La reproducción necesita JavaScript y WebGPU. La secuencia y el texto original siguen visibles.',
       noGpu:
-        'WebGPU no está disponible. La reproducción está desactivada; el botón original sigue funcionando.',
+        'WebGPU no está disponible. La reproducción está desactivada; el texto original sigue siendo legible.',
       reducedMotion:
-        'El movimiento reducido está activado. La reproducción está desactivada; el botón original sigue funcionando.',
+        'El movimiento reducido está activado. La reproducción está desactivada; el texto original sigue siendo legible.',
       resumeRequired:
         'Cambió la preferencia de movimiento. Elige Reproducir para empezar; no se reanudará automáticamente.',
       preparing: 'Preparando la secuencia…',
       waiting:
         'La reproducción está suspendida mientras la vista previa está fuera de la pantalla.',
       unavailable:
-        'Efecto no disponible. La reproducción está desactivada; el botón original sigue funcionando.',
+        'Efecto no disponible. La reproducción está desactivada; el texto original sigue siendo legible.',
       paused: 'En pausa',
       playing: 'Reproduciendo',
       reversing: 'Reproduciendo hacia atrás',

@@ -1,15 +1,18 @@
 import type { Locale } from '@domfx/site/locale';
 
+import { addIgnitionSequence } from './gsap-ignition.ts';
 import { addGsapSequence } from './gsap-sequence.ts';
 
 // Extract executable statements rather than maintaining a second sequence.
 // This also works in the Node-based complete-example verifier, without Vite loaders.
-const sequenceFunction = addGsapSequence.toString();
-export const gsapSequenceCode = sequenceFunction
-  .slice(sequenceFunction.indexOf('{') + 1, sequenceFunction.lastIndexOf('}'))
-  .replace(/^(?: {2}|\t)/gm, '')
-  .replaceAll('\t', '  ')
-  .trim();
+const functionBody = (source: string) =>
+  source
+    .slice(source.indexOf('{') + 1, source.lastIndexOf('}'))
+    .replace(/^(?: {2}|\t)/gm, '')
+    .replaceAll('\t', '  ')
+    .trim();
+export const gsapSequenceCode = functionBody(addGsapSequence.toString());
+export const gsapIgnitionCode = functionBody(addIgnitionSequence.toString());
 
 export function examplesForLocale(locale: Locale) {
   const isEs = locale === 'es';
@@ -108,14 +111,4 @@ void setup();`;
 
 export const { gsapCode, standaloneCode } = examplesForLocale('en');
 
-export const codeTheme = {
-  name: 'domfx',
-  type: 'dark' as const,
-  colors: { 'editor.background': '#101117', 'editor.foreground': '#F4F5FB' },
-  tokenColors: [
-    { scope: ['comment'], settings: { foreground: '#AEB1C1' } },
-    { scope: ['keyword', 'storage', 'entity.name.function'], settings: { foreground: '#D7DAEE' } },
-    { scope: ['string'], settings: { foreground: '#E6DC6A' } },
-    { scope: ['constant.numeric'], settings: { foreground: '#9ED9AD' } },
-  ],
-};
+export { codeTheme } from '@domfx/site/code-theme';

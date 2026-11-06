@@ -33,7 +33,7 @@ const label = locale === 'es' ? `${messages.livePreview} de ${effect.name}` : `$
 <section class="docs-lab not-content" data-docs-lab data-effect={effect.id} data-category={effect.category} data-status="suspended" data-status-visible="true" data-paused="false" aria-labelledby={heading ? `${id}-title` : undefined} aria-label={heading ? undefined : label}>
   {heading && <div class="docs-lab-heading"><h3 id={`${id}-title`}>{heading}</h3>{description && <p>{description}</p>}</div>}
   <div class="docs-lab-frame">
-    <DocsPreview id={id} tools="chip">
+    <DocsPreview id={id}>
       <div class="docs-lab-host" data-docs-lab-host data-docs-preview-camera>
         <span class="docs-lab-subject docs-lab-text" data-docs-lab-target="text" {...visibility('text')}>domfx</span>
         <svg class="docs-lab-subject docs-lab-svg" data-docs-lab-target="svg" {...visibility('svg')} width="132" height="132" viewBox="0 0 160 160" aria-hidden="true"><path fill="#C2C5DB" d="M64 8H96V45L122 19L145 42L119 68H156V100H119L145 126L122 149L96 123V160H64V123L38 149L15 126L41 100H4V68H41L15 42L38 19L64 45Z"/></svg>

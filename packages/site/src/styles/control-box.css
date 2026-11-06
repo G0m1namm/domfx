@@ -512,6 +512,27 @@
   color: inherit;
   font: inherit;
 }
+.control-box-code [data-code='keyword'] {
+  color: #c792ea;
+}
+.control-box-code [data-code='function'] {
+  color: #82aaff;
+}
+.control-box-code [data-code='string'] {
+  color: #ecc48d;
+}
+.control-box-code [data-code='quote'] {
+  color: #d9f5dd;
+}
+.control-box-code [data-code='number'] {
+  color: #f78c6c;
+}
+.control-box-code [data-code='literal'] {
+  color: #ff5874;
+}
+.control-box-code [data-code='comment'] {
+  color: var(--muted);
+}
 .control-box-code-actions .control-box-button {
   flex: 1 1 auto;
   min-inline-size: 0;
@@ -623,9 +644,6 @@
   max-inline-size: 100%;
   pointer-events: auto;
 }
-.zoom-chip-group[data-unfolding] {
-  overflow: hidden;
-}
 .zoom-chip-group::before {
   position: absolute;
   z-index: -1;
@@ -654,9 +672,10 @@
 .zoom-chip button:hover:enabled {
   color: #fff;
 }
+/* A limit must read as blocked at a glance, not as a slightly quieter button. */
 .zoom-chip button:disabled {
-  color: var(--control-border);
-  cursor: default;
+  color: color-mix(in srgb, var(--control-border) 45%, var(--surface));
+  cursor: not-allowed;
 }
 .zoom-chip button:focus-visible {
   outline: 2px solid var(--focus);

@@ -1,4 +1,5 @@
 ---
+import { codeTokens } from '../code-tokens.ts';
 import { controlBoxMessages } from '../control-box-messages.ts';
 import {
   effectColorField,
@@ -101,7 +102,7 @@ const viewId = (tab: string) => `${id}-view-${tab}`;
           </fieldset>
         </div>
         <div class="control-box-view" id={viewId('code')} data-box-view="code" role="group" aria-labelledby={tabId('code')} hidden>
-          <pre class="control-box-code" tabindex="0" aria-label={m.code}><code data-box-code>{effectSnippet(effect, defaults, locale)}</code></pre>
+          <pre class="control-box-code" tabindex="0" aria-label={m.code}><code data-box-code>{codeTokens(effectSnippet(effect, defaults, locale)).map(({ text, kind }) => <span data-code={kind}>{text}</span>)}</code></pre>
           <div class="control-box-code-actions">
             <button type="button" class="control-box-button" data-box-link><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-link"/></svg><span>{m.copyLink}</span></button>
             <button type="button" class="control-box-button control-box-primary" data-box-copy><svg class="ui-icon" viewBox="0 0 256 256" aria-hidden="true"><use href="#ph-copy"/></svg><span>{m.copyCode}</span></button>

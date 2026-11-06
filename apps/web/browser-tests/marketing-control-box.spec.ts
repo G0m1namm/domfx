@@ -438,12 +438,27 @@ for (const width of [1440, 360]) {
     const box = await dialog.locator('[data-zoom-in]').boundingBox();
     const x = (box?.x ?? 0) + (box?.width ?? 0) / 2;
     const y = (box?.y ?? 0) + (box?.height ?? 0) / 2;
+    const zoomGroup = dialog.locator('[data-zoom-in]').locator('..');
+    await zoomGroup.evaluate((group) => {
+      const heights = new Set<number>();
+      const sample = () => {
+        heights.add(Math.round(group.getBoundingClientRect().height));
+        requestAnimationFrame(sample);
+      };
+      sample();
+      Object.assign(window, { zoomGroupHeights: heights });
+    });
     for (const expected of ['150%', '200%', '250%', '300%']) {
       await page.mouse.click(x, y);
       await expect(dialog.locator('[data-zoom-label]')).toHaveText(expected);
       await expect(dialog.locator('[data-pan-controls]')).toBeVisible();
       await page.waitForTimeout(500);
     }
+    expect(
+      await page.evaluate(() => [
+        ...(window as never as { zoomGroupHeights: Set<number> }).zoomGroupHeights,
+      ]),
+    ).toHaveLength(1);
   });
 }
 

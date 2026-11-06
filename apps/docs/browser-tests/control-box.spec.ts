@@ -762,12 +762,50 @@ for (const path of ['/docs/standalone/', '/docs/es/standalone/']) {
   });
 }
 
-test('the GSAP lesson keeps its own controls', async ({ page }) => {
+test('the GSAP lesson uses the dock and zoom chip, with GSAP owning its values', async ({
+  page,
+}) => {
   await page.goto('/docs/gsap/');
   const lab = page.locator('[data-docs-gsap-lab]');
-  await expect(lab.locator('[data-control-box]')).toHaveCount(0);
-  await expect(lab.locator('.docs-preview-toolbar')).toBeAttached();
-  await expect(lab.locator('[data-gsap-play]')).toBeAttached();
+  await lab.scrollIntoViewIfNeeded();
+  const dock = lab.locator('.control-box-dock');
+  const stage = await lab.locator('[data-docs-preview]').boundingBox();
+  await expect(dock).toBeVisible();
+  // The dock floats over the preview, as on every other preview.
+  const docked = await dock.boundingBox();
+  expect((docked?.y ?? 0) + (docked?.height ?? 0)).toBeLessThanOrEqual(
+    (stage?.y ?? 0) + (stage?.height ?? 0),
+  );
+  await expect(lab.locator('.zoom-chip')).toBeVisible();
+  await expect(lab.locator('.docs-preview-toolbar')).toHaveCount(0);
+  // No settings: the timeline owns `time` and `intensity`.
+  await expect(lab.locator('[data-box-tab], [data-box-setting], [data-box-reset]')).toHaveCount(0);
+  for (const action of ['play', 'restart', 'reverse']) {
+    await expect(lab.locator(`[data-gsap-${action}] svg`)).toBeVisible();
+    await expect(lab.locator(`[data-gsap-${action}]`)).toHaveText('');
+  }
+});
+
+test('the GSAP details open and close without moving the target', async ({ page }) => {
+  await page.goto('/docs/gsap/');
+  const lab = page.locator('[data-docs-gsap-lab]');
+  await lab.scrollIntoViewIfNeeded();
+  const details = lab.locator('[data-gsap-details]');
+  const values = lab.locator('.docs-gsap-values');
+  const target = lab.locator('[data-gsap-word]');
+  await expect(details).toBeEnabled();
+  await expect(details).toHaveAttribute('aria-expanded', 'true');
+  await expect(values).toBeVisible();
+  const before = await target.boundingBox();
+  const panel = await lab.locator('[data-box-panel]').boundingBox();
+  expect((before?.y ?? 0) + (before?.height ?? 0)).toBeLessThanOrEqual(panel?.y ?? 0);
+  await details.click();
+  await expect(details).toHaveAttribute('aria-expanded', 'false');
+  await expect(values).toBeHidden();
+  expect(await target.boundingBox()).toEqual(before);
+  await details.click();
+  await expect(values).toBeVisible();
+  expect(await target.boundingBox()).toEqual(before);
 });
 
 test('the label reads Target element, never Subject', async ({ browser, baseURL }) => {

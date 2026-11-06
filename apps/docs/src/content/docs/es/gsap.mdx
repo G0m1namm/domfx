@@ -15,6 +15,10 @@ export const { gsapCode } = examplesForLocale('es');
 
 <DocsGsapLab />
 
+<p>El reproductor da a cada letra su propio efecto con <code>{"attachFire(letter, { host, clock: 'manual', intensity: 0, flameReach: 0.7 })"}</code> y después pasa las letras y los efectos a una sola línea de tiempo, de modo que <code>stagger</code> se aplica a ambos. Mueve, escala y atenúa el contenedor o la posición de las letras con libertad: el efecto las sigue sin una captura nueva. La rotación y la inclinación desactivan el efecto con <code>unsupported-placement</code>, y los cambios de opacidad solo en el objetivo no son compatibles, así que atenúa el contenedor.</p>
+
+<p>El resto de esta guía empieza con algo más pequeño: un objetivo y un efecto.</p>
+
 <span id="provide-your-elements" />
 
 ## Proporciona tus elementos

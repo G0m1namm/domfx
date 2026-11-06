@@ -2,6 +2,7 @@ import { unified } from '@astrojs/markdown-remark';
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
+import { codeTheme } from '@domfx/site/code-theme';
 import { siteConfig } from '@domfx/site/config';
 import { sitePublicDir } from '@domfx/site/public-path';
 
@@ -29,6 +30,7 @@ export default defineConfig({
       defaultLocale: 'root',
       locales: { root: { label: 'English', lang: 'en' }, es: { label: 'Español', lang: 'es' } },
       disable404Route: true,
+      expressiveCode: { themes: [codeTheme], useStarlightUiThemeColors: true },
       editLink: { baseUrl: 'https://github.com/G0m1namm/domfx/edit/main/apps/docs/' },
       pagination: true,
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },

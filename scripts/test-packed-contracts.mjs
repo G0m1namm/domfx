@@ -43,6 +43,7 @@ for (const name of Object.keys(standaloneDependencies)) {
   const installed = realpathSync(join(consumer, 'node_modules', name));
   assert.ok(installed.startsWith(realpathSync(directory)));
   const manifest = readJson(join(installed, 'package.json'));
+  assert.equal(manifest.sideEffects, false, `${name} sideEffects`);
   assert.deepEqual(
     Object.keys(manifest.exports).sort(),
     name === '@domfx/core' ? ['.'] : ['.', './experimental'],

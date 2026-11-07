@@ -25,17 +25,13 @@ for (const prefix of ['/docs', '/docs/es']) {
         .poll(() => page.evaluate(() => sessionStorage.getItem('copied')))
         .toBe(installCommand);
     }
-    const standalonePackages = ['@domfx/browser', '@domfx/core'] as const;
-    for (const name of standalonePackages) {
-      const version = publishedVersions[name];
-      await expect(
-        content.locator('pre').filter({ hasText: `"${name}": "${version}"` }),
-      ).toHaveCount(1);
-    }
+    const browserDependency = `"@domfx/browser": "${publishedVersions['@domfx/browser']}"`;
+    await expect(content.locator('pre').filter({ hasText: browserDependency })).toHaveCount(1);
     const manifest = content
       .locator('.expressive-code')
       .filter({ hasText: '"name": "my-domfx-preview"' });
     await expect(manifest).not.toContainText('@domfx/gsap');
+    await expect(manifest).not.toContainText('@domfx/core');
     const manifestSource = (
       await manifest.locator('pre code .ec-line .code').allTextContents()
     ).join('\n');
@@ -48,9 +44,8 @@ for (const prefix of ['/docs', '/docs/es']) {
     const source = await markdown.text();
     expect(source).toContain(browserInstallCommand);
     expect(source).toContain(bindingInstallCommand);
-    for (const name of standalonePackages) {
-      expect(source).toContain(`"${name}": "${publishedVersions[name]}"`);
-    }
+    expect(source).toContain(browserDependency);
+    expect(source).not.toContain('"@domfx/core"');
     expect(source).not.toContain('%DOMFX_');
     const full = await request.get('/llms-full.txt');
     expect(await full.text()).toContain(source.trim());

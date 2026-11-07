@@ -17,14 +17,14 @@ test('published versions resolve before rendering prose, inline code and copyabl
       '`%DOMFX_GSAP_VERSION%`',
       '```sh\n%DOMFX_BROWSER_INSTALL%\n```',
       '```json',
-      '{"@domfx/core":"%DOMFX_CORE_VERSION%","@domfx/browser":"%DOMFX_BROWSER_VERSION%"}',
+      '{"@domfx/browser":"%DOMFX_BROWSER_VERSION%"}',
       '```',
     ].join('\n\n'),
   );
   assert(code.includes(`Release ${publishedVersions['@domfx/browser']}.`));
   assert(code.includes(`<code>${publishedVersions['@domfx/gsap']}</code>`));
   assert(code.includes(browserInstallCommand));
-  assert(code.includes(`"@domfx/core":"${publishedVersions['@domfx/core']}"`));
+  assert(code.includes(`"@domfx/browser":"${publishedVersions['@domfx/browser']}"`));
   assert(!code.includes('%DOMFX_'));
 });
 

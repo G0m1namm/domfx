@@ -10,10 +10,10 @@ Consulta las versiones exactas en la [guía de instalación](/docs/es/installati
 
 ## Actualiza paquetes compatibles
 
-Los paquetes tienen versiones independientes. Consulta sus registros de cambios
-y notas de publicación, el rango de core que requiere browser y los rangos de
-`peerDependencies` del adaptador GSAP. Que los números de versión coincidan
-no basta para establecer compatibilidad.
+Todos los paquetes públicos `@domfx` comparten una versión, así que usa la misma
+versión de todos los paquetes `@domfx`. Un paquete puede recibir una versión nueva
+sin cambios propios. Consulta los registros de cambios, las notas de publicación y
+el rango de `peerDependencies` del adaptador GSAP.
 
 Fija las versiones que verificaste y guarda el archivo de bloqueo de dependencias
 en el control de versiones. Actualiza el adaptador GSAP opcional cuando sea

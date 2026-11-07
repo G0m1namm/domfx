@@ -9,7 +9,8 @@ Repository visibility and npm publication are separate maintainer actions.
 
 - Verify npm publish permissions for `@domfx/core`, `@domfx/browser` and `@domfx/gsap`
   before approval.
-- Version libraries independently. Changesets also updates affected internal dependents.
+- All public `@domfx/*` packages share one version through a Changesets `fixed` group,
+  which future bindings join. A package can get a new version with no changes of its own.
   The workspace root and apps stay private; website deployments are separate.
 - The first candidate is `0.1.0-alpha.0` for all three libraries. Remain in Changesets
   `alpha` prerelease mode; subsequent candidate changes require a deliberate bump.
@@ -292,7 +293,7 @@ For the website, update each package's verified version in
 `packages/site/src/published-versions.ts`, then rebuild. Marketing install commands,
 English/Spanish docs, code blocks and Markdown exports use that record at build time;
 candidate package manifests never update it automatically. Docs use
-`%DOMFX_CORE_VERSION%`, `%DOMFX_BROWSER_VERSION%`, `%DOMFX_GSAP_VERSION%` and
+`%DOMFX_BROWSER_VERSION%`, `%DOMFX_GSAP_VERSION%` and
 `%DOMFX_BROWSER_INSTALL%` placeholders. Review release-status wording and update
 GitHub READMEs and the Quickstart separately; those files are not templated.
 

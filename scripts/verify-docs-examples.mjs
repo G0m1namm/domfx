@@ -249,9 +249,7 @@ try {
           import.meta.url,
         ),
         'utf8',
-      )
-        .replaceAll('%DOMFX_CORE_VERSION%', publishedVersions['@domfx/core'])
-        .replaceAll('%DOMFX_BROWSER_VERSION%', publishedVersions['@domfx/browser']);
+      ).replaceAll('%DOMFX_BROWSER_VERSION%', publishedVersions['@domfx/browser']);
       const block = (language) =>
         installation.match(new RegExp('```' + language + '\\n([\\s\\S]*?)```'))[1];
       for (const kind of ['standalone', 'gsap']) {

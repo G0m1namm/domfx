@@ -3,7 +3,6 @@ import type { RemarkPlugin } from '@astrojs/markdown-remark';
 import { browserInstallCommand, publishedVersions } from '@domfx/site/published-versions';
 
 const replacements: Record<string, string> = {
-  CORE_VERSION: publishedVersions['@domfx/core'],
   BROWSER_VERSION: publishedVersions['@domfx/browser'],
   GSAP_VERSION: publishedVersions['@domfx/gsap'],
   BROWSER_INSTALL: browserInstallCommand,

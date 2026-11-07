@@ -1,7 +1,7 @@
 {
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [],
+  "fixed": [["@domfx/core", "@domfx/browser", "@domfx/gsap"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",

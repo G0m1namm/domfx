@@ -19,8 +19,9 @@ Si ya tienes una aplicación:
 %DOMFX_BROWSER_INSTALL%
 ```
 
-Core se instala automáticamente. GSAP es opcional. Fija versiones exactas y conserva
-el archivo de bloqueo de dependencias; la API es experimental aunque la etiqueta
+Core se instala automáticamente. GSAP es opcional. Usa la misma versión de todos los
+paquetes `@domfx`, fija versiones exactas y conserva el archivo de bloqueo de
+dependencias; la API es experimental aunque la etiqueta
 `latest` de npm apunte a ella.
 
 <span id="create-your-preview-app"></span>
@@ -41,7 +42,6 @@ Para una aplicación nueva, ejecuta `mkdir my-domfx-preview` y después
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "%DOMFX_CORE_VERSION%",
     "@domfx/browser": "%DOMFX_BROWSER_VERSION%"
   },
   "devDependencies": { "typescript": "5.9.3", "vite": "7.3.7" }

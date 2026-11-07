@@ -33,7 +33,6 @@ Run `mkdir my-domfx-preview`, then `cd my-domfx-preview`. Save this as `package.
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "0.1.0-alpha.2",
     "@domfx/browser": "0.1.0-alpha.2"
   },
   "devDependencies": { "typescript": "5.9.3", "vite": "7.3.7" }

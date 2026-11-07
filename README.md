@@ -12,7 +12,7 @@ Start with the [consumer quickstart](QUICKSTART.md) for verified standalone and 
 
 Package-specific contracts and API references live in their respective package guides:
 
-- [`@domfx/core`](packages/core/README.md) — DOM/framework/GPU-independent contracts and computation
+- [`@domfx/core`](packages/core/README.md) — DOM/framework/GPU-independent effect types, installed automatically
 - [`@domfx/browser`](packages/domfx/README.md) — browser capture and internal TypeGPU renderer
 - [`@domfx/gsap`](packages/gsap/README.md) — optional GSAP lifecycle helpers
 

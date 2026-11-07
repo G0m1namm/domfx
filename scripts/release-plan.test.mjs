@@ -234,8 +234,51 @@ test('local PR preflight requires an explicit base and matches Changesets releas
   assert.doesNotThrow(() => releasePlanPreflight(root, 'origin/main', { artifactCheck: () => {} }));
 });
 
+test('one changeset plans every package in the fixed version group', (t) => {
+  const { root, write } = workspace(t);
+  const run = (command, args) =>
+    execFileSync(command, args, {
+      cwd: root,
+      encoding: 'utf8',
+      timeout: 30_000,
+      env: { ...process.env, LEFTHOOK: '0' },
+    });
+  run('git', ['init', '-b', 'main']);
+  run('git', ['add', '.']);
+  run('git', [
+    '-c',
+    'user.name=Release Test',
+    '-c',
+    'user.email=release@example.invalid',
+    '-c',
+    'commit.gpgsign=false',
+    'commit',
+    '-m',
+    'test: fixture',
+  ]);
+  run('git', ['update-ref', 'refs/remotes/origin/main', 'HEAD']);
+  write('packages/core/README.md', 'Changed packed documentation.');
+  write(
+    '.changeset/browser-only.md',
+    '---\n"@domfx/browser": patch\n---\n\nBrowser-only consumer change.\n',
+  );
+  run('git', ['add', '.']);
+
+  const { releases } = releasePlanPreflight(root, 'origin/main', { artifactCheck: () => {} });
+  const planned = releases.filter(({ type }) => type !== 'none');
+  assert.deepEqual(planned.map(({ name }) => name).toSorted(), [
+    '@domfx/browser',
+    '@domfx/core',
+    '@domfx/gsap',
+  ]);
+  assert.equal(new Set(planned.map(({ newVersion }) => newVersion)).size, 1);
+});
+
 test('local PR preflight blocks changed packed contents omitted from the release plan', (t) => {
   const { root, write } = workspace(t);
+  // A package outside the fixed group, such as a future addition missed from it.
+  const config = JSON.parse(readFileSync(join(root, '.changeset/config.json'), 'utf8'));
+  write('.changeset/config.json', JSON.stringify({ ...config, fixed: [] }));
   const run = (command, args) =>
     execFileSync(command, args, {
       cwd: root,

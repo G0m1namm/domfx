@@ -11,8 +11,9 @@ Write explanations and code comments in the user's language; keep API names unch
 
 ## Check the installed contract
 
-Inspect the app's manifest, lockfile and installed versions of `@domfx/browser`,
-`@domfx/core` and, when used, `gsap` and `@domfx/gsap` before choosing APIs.
+Inspect the app's manifest, lockfile and installed versions of `@domfx/browser` and,
+when used, `gsap` and `@domfx/gsap` before choosing APIs. Do not add `@domfx/core` to
+the install. Use the same version of every `@domfx` package.
 The published quickstart currently pins `0.1.0-alpha.1`; this repository also
 documents additive relative options awaiting release. Check the installed public
 declarations and matching documentation before using those options;

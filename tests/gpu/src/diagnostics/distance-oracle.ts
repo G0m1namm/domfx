@@ -65,3 +65,15 @@ export function exactDistanceField(mask: Uint8Array, width: number, height: numb
   }
   return result;
 }
+
+/** Test-only inside/outside mask at the renderer's alpha threshold. */
+export function classifyAlpha(
+  frame: { readonly width: number; readonly height: number; readonly pixels: Uint8Array },
+  threshold = 128,
+): Uint8Array {
+  const result = new Uint8Array(frame.width * frame.height);
+  for (let i = 0; i < result.length; i += 1) {
+    result[i] = frame.pixels[i * 4 + 3] >= threshold ? 1 : 0;
+  }
+  return result;
+}

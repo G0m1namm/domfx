@@ -1,5 +1,6 @@
-import type { CaptureFrame, EffectHandle } from '@domfx/core';
+import type { EffectHandle } from '@domfx/core';
 
+import type { CaptureFrame } from './capture-frame.js';
 import type { DiagnosticTrace } from './diagnostics.js';
 import { EffectError } from './effect-error.js';
 import type { PreparedGpuFrame } from './gpu.js';

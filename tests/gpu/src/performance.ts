@@ -112,10 +112,7 @@ async function measure() {
     };
     // No runtime library import or GPU request occurs before this boundary.
     const started = performance.now();
-    const [{ captureElement }, { GpuExperiment }] = await Promise.all([
-      import('@domfx/browser'),
-      import('@domfx/browser/experimental'),
-    ]);
+    const { captureElement, GpuExperiment } = await import('@domfx/browser/experimental');
     const imported = performance.now();
     gpu = await GpuExperiment.create();
     const initialized = performance.now();

@@ -1,5 +1,4 @@
-import { captureElement } from '@domfx/browser';
-import { GpuExperiment, type PreparedGpuFrame } from '@domfx/browser/experimental';
+import { GpuExperiment, type PreparedGpuFrame, captureElement } from '@domfx/browser/experimental';
 
 import { measurementEffect } from './effect-selection.js';
 

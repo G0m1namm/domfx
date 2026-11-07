@@ -1,8 +1,7 @@
 import { createJumpFlood, type JumpFlood } from '@typegpu/sdf';
 import { d, std, tgpu, type TgpuRoot } from 'typegpu';
 
-import type { CaptureFrame } from '@domfx/core';
-
+import type { CaptureFrame } from './capture-frame.js';
 import type { EffectColor, EffectColorRamp } from './color.js';
 import { EffectError } from './effect-error.js';
 import type { EffectGeometry } from './effect-geometry.js';

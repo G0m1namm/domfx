@@ -1,7 +1,6 @@
 import { GpuExperiment } from '@domfx/browser/experimental';
-import { classifyAlpha } from '@domfx/core';
 
-import { signedDistanceOracle } from './distance-oracle.js';
+import { classifyAlpha, signedDistanceOracle } from './distance-oracle.js';
 
 /** Real GPU allocations observed at the device boundary, not total VRAM. */
 export async function verifyPreparationResources() {

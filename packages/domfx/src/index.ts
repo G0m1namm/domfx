@@ -224,10 +224,8 @@ export type { KineticOptions } from './kinetic-options.js';
 export type { FireOptions } from './fire-options.js';
 export type { ElectricityOptions } from './electricity-options.js';
 export type { FrostOptions } from './frost-options.js';
-export { captureElement } from './browser.js';
 export { CaptureError, type CaptureErrorCode } from './capture-assets.js';
 export type {
-  CaptureFrame,
   ClockMode,
   EffectHandle,
   EffectName,

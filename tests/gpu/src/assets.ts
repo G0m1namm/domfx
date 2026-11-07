@@ -1,4 +1,5 @@
-import { attachFire, CaptureError, captureElement, type EffectHandle } from '@domfx/browser';
+import { attachFire, CaptureError, type EffectHandle } from '@domfx/browser';
+import { captureElement } from '@domfx/browser/experimental';
 
 const target = document.querySelector<HTMLButtonElement>('#target')!;
 const host = document.querySelector<HTMLElement>('#host')!;

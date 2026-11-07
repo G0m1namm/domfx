@@ -1,6 +1,5 @@
-import type { CaptureFrame } from '@domfx/core';
-
 import { attachWithAdapters } from '../../src/attachment.js';
+import type { CaptureFrame } from '../../src/capture-frame.js';
 import type { PreparedGpuFrame } from '../../src/gpu.js';
 import { memoryFor } from '../../src/memory.js';
 import { measureEffectPlacement } from '../../src/placement.js';

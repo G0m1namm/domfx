@@ -1,10 +1,15 @@
 import { gsap } from 'gsap';
 
-import { attachFire, captureElement, type EffectHandle } from '@domfx/browser';
-import { GpuExperiment, memoryFor, type PreparedGpuFrame } from '@domfx/browser/experimental';
-import { classifyAlpha, type CaptureFrame } from '@domfx/core';
+import { attachFire, type EffectHandle } from '@domfx/browser';
+import {
+  GpuExperiment,
+  memoryFor,
+  type PreparedGpuFrame,
+  captureElement,
+  type CaptureFrame,
+} from '@domfx/browser/experimental';
 
-import { exactDistanceField } from './diagnostics/distance-oracle.js';
+import { classifyAlpha, exactDistanceField } from './diagnostics/distance-oracle.js';
 import { verifyFireShape } from './diagnostics/fire-shape.js';
 import { verifyPreparationResources } from './diagnostics/preparation-resources.js';
 import { qualifyRelativeCatalog } from './relative-qualification.js';

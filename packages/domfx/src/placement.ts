@@ -1,7 +1,6 @@
 import { autoUpdate, computePosition, offset, platform } from '@floating-ui/dom';
 
-import type { CaptureFrame } from '@domfx/core';
-
+import type { CaptureFrame } from './capture-frame.js';
 import { cssEffectError } from './effect-error.js';
 import { calculateEffectPlacement, type PlacementGeometry } from './placement-geometry.js';
 

@@ -22,8 +22,8 @@ and teardown. Increase repetitions with `DOMFX_HOMEPAGE_TRIALS`; set
 `DOMFX_HOMEPAGE_DURATION_MS` for each ordinary window.
 The public homepage does not expose an exact live capture count or resource ledger.
 The runner records effect canvas insertions and per-host canvas counts as attachment
-proxies, not capture or GPU intervals. Its production bundle tree-shakes the unused
-public `captureElement` export, so the runner deliberately does not load a separate
+proxies, not capture or GPU intervals. Its production bundle does not include
+`captureElement`, so the runner deliberately does not load a separate
 diagnostic module: doing so would not measure the production homepage path. It
 attempts a second native tab after the separate synthetic visibility check and
 reports native hide/return only if the original tab actually becomes hidden. Adapter

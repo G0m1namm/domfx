@@ -1,7 +1,7 @@
 {
   "name": "@domfx/core",
   "version": "0.1.0-alpha.2",
-  "description": "DOM-independent domfx contracts and alpha classification.",
+  "description": "DOM-independent domfx effect handle contracts.",
   "license": "MIT",
   "repository": {
     "type": "git",

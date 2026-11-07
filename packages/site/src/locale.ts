@@ -118,6 +118,7 @@ const docsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> = {
     'removed-options',
     'relative-effect-sizing',
     'animation-and-binding-names',
+    'capture-exports',
   ],
   support: [
     'measured-environments',
@@ -200,6 +201,7 @@ const spanishDocsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> 
     'opciones-eliminadas',
     'tamaño-relativo-del-efecto',
     'nombres-de-animación-y-enlaces',
+    'exportaciones-de-captura',
   ],
   support: [
     'entornos-medidos',

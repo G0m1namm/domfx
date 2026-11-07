@@ -1,5 +1,10 @@
-import { attachFire, captureElement } from '@domfx/browser';
-import { attachFireWithAdapters, GpuExperiment, memoryFor } from '@domfx/browser/experimental';
+import { attachFire } from '@domfx/browser';
+import {
+  attachFireWithAdapters,
+  GpuExperiment,
+  memoryFor,
+  captureElement,
+} from '@domfx/browser/experimental';
 
 import { installStressProbe } from './stress-probe.js';
 

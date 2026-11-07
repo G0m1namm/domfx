@@ -4,16 +4,14 @@ import { join } from 'node:path';
 import ts from 'typescript';
 
 const coreExports = [
-  'CaptureFrame',
   'ClockMode',
   'EffectHandle',
   'EffectName',
   'EffectReason',
   'ManualEffectHandle',
-  'classifyAlpha',
 ];
 const browserExports = [
-  ...coreExports.filter((name) => name !== 'classifyAlpha'),
+  ...coreExports,
   'AttachmentOptions',
   'BurnedPaperEffectHandle',
   'ColorAttachmentOptions',
@@ -56,7 +54,6 @@ const browserExports = [
   'attachStarShimmer',
   'attachStipple',
   'attachWovenMesh',
-  'captureElement',
 ];
 for (const module of [ts.ModuleKind.NodeNext, ts.ModuleKind.ESNext]) {
   for (const name of ['core', 'browser']) {

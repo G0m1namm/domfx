@@ -1,5 +1,5 @@
-import { attachFire, attachFrost, captureElement } from '@domfx/browser';
-import { GpuExperiment, startEffectDiagnostics } from '@domfx/browser/experimental';
+import { attachFire, attachFrost } from '@domfx/browser';
+import { GpuExperiment, startEffectDiagnostics, captureElement } from '@domfx/browser/experimental';
 
 import { effects } from './effect-selection.js';
 import {

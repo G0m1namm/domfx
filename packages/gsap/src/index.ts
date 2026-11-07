@@ -1,3 +1,6 @@
+// tsc drops the `gsap` import from the declarations, which still name its global namespace.
+// oxlint-disable-next-line typescript/triple-slash-reference
+/// <reference types="gsap" preserve="true" />
 import { gsap } from 'gsap';
 
 import type { EffectHandle } from '@domfx/core';

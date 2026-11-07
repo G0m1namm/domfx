@@ -143,6 +143,11 @@ apps; diagnostic distance oracles belong only to test fixtures. GSAP belongs in 
 adapter and its example and fixture consumers. For library edits, rebuild with `pnpm build`; the website and fixtures import compiled packages,
 not source aliases. Restart `pnpm demo` after rebuilding to refresh dependencies.
 
+`pnpm check` fails when a stable public API differs from its committed report in
+`packages/*/api/`. Review the change, run `pnpm api:update` and commit the report with
+it. `/experimental` has no report. `pnpm check` also runs `publint` and `attw` on the
+packed packages.
+
 `pnpm check` includes the display-free packed consumer checks. The compile-only
 `scripts/fixtures/packed-contracts/semantics.ts` fixture protects public attachment,
 control and GSAP binding types with valid examples, explained `@ts-expect-error`

@@ -27,6 +27,7 @@
     "**/.wrangler/**",
     ".agents/**",
     "pnpm-lock.yaml",
+    "packages/*/api/*.api.md",
     "**/.astro/**"
   ]
 }

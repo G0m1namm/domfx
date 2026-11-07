@@ -27,7 +27,7 @@
     "build:demo": "pnpm build:web",
     "preview:demo": "pnpm preview:web",
     "typecheck": "pnpm build && pnpm -r typecheck",
-    "check": "pnpm format:check && pnpm lint && pnpm check:artifacts && pnpm build && pnpm lint:boundaries && pnpm test:tooling && node scripts/test-packed-contracts.mjs && pnpm -r typecheck && pnpm -r test",
+    "check": "pnpm format:check && pnpm lint && pnpm check:artifacts && pnpm build && pnpm lint:boundaries && pnpm api:check && pnpm check:packages && pnpm test:tooling && node scripts/test-packed-contracts.mjs && pnpm -r typecheck && pnpm -r test",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "lint": "oxlint --deny-warnings .",
@@ -76,17 +76,23 @@
     "test:web:smoke:built": "node scripts/browser-session.mjs pnpm --filter @domfx/web exec playwright test --config playwright.routine.config.ts",
     "test:visual": "pnpm build:web && node scripts/browser-session.mjs pnpm --filter @domfx/web exec playwright test --config playwright.visual.config.ts",
     "check:artifacts": "node scripts/check-tracked-artifacts.mjs",
+    "check:packages": "node scripts/check-packages.mjs",
+    "api:check": "node scripts/api-report.mjs",
+    "api:update": "node scripts/api-report.mjs --update",
     "browser:run": "node scripts/browser-session.mjs"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
     "@changesets/cli": "3.0.2",
     "@commitlint/cli": "21.2.2",
     "@commitlint/config-conventional": "21.2.2",
+    "@microsoft/api-extractor": "7.60.1",
     "dependency-cruiser": "18.2.0",
     "lefthook": "2.1.12",
     "oxfmt": "0.67.0",
     "oxlint": "1.82.0",
     "playwright": "1.63.0",
+    "publint": "0.3.25",
     "typescript": "5.9.3"
   },
   "engines": {

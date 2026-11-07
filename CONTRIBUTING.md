@@ -146,7 +146,9 @@ not source aliases. Restart `pnpm demo` after rebuilding to refresh dependencies
 `pnpm check` fails when a stable public API differs from its committed report in
 `packages/*/api/`. Review the change, run `pnpm api:update` and commit the report with
 it. `/experimental` has no report. `pnpm check` also runs `publint` and `attw` on the
-packed packages.
+packed packages, and fails when a consumer bundle exceeds its gzip budget: 190 KiB for
+`@domfx/browser` with its dependencies, and 2 KiB for `@domfx/gsap` without GSAP.
+Raising a budget needs maintainer approval.
 
 `pnpm check` includes the display-free packed consumer checks. The compile-only
 `scripts/fixtures/packed-contracts/semantics.ts` fixture protects public attachment,

@@ -85,6 +85,23 @@ for (const module of ['NodeNext', 'ESNext']) {
     'ES2022,DOM,DOM.Iterable',
     'semantics.ts',
   ]);
+  run(consumer, 'pnpm', [
+    'exec',
+    'tsc',
+    '--strict',
+    '--noEmit',
+    '--skipLibCheck',
+    'false',
+    '--target',
+    'ES2022',
+    '--module',
+    module,
+    '--moduleResolution',
+    module === 'NodeNext' ? 'NodeNext' : 'Bundler',
+    '--lib',
+    'ES2022,DOM,DOM.Iterable',
+    'gsap-types.ts',
+  ]);
   console.log(`Public type acceptance/rejection: strict ${module}: PASS`);
 }
 console.log('Packed SSR, declarations and export/dependency boundaries: PASS');

@@ -1,5 +1,4 @@
-import type { CaptureFrame } from '@domfx/core';
-
+import type { CaptureFrame } from './capture-frame.js';
 import { EffectError } from './effect-error.js';
 
 /** Renderer-private CSS geometry. Raster centers map to untransformed target-local

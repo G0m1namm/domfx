@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import type { CaptureFrame } from '@domfx/core';
-
+import type { CaptureFrame } from '../src/capture-frame.js';
 import { createCaptureRevisions } from '../src/capture-revision.js';
 import { diagnosticsFor, startEffectDiagnostics } from '../src/diagnostics.js';
 import type { PreparedGpuFrame } from '../src/gpu.js';

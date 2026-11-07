@@ -94,3 +94,18 @@ que cada segmento parta de los valores anteriores. Cambiar desde los enlaces
 modifica este comportamiento y permite que `killTweensOf(effect)` y la sobrescritura
 de propiedades actúen directamente sobre la instancia. Registra la limpieza antes
 de que termine la configuración; consulta la [guía de GSAP](/docs/es/gsap).
+
+<span id="capture-exports"></span>
+
+## Exportaciones de captura
+
+La próxima versión reduce las exportaciones de captura.
+
+- **`captureElement` y `CaptureFrame`:** impórtalos desde
+  `@domfx/browser/experimental`. Ya no se exportan desde `@domfx/browser`, y
+  `CaptureFrame` ya no se exporta desde `@domfx/core`.
+  `@domfx/browser/experimental` es inestable y puede cambiar en cualquier versión.
+- **`classifyAlpha`:** se eliminó de `@domfx/core`. Compara tú mismo el alfa de un
+  fotograma: `frame.pixels[index * 4 + 3] >= 128`.
+- **`CaptureError` y `CaptureErrorCode`:** no cambian. `refresh()` sigue rechazando
+  con `CaptureError`, así que comprueba su `code`.

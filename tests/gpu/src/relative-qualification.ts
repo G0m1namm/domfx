@@ -1,7 +1,11 @@
-import { captureElement } from '@domfx/browser';
 import * as api from '@domfx/browser';
 import type { EffectHandle } from '@domfx/browser';
-import { GpuExperiment, memoryFor, startEffectDiagnostics } from '@domfx/browser/experimental';
+import {
+  GpuExperiment,
+  memoryFor,
+  startEffectDiagnostics,
+  captureElement,
+} from '@domfx/browser/experimental';
 
 import { effects } from './effect-selection.js';
 

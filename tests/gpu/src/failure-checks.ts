@@ -1,9 +1,10 @@
-import { CaptureError, type CaptureFrame, type EffectHandle } from '@domfx/browser';
+import { CaptureError, type EffectHandle } from '@domfx/browser';
 import {
   attachFireWithAdapters,
   estimateFrameMemory,
   GpuExperiment,
   memoryFor,
+  type CaptureFrame,
 } from '@domfx/browser/experimental';
 
 /** Use a real producer without exporting the internal error constructor to the lab. */

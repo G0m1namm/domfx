@@ -1,12 +1,12 @@
-import { captureElement } from '@domfx/browser';
 import {
   attachElectricityWithAdapters,
   attachKineticWithAdapters,
   GpuExperiment,
   memoryFor,
   type PreparedGpuFrame,
+  captureElement,
+  type CaptureFrame,
 } from '@domfx/browser/experimental';
-import type { CaptureFrame } from '@domfx/core';
 
 function alphaBounds(pixels: Uint8Array, width: number, threshold: number) {
   let minX = width;

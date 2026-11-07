@@ -1,5 +1,5 @@
-import { captureElement, type ClockMode } from '@domfx/browser';
-import { attachFireWithAdapters, GpuExperiment } from '@domfx/browser/experimental';
+import { type ClockMode } from '@domfx/browser';
+import { attachFireWithAdapters, GpuExperiment, captureElement } from '@domfx/browser/experimental';
 
 /** Colored alpha islands give independent, visible landmarks in the captured paint. */
 export async function createPlacementFixture(clock: ClockMode, scrolling = false) {

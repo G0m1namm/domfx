@@ -73,3 +73,16 @@ For chained GSAP sequences, use native `.to(effect, ...)` calls so each segment
 starts from the preceding values. Switching from bindings changes this behavior
 and makes `killTweensOf(effect)` and property overwrite address the instance
 directly. Register cleanup before setup finishes; see the [GSAP guide](/docs/gsap).
+
+## Capture exports
+
+The next release narrows the capture exports.
+
+- **`captureElement` and `CaptureFrame`:** import them from
+  `@domfx/browser/experimental`. They are no longer exported from `@domfx/browser`,
+  and `CaptureFrame` is no longer exported from `@domfx/core`.
+  `@domfx/browser/experimental` is unstable and can change in any release.
+- **`classifyAlpha`:** removed from `@domfx/core`. Compare a frame's alpha yourself:
+  `frame.pixels[index * 4 + 3] >= 128`.
+- **`CaptureError` and `CaptureErrorCode`:** unchanged. `refresh()` still rejects with
+  `CaptureError`, so branch on its `code`.

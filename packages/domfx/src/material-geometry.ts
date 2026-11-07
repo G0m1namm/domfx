@@ -1,5 +1,4 @@
-import type { CaptureFrame } from '@domfx/core';
-
+import type { CaptureFrame } from './capture-frame.js';
 import { EffectError } from './effect-error.js';
 import type { EffectGeometry } from './effect-geometry.js';
 

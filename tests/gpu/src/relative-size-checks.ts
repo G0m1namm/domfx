@@ -1,5 +1,4 @@
-import { captureElement } from '@domfx/browser';
-import { GpuExperiment } from '@domfx/browser/experimental';
+import { GpuExperiment, captureElement } from '@domfx/browser/experimental';
 
 import { effects } from './effect-selection.js';
 

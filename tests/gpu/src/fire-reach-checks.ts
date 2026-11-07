@@ -1,11 +1,11 @@
-import { captureElement } from '@domfx/browser';
 import {
   attachFireWithAdapters,
   GpuExperiment,
   memoryFor,
   type PreparedGpuFrame,
+  captureElement,
+  type CaptureFrame,
 } from '@domfx/browser/experimental';
-import type { CaptureFrame } from '@domfx/core';
 
 const nextPaint = () =>
   new Promise<void>((resolve) =>

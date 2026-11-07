@@ -2,9 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { decodeFloat16 } from '@domfx/browser/experimental';
-import { classifyAlpha } from '@domfx/core';
 
-import { exactDistanceField, signedDistanceOracle } from '../src/diagnostics/distance-oracle.js';
+import {
+  classifyAlpha,
+  exactDistanceField,
+  signedDistanceOracle,
+} from '../src/diagnostics/distance-oracle.js';
 
 test('full-field oracle preserves an inner hole and disconnected island', () => {
   const width = 7;

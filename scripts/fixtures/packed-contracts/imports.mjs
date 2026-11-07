@@ -72,7 +72,7 @@ registerHooks({
 });
 const exports = await import(entry);
 if (entry === '@domfx/core') {
-  assert.deepEqual(Object.keys(exports).sort(), ['classifyAlpha']);
+  assert.deepEqual(Object.keys(exports).sort(), []);
 } else if (entry === '@domfx/browser') {
   assert.deepEqual(Object.keys(exports).sort(), [
     'CaptureError',
@@ -97,7 +97,6 @@ if (entry === '@domfx/core') {
     'attachStarShimmer',
     'attachStipple',
     'attachWovenMesh',
-    'captureElement',
   ]);
 } else {
   assert.deepEqual(Object.keys(exports).sort(), [
@@ -111,6 +110,7 @@ if (entry === '@domfx/core') {
     'attachKineticWithAdapters',
     'attachPatternWithAdapters',
     'attachSlimeWithAdapters',
+    'captureElement',
     'decodeFloat16',
     'estimateFrameMemory',
     'memoryFor',

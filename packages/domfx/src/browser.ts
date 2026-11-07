@@ -1,6 +1,5 @@
-import type { CaptureFrame } from '@domfx/core';
-
 import { CaptureError, prepareCaptureAssets } from './capture-assets.js';
+import type { CaptureFrame } from './capture-frame.js';
 import { relativeSourceGuardCss } from './effect-paint.js';
 import { estimateFrameMemory } from './memory.js';
 import { scaleToViewport } from './placement.js';

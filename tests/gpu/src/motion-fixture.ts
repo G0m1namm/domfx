@@ -1,5 +1,10 @@
-import { captureElement, type FireOptions } from '@domfx/browser';
-import { attachFireWithAdapters, GpuExperiment, memoryFor } from '@domfx/browser/experimental';
+import { type FireOptions } from '@domfx/browser';
+import {
+  attachFireWithAdapters,
+  GpuExperiment,
+  memoryFor,
+  captureElement,
+} from '@domfx/browser/experimental';
 
 function deferred() {
   let resolve = () => {};

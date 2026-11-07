@@ -6,7 +6,8 @@ See the [consumer quickstart](https://github.com/G0m1namm/domfx/blob/main/QUICKS
 for npm installation and a tested standalone/GSAP walkthrough.
 
 Use the quickstart’s pinned versions to install the experimental alpha.
-The `/experimental` entry is reserved for regression fixtures, not a stable public API.
+`@domfx/browser/experimental` is unstable and can change in any release.
+It exists for regression fixtures and local diagnostics.
 See the [browser support record](https://github.com/G0m1namm/domfx/blob/main/engineering/browser-support.md)
 for measured environments and limits.
 
@@ -44,7 +45,7 @@ Root declarations compile with TypeScript 5.9.3, strict checking and
 browser consumers add DOM/DOM.Iterable, without WebGPU or GSAP ambient types.
 Export allowlists reject accidental public renderer/oracle exports and extra package
 subpaths; private source/dist imports are rejected. `/experimental` retains its
-explicit fixture-only renderer and adapter exports and is outside this root declaration
+explicit renderer, adapter and capture exports and is outside this root declaration
 contract. Its GPU types still require the fixtures' WebGPU type setup.
 
 The SDF executor from pinned `@typegpu/sdf` 0.12.0 is bundled with its MIT notice.
@@ -102,6 +103,8 @@ viewport. This avoids WebKit's misplaced paint for positioned HTML under SVG
 viewport translations. `pnpm test:capture` checks target-local pixel landmarks and
 exterior paint in Chromium, Firefox and WebKit; native Safari and zoom checks
 remain separate from that engine regression test.
+
+Import `captureElement` and `CaptureFrame` from the experimental entry. `@domfx/browser/experimental` is unstable and can change in any release.
 
 `captureElement` returns untransformed target-local straight RGBA8. The content bounds
 are the selected root's border box; padding is in CSS pixels. Raster pixel centers map

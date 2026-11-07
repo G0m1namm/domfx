@@ -1,6 +1,4 @@
 import {
-  classifyAlpha,
-  type CaptureFrame,
   type ClockMode,
   type EffectHandle,
   type EffectName,
@@ -8,11 +6,15 @@ import {
   type ManualEffectHandle,
 } from '@domfx/core';
 
-export function consume(frame: CaptureFrame, handle: EffectHandle) {
-  const mask: Uint8Array = classifyAlpha(frame);
+export function consume(handle: EffectHandle) {
   const manual: ManualEffectHandle = handle;
   const clock: ClockMode = handle.clock;
   const name: EffectName = 'fire-edge';
   const reason: EffectReason | undefined = handle.reason;
-  return { mask, manual, clock, name, reason };
+  return { manual, clock, name, reason };
 }
+
+// @ts-expect-error Capture types live in the unstable browser entry.
+export type { CaptureFrame } from '@domfx/core';
+// @ts-expect-error The alpha classifier is not a library export.
+export { classifyAlpha } from '@domfx/core';

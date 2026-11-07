@@ -99,9 +99,10 @@ snapshot. Copy it before `trace.dispose()`, which clears records and marks but
 does not dispose effects. `userTiming: true` also adds bounded `domfx:` marks to
 the browser's Performance panel.
 
-Keep exported traces local and disable tracing when measuring performance. This
-experimental JavaScript entry exposes internal GPU types and is outside the root
-package's consumer TypeScript guarantees. Use `reason` and `reasonDetail` from the
+Keep exported traces local and disable tracing when measuring performance.
+`@domfx/browser/experimental` is unstable and can change in any release. It
+exposes internal GPU types and is outside the root package's consumer TypeScript
+guarantees. Use `reason` and `reasonDetail` from the
 root API for application diagnostics.
 
 ## Recover explicitly

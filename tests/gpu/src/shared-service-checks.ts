@@ -1,8 +1,7 @@
 import { attachFire, type EffectHandle } from '@domfx/browser';
 import { GpuExperiment, memoryFor } from '@domfx/browser/experimental';
-import { classifyAlpha } from '@domfx/core';
 
-import { exactDistanceField } from './diagnostics/distance-oracle.js';
+import { classifyAlpha, exactDistanceField } from './diagnostics/distance-oracle.js';
 
 function deferred() {
   let resolve = () => {};

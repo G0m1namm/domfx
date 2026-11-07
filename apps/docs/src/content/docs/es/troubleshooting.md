@@ -119,8 +119,8 @@ efectos. `userTiming: true` añade también un número limitado de marcas `domfx
 en el panel Performance del navegador.
 
 Mantén locales los registros exportados y desactiva el registro al medir el
-rendimiento. Esta entrada experimental de JavaScript expone tipos GPU internos
-y queda fuera de las garantías de TypeScript de la API principal. Usa `reason`
+rendimiento. `@domfx/browser/experimental` es inestable y puede cambiar en cualquier versión. Expone
+tipos GPU internos y queda fuera de las garantías de TypeScript de la API principal. Usa `reason`
 y `reasonDetail` de la API principal para diagnosticar desde tu aplicación.
 
 <span id="recover-explicitly"></span>

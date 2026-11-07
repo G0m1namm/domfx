@@ -8,9 +8,9 @@ See the [installation guide](/docs/installation) for exact versions.
 
 ## Upgrade compatible packages
 
-Packages have independent versions. Check each changelog and release note, the
-browser package's core dependency range, and the GSAP adapter's peer ranges.
-Matching version numbers alone do not establish compatibility.
+All public `@domfx` packages share one version, so use the same version of every
+`@domfx` package. A package can get a new version with no changes of its own. Check
+the changelogs, release notes and the GSAP adapter's peer range.
 
 Pin the versions you verified and commit your app's lockfile. Update the optional
 GSAP adapter only when needed; standalone effects do not depend on it. Reinstall,

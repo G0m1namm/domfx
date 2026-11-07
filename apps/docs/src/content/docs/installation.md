@@ -17,8 +17,8 @@ In an existing app:
 %DOMFX_BROWSER_INSTALL%
 ```
 
-Core is installed automatically. GSAP is optional. Pin exact versions and keep
-your lockfile; the API is experimental even when npm's `latest` tag points to it.
+Core is installed automatically. GSAP is optional. Use the same version of every
+`@domfx` package, pin exact versions and keep your lockfile; the API is experimental even when npm's `latest` tag points to it.
 
 ## Create your preview app
 
@@ -36,7 +36,6 @@ Save this as `package.json`:
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@domfx/core": "%DOMFX_CORE_VERSION%",
     "@domfx/browser": "%DOMFX_BROWSER_VERSION%"
   },
   "devDependencies": { "typescript": "5.9.3", "vite": "7.3.7" }

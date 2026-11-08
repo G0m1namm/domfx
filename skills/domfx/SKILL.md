@@ -23,6 +23,9 @@ For a new installation, use the exact package versions in the public
 [installation guide](https://domfx.dev/docs/installation/).
 Import from `@domfx/browser`; the published build already includes its shader transform.
 No repository checkout, private imports or consumer TypeGPU plugin is needed.
+Do not import `@domfx/browser/experimental` in app code; it can change in any
+release. Replace APIs marked `@deprecated` with the replacement their note names. See
+the [stability policy](https://domfx.dev/docs/upgrading/#stability-and-deprecation).
 
 Choose an attachment from the [effect catalog](https://domfx.dev/docs/api/effects/).
 `attachFire`, `attachFrost` and `attachDither` share controls, but effect-specific
@@ -135,6 +138,8 @@ Native property tweens are the ordinary path; snapshot helpers are optional.
 `ready` resolves when an initialization attempt finishes, including unavailability;
 it does not prove visible output. Inspect `lifecycle`, `raster`, `reason` and
 `reasonDetail`. Use the reason code for branching and the detail for diagnostics.
+Minor releases can add `EffectReason`, `CaptureErrorCode` and `EffectName` values:
+keep a default branch for unknown values, and never branch on `reasonDetail` wording.
 
 After changing captured paint, await `refresh()`. It hides stale output and resolves
 when this or a newer requested capture is accepted; it can reject. Observed target

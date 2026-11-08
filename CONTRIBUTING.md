@@ -150,6 +150,11 @@ packed packages, and fails when a consumer bundle exceeds its gzip budget: 190 K
 `@domfx/browser` with its dependencies, and 2 KiB for `@domfx/gsap` without GSAP.
 Raising a budget needs maintainer approval.
 
+`pnpm test` runs Node unit tests, including attachment lifecycle and the GSAP binding.
+Lifecycle tests drive `@domfx/browser/experimental` adapters in happy-dom with fixed
+layout and fake capture/renderer adapters; real geometry and rendering stay in the
+browser suites.
+
 `pnpm check` includes the display-free packed consumer checks. The compile-only
 `scripts/fixtures/packed-contracts/semantics.ts` fixture protects public attachment,
 control and GSAP binding types with valid examples, explained `@ts-expect-error`

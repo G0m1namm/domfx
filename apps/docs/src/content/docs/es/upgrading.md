@@ -28,7 +28,8 @@ Las etiquetas de npm pueden cambiar; `latest` no garantiza una API estable.
 Fija versiones exactas en lugar de depender de una etiqueta que puede cambiar.
 Durante `0.x`, los cambios incompatibles requieren una versión menor con notas
 de migración explícitas. Las API alfa pueden cambiar; un parche compatible debe
-conservar el contrato documentado.
+conservar el contrato documentado. Desde `1.0.0-beta.0`, se aplica la
+[política de estabilidad](#stability-and-deprecation).
 
 Prueba tu objetivo y línea de tiempo: avance y retroceso, selección de texto y
 controles originales, comportamiento con movimiento reducido o
@@ -41,6 +42,42 @@ Conserva el archivo de bloqueo anterior para volver a las versiones previas. Si 
 de versiones de paquetes, entorno, código de motivo y mensaje de diagnóstico
 junto con un ejemplo mínimo reproducible. Consulta
 [solución de problemas](/docs/es/troubleshooting).
+
+<span id="stability-and-deprecation"></span>
+
+## Estabilidad y obsolescencia
+
+Desde `1.0.0-beta.0`, la API pública queda congelada. El contrato estable cubre:
+
+- todas las exportaciones de `@domfx/browser`, `@domfx/core` y `@domfx/gsap`:
+  nombres, tipos y firmas;
+- el comportamiento documentado: rangos y valores predeterminados de las opciones,
+  qué entradas lanzan un error y cuál, los estados de `lifecycle`, los códigos de
+  `reason`, los códigos de `CaptureError`, `ready`, `refresh()`, `retry()`,
+  `dispose()` y cómo avanzan y retroceden los enlaces GSAP.
+
+No cubre `@domfx/browser/experimental`, los píxeles exactos ni el ajuste visual,
+las cifras de rendimiento o memoria, el lienzo del efecto y sus atributos, el
+texto de `reasonDetail`, la salida de diagnóstico ni nada sin documentar. Los
+cambios en la apariencia predeterminada de un efecto se indican en el registro de
+cambios.
+
+Durante la beta, la API congelada solo cambia para corregir un defecto del
+contrato. Cada cambio de este tipo incluye una nota de migración y, cuando sea
+posible, una obsolescencia previa. Desde `1.0.0`, los cambios incompatibles solo
+llegan en una versión mayor.
+
+Una API obsoleta se marca con `@deprecated`, así que los editores la muestran
+tachada, y aparece con su sustituta en el registro de cambios y en esta página.
+Sigue funcionando sin cambios durante al menos una versión menor y hasta la
+siguiente versión mayor, que la elimina. domfx no muestra avisos de obsolescencia
+en tiempo de ejecución.
+
+Una versión menor puede añadir valores a `EffectReason`, `CaptureErrorCode` y
+`EffectName`. Trata los valores desconocidos con una rama predeterminada. Un
+`switch` exhaustivo de TypeScript que asigna el valor a `never` puede dejar de
+compilar tras una versión así; es lo esperado, no un cambio incompatible. Eliminar
+o renombrar un valor sí es incompatible.
 
 <span id="removed-options"></span>
 

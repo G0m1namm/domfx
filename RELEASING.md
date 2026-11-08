@@ -34,6 +34,30 @@ out of private notes: they are public release documentation.
 If `release:status` reports changed packages without a changeset, record a deliberate
 no-release change with `pnpm changeset --empty`.
 
+## Stability and deprecation
+
+From `1.0.0-beta.0`, the committed reports in `packages/*/api/` define the frozen
+surface, together with the documented behavior. The
+[Upgrading page](apps/docs/src/content/docs/upgrading.md#stability-and-deprecation)
+states what consumers can rely on and what is excluded; keep it in step with this
+section in EN and ES.
+
+- **Review:** every `pnpm api:update` diff needs maintainer review. Classify it in
+  the changeset: an addition is a minor; a removal, rename or narrowed signature is
+  breaking.
+- **During beta:** break the frozen API only to fix a defect in the contract. Mark
+  the changeset as breaking, include a migration note, and deprecate first where
+  practical. From `1.0.0`, breaking changes ship only in a major.
+- **Deprecate:** add `@deprecated` TSDoc naming the replacement, describe it in the
+  changeset, and add it to the Upgrading page in EN and ES. Keep its behavior and
+  tests unchanged for at least one minor release; remove it only in the next major,
+  with a migration note. Add no runtime warning.
+- **Open sets:** a new `EffectReason`, `CaptureErrorCode` or `EffectName` value is a
+  minor. Removing or renaming one is breaking.
+- **Excluded:** `@domfx/browser/experimental`, pixels and visual tuning,
+  performance, the effect canvas, `reasonDetail` wording and diagnostics can change
+  in any release. Call out Default-appearance changes in the changeset.
+
 ## Available now
 
 | Command                  | Purpose                                                                |

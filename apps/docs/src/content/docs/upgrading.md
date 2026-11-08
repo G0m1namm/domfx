@@ -21,7 +21,8 @@ then run your app's build and type checks.
 npm distribution tags can change; a `latest` tag does not guarantee a stable API.
 Pin exact versions rather than relying on a moving tag. During `0.x`,
 breaking changes require a minor release with explicit migration notes. Alpha APIs
-may change; a compatible patch should preserve the documented contract.
+may change; a compatible patch should preserve the documented contract. From
+`1.0.0-beta.0`, the [stability policy](#stability-and-deprecation) applies.
 
 Test your own target and timeline: forward/backward seek, original text selection
 and controls, reduced-motion/unavailable fallback, refresh, teardown and remount.
@@ -31,6 +32,36 @@ unavailable condition before explicit retry; do not add a second binding to reco
 Keep the previous lockfile for rollback. If an update fails, report the package
 versions, environment, reason code and diagnostic message with a small reproduction.
 See [troubleshooting](/docs/troubleshooting).
+
+## Stability and deprecation
+
+From `1.0.0-beta.0`, the public API is frozen. The stable contract covers:
+
+- every export of `@domfx/browser`, `@domfx/core` and `@domfx/gsap`: names, types
+  and signatures;
+- documented behavior: option ranges and defaults, which inputs throw and with
+  which error, `lifecycle` states, `reason` codes, `CaptureError` codes, `ready`,
+  `refresh()`, `retry()`, `dispose()` and how GSAP bindings seek.
+
+It does not cover `@domfx/browser/experimental`, exact pixels or visual tuning,
+performance or memory figures, the effect canvas and its attributes,
+`reasonDetail` wording, diagnostic output, or anything undocumented. Changes to
+an effect's Default appearance are called out in the changelog.
+
+During beta, the frozen API changes only to fix a defect found in the contract.
+Each such change has a migration note and, where practical, a deprecation first.
+From `1.0.0`, breaking changes ship only in a major release.
+
+A deprecated API is marked `@deprecated`, so editors show it struck through, and
+is listed with its replacement in the changelog and on this page. It keeps working
+unchanged for at least one minor release and until the next major, which removes
+it. domfx logs no deprecation warnings at runtime.
+
+A minor release can add `EffectReason`, `CaptureErrorCode` and `EffectName`
+values. Handle unknown values with a default branch. An exhaustive TypeScript
+`switch` that assigns the value to `never` can stop compiling after such a
+release; that is expected, not a breaking change. Removing or renaming a value is
+breaking.
 
 ## Removed options
 

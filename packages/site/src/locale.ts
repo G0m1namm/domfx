@@ -115,6 +115,7 @@ const docsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> = {
   upgrading: [
     'upgrade-compatible-packages',
     'check-migration-notes',
+    'stability-and-deprecation',
     'removed-options',
     'relative-effect-sizing',
     'animation-and-binding-names',
@@ -198,6 +199,7 @@ const spanishDocsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> 
   upgrading: [
     'actualiza-paquetes-compatibles',
     'revisa-las-notas-de-migración',
+    'estabilidad-y-obsolescencia',
     'opciones-eliminadas',
     'tamaño-relativo-del-efecto',
     'nombres-de-animación-y-enlaces',

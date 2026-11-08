@@ -1,8 +1,9 @@
 # Releases
 
 The first alpha uses Changesets, a reviewed release PR and manual publication of
-verified tarballs. The three libraries are published as experimental `0.1.0-alpha.2`. All other workspaces remain private. Hosted publication
-is disabled.
+verified tarballs. The three libraries are published as experimental `0.1.0-alpha.2`. All other workspaces remain private. From
+`1.0.0-beta.0`, releases are staged from CI with provenance; see
+[hosted staging](#hosted-staging-with-provenance).
 Repository visibility and npm publication are separate maintainer actions.
 
 ## Packages and versions
@@ -139,9 +140,8 @@ readiness. Run `pnpm agent:verify` separately for the full repository gate.
 
 ## Exact-artifact handoff
 
-Hosted publication is disabled: `.github/workflows/publish.yml` intentionally has no hosted
-preparation, upload or registry job. A hosted Linux build cannot stand in for the locally
-GPU-verified tarballs. On the WebGPU-capable machine, start from a clean checkout of the
+The locally GPU-verified tarballs are the approved bytes. A hosted Linux build cannot
+stand in for them; hosted staging only rebuilds and compares them. On the WebGPU-capable machine, start from a clean checkout of the
 approved revision, run the local rehearsal, then verify the retained directory before
 transporting it:
 
@@ -243,11 +243,53 @@ test it. This exception does not waive technical, license or maintainer readines
 Independent onboarding and developer value remain unverified until that feedback
 round. Keep its plan and results in the release issue.
 
+## Hosted staging with provenance
+
+From `1.0.0-beta.0`, `.github/workflows/publish.yml` stages the approved tarballs on npm
+through trusted publishing, so each version carries provenance linking it to this
+repository, commit and workflow. npm keeps staged versions private until the maintainer
+approves them with 2FA; that approval is the publication gate.
+
+1. Complete the [exact-artifact handoff](#exact-artifact-handoff) on the merged release
+   commit, then print the approval and the dispatch command:
+
+   ```sh
+   node scripts/release-ci.mjs approval <tested-evidence-directory> <approved-commit>
+   ```
+
+2. Review the three versions and integrities, then run the printed
+   `gh workflow run publish.yml ... -f mode=stage` command. Use `mode=dry-run` to pack and
+   compare without staging.
+3. The pack job checks that the commit is on `main`, builds from the lockfile without a
+   cache, packs as the rehearsal does, and stops unless every tarball's SHA-512 equals
+   the approval. Only then does the stage job, in the `npm` environment with
+   `id-token: write` and no npm token, recheck the bytes and run
+   `npm stage publish <tarball> --tag <tag> --access public` in dependency order.
+4. Approve each staged version on npmjs.com (Staged Packages) or with
+   `npm stage approve <stage-id>`, then run `pnpm release:verify:registry`. Reject a
+   wrong version with `npm stage reject <stage-id>` and stage a new version.
+
+The workflow never runs `npm publish` or changes distribution tags; move `latest` by
+hand, with maintainer authorization, after the registry check passes.
+
+**One-time registry setup** (maintainer account, npm 11.15 or later, for example
+`npx npm@11`). A new trusted publisher expires unless its first publish succeeds within
+two days, so configure it right before the first hosted release:
+
+- In GitHub, create the `npm` environment, limited to the `main` branch.
+- For each of `@domfx/core`, `@domfx/browser` and `@domfx/gsap`:
+  `npm trust github <package> --file publish.yml --repo G0m1namm/domfx --env npm --allow-stage-publish`.
+  Allow stage publish only, never publish.
+- After the first approved hosted release passes the registry check, enable
+  "Require two-factor authentication and disallow tokens" in each package's publishing
+  access settings. Trusted publishing keeps working. Before relying on the local
+  publisher below as a fallback, confirm it still works with an interactive 2FA login.
+
 ## Manual publication approval
 
-Hosted publication remains disabled. The first release uses the existing local
-exact-artifact publisher below, after review and explicit approval of its tested bytes.
-It needs no GitHub npm environment, CI token or trusted publisher. Confirm the npm
+The local exact-artifact publisher below remains the fallback when hosted staging is
+unavailable, after review and explicit approval of its tested bytes. It publishes
+without provenance and needs no GitHub npm environment, CI token or trusted publisher. Confirm the npm
 account can publish all three packages under `@domfx`, has 2FA enabled, and is authenticated
 with npm before execution. Do not put credentials in commands, issues or logs.
 Resolve the readiness decisions in #36, including the documented after-alpha
@@ -286,8 +328,7 @@ The registry verifier must pass before installation/upgrade pages claim a public
 release. It proves consumers can resolve dependencies without local overrides and
 checks registry integrity against the approved bytes. After that proof, record the
 versions, create matching package version tags and GitHub release notes from the
-approved commit, and update the public installation route. Configure OIDC trusted
-publishing only as a separately reviewed future hosted publication path.
+approved commit, and update the public installation route.
 
 The website deploys through the dashboard-configured GitHub connection using the
 [Cloudflare deployment guide](engineering/website-deployment.md). Website deployment

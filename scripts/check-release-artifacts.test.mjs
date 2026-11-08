@@ -125,10 +125,21 @@ for (const path of ['.', 'tests/gpu', 'apps/web', 'packages/other']) {
   });
 }
 
-test('disabled publication workflow has no hosted artifact preparation or registry action', () => {
+test('hosted publication only stages approved bytes through trusted publishing', () => {
   const workflow = readFileSync(join(process.cwd(), '.github/workflows/publish.yml'), 'utf8');
-  assert.match(workflow, /if: \$\{\{ false \}\}/);
-  assert.doesNotMatch(workflow, /release:rehearse|upload-artifact|npm publish/);
+  const [, pack, stage] = workflow.split(/^ {2}(?:pack|stage):$/m);
+  assert.match(workflow, /^on:\n {2}workflow_dispatch:/m, 'manual dispatch only');
+  assert.doesNotMatch(workflow, /^ {2}(?:push|pull_request|schedule|release):/m);
+  assert.doesNotMatch(workflow, /secrets\.|NPM_TOKEN|NODE_AUTH_TOKEN|npm publish|dist-tag/);
+  assert.doesNotMatch(pack, /id-token|npm stage/, 'packing has no registry identity');
+  assert.match(pack, /stage runs only from main/);
+  assert.match(pack, /git merge-base --is-ancestor "\$COMMIT" origin\/main/);
+  assert.match(stage, /environment: npm/);
+  assert.match(stage, /id-token: write/);
+  assert.ok(
+    stage.indexOf('release-ci.mjs verify') < stage.indexOf('npm stage publish'),
+    'the stage job rechecks the bytes before staging',
+  );
 });
 
 function releaseEvidence(t, sourceIdentity = source, options = {}) {

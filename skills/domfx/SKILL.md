@@ -14,10 +14,9 @@ Write explanations and code comments in the user's language; keep API names unch
 Inspect the app's manifest, lockfile and installed versions of `@domfx/browser` and,
 when used, `gsap` and `@domfx/gsap` before choosing APIs. Do not add `@domfx/core` to
 the install. Use the same version of every `@domfx` package.
-The published quickstart currently pins `0.1.0-alpha.1`; this repository also
-documents additive relative options awaiting release. Check the installed public
-declarations and matching documentation before using those options;
-explain a mismatch rather than inventing exports or upgrading dependencies silently.
+This skill can describe options newer than the installed release. Check the installed
+public declarations and matching documentation before using an option; explain a
+mismatch rather than inventing exports or upgrading dependencies silently.
 
 For a new installation, use the exact package versions in the public
 [installation guide](https://domfx.dev/docs/installation/).

@@ -36,7 +36,7 @@ five selected effects followed by setup, GSAP, native HTML, FAQ and closing cont
 The gallery shows every entry in `@domfx/site/effects`, with category filters.
 Filtered cards share a uniform size. `/examples` redirects to `/effects/`.
 Content and documentation links remain available without JavaScript. The Agents
-command is explicitly a preview of an unpublished consumer skill.
+command installs the consumer skill from the public repository.
 
 `effect-card.astro`, `marketing-story.astro`, `marketing-closing.astro` and
 `site-search.astro` own their markup. Phosphor icons use the official sprite paths
@@ -69,7 +69,6 @@ The GitHub action reads the public repository star count with a static fallback.
 On phones it moves from the compact header to the Humans hero panel, beside
 “Find your effect.” The hero has 128px top padding on desktop and 112px from tablet
 down, plus 16px before the collection’s own spacing.
-The consumer skill preview is not a claim that the skill has been published.
 Package publication and website deployment remain separate workflows.
 
 ## Documentation and artwork

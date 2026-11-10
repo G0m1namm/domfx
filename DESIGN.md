@@ -680,9 +680,8 @@ headline and supporting copy on the left, Humans/Agents setup tabs on the right.
 Stack these on mobile. Give the hero 128px of top padding on desktop and 112px
 from tablet down, plus 16px of bottom padding before the collection’s own spacing.
 Humans offers the package install command and gallery link.
-Agents previews `pnpm dlx skills add G0m1namm/domfx --skill domfx`, explicitly labeled
-as a preview because the consumer skill is not published yet, alongside the API guide.
-Publishing that skill remains separate work.
+Agents offers `pnpm dlx skills add G0m1namm/domfx --skill domfx`, which installs the
+consumer skill from the public repository, alongside the API guide.
 
 Move search from the gallery into the fixed header as an icon-only magnifying-glass
 button with a 44px target, accessible label, shortcut tooltip and Cmd/Ctrl+K support.

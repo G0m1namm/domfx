@@ -80,7 +80,8 @@ Use separate elements in the same document, with `position: relative` on the
 container and room for the flames. Keep both in the document while the effect runs.
 
 Continue with [Standalone](/docs/standalone#attach-fire) to create `main.ts` and see
-the result. If you already use GSAP, follow the [GSAP guide](/docs/gsap).
+the result. If you already use GSAP, follow the [GSAP guide](/docs/gsap). In React or
+Vue, copy the [tested recipes](/docs/frameworks).
 
 ## Add the optional GSAP binding
 

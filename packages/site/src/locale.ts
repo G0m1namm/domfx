@@ -53,6 +53,7 @@ export const docsSlugs = [
   'introduction',
   'installation',
   'standalone',
+  'frameworks',
   'gsap',
   'api',
   'api/effects',
@@ -86,6 +87,14 @@ const docsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> = {
     'control-time-and-intensity',
     'refresh-and-cleanup',
     'unavailable-output',
+  ],
+  frameworks: [
+    'react',
+    'vue',
+    'how-the-recipes-own-the-effect',
+    'use-another-effect',
+    'server-rendering-and-gsap',
+    'tested-versions',
   ],
   gsap: [
     'provide-your-elements',
@@ -163,6 +172,14 @@ const spanishDocsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> 
     'actualiza-la-captura-y-libera-recursos',
     'salida-no-disponible',
   ],
+  frameworks: [
+    'react',
+    'vue',
+    'cómo-gestionan-el-efecto',
+    'usa-otro-efecto',
+    'renderizado-en-servidor-y-gsap',
+    'versiones-probadas',
+  ],
   gsap: [
     'proporciona-tus-elementos',
     'construye-tu-secuencia',
@@ -225,6 +242,12 @@ const spanishDocsAnchors: Record<(typeof docsSlugs)[number], readonly string[]> 
 // Explicit source IDs are present in both languages alongside translated headings.
 const sharedDocsAnchors: Partial<Record<(typeof docsSlugs)[number], readonly string[]>> = {
   standalone: ['control-time'],
+  frameworks: [
+    'how-the-recipes-own-the-effect',
+    'use-another-effect',
+    'server-rendering-and-gsap',
+    'tested-versions',
+  ],
   gsap: ['context-cleanup', 'optional-bindings', 'unavailable-and-retry'],
   api: [
     'create-an-attachment',

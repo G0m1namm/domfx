@@ -1,0 +1,71 @@
+---
+title: "React y Vue"
+description: "Copia un hook o composable probado que aplica, actualiza y libera un efecto junto con el componente."
+---
+
+import { Code } from 'astro:components';
+import { codeTheme } from "../../examples";
+import reactHook from '../../../../recipes/react/use-domfx-effect.ts?raw';
+import reactButton from '../../../../recipes/react/FireButton.tsx?raw';
+import reactStyles from '../../../../recipes/react/fire-button.css?raw';
+import vueComposable from '../../../../recipes/vue/use-domfx-effect.ts?raw';
+import vueButton from '../../../../recipes/vue/FireButton.vue?raw';
+
+<p>Estas recetas vinculan la vida de un efecto a la de un componente. Cópialas en tu aplicación y adáptalas: son código tuyo, no un paquete de domfx. Primero instala <code>@domfx/browser</code> como indica la <a href="/docs/es/installation">guía de instalación</a>. Los comentarios del código están en inglés.</p>
+
+<p>Cada receta tiene dos partes: un hook o composable pequeño que gestiona un efecto y un botón con Fire que lo usa. Una opción de creación (<code>flameReach</code>) sustituye el efecto cuando cambia. Los controles modificables (<code>intensity</code>, <code>color</code>) actualizan el efecto activo. Un cambio de estilo en el contenedor llama a <code>refresh()</code>.</p>
+
+## React
+
+<p>Guarda el hook como <code>use-domfx-effect.ts</code>. Envuelve <code>create</code> en <code>useCallback</code> con sus opciones de creación; una función nueva sustituye el efecto.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Hook de React"><Code code={reactHook} lang="ts" theme={codeTheme} /></div>
+
+<p>Guarda el componente como <code>FireButton.tsx</code> y sus estilos como <code>fire-button.css</code>.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Botón con Fire en React"><Code code={reactButton} lang="tsx" theme={codeTheme} /></div>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Estilos del botón con Fire"><Code code={reactStyles} lang="css" theme={codeTheme} /></div>
+
+## Vue
+
+<p>Guarda el composable como <code>use-domfx-effect.ts</code>. Los valores reactivos que lee <code>options</code> son de creación; un cambio sustituye el efecto.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Composable de Vue"><Code code={vueComposable} lang="ts" theme={codeTheme} /></div>
+
+<p>Guarda el componente como <code>FireButton.vue</code>.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Botón con Fire en Vue"><Code code={vueButton} lang="vue" theme={codeTheme} /></div>
+
+<span id="how-the-recipes-own-the-effect" />
+
+## Cómo gestionan el efecto
+
+<ul>
+<li>La limpieza se registra antes de esperar las fuentes. Desmontar durante la preparación nunca crea un efecto tardío.</li>
+<li>StrictMode de React monta dos veces en desarrollo. La primera limpieza ocurre antes de que las fuentes estén listas, así que solo se aplica un efecto.</li>
+<li>Desmontar libera el efecto y retira su canvas. Volver a montar aplica un efecto nuevo; un efecto liberado no se puede reutilizar.</li>
+<li>Los controles se muestran en el siguiente fotograma sin volver a capturar el objetivo. Las opciones de creación necesitan un efecto nuevo.</li>
+<li>Los cambios dentro del objetivo actualizan la captura automáticamente. Los cambios de estilo en el contenedor, los ancestros o las hojas de estilo necesitan <code>refresh()</code>.</li>
+<li>Si el efecto no está disponible, el botón sigue funcionando. El hook registra <code>reason</code>; consulta <a href="/docs/es/troubleshooting">solución de problemas</a>.</li>
+</ul>
+
+<span id="use-another-effect" />
+
+## Usa otro efecto
+
+<p>Sustituye <code>attachFire</code> y sus opciones en el componente, por ejemplo por <code>attachFrost</code> y <code>coatingDepth</code>. El hook y el composable funcionan con todas las funciones <code>attach*</code>. Cada <a href="/docs/es/api/effects">referencia de efecto</a> enumera sus opciones de creación y sus controles modificables.</p>
+
+<span id="server-rendering-and-gsap" />
+
+## Renderizado en servidor y GSAP
+
+<p>Los efectos solo funcionan en el cliente. Las recetas aplican el efecto después del montaje, así que el renderizado en servidor genera el botón sin efecto. Se probaron con Vite, no con Next.js ni Nuxt.</p>
+
+<p>Para una línea de tiempo, sigue la <a href="/docs/es/gsap">guía de GSAP</a> y llama a su <code>cleanup()</code> desde la misma limpieza: la de <code>useEffect</code> o <code>useGSAP</code> en React, y la del watcher u <code>onBeforeUnmount</code> en Vue.</p>
+
+<span id="tested-versions" />
+
+## Versiones probadas
+
+<p>Probado con React 19.3.1 (StrictMode) y Vue 3.5.45, compilado con Vite 7.3.7 y TypeScript 5.9.3 a partir de los paquetes empaquetados, en compilaciones de desarrollo y producción en Chrome.</p>

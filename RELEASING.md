@@ -138,6 +138,18 @@ A passing run covers these Vite/Chromium consumers on the recorded GPU. It does 
 establish broad browser/bundler support, physical device-loss recovery or publication
 readiness. Run `pnpm agent:verify` separately for the full repository gate.
 
+## Framework recipe check
+
+Run `pnpm test:recipes` before each release and after editing `apps/docs/recipes`.
+It packs the current core and browser libraries and builds the React and Vue recipes
+from the [Frameworks page](https://domfx.dev/docs/frameworks/) in two Vite consumers,
+with versions listed in `scripts/recipes.mjs`. Under real Chrome with WebGPU, in
+development (React StrictMode) and production builds, it checks rendered pixels,
+original interaction, live control writes without recreating the effect, recreation
+on a creation-only change, unmount, remount, and unmount while fonts are pending.
+It runs locally, not in CI. The printed directory keeps `report.json`, logs and PNGs.
+When changing tested versions, update `scripts/recipes.mjs` and both Frameworks pages.
+
 ## Exact-artifact handoff
 
 The locally GPU-verified tarballs are the approved bytes. A hosted Linux build cannot

@@ -98,6 +98,7 @@ options and explain the version requirement instead of claiming npm support.
 
 Use the complete [standalone walkthrough](https://domfx.dev/docs/standalone/)
 with the [HTML setup](https://domfx.dev/docs/installation/#provide-the-target-and-host).
+In React or Vue, read [framework recipes](references/frameworks.md).
 For Spanish requests, link the equivalent guides under `https://domfx.dev/docs/es/`.
 
 - The target is the element whose visible shape receives the effect. The effect

@@ -1,0 +1,21 @@
+/* The host is positioned and leaves room above the button for the flames. */
+.fire-host {
+  position: relative;
+  display: inline-block;
+  padding: 72px 32px 16px;
+}
+
+.fire-target {
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: #1f2937;
+  font:
+    600 1rem/1 system-ui,
+    sans-serif;
+}
+
+.fire-host[data-tone='alert'] .fire-target {
+  background: #b91c1c;
+}

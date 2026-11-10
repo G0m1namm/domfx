@@ -31,6 +31,17 @@ test('consumer distribution has one discoverable standard skill', () => {
   }
 });
 
+test('the skill names no package version, so it never goes stale', () => {
+  const files = readdirSync(skill, { recursive: true }).filter((path) => path.endsWith('.md'));
+  for (const file of files) {
+    assert.doesNotMatch(
+      read(join(skill, file)),
+      /\b\d+\.\d+\.\d+(?:-[a-z]+\.\d+)?\b/,
+      `${file}: read versions from the installed packages or the installation guide`,
+    );
+  }
+});
+
 test('every bundled resource is reachable and links stay portable', () => {
   const pending = [join(skill, 'SKILL.md')];
   const reached = new Set();

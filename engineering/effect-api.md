@@ -7,7 +7,8 @@ Each effect reference opens with its own live preview; the Standalone guide reus
 the same preview to tune Fire.
 
 For every effect behavior, option or default change, update and verify the marketing
-Home and `/effects/` previews, copied code, and EN/ES docs together. Reuse shared
+Home and `/effects/` previews, copied code, EN/ES docs and the consumer skill
+(`skills/domfx`) together. Reuse shared
 creation-control metadata so both sites expose the same supported settings. Preserve
 authored showcase sizing and synchronized animations unless the change requires
 otherwise. Final review must check these surfaces, including keyboard and narrow

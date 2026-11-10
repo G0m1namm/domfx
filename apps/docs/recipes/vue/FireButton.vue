@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTemplateRef, watch } from 'vue';
+import { useTemplateRef } from 'vue';
 
 import { attachFire } from '@domfx/browser';
 
@@ -24,35 +24,18 @@ const emit = defineEmits<{ click: [] }>();
 const host = useTemplateRef<HTMLDivElement>('host');
 const target = useTemplateRef<HTMLButtonElement>('target');
 
-const fire = useDomfxEffect(
+const { lifecycle } = useDomfxEffect({
   host,
   target,
-  () => ({ flameReach }),
-  (targetElement, hostElement, options) =>
-    attachFire(targetElement, {
-      host: hostElement,
-      clock: 'auto',
-      motion: 'respect',
-      flameReach: options.flameReach,
-      seed: 314,
-    }),
-  // Writable controls update the live effect without recapturing the target.
-  () => ({ intensity, color }),
-);
-
-// Target changes refresh automatically; a host style change needs refresh().
-watch(
-  () => tone,
-  () => {
-    // Rejects after disposal or when the capture fails; fire.reason has the cause.
-    fire.value?.refresh().catch(() => {});
-  },
-  { flush: 'post' },
-);
+  attach: attachFire,
+  options: () => ({ clock: 'auto', flameReach }),
+  controls: () => ({ intensity, color }),
+  refreshOn: () => tone,
+});
 </script>
 
 <template>
-  <div ref="host" class="fire-host" :data-tone="tone">
+  <div ref="host" class="fire-host" :data-tone="tone" :data-effect="lifecycle">
     <button ref="target" class="fire-target" type="button" @click="emit('click')">
       <slot />
     </button>
@@ -78,5 +61,10 @@ watch(
 
 .fire-host[data-tone='alert'] .fire-target {
   background: #b91c1c;
+}
+
+/* Without a live effect, a static glow keeps the button's look. */
+.fire-host:is([data-effect='unavailable'], [data-effect='suspended']) .fire-target {
+  box-shadow: 0 -4px 24px #f97316;
 }
 </style>

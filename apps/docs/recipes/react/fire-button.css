@@ -19,3 +19,8 @@
 .fire-host[data-tone='alert'] .fire-target {
   background: #b91c1c;
 }
+
+/* Without a live effect, a static glow keeps the button's look. */
+.fire-host:is([data-effect='unavailable'], [data-effect='suspended']) .fire-target {
+  box-shadow: 0 -4px 24px #f97316;
+}

@@ -147,6 +147,7 @@ async function verify(browser, cwd, framework, mode) {
     await canvas.waitFor({ state: 'visible' });
     await page.waitForTimeout(500);
     assert.equal(await canvas.count(), 1, 'one effect after mount, including StrictMode');
+    await page.waitForSelector('.fire-host[data-effect="active"]');
     const effect = await page
       .locator('.fire-host')
       .screenshot({ path: join(directory, `${label}.png`) });
@@ -166,6 +167,7 @@ async function verify(browser, cwd, framework, mode) {
       assert.equal(await canvas.count(), 1, `${control} keeps one effect`);
       assert.equal(await marked(), true, `${control} updates the live effect`);
     }
+    await page.waitForSelector('.fire-host[data-tone="alert"][data-effect="active"]');
     const written = await live();
     assert.equal(written.intensity, 0.4, 'intensity reaches the live effect');
     assert.notEqual(written.color, undefined, 'color reaches the live effect');

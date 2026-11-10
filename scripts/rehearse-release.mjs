@@ -19,7 +19,7 @@ import { chromium } from 'playwright';
 import {
   assertReleaseVisibility,
   assertCleanReleaseCheckout,
-  publishedArtifactMatches,
+  registryArtifactMatches,
   registryMetadata,
   releaseSourceIdentity,
   testedReleaseArtifacts,
@@ -99,7 +99,7 @@ try {
     )) {
       const metadata = registryMetadata(`${artifact.name}@${artifact.version}`);
       assert.ok(metadata, 'published package missing');
-      publishedArtifactMatches(artifact, metadata);
+      await registryArtifactMatches(artifact, metadata);
       dependencies[artifact.name] = artifact.version;
       report.registry.push({
         name: artifact.name,

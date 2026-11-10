@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 
 export const releaseLibraries = {
   'packages/core': '@domfx/core',
@@ -12,6 +13,19 @@ export const releaseLibraries = {
 };
 
 const npmRegistry = 'https://registry.npmjs.org';
+
+/** The npm distribution tag for a version: its prerelease name, or `latest`. */
+export function releaseTag(version) {
+  return /^\d+\.\d+\.\d+-([a-z]+)\.\d+$/.exec(version)?.[1] ?? 'latest';
+}
+
+/**
+ * SHA-512 of a tarball's uncompressed tar stream. It identifies the package contents
+ * (paths, modes, times and bytes) independently of gzip, which differs across platforms.
+ */
+export function contentsOf(tarball) {
+  return `sha512-${createHash('sha512').update(gunzipSync(tarball)).digest('base64')}`;
+}
 const npmNetworkTimeout = 30_000;
 const npmTransportOptions = [
   '--fetch-timeout=30000',
@@ -167,6 +181,7 @@ export function testedReleaseArtifacts(directory, revision, source, now = Date.n
       name: manifest.name,
       version: manifest.version,
       integrity,
+      contents: contentsOf(bytes),
     };
   });
 }
@@ -221,11 +236,39 @@ export function registryMetadata(spec, execute = execFileSync) {
 export function publishedArtifactMatches(artifact, metadata) {
   assert.equal(metadata.version, artifact.version, 'registry version mismatch');
   assert.equal(metadata.dist?.integrity, artifact.integrity, 'immutable registry bytes differ');
+  const tag = releaseTag(artifact.version);
   assert.equal(
-    metadata['dist-tags']?.alpha,
+    metadata['dist-tags']?.[tag],
     artifact.version,
-    'inspect alpha tag before resuming a partial release',
+    `inspect ${tag} tag before resuming a partial release`,
   );
+}
+
+async function downloadTarball(url) {
+  const response = await fetch(url, { signal: AbortSignal.timeout(npmNetworkTimeout) });
+  assert.ok(response.ok, `registry tarball download failed: ${response.status}`);
+  return Buffer.from(await response.arrayBuffer());
+}
+
+/**
+ * Verify a published version against tested evidence. Hosted staging recompresses the
+ * tested contents on Linux, so differing gzip bytes pass only with identical contents.
+ */
+export async function registryArtifactMatches(artifact, metadata, download = downloadTarball) {
+  if (metadata.dist?.integrity === artifact.integrity) {
+    publishedArtifactMatches(artifact, metadata);
+    return;
+  }
+  assert.equal(metadata.version, artifact.version, 'registry version mismatch');
+  const tag = releaseTag(artifact.version);
+  assert.equal(metadata['dist-tags']?.[tag], artifact.version, `registry ${tag} tag differs`);
+  const bytes = await download(metadata.dist?.tarball);
+  assert.equal(
+    `sha512-${createHash('sha512').update(bytes).digest('base64')}`,
+    metadata.dist?.integrity,
+    'downloaded registry tarball differs from its published integrity',
+  );
+  assert.equal(contentsOf(bytes), artifact.contents, 'registry package contents differ');
 }
 
 export function assertInteractivePublishTerminal(io = process) {
@@ -294,7 +337,7 @@ export async function publishArtifacts(artifacts, directory, options = {}) {
       publishedArtifactMatches(artifact, existing);
       checkpoint.artifacts[spec] = { integrity: artifact.integrity, status: 'verified' };
       savePublicationCheckpoint(directory, checkpoint);
-      write(`${spec}: identical published bytes and alpha tag; retained`);
+      write(`${spec}: identical published bytes and ${releaseTag(artifact.version)} tag; retained`);
       continue;
     }
     const saved = checkpoint.artifacts[spec];
@@ -307,7 +350,7 @@ export async function publishArtifacts(artifacts, directory, options = {}) {
       await waitForRegistryVisibility(artifact, { ...options, lookup, write });
       checkpoint.artifacts[spec] = { integrity: artifact.integrity, status: 'verified' };
       savePublicationCheckpoint(directory, checkpoint);
-      write(`${spec}: registry bytes and alpha tag verified`);
+      write(`${spec}: registry bytes and ${releaseTag(artifact.version)} tag verified`);
       continue;
     }
     checkpoint.artifacts[spec] = { integrity: artifact.integrity, status: 'requested' };
@@ -325,7 +368,7 @@ export async function publishArtifacts(artifacts, directory, options = {}) {
     await waitForRegistryVisibility(artifact, { ...options, lookup, write });
     checkpoint.artifacts[spec] = { integrity: artifact.integrity, status: 'verified' };
     savePublicationCheckpoint(directory, checkpoint);
-    write(`${spec}: registry bytes and alpha tag verified`);
+    write(`${spec}: registry bytes and ${releaseTag(artifact.version)} tag verified`);
   }
 }
 
@@ -336,7 +379,7 @@ export function publishArtifact(artifact, execute = execFileSync) {
       'publish',
       artifact.tarball,
       '--access=public',
-      '--tag=alpha',
+      `--tag=${releaseTag(artifact.version)}`,
       '--ignore-scripts',
       `--registry=${npmRegistry}`,
       ...npmTransportOptions,

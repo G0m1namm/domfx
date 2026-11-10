@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 
 import type { EffectHandle } from '@domfx/browser';
 
@@ -30,7 +30,7 @@ export interface DomfxEffectState<E extends EffectHandle> {
 
 const idle = { effect: undefined, lifecycle: undefined, reason: undefined };
 
-/** Owns one effect while the component is mounted. Requires React 19.2 or later. */
+/** Owns one effect while the component is mounted. Works with React 18 and later. */
 export function useDomfxEffect<O extends { readonly host: HTMLElement }, E extends EffectHandle>({
   host,
   target,
@@ -46,20 +46,18 @@ export function useDomfxEffect<O extends { readonly host: HTMLElement }, E exten
   const optionsKey = JSON.stringify(options ?? {});
   const refreshKey = JSON.stringify(refreshOn);
 
-  // Effect events read the latest props without making them effect dependencies.
-  const report = useEffectEvent((effect: E) => {
+  // The latest config, read by effects without making it a dependency. Effects run
+  // in order, so this updates first. On React 19.2+, useEffectEvent can replace it.
+  const latest = useRef({ attach, options, controls, refreshKey });
+  useEffect(() => {
+    latest.current = { attach, options, controls, refreshKey };
+  });
+
+  const report = useCallback((effect: E) => {
     if (live.current?.effect === effect) {
       setState({ effect, lifecycle: effect.lifecycle, reason: effect.reason });
     }
-  });
-
-  const create = useEffectEvent((targetElement: HTMLElement, hostElement: HTMLElement) => {
-    // Omit<O, 'host'> plus host is O, which TypeScript cannot prove for a generic O.
-    const effect = attach(targetElement, { ...options, host: hostElement } as O);
-    Object.assign(effect, controls);
-    live.current = { effect, written: { ...controls }, refreshKey };
-    return effect;
-  });
+  }, []);
 
   useEffect(() => {
     const hostElement = host.current;
@@ -74,7 +72,15 @@ export function useDomfxEffect<O extends { readonly host: HTMLElement }, E exten
       if (disposed) {
         return;
       }
-      current = create(targetElement, hostElement);
+      const config = latest.current;
+      // Omit<O, 'host'> plus host is O, which TypeScript cannot prove for a generic O.
+      current = config.attach(targetElement, { ...config.options, host: hostElement } as O);
+      Object.assign(current, config.controls);
+      live.current = {
+        effect: current,
+        written: { ...config.controls },
+        refreshKey: config.refreshKey,
+      };
       setState({ ...idle, effect: current });
       await current.ready;
       report(current);
@@ -87,7 +93,7 @@ export function useDomfxEffect<O extends { readonly host: HTMLElement }, E exten
       live.current = undefined;
       setState(idle);
     };
-  }, [host, target, optionsKey]);
+  }, [host, target, optionsKey, report]);
 
   // Runs after every render and writes only changed controls; each write draws a frame.
   useEffect(() => {
@@ -115,7 +121,7 @@ export function useDomfxEffect<O extends { readonly host: HTMLElement }, E exten
       .refresh()
       .catch(() => {})
       .then(() => report(entry.effect));
-  }, [refreshKey]);
+  }, [refreshKey, report]);
 
   return state;
 }

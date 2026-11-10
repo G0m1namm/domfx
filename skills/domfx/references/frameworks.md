@@ -12,7 +12,7 @@ the app as app-owned code; there is no domfx framework package to install.
   and `refreshOn` (values that restyle the host; a change calls `refresh()`).
 - Both return `lifecycle` and `reason`. Style a fallback from `lifecycle` instead of
   hiding the target; branch on `reason`, never on `reasonDetail`.
-- React: requires React 19.2+ (`useEffectEvent`). Options are compared by value, so
+- React: works with React 18+. Options are compared by value, so
   inline objects need no `useCallback`. Do not assign to the returned effect: the
   React Compiler treats hook return values as immutable. StrictMode's double mount
   leaves one effect. Keep `'use client'` on the component for Next.js App Router.

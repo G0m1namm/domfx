@@ -51,7 +51,7 @@ const core = pack(join(root, 'packages/core'));
 const browserPackage = pack(join(root, 'packages/domfx'));
 
 function prepare(consumer) {
-  const cwd = join(directory, consumer.framework);
+  const cwd = join(directory, consumer.name);
   mkdirSync(cwd);
   cpSync(consumer.recipe, join(cwd, 'src'), { recursive: true });
   cpSync(consumer.harness, join(cwd, 'src'), {
@@ -65,7 +65,7 @@ function prepare(consumer) {
     `<!doctype html>\n<html lang="en">\n  <head><link rel="icon" href="data:," /></head>\n  <body>\n    <div id="root"></div>\n    <script type="module" src="/src/${consumer.entry}"></script>\n  </body>\n</html>\n`,
   );
   writeJson(join(cwd, 'package.json'), {
-    name: `domfx-recipe-${consumer.framework}`,
+    name: `domfx-recipe-${consumer.name}`,
     private: true,
     type: 'module',
     dependencies: {
@@ -121,8 +121,8 @@ const frames = (page, count = 3) =>
     count,
   );
 
-async function verify(browser, cwd, framework, mode) {
-  const label = `${framework}-${mode}`;
+async function verify(browser, cwd, name, mode) {
+  const label = `${name}-${mode}`;
   const server = await serve(cwd, mode);
   const page = await browser.newPage({
     viewport: { width: 800, height: 500 },
@@ -206,7 +206,7 @@ async function verify(browser, cwd, framework, mode) {
     assert.equal(await canvas.count(), 0, 'no effect after unmount during setup');
 
     assert.deepEqual(errors, []);
-    report.runs.push({ framework, mode, outcome: 'PASS', browser: browser.version() });
+    report.runs.push({ consumer: name, mode, outcome: 'PASS', browser: browser.version() });
     console.log(`${label}: PASS`);
   } finally {
     await page.close();
@@ -225,9 +225,9 @@ try {
     args: ['--enable-unsafe-webgpu'],
   });
   try {
-    for (const { cwd, framework } of prepared) {
+    for (const { cwd, name } of prepared) {
       for (const mode of ['development', 'production']) {
-        await verify(browser, cwd, framework, mode);
+        await verify(browser, cwd, name, mode);
         save();
       }
     }

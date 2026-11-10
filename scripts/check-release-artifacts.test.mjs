@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { gunzipSync, gzipSync } from 'node:zlib';
 
 import {
   assertCleanReleaseCheckout,
@@ -15,7 +16,9 @@ import {
   publishTestedRelease,
   publishableTestedReleaseArtifacts,
   publishedArtifactMatches,
+  registryArtifactMatches,
   registryMetadata,
+  releaseTag,
   releaseSourceIdentity,
   testedReleaseArtifacts,
   validateArtifact,
@@ -222,6 +225,52 @@ test('transports the three tested alpha tarballs without repacking', (t) => {
   assert.throws(
     () => publishedArtifactMatches(artifact, { ...metadata, 'dist-tags': { alpha: 'another' } }),
     /alpha tag/,
+  );
+});
+
+test('the distribution tag is the prerelease name, or latest for a stable version', () => {
+  assert.equal(releaseTag('0.1.0-alpha.2'), 'alpha');
+  assert.equal(releaseTag('1.0.0-beta.0'), 'beta');
+  assert.equal(releaseTag('1.0.0'), 'latest');
+});
+
+test('registry verification accepts recompressed bytes only with identical contents', async (t) => {
+  const { directory } = releaseEvidence(t);
+  const [artifact] = testedReleaseArtifacts(directory, 'approved', source);
+  const tested = readFileSync(artifact.tarball);
+  const recompressed = gzipSync(gunzipSync(tested), { level: 1 });
+  assert.notDeepEqual(recompressed, tested);
+  const metadataFor = (bytes) => ({
+    version: artifact.version,
+    dist: {
+      integrity: `sha512-${createHash('sha512').update(bytes).digest('base64')}`,
+      tarball: 'https://registry.example/core.tgz',
+    },
+    'dist-tags': { alpha: artifact.version },
+  });
+  const download = (bytes) => async (url) => {
+    assert.equal(url, 'https://registry.example/core.tgz');
+    return bytes;
+  };
+
+  await registryArtifactMatches(artifact, metadataFor(tested), download(tested));
+  await registryArtifactMatches(artifact, metadataFor(recompressed), download(recompressed));
+  const other = gzipSync('other contents');
+  await assert.rejects(
+    registryArtifactMatches(artifact, metadataFor(other), download(other)),
+    /package contents differ/,
+  );
+  await assert.rejects(
+    registryArtifactMatches(artifact, metadataFor(recompressed), download(other)),
+    /differs from its published integrity/,
+  );
+  await assert.rejects(
+    registryArtifactMatches(
+      artifact,
+      { ...metadataFor(recompressed), 'dist-tags': { alpha: 'another' } },
+      download(recompressed),
+    ),
+    /alpha tag differs/,
   );
 });
 

@@ -245,10 +245,16 @@ round. Keep its plan and results in the release issue.
 
 ## Hosted staging with provenance
 
-From `1.0.0-beta.0`, `.github/workflows/publish.yml` stages the approved tarballs on npm
-through trusted publishing, so each version carries provenance linking it to this
-repository, commit and workflow. npm keeps staged versions private until the maintainer
+From `1.0.0-beta.0`, `.github/workflows/publish.yml` stages the approved package
+contents on npm through trusted publishing, so each version carries provenance linking
+it to this repository, commit and workflow. GPU and consumer testing stays local; CI only
+rebuilds, compares and stages. npm keeps staged versions private until the maintainer
 approves them with 2FA; that approval is the publication gate.
+
+CI's tarballs hold the same contents as the tested ones but are compressed differently:
+gzip output differs between macOS and Linux runners, so the registry integrity is not the
+tested SHA-512. The approval therefore pins each tarball's **contents hash**, the SHA-512
+of its uncompressed tar stream, which covers every path, mode, time and byte.
 
 1. Complete the [exact-artifact handoff](#exact-artifact-handoff) on the merged release
    commit, then print the approval and the dispatch command:
@@ -257,17 +263,20 @@ approves them with 2FA; that approval is the publication gate.
    node scripts/release-ci.mjs approval <tested-evidence-directory> <approved-commit>
    ```
 
-2. Review the three versions and integrities, then run the printed
+2. Review the three versions and contents hashes, then run the printed
    `gh workflow run publish.yml ... -f mode=stage` command. Use `mode=dry-run` to pack and
    compare without staging.
 3. The pack job checks that the commit is on `main`, builds from the lockfile without a
-   cache, packs as the rehearsal does, and stops unless every tarball's SHA-512 equals
+   cache, packs as the rehearsal does, and stops unless every tarball's contents hash equals
    the approval. Only then does the stage job, in the `npm` environment with
-   `id-token: write` and no npm token, recheck the bytes and run
-   `npm stage publish <tarball> --tag <tag> --access public` in dependency order.
+   `id-token: write` and no npm token, recheck the contents and run
+   `npm stage publish <tarball> --tag <tag> --access public` in dependency order. The tag
+   is the version's prerelease name, such as `beta`; a stable version is refused.
 4. Approve each staged version on npmjs.com (Staged Packages) or with
-   `npm stage approve <stage-id>`, then run `pnpm release:verify:registry`. Reject a
-   wrong version with `npm stage reject <stage-id>` and stage a new version.
+   `npm stage approve <stage-id>`, then run `pnpm release:verify:registry` with the same
+   evidence. It downloads each registry tarball and accepts different compression only
+   when the contents hash matches the tested one. Reject a wrong version with
+   `npm stage reject <stage-id>` and stage a new version.
 
 The workflow never runs `npm publish` or changes distribution tags; move `latest` by
 hand, with maintainer authorization, after the registry check passes.
@@ -288,7 +297,8 @@ two days, so configure it right before the first hosted release:
 ## Manual publication approval
 
 The local exact-artifact publisher below remains the fallback when hosted staging is
-unavailable, after review and explicit approval of its tested bytes. It publishes
+unavailable, after review and explicit approval of its tested bytes. It still accepts only
+`0.x` alpha versions; allowing beta through it needs a separate decision. It publishes
 without provenance and needs no GitHub npm environment, CI token or trusted publisher. Confirm the npm
 account can publish all three packages under `@domfx`, has 2FA enabled, and is authenticated
 with npm before execution. Do not put credentials in commands, issues or logs.

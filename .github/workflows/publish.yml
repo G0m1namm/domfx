@@ -1,8 +1,9 @@
 name: Publish
 
-# Stages the maintainer-approved tarballs on npm through trusted publishing (OIDC).
-# The packages stay private on npm until the maintainer approves the staged versions
-# with 2FA. See RELEASING.md, "Hosted staging with provenance".
+# Stages the maintainer-approved package contents on npm through trusted publishing
+# (OIDC). GPU testing happens locally; this workflow only rebuilds, compares and stages.
+# Staged versions stay private until the maintainer approves them with 2FA.
+# See RELEASING.md, "Hosted staging with provenance".
 on:
   workflow_dispatch:
     inputs:
@@ -19,10 +20,6 @@ on:
         description: Approval JSON printed by `node scripts/release-ci.mjs approval` (required to stage)
         type: string
         required: false
-      tag:
-        description: npm distribution tag for the staged versions
-        type: string
-        default: beta
 
 permissions:
   contents: read
@@ -42,12 +39,10 @@ jobs:
       MODE: ${{ inputs.mode }}
       COMMIT: ${{ inputs.commit }}
       APPROVED: ${{ inputs.approved }}
-      TAG: ${{ inputs.tag }}
     steps:
       - name: Check inputs
         run: |
           [[ "$COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo 'commit must be a full SHA'; exit 1; }
-          [[ "$TAG" =~ ^[a-z][a-z0-9-]*$ && "$TAG" != latest ]] || { echo 'tag must be a lowercase name other than latest'; exit 1; }
           if [ "$MODE" = stage ]; then
             [ "$GITHUB_REF" = refs/heads/main ] || { echo 'stage runs only from main'; exit 1; }
             [ -n "$APPROVED" ] || { echo 'stage needs the approval JSON'; exit 1; }
@@ -70,7 +65,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: node scripts/release-ci.mjs pack release-artifacts
-      - name: Compare with the approved bytes
+      - name: Compare with the approved contents
         if: inputs.approved != ''
         run: node scripts/release-ci.mjs verify release-artifacts "$APPROVED"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -90,7 +85,6 @@ jobs:
       id-token: write
     env:
       APPROVED: ${{ inputs.approved }}
-      TAG: ${{ inputs.tag }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -106,10 +100,13 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       # Staged publishing needs npm 11.15 or later; trusted publishing needs 11.5.1.
       - run: npm install --global npm@11.21.2
-      - name: Recheck the bytes to stage
+      - name: Recheck the contents to stage
         run: node scripts/release-ci.mjs verify release-artifacts "$APPROVED"
       - name: Stage on npm (provenance from trusted publishing)
+        # The tag is the version's prerelease name (beta for 1.0.0-beta.0), never latest.
         run: |
-          for file in $(node -e "for (const a of require('./release-artifacts/packed.json')) console.log(a.file)"); do
-            npm stage publish "./release-artifacts/$file" --tag "$TAG" --access public
-          done
+          node -e "for (const a of require('./release-artifacts/packed.json')) console.log(a.file, a.tag)" |
+            while read -r file tag; do
+              [ "$tag" != latest ] || { echo "$file: stable versions need a separate decision"; exit 1; }
+              npm stage publish "./release-artifacts/$file" --tag "$tag" --access public
+            done

@@ -8,12 +8,25 @@ import { fileURLToPath } from 'node:url';
 import {
   assertCleanReleaseCheckout,
   assertReleaseVisibility,
+  contentsOf,
   releaseLibraries,
   releaseSourceIdentity,
+  releaseTag,
   testedReleaseArtifacts,
 } from './check-release-artifacts.mjs';
 
-const integrityOf = (bytes) => `sha512-${createHash('sha512').update(bytes).digest('base64')}`;
+const tarballName = (name, version) => `${name.replace('@', '').replace('/', '-')}-${version}.tgz`;
+
+function describe(name, version, bytes) {
+  return {
+    name,
+    version,
+    tag: releaseTag(version),
+    file: tarballName(name, version),
+    integrity: `sha512-${createHash('sha512').update(bytes).digest('base64')}`,
+    contents: contentsOf(bytes),
+  };
+}
 
 /** Pack the release libraries in dependency order, as the local rehearsal does. */
 export function packReleaseLibraries(root, destination) {
@@ -24,43 +37,37 @@ export function packReleaseLibraries(root, destination) {
     execFileSync(
       'pnpm',
       ['--config.ignore-scripts=true', 'pack', '--pack-destination', destination],
-      {
-        cwd: join(root, path),
-        stdio: ['ignore', 'ignore', 'inherit'],
-      },
+      { cwd: join(root, path), stdio: ['ignore', 'ignore', 'inherit'] },
     );
-    const file = `${manifest.name.replace('@', '').replace('/', '-')}-${manifest.version}.tgz`;
-    return {
-      name: manifest.name,
-      version: manifest.version,
-      file,
-      integrity: integrityOf(readFileSync(join(destination, file))),
-    };
+    const bytes = readFileSync(join(destination, tarballName(manifest.name, manifest.version)));
+    return describe(manifest.name, manifest.version, bytes);
   });
 }
 
-/** Parse the maintainer's approval: one name, version and integrity per release library. */
+/** Parse the maintainer's approval: one name, version and contents hash per release library. */
 export function parseApproval(text) {
   const approval = JSON.parse(text);
   assert.ok(Array.isArray(approval), 'approval must be a JSON array');
-  const names = approval.map(({ name }) => name).sort();
   assert.deepEqual(
-    names,
+    approval.map(({ name }) => name).sort(),
     Object.values(releaseLibraries).sort(),
     'approval must list each release library once',
   );
-  for (const { name, version, integrity } of approval) {
+  for (const { name, version, contents } of approval) {
     assert.ok(typeof version === 'string' && version, `${name}: approval needs a version`);
     assert.match(
-      String(integrity),
+      String(contents),
       /^sha512-[A-Za-z0-9+/]+=*$/,
-      `${name}: approval needs a sha512 integrity`,
+      `${name}: approval needs a sha512 contents hash`,
     );
   }
-  return approval.map(({ name, version, integrity }) => ({ name, version, integrity }));
+  return approval.map(({ name, version, contents }) => ({ name, version, contents }));
 }
 
-/** Stop unless every packed tarball is byte-identical to the approved one. */
+/**
+ * Stop unless every packed tarball holds exactly the approved contents. Gzip output
+ * differs between platforms, so the uncompressed tar stream is compared.
+ */
 export function assertApprovedArtifacts(packed, approval) {
   const errors = [];
   for (const approved of approval) {
@@ -69,9 +76,9 @@ export function assertApprovedArtifacts(packed, approval) {
       errors.push(`${approved.name}: not packed`);
     } else if (artifact.version !== approved.version) {
       errors.push(`${approved.name}: packed ${artifact.version}, approved ${approved.version}`);
-    } else if (artifact.integrity !== approved.integrity) {
+    } else if (artifact.contents !== approved.contents) {
       errors.push(
-        `${approved.name}@${approved.version}: packed bytes differ from the approved tarball`,
+        `${approved.name}@${approved.version}: packed contents differ from the approved tarball`,
       );
     }
   }
@@ -81,12 +88,11 @@ export function assertApprovedArtifacts(packed, approval) {
   assert.equal(packed.length, approval.length, 'packed and approved libraries differ');
 }
 
-/** Recompute integrity from files on disk, so a later job checks the bytes it publishes. */
+/** Describe the files on disk, so a later job checks the bytes it stages. */
 export function artifactsOnDisk(directory, approval) {
-  return approval.map(({ name, version }) => {
-    const file = `${name.replace('@', '').replace('/', '-')}-${version}.tgz`;
-    return { name, version, file, integrity: integrityOf(readFileSync(join(directory, file))) };
-  });
+  return approval.map(({ name, version }) =>
+    describe(name, version, readFileSync(join(directory, tarballName(name, version)))),
+  );
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
@@ -100,17 +106,17 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
     assert.ok(first && second, 'provide the artifact directory and approval JSON');
     const approval = parseApproval(second);
     assertApprovedArtifacts(artifactsOnDisk(resolve(first), approval), approval);
-    console.log('Packed tarballs match the approved bytes.');
+    console.log('Packed tarballs hold the approved contents.');
   } else if (command === 'approval') {
     assert.ok(first && second, 'provide tested evidence directory and approved revision');
     assertCleanReleaseCheckout();
     const tested = testedReleaseArtifacts(resolve(first), second, releaseSourceIdentity());
     const approval = JSON.stringify(
-      tested.map(({ name, version, integrity }) => ({ name, version, integrity })),
+      tested.map(({ name, version, contents }) => ({ name, version, contents })),
     );
     console.log(`Tested tarballs: ${tested.map(({ tarball }) => basename(tarball)).join(', ')}`);
     console.log(
-      `gh workflow run publish.yml --ref main -f mode=stage -f tag=beta -f commit=${second} -f approved='${approval}'`,
+      `gh workflow run publish.yml --ref main -f mode=stage -f commit=${second} -f approved='${approval}'`,
     );
   } else {
     throw new Error(

@@ -33,19 +33,8 @@ export function FireButton({
       attachFire(target, { host, clock: 'auto', motion: 'respect', flameReach, seed: 314 }),
     [flameReach],
   );
-  const fire = useDomfxEffect(hostRef, targetRef, create);
-
-  // Control writes render on the next frame without recapturing the target.
-  useEffect(() => {
-    if (fire) {
-      fire.intensity = intensity;
-    }
-  }, [fire, intensity]);
-  useEffect(() => {
-    if (fire) {
-      fire.color = color;
-    }
-  }, [fire, color]);
+  // Writable controls update the live effect without recapturing the target.
+  const fire = useDomfxEffect(hostRef, targetRef, create, { intensity, color });
 
   // Target changes refresh automatically; a host style change needs refresh().
   const capturedTone = useRef(tone);

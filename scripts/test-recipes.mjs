@@ -59,6 +59,7 @@ function prepare(consumer) {
     filter: (source) => !source.endsWith('vite.config.ts'),
   });
   cpSync(join(consumer.harness, 'vite.config.ts'), join(cwd, 'vite.config.ts'));
+  cpSync(join(consumer.harness, '../domfx-probe.ts'), join(cwd, 'src/domfx-probe.ts'));
   writeFileSync(
     join(cwd, 'index.html'),
     `<!doctype html>\n<html lang="en">\n  <head><link rel="icon" href="data:," /></head>\n  <body>\n    <div id="root"></div>\n    <script type="module" src="/src/${consumer.entry}"></script>\n  </body>\n</html>\n`,
@@ -136,6 +137,11 @@ async function verify(browser, cwd, framework, mode) {
   });
   const canvas = page.locator('.fire-host canvas');
   const marked = () => canvas.evaluate((element) => element.dataset.recipeMark === 'first');
+  const live = () =>
+    page.evaluate(() => {
+      const { intensity, color } = globalThis.recipeEffect;
+      return { intensity, color };
+    });
   try {
     await page.goto(server.url);
     await canvas.waitFor({ state: 'visible' });
@@ -160,12 +166,17 @@ async function verify(browser, cwd, framework, mode) {
       assert.equal(await canvas.count(), 1, `${control} keeps one effect`);
       assert.equal(await marked(), true, `${control} updates the live effect`);
     }
+    const written = await live();
+    assert.equal(written.intensity, 0.4, 'intensity reaches the live effect');
+    assert.notEqual(written.color, undefined, 'color reaches the live effect');
 
     await page.locator('#reach').click();
     await page.waitForFunction(() => {
       const canvases = document.querySelectorAll('.fire-host canvas');
       return canvases.length === 1 && !canvases[0].dataset.recipeMark;
     });
+    await frames(page);
+    assert.deepEqual(await live(), written, 'a recreated effect receives current controls');
 
     await page.locator('#toggle').click();
     await frames(page);

@@ -11,8 +11,10 @@ the app as app-owned code; there is no domfx framework package to install.
   into render or a ref callback.
 - Vue: reactive values read by `options` are creation-only and recreate the effect.
   Keep writable controls out of `options`.
-- Write writable controls (`intensity`, `color`, effect-specific setters) to the live
-  effect in a separate effect or watcher. Never recreate the effect for them.
+- Pass writable controls (`intensity`, `color`, effect-specific setters) as the hook's
+  or composable's `controls` argument; it writes them to the live effect. Never
+  recreate the effect for them. In React, do not assign to the returned effect: the
+  React Compiler treats hook return values as immutable.
 - Await or catch `refresh()` after host, ancestor or stylesheet changes the capture
   does not observe. Target subtree changes refresh automatically.
 - Effects are client-only. With SSR frameworks, attach after mount as the recipes do.

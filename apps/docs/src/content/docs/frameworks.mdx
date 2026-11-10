@@ -17,7 +17,7 @@ import vueButton from '../../../recipes/vue/FireButton.vue?raw';
 
 ## React
 
-<p>Save the hook as <code>use-domfx-effect.ts</code>. Wrap <code>create</code> in <code>useCallback</code> with its creation-only options; a new function replaces the effect.</p>
+<p>Save the hook as <code>use-domfx-effect.ts</code>. Wrap <code>create</code> in <code>useCallback</code> with its creation-only options; a new function replaces the effect. Pass writable controls as the last argument; the hook writes only values that changed.</p>
 
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="React hook"><Code code={reactHook} lang="ts" theme={codeTheme} /></div>
 
@@ -29,7 +29,7 @@ import vueButton from '../../../recipes/vue/FireButton.vue?raw';
 
 ## Vue
 
-<p>Save the composable as <code>use-domfx-effect.ts</code>. Reactive values read by <code>options</code> are creation-only; a change replaces the effect.</p>
+<p>Save the composable as <code>use-domfx-effect.ts</code>. Reactive values read by <code>options</code> are creation-only; a change replaces the effect. The last argument returns writable controls, which update the live effect.</p>
 
 <div class="docs-code-scroll" tabindex="0" role="region" aria-label="Vue composable"><Code code={vueComposable} lang="ts" theme={codeTheme} /></div>
 

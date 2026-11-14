@@ -1,5 +1,5 @@
-// Records a browser run in installed Chrome: environment, source revision, suite results.
-// Usage: node scripts/record-browser-run.mjs [--skip-build]
+// Records a browser run in installed Chrome or Edge: environment, source revision, suite results.
+// Usage: node scripts/record-browser-run.mjs [--channel chrome|msedge] [--skip-build]
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -10,6 +10,11 @@ import { join, resolve } from 'node:path';
 
 import { chromium } from 'playwright';
 
+const channelArg = process.argv.indexOf('--channel');
+const channel = channelArg === -1 ? 'chrome' : process.argv[channelArg + 1];
+if (!['chrome', 'msedge'].includes(channel)) {
+  throw new Error('--channel must be chrome or msedge');
+}
 const root = resolve(import.meta.dirname, '..');
 const windows = process.platform === 'win32';
 const pnpm = windows ? 'pnpm.cmd' : 'pnpm';
@@ -61,7 +66,7 @@ async function probeBrowser() {
     response.end('<!doctype html><title>probe</title>'),
   );
   await new Promise((listening) => server.listen(0, '127.0.0.1', listening));
-  const browser = await chromium.launch({ channel: 'chrome' });
+  const browser = await chromium.launch({ channel });
   try {
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
@@ -73,7 +78,7 @@ async function probeBrowser() {
       const { vendor, architecture, device, description } = found.info;
       return { vendor, architecture, device, description };
     });
-    return { chrome: browser.version(), adapter };
+    return { channel, browserVersion: browser.version(), adapter };
   } finally {
     await browser.close();
     server.close();
@@ -90,7 +95,7 @@ const results = [];
 for (const suite of suites) {
   const dir = join(out, suite.name);
   const status = run(['--filter', suite.filter, 'exec', 'playwright', 'test'], {
-    DOMFX_BROWSER_CHANNEL: 'chrome',
+    DOMFX_BROWSER_CHANNEL: channel,
     [suite.outputVar]: dir,
   });
   let stats;

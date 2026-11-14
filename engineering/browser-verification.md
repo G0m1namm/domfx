@@ -161,3 +161,47 @@ The public lab gallery/control tests were retired. Their relevant capture shapes
 remain in `capture.spec.ts`; public gallery integration is covered by the website.
 Existing independent numerical oracles, failure injection, resource accounting,
 asset, lifecycle and shared-service fixtures remain test-only infrastructure.
+
+## Recorded browser runs
+
+A recorded run puts one named environment in the
+[support record](browser-support.md). `node scripts/record-browser-run.mjs` builds,
+runs the website, docs and rendering suites in installed Chrome without the WebGPU
+flag, then writes `.scratch/browser-run/<time>/record.json`: revision, lockfile hash,
+OS, CPU, memory, Node, Chrome version, adapter and per-suite counts. It refuses a
+dirty tree. Set `DOMFX_BROWSER_CHANNEL=chrome` to run one suite this way by hand.
+
+### Chrome on Windows
+
+1. Install Git, Node 22 and Chrome, then `corepack enable`.
+2. `git clone https://github.com/G0m1namm/domfx`, `cd domfx`, check out the revision
+   under test, then `pnpm install --frozen-lockfile`.
+3. In NVIDIA Control Panel, set Chrome to the high-performance NVIDIA GPU. Open
+   `chrome://gpu` and confirm WebGPU is hardware accelerated.
+4. `node scripts/record-browser-run.mjs`. Keep the window visible and unattended.
+5. Run `pnpm preview:demo` and do the Dock pass below in Chrome at 100% and 200% zoom.
+
+### Safari on macOS
+
+Run `pnpm build:web` and `pnpm preview:demo`, then do the Dock pass in Safari at 100%
+and 200% zoom. Add the keyboard pass: from the address bar, Tab through the home page,
+one marketing dialog, one docs effect page and the GSAP lesson. Turn on Safari's
+**Press Tab to highlight each item on a webpage** first. Record Safari, macOS and
+adapter versions as the [native placement run](browser-support.md#native-safari-placement--2026-10-21-utc) does.
+
+### Dock pass
+
+On a marketing dialog, a docs effect page, the Standalone guide's Fire preview and
+the GSAP lesson, confirm each item and note any failure with a screenshot:
+
+- The dock floats at the bottom of the preview with even gutters; the effect paints.
+- Shape, Color, Time and Code each open one panel joined to the dock; changes
+  repaint the effect; Reset all restores the defaults.
+- Pause/Resume, Copy link and Copy code work; the copied link restores the settings.
+- The zoom chip zooms, pans while zoomed and fits back; limits are dimmed.
+- Tooltips appear above panels and dialogs and close with Esc.
+- Keyboard: every control is reachable in visual order with a visible focus ring;
+  Esc closes the panel or dialog and returns focus to its opener.
+- At 200% zoom, the dock and panels stay reachable without horizontal page scroll.
+- The GSAP lesson's Play/Pause, Restart, Reverse, slider and Details acts drive the
+  timeline.

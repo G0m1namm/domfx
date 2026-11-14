@@ -142,13 +142,21 @@ export async function captureElementWithReservation(
       new Error('capture-sandbox-missing'),
     );
   }
-  svg.setAttribute('viewBox', `0 0 ${sourceViewWidth} ${sourceViewHeight}`);
+  // Relative capture rasterizes 1:1 in device px. Scale in HTML, not by viewBox:
+  // WebKit drops the viewBox scale for positioned HTML inside foreignObject.
+  const rasterWidth = relative ? sourceWidth : sourceViewWidth;
+  const rasterHeight = relative ? sourceHeight : sourceViewHeight;
+  svg.setAttribute('viewBox', `0 0 ${rasterWidth} ${rasterHeight}`);
   svg.setAttribute('width', String(relative ? sourceWidth : widthCss));
   svg.setAttribute('height', String(relative ? sourceHeight : heightCss));
   foreignObject.setAttribute('x', '0');
   foreignObject.setAttribute('y', '0');
-  foreignObject.setAttribute('width', String(sourceViewWidth));
-  foreignObject.setAttribute('height', String(sourceViewHeight));
+  foreignObject.setAttribute('width', String(rasterWidth));
+  foreignObject.setAttribute('height', String(rasterHeight));
+  if (relative) {
+    sandbox.style.setProperty('transform', `scale(${dpr})`, 'important');
+    sandbox.style.setProperty('transform-origin', '0 0', 'important');
+  }
   sandbox.style.setProperty('padding-left', `${sourcePadding}px`, 'important');
   sandbox.style.setProperty('padding-top', `${sourcePadding}px`, 'important');
   sandbox.style.width = `${sourceViewWidth}px`;

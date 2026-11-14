@@ -1,0 +1,72 @@
+---
+title: "React and Vue"
+description: "Copy a tested hook or composable that attaches, updates and disposes an effect with the component."
+---
+
+import { Code } from 'astro:components';
+import { codeTheme } from "../examples";
+import reactHook from '../../../recipes/react/use-domfx-effect.ts?raw';
+import reactButton from '../../../recipes/react/FireButton.tsx?raw';
+import reactStyles from '../../../recipes/react/fire-button.css?raw';
+import vueComposable from '../../../recipes/vue/use-domfx-effect.ts?raw';
+import vueButton from '../../../recipes/vue/FireButton.vue?raw';
+
+<p>These recipes tie an effect's lifetime to a component. Copy them into your app and change them as needed: they are your code, not a domfx package. Install <code>@domfx/browser</code> as shown in the <a href="/docs/installation">installation guide</a> first.</p>
+
+<p>Each recipe has two parts: a small hook or composable that owns one effect, and a Fire button that uses it. Both take the same settings:</p>
+
+<ul>
+<li><code>attach</code>: the effect, such as <code>attachFire</code>.</li>
+<li><code>options</code>: creation-only values, such as <code>flameReach</code>. A changed value replaces the effect.</li>
+<li><code>controls</code>: writable values, such as <code>intensity</code> and <code>color</code>. They update the live effect.</li>
+<li><code>refreshOn</code>: values that restyle the host. A change calls <code>refresh()</code>.</li>
+</ul>
+
+<p>Both return <code>lifecycle</code> and <code>reason</code>, so the component can style a fallback.</p>
+
+## React
+
+<p>Save the hook as <code>use-domfx-effect.ts</code>. It works with React 18 and later. Options are compared by value, so inline objects need no <code>useCallback</code> or <code>useMemo</code>, with or without the React Compiler.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="React hook"><Code code={reactHook} lang="ts" theme={codeTheme} /></div>
+
+<p>Save the component as <code>FireButton.tsx</code>, with its styles as <code>fire-button.css</code>. Its <code>'use client'</code> line marks it as a client component in Next.js; other setups ignore it.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="React Fire button"><Code code={reactButton} lang="tsx" theme={codeTheme} /></div>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Fire button styles"><Code code={reactStyles} lang="css" theme={codeTheme} /></div>
+
+## Vue
+
+<p>Save the composable as <code>use-domfx-effect.ts</code>. Pass getters, such as <code>{'() => ({ flameReach })'}</code>, so prop changes are tracked. Any reactive value read by <code>options</code> replaces the effect when it changes.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Vue composable"><Code code={vueComposable} lang="ts" theme={codeTheme} /></div>
+
+<p>Save the component as <code>FireButton.vue</code>.</p>
+
+<div class="docs-code-scroll" tabindex="0" role="region" aria-label="Vue Fire button"><Code code={vueButton} lang="vue" theme={codeTheme} /></div>
+
+## How the recipes own the effect
+
+<ul>
+<li>Cleanup is registered before waiting for fonts. Unmounting during setup never creates a late effect.</li>
+<li>React StrictMode mounts twice in development. The first cleanup runs before fonts are ready, so only one effect attaches.</li>
+<li>Unmounting disposes the effect and removes its canvas. Remounting attaches a fresh effect; a disposed effect cannot be reused.</li>
+<li>Control writes render on the next frame without recapturing the target. Creation-only options need a new effect.</li>
+<li>Changes inside the target refresh automatically. Style changes on the host, ancestors or stylesheets need <code>refresh()</code>.</li>
+<li>An unavailable or suspended effect leaves the button working. The button sets <code>data-effect</code> from <code>lifecycle</code>, and its CSS shows a static glow instead. Branch on <code>reason</code> as shown in <a href="/docs/troubleshooting">troubleshooting</a>.</li>
+</ul>
+
+## Use another effect
+
+<p>Replace <code>attachFire</code> and its options in the component, for example with <code>attachFrost</code> and <code>coatingDepth</code>. The hook and composable work with every <code>attach*</code> function. Each <a href="/docs/api/effects">effect reference</a> lists its creation options and writable controls.</p>
+
+## Server rendering and GSAP
+
+<p>Effects are client-only. The recipes attach after mount, so server rendering outputs the plain button, and <code>'use client'</code> keeps the React component out of server components. They were tested with Vite, not with Next.js or Nuxt.</p>
+
+<p>For a timeline, follow the <a href="/docs/gsap">GSAP guide</a> and call its <code>cleanup()</code> from the same teardown: the <code>useEffect</code> cleanup or <code>useGSAP</code> in React, the watcher cleanup or <code>onBeforeUnmount</code> in Vue.</p>
+
+## Tested versions
+
+<p>Tested with React 18.3.1 and 19.3.1 (StrictMode) and Vue 3.5.45, built with Vite 7.3.7 and TypeScript 5.9.3 against the packed packages, in development and production builds in Chrome.</p>

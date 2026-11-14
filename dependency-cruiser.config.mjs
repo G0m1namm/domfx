@@ -68,7 +68,11 @@ export default {
   ],
   options: {
     doNotFollow: { path: '(^|/)node_modules/|/dist/' },
-    exclude: { path: '(^|/)\\.test-dist/|^apps/(web|docs)/\\.astro/|^astro:content$' },
+    // apps/docs/recipes is consumer code with its own React/Vue dependencies;
+    // pnpm test:recipes installs and builds it outside the workspace.
+    exclude: {
+      path: '(^|/)\\.test-dist/|^apps/(web|docs)/\\.astro/|^apps/docs/recipes/|^astro:content$',
+    },
     tsPreCompilationDeps: 'specify',
     tsConfig: { fileName: 'tsconfig.base.json' },
     enhancedResolveOptions: {

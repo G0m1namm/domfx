@@ -63,6 +63,7 @@ export default defineConfig({
           translations: { es: 'Guías' },
           items: [
             { label: 'Standalone', translations: { es: 'Uso independiente' }, slug: 'standalone' },
+            { label: 'React and Vue', translations: { es: 'React y Vue' }, slug: 'frameworks' },
             { label: 'GSAP', slug: 'gsap' },
           ],
         },

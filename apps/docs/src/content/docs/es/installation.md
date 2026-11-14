@@ -89,6 +89,7 @@ contenedor y espacio para las llamas. Mantén ambos en el documento durante el e
 
 Continúa con [uso independiente](/docs/es/standalone#attach-fire) para crear
 `main.ts` y ver el resultado. Si ya usas GSAP, sigue la [guía de GSAP](/docs/es/gsap).
+En React o Vue, copia las [recetas probadas](/docs/es/frameworks).
 
 <span id="add-the-optional-gsap-binding"></span>
 

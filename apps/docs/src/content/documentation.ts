@@ -38,6 +38,13 @@ export const documentation = [
     description: 'Attach an effect, control its animation and tune a live Fire example.',
   },
   {
+    slug: 'frameworks',
+    title: 'React and Vue',
+    group: 'Guides',
+    description:
+      'Copy a tested hook or composable that attaches, updates and disposes an effect with the component.',
+  },
+  {
     slug: 'gsap',
     title: 'GSAP',
     group: 'Guides',
@@ -121,6 +128,11 @@ const authoredSpanish = {
   standalone: {
     title: 'Uso independiente',
     description: 'Aplica un efecto, controla su animación y ajusta un ejemplo interactivo de Fire.',
+  },
+  frameworks: {
+    title: 'React y Vue',
+    description:
+      'Copia un hook o composable probado que aplica, actualiza y libera un efecto junto con el componente.',
   },
   gsap: {
     title: 'GSAP',

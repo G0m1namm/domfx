@@ -8,6 +8,11 @@ const gpuBackend = process.env.DOMFX_GPU_BACKEND ?? 'native';
 if (!['native', 'swiftshader'].includes(gpuBackend)) {
   throw new Error('DOMFX_GPU_BACKEND must be native or swiftshader');
 }
+// 'chrome' runs installed Chrome for recorded browser runs, without the WebGPU flag.
+const channel = process.env.DOMFX_BROWSER_CHANNEL ?? 'chromium';
+if (!['chromium', 'chrome'].includes(channel)) {
+  throw new Error('DOMFX_BROWSER_CHANNEL must be chromium or chrome');
+}
 
 export const fixtureProjects = [
   { name: 'development', use: { baseURL: 'http://127.0.0.1:4173' } },
@@ -18,7 +23,7 @@ export default defineConfig({
   testDir: './browser-tests',
   outputDir: resolve(artifacts, 'test-results'),
   reporter: [['list'], ['json', { outputFile: resolve(artifacts, 'report.json') }]],
-  metadata: { gpuBackend },
+  metadata: { gpuBackend, channel },
   // Serial runs avoid contention between numerical fixtures and capture measurements.
   workers: 1,
   retries: 0,
@@ -28,7 +33,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   use: {
     browserName: 'chromium',
-    channel: 'chromium',
+    channel,
     viewport: { width: 1280, height: 900 },
     deviceScaleFactor: 2,
     reducedMotion: 'no-preference',
@@ -36,7 +41,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     launchOptions: {
       args: [
-        '--enable-unsafe-webgpu',
+        ...(channel === 'chromium' ? ['--enable-unsafe-webgpu'] : []),
         ...(gpuBackend === 'swiftshader'
           ? process.platform === 'linux'
             ? [

@@ -23,6 +23,41 @@ The earlier #143 default-font and #144 playback-control defects were resolved by
 the October 20 cohort below remain historical results. Missing devices/engines and
 Linux/SwiftShader holds remain unchanged; they are outside #87's narrowed review.
 
+## Safari Dock pass — 2026-11-14 UTC
+
+**PASS at native 100%; 200% UNTESTED.** On the marketing Fire dialog, the Fire docs
+page, the Standalone guide's Fire preview and the GSAP lesson:
+
+- Fire painted; the dock sat at the bottom with even gutters. Shape, Color, Time and
+  Code each opened one joined panel; an intensity change repainted the canvas and
+  enabled Reset all, which restored the default.
+- Pause froze canvas pixels and Resume animated them. Copy code reached the system
+  clipboard; the copied link restored intensity 90% on the dialog and docs page.
+- The zoom chip zoomed to its 300% limit, panned with arrow keys and fit back;
+  Zoom out and Zoom in were disabled at their limits. The dialog's hover magnifier
+  kept the flames on the magnified logo.
+- Tooltips appeared above the open panel on keyboard focus and mouse hover; Esc
+  closed only the tooltip.
+- GSAP Play/Pause, Restart, Reverse, the position slider and the four acts drove the
+  timeline and its readouts.
+- Keyboard: with **Press Tab to highlight each item** on, Tab order followed the
+  layout on the home page, the dialog, the docs effect page and the GSAP lesson, with
+  a visible ring at every stop. The panel follows the tabs; Esc closed the panel and
+  returned focus to its tab.
+
+Observations: the preview region shows Safari's default focus ring instead of the
+site ring, and Safari adds one Tab stop on the `<dialog>` itself before Close.
+
+This run found [#247](https://github.com/G0m1namm/domfx/issues/247): relative capture
+drew at half size at DPR 2. [PR #248](https://github.com/G0m1namm/domfx/pull/248)
+fixed it before this pass.
+
+Environment: installed Safari **26.6.2**, WebKit UA **605.1.15**, macOS **26.6.2 (25G83)**,
+Apple M5 Pro, DPR 2, 1280×900 window, reduced motion off, page visible. Default
+adapter vendor `apple`. Driven by safaridriver; mouse hover and the magnifier were
+checked in a normal window. Source: [0e2c5c4](https://github.com/G0m1namm/domfx/commit/0e2c5c4);
+lockfile SHA-256: `347ac44038ebf90416b0e3151b7b8f5dbda565c90b2f18c82cfefb591135aee0`.
+
 ## Native Safari placement — 2026-10-21 UTC
 
 **PASS:** Fire output on text, SVG and image targets stayed aligned through nested
@@ -117,7 +152,7 @@ Safari attempts do not establish incompatibility.
 
 | Scope                                                                                                  | Current status                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Safari complete keyboard order, full zoomed labs and AT history                                        | **UNTESTED.** Existing automated Chromium results do not fill these Safari/native rows.                                                                                                                                                                                                                                                                                    |
+| Safari native 200% Dock pass and AT history                                                            | **UNTESTED.** The 2026-11-14 Safari pass covered keyboard order and the Dock at 100% only.                                                                                                                                                                                                                                                                                 |
 | Other browser/AT pairings, Firefox, Edge, other browser versions and other desktop GPU/OS combinations | **UNTESTED.** A fresh run on each named environment is needed. Shared engines or vendors are insufficient.                                                                                                                                                                                                                                                                 |
 | Physical iOS/Android devices and a second OS/GPU                                                       | **UNAVAILABLE in this cohort.** Real hardware/session access is required; desktop emulation does not establish touch, selection, rendering or lifecycle behavior on those devices.                                                                                                                                                                                         |
 | Linux Chromium/SwiftShader                                                                             | **HELD.** [Failed run 36828639144](https://github.com/G0m1namm/domfx/actions/runs/36828639144) had initialization and no-adapter failures. No new rendering pass is claimed; [#41](https://github.com/G0m1namm/domfx/issues/41) and [#91](https://github.com/G0m1namm/domfx/issues/91) own release reliance. No-GPU smoke success does not resolve software-GPU rendering. |

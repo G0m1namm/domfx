@@ -6,10 +6,10 @@ const gpuBackend = process.env.DOMFX_GPU_BACKEND ?? 'native';
 if (!['native', 'swiftshader'].includes(gpuBackend)) {
   throw new Error('DOMFX_GPU_BACKEND must be native or swiftshader');
 }
-// 'chrome' runs installed Chrome for recorded browser runs, without the WebGPU flag.
+// 'chrome' and 'msedge' run the installed browser for recorded runs, without the WebGPU flag.
 const channel = process.env.DOMFX_BROWSER_CHANNEL ?? 'chromium';
-if (!['chromium', 'chrome'].includes(channel)) {
-  throw new Error('DOMFX_BROWSER_CHANNEL must be chromium or chrome');
+if (!['chromium', 'chrome', 'msedge'].includes(channel)) {
+  throw new Error('DOMFX_BROWSER_CHANNEL must be chromium, chrome or msedge');
 }
 const artifacts =
   process.env.DOMFX_DOCS_OUTPUT_DIR ?? resolve(import.meta.dirname, '../../.scratch/docs');

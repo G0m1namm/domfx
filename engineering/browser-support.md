@@ -6,6 +6,27 @@ for an entire browser family. The original DOM must remain usable when an effect
 unavailable. [Release gates](../RELEASING.md#held-publication-approval)
 remain in force.
 
+## Installed Edge on macOS — 2026-11-14 UTC
+
+**PASS:** the website, docs and rendering suites ran in installed Microsoft Edge
+**157.0.4341.60** through Playwright's `msedge` channel, without the WebGPU flag.
+
+| Suite     | Passed | Failed | Skipped |
+| --------- | -----: | -----: | ------: |
+| Website   |    273 |      0 |       5 |
+| Docs      |    133 |      0 |       0 |
+| Rendering |    725 |      1 |       0 |
+
+The rendering failure was `refresh.spec.ts` ("capture/hidden re-entry cannot revive
+stale paint"). It then passed 20 of 20 repeats in Edge and in bundled Chromium, so it
+is recorded as intermittent, alongside [#233](https://github.com/G0m1namm/domfx/issues/233).
+The skips are conditional: reduced-motion handoff and discovery metadata that need
+indexing enabled.
+
+Environment: macOS 26.6.2 (25G83), Apple M5 Pro, DPR 2, 1280×900 viewport. Default
+adapter `apple`/`metal-3`. Source: [0e2c5c4](https://github.com/G0m1namm/domfx/commit/0e2c5c4);
+lockfile SHA-256: `347ac44038ebf90416b0e3151b7b8f5dbda565c90b2f18c82cfefb591135aee0`. Edge on Windows remains untested.
+
 ## Keyboard and A/AA review — 2026-10-21 UTC
 
 The [bounded accessibility review](accessibility-verification.md#keyboard-and-aaa-review--2026-10-21-utc)

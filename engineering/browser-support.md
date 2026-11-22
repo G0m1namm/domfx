@@ -46,7 +46,7 @@ Linux/SwiftShader holds remain unchanged; they are outside #87's narrowed review
 
 ## Safari Dock pass — 2026-11-14 UTC
 
-**PASS at native 100%; 200% UNTESTED.** On the marketing Fire dialog, the Fire docs
+**PASS at native 100%. At native 200%, the Dock layout passes; Fire does not paint.** On the marketing Fire dialog, the Fire docs
 page, the Standalone guide's Fire preview and the GSAP lesson:
 
 - Fire painted; the dock sat at the bottom with even gutters. Shape, Color, Time and
@@ -68,6 +68,29 @@ page, the Standalone guide's Fire preview and the GSAP lesson:
 
 Observations: the preview region shows Safari's default focus ring instead of the
 site ring, and Safari adds one Tab stop on the `<dialog>` itself before Close.
+
+### Native 200% — 2026-11-22 UTC
+
+Same pages and build, Safari page zoom 200% (viewport 640×424 CSS px, DPR 4), driven
+by safaridriver in a visible window that inherited the site's zoom:
+
+- No horizontal page scroll. The dock fit the preview with even gutters.
+- Shape, Color, Time and Code each opened one joined panel inside the viewport; every
+  panel control was hit-testable. Shape and Code scroll a few pixels inside the panel.
+  Esc closed the panel and returned focus to its tab, without closing the dialog.
+- Reset all was disabled at defaults, enabled after an intensity change and restored 80.
+- The zoom chip reached 300% with Zoom in disabled, showed pan controls and fit back.
+- Tooltips opened in the top layer above the open panel; Esc closed only the tooltip.
+- **Fire did not paint** on any page: the dialog showed "Static content ·
+  capture-budget", and the GSAP lesson disabled playback as designed. Page zoom
+  multiplies DPR, and a capture over 1,000,000 device pixels is refused
+  (`packages/domfx/src/memory.ts`). The original content stayed usable. This first
+  appeared at 175% (DPR 3.5). Playback, Pause/Resume and the GSAP acts were therefore
+  not exercised at 200%.
+- **Overlap:** on docs pages, the fixed Back to top button covered the dock's last
+  action (Copy code; Reverse on the GSAP lesson) when the dock sat at the bottom of
+  the viewport. Scrolling further uncovers it. This depends on viewport width, not
+  Safari.
 
 This run found [#247](https://github.com/G0m1namm/domfx/issues/247): relative capture
 drew at half size at DPR 2. [PR #248](https://github.com/G0m1namm/domfx/pull/248)
@@ -173,7 +196,7 @@ Safari attempts do not establish incompatibility.
 
 | Scope                                                                                                  | Current status                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Safari native 200% Dock pass and AT history                                                            | **UNTESTED.** The 2026-11-14 Safari pass covered keyboard order and the Dock at 100% only.                                                                                                                                                                                                                                                                                 |
+| Safari AT history                                                                                      | **UNTESTED.** No screen-reader pass was run with Safari.                                                                                                                                                                                                                                                                                                                   |
 | Chrome on Windows with an NVIDIA GPU                                                                   | **UNTESTED.** Accepted for the beta on 2026-11-22: no Windows/NVIDIA machine was available. Run it with the [Windows runbook](browser-verification.md#chrome-on-windows) when one is.                                                                                                                                                                                      |
 | Other browser/AT pairings, Firefox, Edge, other browser versions and other desktop GPU/OS combinations | **UNTESTED.** A fresh run on each named environment is needed. Shared engines or vendors are insufficient.                                                                                                                                                                                                                                                                 |
 | Physical iOS/Android devices and a second OS/GPU                                                       | **UNAVAILABLE in this cohort.** Real hardware/session access is required; desktop emulation does not establish touch, selection, rendering or lifecycle behavior on those devices.                                                                                                                                                                                         |

@@ -168,8 +168,9 @@ A recorded run puts one named environment in the
 [support record](browser-support.md). `node scripts/record-browser-run.mjs` builds,
 runs the website, docs and rendering suites in installed Chrome without the WebGPU
 flag, then writes `.scratch/browser-run/<time>/record.json`: revision, lockfile hash,
-OS, CPU, memory, Node, Chrome version, adapter and per-suite counts. It refuses a
-dirty tree. Set `DOMFX_BROWSER_CHANNEL=chrome` to run one suite this way by hand.
+OS, CPU, memory, Node, browser version, adapter and per-suite counts. It refuses a
+dirty tree. Add `--channel msedge` for installed Edge. Set
+`DOMFX_BROWSER_CHANNEL=chrome` or `msedge` to run one suite this way by hand.
 
 ### Chrome on Windows
 

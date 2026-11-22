@@ -86,11 +86,11 @@ by safaridriver in a visible window that inherited the site's zoom:
   multiplies DPR, and a capture over 1,000,000 device pixels is refused
   (`packages/domfx/src/memory.ts`). The original content stayed usable. This first
   appeared at 175% (DPR 3.5). Playback, Pause/Resume and the GSAP acts were therefore
-  not exercised at 200%.
+  not exercised at 200%. Tracked in [#252](https://github.com/G0m1namm/domfx/issues/252).
 - **Overlap:** on docs pages, the fixed Back to top button covered the dock's last
   action (Copy code; Reverse on the GSAP lesson) when the dock sat at the bottom of
   the viewport. Scrolling further uncovers it. This depends on viewport width, not
-  Safari.
+  Safari. Tracked in [#253](https://github.com/G0m1namm/domfx/issues/253).
 
 This run found [#247](https://github.com/G0m1namm/domfx/issues/247): relative capture
 drew at half size at DPR 2. [PR #248](https://github.com/G0m1namm/domfx/pull/248)
